@@ -1,0 +1,6 @@
+{
+  "name": "Grizzy'nin Büyük Macerası",
+  "description": "Grizzy'nin Büyük Macerası 3D - 15 Klasik Dünya, 7 Uzay Bölgesi, 7 Poneix Gezegeni, 9 Phelix Gezegeni ve 5 Dakikalık 20:00 Yeraltı Dünyası Büyük Güncelleme Fragmanı.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
