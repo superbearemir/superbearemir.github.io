@@ -5,6 +5,8 @@ import { CustomCharacterDesign } from './types';
 import { DrawingInspectorModal } from '../components/DrawingInspectorModal';
 import { SpaceActionHUD } from '../components/SpaceActionHUD';
 import { CatMerchantShopModal } from '../components/CatMerchantShopModal';
+import { HealthConsumablesShopModal } from '../components/HealthConsumablesShopModal';
+import { TreasureInventoryModal } from '../components/TreasureInventoryModal';
 import { SpaceBossDialogueOverlay } from '../components/SpaceBossDialogueOverlay';
 import { MapSelectorModal } from '../components/MapSelectorModal';
 import { UndergroundTrailerModal } from '../components/UndergroundTrailerModal';
@@ -18,9 +20,13 @@ export const CustomizerAppOverlay: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDrawingModalOpen, setIsDrawingModalOpen] = useState(false);
   const [isCatShopOpen, setIsCatShopOpen] = useState(false);
+  const [isHealthShopOpen, setIsHealthShopOpen] = useState(false);
+  const [isTreasureInventoryOpen, setIsTreasureInventoryOpen] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [isTrailerOpen, setIsTrailerOpen] = useState(false);
   const [isArcadeGamesOpen, setIsArcadeGamesOpen] = useState(false);
+
+  const [playerStats, setPlayerStats] = useState({ coins: 150, currentHp: 100, maxHp: 100, honeyGems: 2 });
   
   // Device Selection Welcome Modal (white background selection on entry)
   const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(true);
@@ -81,6 +87,12 @@ export const CustomizerAppOverlay: React.FC = () => {
 
     const handleOpenCatShop = () => setIsCatShopOpen(true);
     window.addEventListener('superbear:open-cat-shop', handleOpenCatShop);
+
+    const handleOpenHealthShop = () => setIsHealthShopOpen(true);
+    window.addEventListener('superbear:open-health-shop', handleOpenHealthShop);
+
+    const handleOpenTreasureInventory = () => setIsTreasureInventoryOpen(true);
+    window.addEventListener('superbear:open-treasure-inventory', handleOpenTreasureInventory);
 
     const handleOpenMapSelector = () => setIsMapModalOpen(true);
     window.addEventListener('superbear:open-map-selector', handleOpenMapSelector);
@@ -181,6 +193,8 @@ export const CustomizerAppOverlay: React.FC = () => {
       window.removeEventListener('superbear:open-customizer', handleOpenEvent);
       window.removeEventListener('superbear:inspect-drawing', handleInspectDrawingEvent);
       window.removeEventListener('superbear:open-cat-shop', handleOpenCatShop);
+      window.removeEventListener('superbear:open-health-shop', handleOpenHealthShop);
+      window.removeEventListener('superbear:open-treasure-inventory', handleOpenTreasureInventory);
       window.removeEventListener('superbear:open-map-selector', handleOpenMapSelector);
       window.removeEventListener('superbear:open-trailer', handleOpenTrailer);
       window.removeEventListener('superbear:open-arcade-games', handleOpenArcade);
@@ -201,6 +215,36 @@ export const CustomizerAppOverlay: React.FC = () => {
     const enhancer = (window as any).__superBearSpaceEnhancer;
     if (enhancer && enhancer.teleportToSpace) enhancer.teleportToSpace();
   };
+
+  const handleConsumeFood = (healAmount: number, cost: number, itemName: string) => {
+    const game = (window as any).__superBearGame;
+    if (game && game.stats) {
+      game.stats.currentHp = Math.min(game.stats.maxHp, game.stats.currentHp + healAmount);
+      game.stats.coins = Math.max(0, game.stats.coins - cost);
+      if (game.callbacks && game.callbacks.onStatsUpdate) {
+        game.callbacks.onStatsUpdate(game.stats);
+      }
+      setPlayerStats({
+        coins: game.stats.coins,
+        currentHp: game.stats.currentHp,
+        maxHp: game.stats.maxHp,
+        honeyGems: game.stats.honeyGems || 2
+      });
+    }
+  };
+
+  const gameStats = (() => {
+    const game = (window as any).__superBearGame;
+    if (game && game.stats) {
+      return {
+        coins: game.stats.coins ?? playerStats.coins,
+        currentHp: game.stats.currentHp ?? playerStats.currentHp,
+        maxHp: game.stats.maxHp ?? playerStats.maxHp,
+        honeyGems: game.stats.honeyGems ?? playerStats.honeyGems
+      };
+    }
+    return playerStats;
+  })();
 
   return (
     <>
@@ -266,6 +310,24 @@ export const CustomizerAppOverlay: React.FC = () => {
       <CatMerchantShopModal
         isOpen={isCatShopOpen}
         onClose={() => setIsCatShopOpen(false)}
+      />
+
+      {/* Health & Consumables Shop Modal */}
+      <HealthConsumablesShopModal
+        isOpen={isHealthShopOpen}
+        onClose={() => setIsHealthShopOpen(false)}
+        coins={gameStats.coins}
+        currentHp={gameStats.currentHp}
+        maxHp={gameStats.maxHp}
+        onConsumeFood={handleConsumeFood}
+      />
+
+      {/* Treasure & Collected Items Inventory Modal */}
+      <TreasureInventoryModal
+        isOpen={isTreasureInventoryOpen}
+        onClose={() => setIsTreasureInventoryOpen(false)}
+        coins={gameStats.coins}
+        honeyGems={gameStats.honeyGems}
       />
 
       {/* Arcade Games Modal */}

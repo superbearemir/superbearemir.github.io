@@ -6394,11 +6394,11 @@ const Zw = [
       // Left: Player Stats
       E.jsxs("div",{className:"flex items-center gap-2 sm:gap-3",children:[
         E.jsx("div",{className:"w-7 h-7 rounded-full bg-gradient-to-tr from-amber-400 to-amber-600 font-black text-slate-950 text-xs flex items-center justify-center shadow-md",title:"Seviye "+r.level,children:r.level}),
-        E.jsxs("div",{className:"flex items-center gap-1 font-mono text-xs font-black text-rose-400",children:[
+        E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-health-shop"));},className:"px-2 py-1 rounded-full bg-rose-950/40 border border-rose-800/40 flex items-center gap-1 font-mono text-xs font-black text-rose-400 hover:bg-rose-900/60 cursor-pointer transition active:scale-95 shadow-sm",title:"Can Durumu (HP) - Tıkla Menüyü Aç",children:[
           E.jsx(hp,{className:"w-3.5 h-3.5 fill-rose-500 text-rose-500"}),
           E.jsxs("span",{children:[r.currentHp,"/",r.maxHp]})
         ]}),
-        E.jsxs("div",{className:"flex items-center gap-1 font-mono text-xs font-black text-amber-300",children:[
+        E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-treasure-inventory"));},className:"px-2 py-1 rounded-full bg-amber-950/40 border border-amber-800/40 flex items-center gap-1 font-mono text-xs font-black text-amber-300 hover:bg-amber-900/60 cursor-pointer transition active:scale-95 shadow-sm",title:"Altın / Para - Tıkla Kedi Dükkanını Aç",children:[
           E.jsx(hl,{className:"w-3.5 h-3.5 fill-amber-400 text-amber-500"}),
           E.jsx("span",{children:r.coins})
         ]}),
@@ -6414,9 +6414,10 @@ const Zw = [
         E.jsx("span",{className:"text-[9px] text-sky-300 bg-sky-950/80 px-1.5 py-0.2 rounded font-mono",children:"🗺️ Harita"})
       ]}),
 
-      // Right: Menu & Music Actions (Menu placed left of Music, single modal trigger)
-      E.jsxs("div",{className:"flex items-center gap-1 sm:gap-2",children:[
-        E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-master-menu"));},className:"px-3 py-1 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-black text-xs flex items-center gap-1.5 border border-purple-300 shadow-xl cursor-pointer transition active:scale-95",title:"Menü ve Güçler",children:[          E.jsx(CA,{className:"w-3.5 h-3.5 text-yellow-300"}),          E.jsx("span",{children:"🌌 Menü & Güçler"})        ]}),
+      // Right: Separated Menu, Bear Studio, and Music Actions side by side
+      E.jsxs("div",{className:"flex items-center gap-1 sm:gap-1.5",children:[
+        E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-master-menu"));},className:"px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs flex items-center gap-1 border border-purple-300 shadow-md cursor-pointer transition active:scale-95",title:"Süper Ayı Macera ve Kontrol Menüsü",children:[          E.jsx(CA,{className:"w-3.5 h-3.5 text-yellow-300"}),          E.jsx("span",{children:"🐻 Ayı Menü"})        ]}),
+        E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-customizer"));},className:"px-2.5 py-1 rounded-full bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-700 hover:from-teal-500 hover:to-emerald-500 text-white font-black text-xs flex items-center gap-1 border border-teal-300 shadow-md cursor-pointer transition active:scale-95",title:"Ayı Özelleştirme Stüdyosu",children:[          E.jsx("span",{children:"🎨"}),          E.jsx("span",{children:"Ayı Stüdyosu"})        ]}),
         E.jsxs("button",{onClick:()=>b(!0),className:"px-2.5 py-1 rounded-full bg-pink-950/70 hover:bg-pink-900/80 text-pink-200 border border-pink-500/50 text-xs font-black flex items-center gap-1 shadow cursor-pointer transition active:scale-95",title:"Dinamik Müzik Çalar",children:[          E.jsx(DA,{className:"w-3.5 h-3.5 text-pink-400"}),          E.jsx("span",{className:"hidden md:inline",children:"Müzik"})        ]}),
         E.jsx("button",{onClick:y,className:"p-1.5 rounded-full bg-slate-900/80 text-slate-300 hover:text-white border border-slate-700 cursor-pointer shadow",title:x?"Sesi Aç":"Sesi Kapat",children:          x?E.jsx(Gv,{className:"w-3.5 h-3.5 text-rose-400"}):E.jsx(Fv,{className:"w-3.5 h-3.5 text-emerald-400"})        })
       ]})
