@@ -28,6 +28,11 @@ window.__superBearPurgeScene = function(game) {
     if (!game) game = window.__superBearGame;
     if (!game || !game.scene) return;
     console.log("🧹 [Universal Purge] Deep cleaning previous scene objects, colliders and states...");
+    if (game._returnPortals) {
+        game._returnPortals.forEach(p => { if (p && p.parent) p.parent.remove(p); });
+        game._returnPortals = [];
+    }
+
 
     // 1. Clean up Space Realm if active
     if (window.__superBearSpaceLevels && typeof window.__superBearSpaceLevels.cleanUpSpaceRealm === 'function') {
@@ -96,6 +101,7 @@ window.__superBearPurgeScene = function(game) {
 
             const name = child.name || '';
             if (
+                name.startsWith('level_return_portal_') ||
                 name.startsWith('space_') ||
                 name.startsWith('cosmic_') ||
                 name.startsWith('chunk_') ||
@@ -1534,7 +1540,7 @@ function buildSpaceGalaxyWorld(scene) {
     sCtx.fillStyle = '#fef08a';
     sCtx.font = 'bold 28px sans-serif';
     sCtx.textAlign = 'center';
-    sCtx.fillText('🐱 CAPITOOLOS BAKKALI 🛍️', 256, 52);
+    sCtx.fillText('🐱 CAPI BAKKALI 🛍️', 256, 52);
     sCtx.fillStyle = '#ffffff';
     sCtx.font = '20px sans-serif';
     sCtx.fillText('[E] Kostüm & Özel Eşyalar Dükkanı', 256, 96);
@@ -1559,6 +1565,99 @@ function buildSpaceGalaxyWorld(scene) {
   bakkal.name = 'merchant_cat';
   scene.add(bakkal);
   spaceObjects.push(bakkal);
+
+  // =========================================================================
+  // --- 2. RETRO ARCADE MİNİ OYUN SALONU KABİNİ (Arcade Station) ---
+  // Positioned at (-11, 0.2, -22)
+  // =========================================================================
+  const arcadeStation = new window.THREE.Group();
+  arcadeStation.position.set(-11, 0.2, -22);
+  arcadeStation.rotation.y = 0.4;
+  arcadeStation.name = 'retro_arcade_cabinet';
+
+  const arcadeBodyMat = new window.THREE.MeshStandardMaterial({ color: 0x3b0764, roughness: 0.4 });
+  const arcadePurpleNeon = createGlowMat(0xa855f7, 0xc084fc);
+  const arcadeScreenMat = new window.THREE.MeshStandardMaterial({ color: 0x1e1b4b, emissive: 0x312e81, emissiveIntensity: 0.8 });
+  const cyberPlatformMat = new window.THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3, metalness: 0.7 });
+  const cyanGlowMat = createGlowMat(0x06b6d4, 0x38bdf8);
+  const yellowGoldMat = createGlowMat(0xf59e0b, 0xfde047);
+
+  // Double Arcade Cabinets Side by Side
+  [-1.1, 1.1].forEach((cx, idx) => {
+    const cab = new window.THREE.Group();
+    cab.position.x = cx;
+
+    const baseBox = new window.THREE.Mesh(new window.THREE.BoxGeometry(1.8, 4.2, 2.0), arcadeBodyMat);
+    baseBox.position.y = 2.1;
+    cab.add(baseBox);
+
+    [-0.92, 0.92].forEach(sx => {
+      const strip = new window.THREE.Mesh(new window.THREE.BoxGeometry(0.08, 4.3, 2.05), arcadePurpleNeon);
+      strip.position.set(sx, 2.15, 0);
+      cab.add(strip);
+    });
+
+    const crt = new window.THREE.Mesh(new window.THREE.PlaneGeometry(1.4, 1.3), arcadeScreenMat);
+    crt.position.set(0, 2.6, 1.02);
+    cab.add(crt);
+
+    const shelf = new window.THREE.Mesh(new window.THREE.BoxGeometry(1.7, 0.3, 0.9), cyberPlatformMat);
+    shelf.position.set(0, 1.7, 1.25);
+    shelf.rotation.x = -0.3;
+    cab.add(shelf);
+
+    const stick = new window.THREE.Mesh(new window.THREE.CylinderGeometry(0.04, 0.04, 0.35, 8), cyberPlatformMat);
+    stick.position.set(-0.35, 1.95, 1.25);
+    cab.add(stick);
+
+    const stickBall = new window.THREE.Mesh(new window.THREE.SphereGeometry(0.1, 8, 8), idx === 0 ? cyanGlowMat : yellowGoldMat);
+    stickBall.position.set(-0.35, 2.15, 1.25);
+    cab.add(stickBall);
+
+    const marquee = new window.THREE.Mesh(new window.THREE.BoxGeometry(1.7, 0.6, 0.4), arcadePurpleNeon);
+    marquee.position.set(0, 4.0, 0.9);
+    cab.add(marquee);
+
+    arcadeStation.add(cab);
+  });
+
+  const arcadeCanvas = document.createElement('canvas');
+  arcadeCanvas.width = 512;
+  arcadeCanvas.height = 140;
+  const aCtx = arcadeCanvas.getContext('2d');
+  if (aCtx) {
+    aCtx.fillStyle = '#2e1065';
+    aCtx.fillRect(0, 0, 512, 140);
+    aCtx.strokeStyle = '#c084fc';
+    aCtx.lineWidth = 6;
+    aCtx.strokeRect(4, 4, 504, 132);
+    aCtx.fillStyle = '#f43f5e';
+    aCtx.font = 'bold 30px sans-serif';
+    aCtx.textAlign = 'center';
+    aCtx.fillText('🕹️ SUPER BEAR ARCADE 🎮', 256, 50);
+    aCtx.fillStyle = '#fde047';
+    aCtx.font = 'bold 22px sans-serif';
+    aCtx.fillText('[E Tuşu] 4 Yeni Mini Oyun Oyna!', 256, 95);
+    aCtx.fillStyle = '#e9d5ff';
+    aCtx.font = '16px sans-serif';
+    aCtx.fillText('Bal Koşusu • Baloncuk • Asteroit • Kartlar', 256, 126);
+  }
+  const arcadeTex = new window.THREE.CanvasTexture(arcadeCanvas);
+  const marqueeSign = new window.THREE.Mesh(
+    new window.THREE.PlaneGeometry(4.0, 1.2),
+    new window.THREE.MeshBasicMaterial({ map: arcadeTex })
+  );
+  marqueeSign.position.set(0, 4.8, 0.85);
+  arcadeStation.add(marqueeSign);
+
+  const arcIconGeo = new window.THREE.BoxGeometry(0.8, 0.6, 0.2);
+  const arcIconMesh = new window.THREE.Mesh(arcIconGeo, arcadePurpleNeon);
+  arcIconMesh.position.set(0, 5.8, 0.8);
+  arcIconMesh.name = 'arcade_cabinet_icon';
+  arcadeStation.add(arcIconMesh);
+
+  scene.add(arcadeStation);
+  spaceObjects.push(arcadeStation);
 
   // Tatlış Pelikan Piko (Standing Pelican NPC near pond in Ayı Köyü)
   const pelikanPiko = createCutePelicanMesh(window.THREE, false);
@@ -6226,12 +6325,162 @@ function updateSpaceLoop() {
     return;
   }
 
-  // Region Transition Cleanup Hook (Prevents 2 regions from merging)
+  // Super Bear Adventure Chapter Banner UI (Disabled per user request)
+  function showSbaChapterBanner(icon, title, subtitle) {
+    try {
+      const container = document.getElementById('sba-chapter-banner-container');
+      if (container) container.remove();
+    } catch(e) {}
+  }
+
+  // Authentic Return Portal Mesh to Ayı Köyü
+  function addLevelReturnPortal(game, px, py, pz) {
+    if (!game || !game.scene || !window.THREE) return;
+    const THREE = window.THREE;
+    const portalGroup = new THREE.Group();
+    portalGroup.name = 'level_return_portal_to_hub';
+    portalGroup.position.set(px, py, pz);
+
+    const ringGeo = new THREE.TorusGeometry(1.8, 0.28, 16, 32);
+    const ringMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0284c7,
+      emissiveIntensity: 1.2,
+      roughness: 0.2
+    });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.position.y = 1.9;
+    portalGroup.add(ring);
+
+    const vortexGeo = new THREE.CircleGeometry(1.6, 32);
+    const vortexMat = new THREE.MeshBasicMaterial({
+      color: 0x7dd3fc,
+      transparent: true,
+      opacity: 0.75,
+      side: THREE.DoubleSide
+    });
+    const vortex = new THREE.Mesh(vortexGeo, vortexMat);
+    vortex.position.y = 1.9;
+    portalGroup.add(vortex);
+
+    const ped = new THREE.Mesh(
+      new THREE.CylinderGeometry(2.4, 2.8, 0.4, 16),
+      new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 })
+    );
+    ped.position.y = 0.2;
+    portalGroup.add(ped);
+
+    game.scene.add(portalGroup);
+
+    portalGroup.userData = {
+      update: () => {
+        ring.rotation.z += 0.03;
+        vortex.rotation.z -= 0.02;
+        if (game.playerPos && game.currentRegion !== 'hub') {
+          const dist = game.playerPos.distanceTo(portalGroup.position);
+          if (dist < 2.5) {
+            game.loadRegion('hub');
+            if (game.callbacks && game.callbacks.onShowNotice) {
+              game.callbacks.onShowNotice("🏡 Ayı Köyü'ne güvenle geri döndün!", "info");
+            }
+          }
+        }
+      }
+    };
+    if (!game._returnPortals) game._returnPortals = [];
+    game._returnPortals.push(portalGroup);
+  }
+
+  // Exact Coordinates & Safety Spawns for Every Region
+  const SAFE_SPAWNS = {
+    hub: { x: 0, y: 0.2, z: 5, rotY: 0, title: "1. BÖLÜM: AYI VE KEDİ KÖYÜ", sub: "Maceranın Başladığı Huzurlu Köy Meydanı", icon: "🏡" },
+    forest_temple: { x: 0, y: 1.5, z: 25, rotY: 0, title: "2. BÖLÜM: ANTİK ORMAN TAPINAĞI", sub: "Sarmaşıklar ve Zehirli Spor Kanyonu", icon: "🍃" },
+    beehive: { x: 0, y: 1.5, z: 42, rotY: 0, title: "3. BÖLÜM: VIZILDIYAN BAL KOVANI", sub: "Altın Bal Petekleri ve Arı Kraliçesi Labirenti", icon: "🐝" },
+    pelican_plains: { x: 0, y: 2.0, z: 46, rotY: 0, title: "4. BÖLÜM: PELİKAN OVALARI & GÖK ADALARI", sub: "Rüzgarlı Bulut Köprüleri ve Gök Tapınağı", icon: "🪶" },
+    snow_desert: { x: 0, y: 2.0, z: 52, rotY: 0, title: "5. BÖLÜM: KAR VADİSİ & DONMUŞ ÇÖL", sub: "Buzul Sarkıtları ve Koca Ayak Zirvesi", icon: "❄️" },
+    volcano_cave: { x: 0, y: 2.5, z: 70, rotY: 0, title: "6. BÖLÜM: VOLKANİK EJDERHA MAĞARASI", sub: "Kızgın Magma Şelaleleri ve Lav Parkurları", icon: "🌋" },
+    underwater_palace: { x: 0, y: 2.0, z: 0, rotY: 0, title: "7. BÖLÜM: ANTİK SU ALTI KRİSTAL SARAYI", sub: "Biolüminesans Mercanlar ve Derin Deniz Yolları", icon: "🌊" },
+    golden_sanctuary: { x: 0, y: 2.2, z: 90, rotY: 0, title: "8. BÖLÜM: EFSANEVİ ALTIN CENNETİ", sub: "Güneş Mabedi ve Görkemli Altın Heykeller", icon: "🌟" },
+    dinosaur_world: { x: 0, y: 1.8, z: 60, rotY: 0, title: "9. BÖLÜM: DİNOZOR DÜNYASI", sub: "Prehistorik Vadiler ve T-Rex Gözlem Kulesi", icon: "🦖" },
+    sugar_world: { x: 0, y: 11.5, z: 70, rotY: 0, title: "10. BÖLÜM: ŞEKER DÜNYASI & LOLİPOP KRALLIĞI", sub: "Pamuk Şeker Bulutları ve Marshmallow Atlama Pedleri", icon: "🍬" },
+    jokerooms: { x: 0, y: 1.2, z: 0, rotY: 0, title: "11. BÖLÜM: JOKEROOMS ŞAKA ODALARI", sub: "Sonsuz Sarı Labirent, Muz Kabukları ve Gizemli Odalar", icon: "🚪" },
+    ruin_village: { x: 0, y: 2.8, z: 80, rotY: 0, title: "12. BÖLÜM: YIKILMIŞ KÖY & SİRK HARABELERİ", sub: "Asit Nehri ve Terk Edilmiş Sirk Parkuru", icon: "🏚️" },
+    water_cave: { x: 0, y: 4.8, z: 60, rotY: 0, title: "13. BÖLÜM: KARANLIK SU MAĞARASI", sub: "Mavi Göletler, Mağara Sarkıtları ve Su Ejderhası", icon: "💧" },
+    bee_desert: { x: 0, y: 3.2, z: 60, rotY: 0, title: "14. BÖLÜM: ARI ÇÖLÜ & ANTİK PİRAMİT", sub: "Sonsuz Kum Tepeleri ve Antik Firavun Piramidi", icon: "🏜️" },
+    space_realm: { x: 0, y: 2.0, z: 25, rotY: 0, title: "15. BÖLÜM: KOZMİK BOYUT & BÜYÜK BOSSLAR", sub: "Yıldız Geçitleri ve Final Kozmik Savaş Arenası", icon: "🌌" },
+  };
+
+  function ensureSafeLevelSpawn(game, regionId, isFollowup = false) {
+    if (!game) return;
+    const THREE = window.THREE;
+    if (!THREE) return;
+
+    const info = SAFE_SPAWNS[regionId] || { x: 0, y: 2.0, z: 0, rotY: 0, title: regionId, sub: "Yeni Bölüm", icon: "🌟" };
+
+    if (game.currentLevel) {
+      if (!game.currentLevel.spawnPoint) game.currentLevel.spawnPoint = new THREE.Vector3();
+      game.currentLevel.spawnPoint.set(info.x, info.y, info.z);
+    }
+
+    if (game.playerPos) {
+      game.playerPos.set(info.x, info.y, info.z);
+    }
+    if (game.playerVel) {
+      game.playerVel.set(0, 0, 0);
+    }
+    game.playerRotY = info.rotY || 0;
+
+    if (game.playerBear && game.playerBear.root) {
+      game.playerBear.root.position.copy(game.playerPos);
+      game.playerBear.root.rotation.y = game.playerRotY;
+      game.playerBear.root.visible = true;
+    }
+
+    if (regionId === "hub") {
+      if (game.camera) {
+        game.camYaw = 0;
+        game.camPitch = 0.2;
+        game.camDist = 6.0;
+        game.camera.position.set(0, 2.5, 11);
+        game.camera.lookAt(0, 1.0, -10);
+      }
+      // Remove any artificial spawn colliders that could cause bear to float in mid air in the hub
+      if (game.currentLevel && game.currentLevel.colliders) {
+        game.currentLevel.colliders = game.currentLevel.colliders.filter(c => !c.isSpawnBase && !(c.min && c.min.x === -14 && c.max && Math.abs(c.max.y - 1.4) < 0.2));
+      }
+    } else {
+      if (game.camera) {
+        game.camYaw = Math.PI;
+        game.camPitch = 0.22;
+        game.camDist = 6.2;
+        game.camera.position.set(info.x, info.y + 2.6, info.z + 6.2);
+        game.camera.lookAt(info.x, info.y + 1.2, info.z - 5.0);
+      }
+      // Solid base collider under spawn platform for non-hub levels only
+      if (game.currentLevel) {
+        if (!game.currentLevel.colliders) game.currentLevel.colliders = [];
+        const hasBase = game.currentLevel.colliders.some(c => c && c.isSpawnBase);
+        if (!hasBase) {
+          game.currentLevel.colliders.push({
+            min: new THREE.Vector3(info.x - 16, info.y - 3.5, info.z - 16),
+            max: new THREE.Vector3(info.x + 16, info.y - 0.05, info.z + 16),
+            isSpawnBase: true
+          });
+        }
+      }
+    }
+
+    if (regionId !== "hub" && !isFollowup) {
+      addLevelReturnPortal(game, info.x, info.y, info.z + 7.5);
+    }
+  }
+
+  // Enhanced Region Transition & Safe Level Spawner Hook
   if (!game._regionCleanupHookInstalled && game.loadRegion) {
     game._regionCleanupHookInstalled = true;
     const origLoadRegion = game.loadRegion;
     game.loadRegion = function(regionId) {
-      console.log("🧹 Region transition: loading " + regionId + " (cleaning up previous region)...");
+      console.log("🧹 Region transition: loading " + regionId + " (deep cleaning previous region)...");
       if (typeof window.__superBearPurgeScene === 'function') {
         window.__superBearPurgeScene(this);
       }
@@ -6244,8 +6493,88 @@ function updateSpaceLoop() {
       goldenSanctuaryPopulated = false;
       waterCavePopulated = false;
       beeDesertPopulated = false;
-      return origLoadRegion.call(this, regionId);
+
+      const res = origLoadRegion.call(this, regionId);
+
+      // Synchronously populate custom region objects
+      if (regionId === 'volcano_cave') {
+        volcanoCavePopulated = true;
+        populateVolcanoCave(this);
+      } else if (regionId === 'underwater_palace') {
+        underwaterPalacePopulated = true;
+        populateUnderwaterPalace(this);
+      } else if (regionId === 'golden_sanctuary') {
+        goldenSanctuaryPopulated = true;
+        populateGoldenSanctuary(this);
+      } else if (regionId === 'dinosaur_world') {
+        dinoWorldPopulated = true;
+        populateDinosaurWorld(this);
+      } else if (regionId === 'sugar_world') {
+        sugarWorldPopulated = true;
+        populateSugarWorld(this);
+      } else if (regionId === 'jokerooms') {
+        jokeroomsPopulated = true;
+        populateJokerooms(this);
+      } else if (regionId === 'ruin_village') {
+        ruinVillagePopulated = true;
+        populateRuinVillage(this);
+      } else if (regionId === 'water_cave') {
+        waterCavePopulated = true;
+        populateWaterCave(this);
+      } else if (regionId === 'bee_desert') {
+        beeDesertPopulated = true;
+        populateBeeDesert(this);
+      }
+
+      // Ensure player and camera spawn safely inside the map
+      ensureSafeLevelSpawn(this, regionId, false);
+
+      setTimeout(() => {
+        if (this.currentRegion === regionId) {
+          ensureSafeLevelSpawn(this, regionId, true);
+        }
+      }, 60);
+
+      setTimeout(() => {
+        if (this.currentRegion === regionId) {
+          ensureSafeLevelSpawn(this, regionId, true);
+        }
+      }, 180);
+
+      return res;
     };
+  }
+
+  // Return Portals Animation & Touch Handler
+  if (game._returnPortals && game._returnPortals.length > 0) {
+    for (let i = game._returnPortals.length - 1; i >= 0; i--) {
+      const p = game._returnPortals[i];
+      if (p && p.parent && p.userData && typeof p.userData.update === 'function') {
+        p.userData.update();
+      } else if (!p || !p.parent) {
+        game._returnPortals.splice(i, 1);
+      }
+    }
+  }
+
+  // Universal Fall Protection: If player drops below floor, safely respawn at start
+  if (game.playerPos && game.currentLevel && !window.__isParkourActive) {
+    const r = game.currentRegion || 'hub';
+    const minY = (r === 'water_cave' || r === 'underwater_palace') ? -35.0 :
+                 (r === 'space_realm') ? -30.0 :
+                 (r === 'sugar_world') ? -5.0 :
+                 (r === 'volcano_cave') ? -10.0 : -15.0;
+    if (game.playerPos.y < minY) {
+      if (typeof ensureSafeLevelSpawn === 'function') {
+        ensureSafeLevelSpawn(game, r, true);
+      } else if (game.currentLevel.spawnPoint) {
+        game.playerPos.copy(game.currentLevel.spawnPoint);
+        if (game.playerVel) game.playerVel.set(0, 0, 0);
+      }
+      if (game.callbacks && game.callbacks.onShowNotice) {
+        game.callbacks.onShowNotice("✨ Güvenli başlangıç platformuna geri getirildin!", "info");
+      }
+    }
   }
 
   // If in Hub (Ayı Köyü), guarantee all boss health bars remain hidden
@@ -9053,6 +9382,110 @@ function updateSpaceLoop() {
             if (game.callbacks && game.callbacks.onShowNotice && Date.now() % 4000 < 50) {
               game.callbacks.onShowNotice("🪶 Tatlış Pelikan Piko: 'Gak gak! Ben Ayı Köyü'nün en sevimli pelikanıyım! Pelikan Ovaları'nda gök adalarına uçabilirsin!'");
             }
+          }
+        }
+      }
+    }
+
+    // --- 🕹️ RETRO ARCADE MİNİ OYUN KABİNİ PROXIMITY & ANIMATION ---
+    const aCabinet = game.scene.getObjectByName('retro_arcade_cabinet');
+    if (!isHub) {
+      if (aCabinet) aCabinet.visible = false;
+      window.dispatchEvent(new CustomEvent('superbear:arcade-proximity', { detail: { isNear: false } }));
+    } else if (aCabinet) {
+      aCabinet.visible = true;
+      const aIcon = aCabinet.getObjectByName('arcade_cabinet_icon');
+      if (aIcon) {
+        aIcon.rotation.y += 0.03;
+        aIcon.position.y = 5.8 + Math.sin(Date.now() * 0.005) * 0.15;
+      }
+      if (game.playerPos) {
+        const dist = game.playerPos.distanceTo(aCabinet.position);
+        if (dist < 4.5) {
+          window.dispatchEvent(new CustomEvent('superbear:arcade-proximity', { detail: { isNear: true, dist } }));
+        } else {
+          window.dispatchEvent(new CustomEvent('superbear:arcade-proximity', { detail: { isNear: false } }));
+        }
+      }
+    } else {
+      window.dispatchEvent(new CustomEvent('superbear:arcade-proximity', { detail: { isNear: false } }));
+    }
+
+    // =========================================================================
+    // --- 🏊 KÜRESEL SUDA YÜZME MEKANİĞİ (Global Swimming Physics Engine) ---
+    // =========================================================================
+    if (game.playerPos) {
+      const pPos = game.playerPos;
+      const pVel = game.playerVel || { x: 0, y: 0, z: 0 };
+      
+      // Determine if player is inside any body of water:
+      // 1. Ayı Köyü River: x in [-45, 45], z in [14, 32], y in [-2.0, 0.85] (ONLY in Hub and NOT in parkour)
+      const inVillageRiver = (isHub && pPos.x >= -45 && pPos.x <= 45 && pPos.z >= 14 && pPos.z <= 32 && pPos.y <= 0.85 && pPos.y >= -2.0);
+      // 2. Fishing Pond 1: near (-26, -8)
+      const dPond1 = Math.sqrt((pPos.x + 26) * (pPos.x + 26) + (pPos.z + 8) * (pPos.z + 8));
+      const inPond1 = (isHub && dPond1 <= 9.0 && pPos.y <= 0.85 && pPos.y >= -2.0);
+      // 3. Fishing Pond 2: near (-10, 38)
+      const dPond2 = Math.sqrt((pPos.x + 10) * (pPos.x + 10) + (pPos.z - 38) * (pPos.z - 38));
+      const inPond2 = (isHub && dPond2 <= 8.0 && pPos.y <= 0.85 && pPos.y >= -2.0);
+      // 4. Level-defined water surfaces
+      const inLevelWater = (game.currentLevel && game.currentLevel.waterLevel !== undefined && pPos.y <= game.currentLevel.waterLevel + 0.3 && pPos.y >= game.currentLevel.waterLevel - 3.0);
+
+      const inWater = Boolean(inVillageRiver || inPond1 || inPond2 || inLevelWater);
+
+      if (inWater) {
+        let waterSurfaceY = 0.6;
+        if (inLevelWater && game.currentLevel) {
+          waterSurfaceY = game.currentLevel.waterLevel;
+        }
+
+        if (!game._isSwimmingActive) {
+          game._isSwimmingActive = true;
+          if (game.spawnSparkleParticles) {
+            game.spawnSparkleParticles(pPos, 22, 0x38bdf8);
+          }
+          if (window.St && typeof window.St.playWaterSplash === 'function') {
+            window.St.playWaterSplash();
+          }
+          if (game.callbacks && game.callbacks.onShowNotice) {
+            game.callbacks.onShowNotice("🏊 Suya Girdin! Yüzme Modu Aktif (Boşluk Tuşu: Kulaç At / Zıpla)", "info");
+          }
+        }
+
+        // Buoyancy float force: gently push toward water surface
+        const depth = waterSurfaceY - pPos.y;
+        if (depth > 0.1) {
+          pVel.y = Math.min(0.28, pVel.y + 0.065);
+        } else if (depth < -0.1) {
+          pVel.y = Math.max(-0.08, pVel.y - 0.02);
+        } else {
+          // Floating wave wobble
+          pVel.y = Math.sin(Date.now() * 0.005) * 0.025;
+        }
+
+        // Water resistance & drag
+        pVel.x *= 0.94;
+        pVel.z *= 0.94;
+
+        // Visual water ripples & droplets
+        if (Math.random() < 0.35 && game.spawnSparkleParticles) {
+          game.spawnSparkleParticles(pPos, 2, 0x7dd3fc);
+        }
+
+        // Animate swimming bear body (horizontal tilt)
+        const playerObj = game.scene.getObjectByName('player_bear') || game.playerMesh;
+        if (playerObj) {
+          playerObj.rotation.x = 0.55; // Lean forward to paddle
+        }
+      } else {
+        game._lastSwimTrackPos = null;
+        if (game._isSwimmingActive) {
+          game._isSwimmingActive = false;
+          if (game.spawnSparkleParticles) {
+            game.spawnSparkleParticles(pPos, 14, 0xbae6fd);
+          }
+          const playerObj = game.scene.getObjectByName('player_bear') || game.playerMesh;
+          if (playerObj) {
+            playerObj.rotation.x = 0; // Restore upright posture
           }
         }
       }
@@ -13755,7 +14188,7 @@ function triggerEmote(type) {
     startSubterraneanMovieTrailer(1);
   }
 
-// Expose global enhancer controller API for React HUD
+  // Expose global enhancer controller API for React HUD
   window.__superBearSpaceEnhancer = {
     triggerJump,
     triggerEmote,
@@ -13773,6 +14206,7 @@ function triggerEmote(type) {
     teleportToBeeDesert,
     triggerSubterraneanRupture,
     openCatShop: () => window.dispatchEvent(new CustomEvent('superbear:open-cat-shop')),
+    openArcade: () => window.dispatchEvent(new CustomEvent('superbear:open-arcade-games')),
     updateAliensRescued: (count) => {
         spaceState.aliensRescued = Math.min(spaceState.maxAliens, spaceState.aliensRescued + count);
         if (spaceState.aliensRescued >= spaceState.maxAliens) {

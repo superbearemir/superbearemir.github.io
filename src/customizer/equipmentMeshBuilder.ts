@@ -178,6 +178,30 @@ export function buildFaceMesh(itemId: string, itemColorHex = 0x0f172a): THREE.Gr
     const ring = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.03, 12, 20), goldMat);
     ring.position.set(0.25, 0, 0);
     group.add(ring);
+  } else if (itemId.includes('goggles') || itemId.includes('swimming') || itemId.includes('şnorkel')) {
+    // 3D Diving Goggles with Snorkel
+    const goggleFrame = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.32, 0.12), new THREE.MeshStandardMaterial({ color: 0x06b6d4, roughness: 0.3 }));
+    group.add(goggleFrame);
+
+    const goggleLenses = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.24, 0.14), new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.7, roughness: 0.1 }));
+    group.add(goggleLenses);
+
+    // Snorkel tube
+    const tubeMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 });
+    const snorkelTube = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.7, 12), tubeMat);
+    snorkelTube.position.set(0.48, 0.18, 0.05);
+    snorkelTube.rotation.z = -0.15;
+    group.add(snorkelTube);
+
+    const snorkelTip = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
+    snorkelTip.position.set(0.54, 0.52, 0.05);
+    group.add(snorkelTip);
+  } else if (itemId.includes('ninja')) {
+    // Ninja Stealth Face Wrap
+    const ninjaMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 });
+    const wrap = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.45, 0.2), ninjaMat);
+    wrap.position.set(0, -0.14, 0.05);
+    group.add(wrap);
   } else if (itemId.includes('mask') || itemId.includes('oni') || itemId.includes('maskesi')) {
     const maskMat = new THREE.MeshStandardMaterial({ color: itemColorHex, roughness: 0.3, metalness: 0.4 });
     const mask = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.4, 0.15), maskMat);
@@ -273,6 +297,22 @@ export function buildBackMesh(itemId: string, itemColorHex = 0xf59e0b): THREE.Gr
     const shield = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.08, 20), shieldMat);
     shield.rotation.x = Math.PI / 2;
     group.add(shield);
+  } else if (itemId.includes('backpack') || itemId.includes('çanta')) {
+    // Explorer / Carrot Backpack
+    const bagMat = new THREE.MeshStandardMaterial({ color: itemColorHex || 0xf97316, roughness: 0.6 });
+    const bag = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.75, 0.35), bagMat);
+    bag.position.set(0, -0.15, 0);
+    group.add(bag);
+
+    // Cute Carrot peaking out
+    const carrotCone = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.35, 10), new THREE.MeshStandardMaterial({ color: 0xf97316 }));
+    carrotCone.position.set(0.12, 0.25, 0.05);
+    carrotCone.rotation.z = 0.2;
+    group.add(carrotCone);
+
+    const carrotGreens = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.15, 8), new THREE.MeshStandardMaterial({ color: 0x22c55e }));
+    carrotGreens.position.set(0.15, 0.42, 0.05);
+    group.add(carrotGreens);
   } else {
     // Flowing Cape
     const capeGeo = new THREE.PlaneGeometry(0.85, 1.3, 6, 10);
@@ -348,6 +388,21 @@ export function buildHandMesh(itemId: string, itemColorHex = 0x38bdf8): THREE.Gr
     glove.scale.set(1.0, 1.25, 1.0);
     glove.position.y = 0.22;
     group.add(glove);
+  } else if (itemId.includes('carrot') || itemId.includes('havuç')) {
+    // Giant Gold/Orange Champion Carrot
+    const carrotMat = new THREE.MeshStandardMaterial({ color: itemColorHex || 0xf97316, roughness: 0.3, emissive: 0xea580c, emissiveIntensity: 0.3 });
+    const carrotBody = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.85, 14), carrotMat);
+    carrotBody.position.y = 0.45;
+    carrotBody.rotation.x = Math.PI;
+    group.add(carrotBody);
+
+    const greenMat = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.4 });
+    for (let i = 0; i < 3; i++) {
+      const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.3, 8), greenMat);
+      leaf.position.set(Math.sin(i * 2.1) * 0.08, 0.95, Math.cos(i * 2.1) * 0.08);
+      leaf.rotation.z = Math.sin(i * 2.1) * 0.3;
+      group.add(leaf);
+    }
   } else {
     // Generic stylish handheld tool
     const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.8, 10), new THREE.MeshStandardMaterial({ color: 0xd97706 }));

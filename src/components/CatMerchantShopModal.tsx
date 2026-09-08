@@ -565,7 +565,7 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-xl sm:text-2xl font-black tracking-wider text-slate-950">
-                  BAKKAL KEDİ CAPITOOLOS & CANLI 3D AYI KOSTÜM MAĞAZASI
+                  BAKKAL KEDİ CAPİ & CANLI 3D AYI KOSTÜM MAĞAZASI
                 </h2>
                 <span className="px-2.5 py-0.5 rounded-full bg-slate-950 text-amber-300 font-black text-xs border border-amber-400/50">
                   180+ İtem 🏪
@@ -1134,7 +1134,7 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
 
         {/* Footer */}
         <div className="p-3 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 shrink-0">
-          <span>🐱 Bakkal Kedi Capitoolos • Toplam {SHOP_ITEMS.length} Adet Takı, Zırh ve Kostüm • Canlı 3D Önizleme Destekli</span>
+          <span>🐱 Bakkal Kedi Capi • Toplam {SHOP_ITEMS.length} Adet Takı, Zırh ve Kostüm • Canlı 3D Önizleme Destekli</span>
           <button
             onClick={onClose}
             className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-black transition cursor-pointer border border-slate-700"

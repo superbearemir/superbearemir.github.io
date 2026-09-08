@@ -8,7 +8,8 @@ import { CatMerchantShopModal } from '../components/CatMerchantShopModal';
 import { SpaceBossDialogueOverlay } from '../components/SpaceBossDialogueOverlay';
 import { MapSelectorModal } from '../components/MapSelectorModal';
 import { UndergroundTrailerModal } from '../components/UndergroundTrailerModal';
-import { ShoppingBag } from 'lucide-react';
+import { ArcadeGamesModal } from '../components/ArcadeGamesModal';
+import { ShoppingBag, Gamepad2 } from 'lucide-react';
 
 export const CustomizerAppOverlay: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,7 +17,11 @@ export const CustomizerAppOverlay: React.FC = () => {
   const [isCatShopOpen, setIsCatShopOpen] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [isTrailerOpen, setIsTrailerOpen] = useState(false);
+  const [isArcadeGamesOpen, setIsArcadeGamesOpen] = useState(false);
+
   const [isNearCatMerchant, setIsNearCatMerchant] = useState(false);
+  const [isNearArcade, setIsNearArcade] = useState(false);
+
   const [aliensRescued, setAliensRescued] = useState(0);
   const [, setActiveDesign] = useState<CustomCharacterDesign>(getCurrentSavedDesign);
 
@@ -28,33 +33,30 @@ export const CustomizerAppOverlay: React.FC = () => {
     (window as unknown as { __openTrailerModal?: () => void }).__openTrailerModal = () => {
       setIsTrailerOpen(true);
     };
+    (window as any).__openArcadeGames = () => {
+      setIsArcadeGamesOpen(true);
+    };
 
     // Listen for custom open events
-    const handleOpenEvent = () => {
-      setIsOpen(true);
-    };
+    const handleOpenEvent = () => setIsOpen(true);
     window.addEventListener('superbear:open-customizer', handleOpenEvent);
 
-    const handleInspectDrawingEvent = () => {
-      setIsDrawingModalOpen(true);
-    };
+    const handleInspectDrawingEvent = () => setIsDrawingModalOpen(true);
     window.addEventListener('superbear:inspect-drawing', handleInspectDrawingEvent);
 
-    const handleOpenCatShop = () => {
-      setIsCatShopOpen(true);
-    };
+    const handleOpenCatShop = () => setIsCatShopOpen(true);
     window.addEventListener('superbear:open-cat-shop', handleOpenCatShop);
 
-    const handleOpenMapSelector = () => {
-      setIsMapModalOpen(true);
-    };
+    const handleOpenMapSelector = () => setIsMapModalOpen(true);
     window.addEventListener('superbear:open-map-selector', handleOpenMapSelector);
 
-    const handleOpenTrailer = () => {
-      setIsTrailerOpen(true);
-    };
+    const handleOpenTrailer = () => setIsTrailerOpen(true);
     window.addEventListener('superbear:open-trailer', handleOpenTrailer);
 
+    const handleOpenArcade = () => setIsArcadeGamesOpen(true);
+    window.addEventListener('superbear:open-arcade-games', handleOpenArcade);
+
+    // Proximity events
     const handleCatMerchantProximity = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail && typeof detail.isNear === 'boolean') {
@@ -62,6 +64,14 @@ export const CustomizerAppOverlay: React.FC = () => {
       }
     };
     window.addEventListener('superbear:cat-merchant-proximity', handleCatMerchantProximity);
+
+    const handleArcadeProximity = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && typeof detail.isNear === 'boolean') {
+        setIsNearArcade(detail.isNear);
+      }
+    };
+    window.addEventListener('superbear:arcade-proximity', handleArcadeProximity);
 
     const handleSpaceStateUpdate = (e: Event) => {
       const detail = (e as CustomEvent).detail;
@@ -71,6 +81,7 @@ export const CustomizerAppOverlay: React.FC = () => {
     };
     const handleRegionChange = () => {
       setIsNearCatMerchant(false);
+      setIsNearArcade(false);
     };
     window.addEventListener('superbear:region-change', handleRegionChange);
     window.addEventListener('superbear:space-state-update', handleSpaceStateUpdate);
@@ -85,9 +96,15 @@ export const CustomizerAppOverlay: React.FC = () => {
       } else if (e.code === 'KeyM' || e.key === 'm' || e.key === 'M') {
         setIsMapModalOpen((prev) => !prev);
       } else if (e.code === 'KeyB' || e.key === 'b' || e.key === 'B' || e.code === 'KeyE' || e.key === 'e' || e.key === 'E') {
-        setIsCatShopOpen((prev) => !prev);
+        if (isNearArcade) {
+          setIsArcadeGamesOpen(true);
+        } else {
+          setIsCatShopOpen((prev) => !prev);
+        }
       } else if (e.code === 'KeyC' || e.key === 'c' || e.key === 'C') {
         setIsOpen((prev) => !prev);
+      } else if (e.code === 'KeyJ' || e.key === 'j' || e.key === 'J') {
+        setIsArcadeGamesOpen((prev) => !prev);
       } else if (e.code === 'KeyT' || e.key === 't' || e.key === 'T') {
         const enhancer = (window as any).__superBearSpaceEnhancer;
         if (enhancer && enhancer.teleportDash) enhancer.teleportDash();
@@ -131,12 +148,14 @@ export const CustomizerAppOverlay: React.FC = () => {
       window.removeEventListener('superbear:open-cat-shop', handleOpenCatShop);
       window.removeEventListener('superbear:open-map-selector', handleOpenMapSelector);
       window.removeEventListener('superbear:open-trailer', handleOpenTrailer);
+      window.removeEventListener('superbear:open-arcade-games', handleOpenArcade);
       window.removeEventListener('superbear:cat-merchant-proximity', handleCatMerchantProximity);
+      window.removeEventListener('superbear:arcade-proximity', handleArcadeProximity);
       window.removeEventListener('superbear:space-state-update', handleSpaceStateUpdate);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('superbear:game-ready', handleGameReady);
     };
-  }, []);
+  }, [isNearArcade]);
 
   const handleApplyDesign = (design: CustomCharacterDesign) => {
     setActiveDesign(design);
@@ -170,7 +189,7 @@ export const CustomizerAppOverlay: React.FC = () => {
             </div>
             <div className="text-left">
               <div className="flex items-center gap-1.5 leading-tight">
-                <span>Bakkal Kedi Capitoolos</span>
+                <span>Bakkal Kedi Capi</span>
                 <span className="px-1.5 py-0.2 bg-slate-950 text-amber-300 rounded text-[10px] font-mono">[E Tuşu]</span>
               </div>
               <p className="text-[11px] font-bold text-slate-900 opacity-90">
@@ -182,10 +201,40 @@ export const CustomizerAppOverlay: React.FC = () => {
         </div>
       )}
 
+      {/* Retro Arcade Proximity Floating Banner - ONLY shown when standing next to Arcade Machine */}
+      {isNearArcade && !isArcadeGamesOpen && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[85] pointer-events-auto animate-in slide-in-from-bottom-4 duration-200">
+          <button
+            onClick={() => setIsArcadeGamesOpen(true)}
+            className="px-5 py-3 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-sm border-2 border-purple-300 shadow-2xl backdrop-blur-md flex items-center gap-3 transition transform active:scale-95 hover:scale-105 cursor-pointer"
+          >
+            <div className="w-8 h-8 rounded-xl bg-slate-950 flex items-center justify-center text-lg shadow-inner">
+              🕹️
+            </div>
+            <div className="text-left">
+              <div className="flex items-center gap-1.5 leading-tight">
+                <span>Retro Arcade Mini Oyun Salonu</span>
+                <span className="px-1.5 py-0.2 bg-slate-950 text-purple-300 rounded text-[10px] font-mono">[E / J Tuşu]</span>
+              </div>
+              <p className="text-[11px] font-bold text-purple-200 opacity-90">
+                "10 Nostaljik Atari Oyunu & 2X Jeton!"
+              </p>
+            </div>
+            <Gamepad2 className="w-5 h-5 text-white animate-bounce ml-1" />
+          </button>
+        </div>
+      )}
+
       {/* Cat Merchant Shop Modal */}
       <CatMerchantShopModal
         isOpen={isCatShopOpen}
         onClose={() => setIsCatShopOpen(false)}
+      />
+
+      {/* Arcade Games Modal */}
+      <ArcadeGamesModal
+        isOpen={isArcadeGamesOpen}
+        onClose={() => setIsArcadeGamesOpen(false)}
       />
 
       {/* Drawing Inspector Modal */}

@@ -708,9 +708,23 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
                 >
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm">🐱</span>
-                    <span>Bakkal Kedi Capitoolos</span>
+                    <span>Bakkal Kedi Capi</span>
                   </div>
                   <span className="text-[9px] bg-slate-950 text-amber-300 px-1 py-0.2 rounded font-mono">Dükkan</span>
+                </button>
+
+                {/* Retro Arcade - Prominent */}
+                <button
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent('superbear:open-arcade-games'));
+                  }}
+                  className="w-full px-2.5 py-2 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs rounded-xl border border-purple-300 shadow-[0_0_15px_rgba(168,85,247,0.35)] flex items-center justify-between transition active:scale-95 cursor-pointer"
+                >
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-base">🕹️</span>
+                    <span className="text-amber-300">Retro Arcade (Günün Oyunları)</span>
+                  </div>
+                  <span className="text-[9px] bg-slate-950 text-purple-300 px-1 py-0.5 rounded font-mono">[J] Tuşu</span>
                 </button>
 
                 {/* Concept Drawings */}
