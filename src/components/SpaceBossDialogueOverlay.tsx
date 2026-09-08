@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Sparkles, MessageCircle, KeyRound, ShieldAlert, Heart } from 'lucide-react';
+import { Sparkles, MessageCircle, KeyRound, ShieldAlert, Heart, X } from 'lucide-react';
 
 export interface SpaceDialogueState {
   isOpen: boolean;
@@ -100,19 +100,19 @@ export const SpaceBossDialogueOverlay: React.FC = () => {
     <>
       {/* 1. DEV KONUŞMA BALONU (GIANT SPEECH BUBBLE MODAL) */}
       {dialogue.isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-fade-in pointer-events-auto">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-6 bg-slate-950/80 backdrop-blur-md animate-fade-in pointer-events-auto overflow-y-auto">
           <div
-            className={`relative w-full max-w-2xl rounded-3xl p-6 sm:p-8 border-4 shadow-[0_0_80px_rgba(168,85,247,0.4)] flex flex-col gap-6 transition-all duration-300 transform scale-100 ${
+            className={`relative w-full max-w-2xl rounded-3xl p-4 sm:p-8 border-4 shadow-[0_0_80px_rgba(168,85,247,0.4)] flex flex-col gap-3 sm:gap-6 transition-all duration-300 transform scale-100 max-h-[94vh] overflow-y-auto ${
               dialogue.isMorAyi
                 ? 'bg-gradient-to-b from-purple-950 via-slate-950 to-purple-950 border-purple-500 text-purple-100'
                 : 'bg-gradient-to-b from-amber-950 via-slate-950 to-amber-950 border-amber-400 text-amber-100'
             }`}
           >
-            {/* Header Badge */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-4">
-              <div className="flex items-center gap-3">
+            {/* Header Badge & Prominent Top-Right Close Button */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-3 sm:pb-4">
+              <div className="flex items-center gap-2.5 sm:gap-3">
                 <div
-                  className={`w-16 h-16 rounded-2xl flex items-center justify-center text-4xl border-2 shadow-2xl ${
+                  className={`w-12 h-12 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center text-2xl sm:text-4xl border-2 shadow-2xl ${
                     dialogue.isMorAyi
                       ? 'bg-purple-900/60 border-purple-400 animate-pulse'
                       : 'bg-amber-900/60 border-amber-400'
@@ -122,7 +122,7 @@ export const SpaceBossDialogueOverlay: React.FC = () => {
                 </div>
                 <div>
                   <h3
-                    className={`text-xl sm:text-2xl font-black tracking-wide ${
+                    className={`text-lg sm:text-2xl font-black tracking-wide ${
                       dialogue.isMorAyi ? 'text-purple-300 drop-shadow-[0_0_12px_rgba(192,132,252,0.8)]' : 'text-amber-300'
                     }`}
                   >
@@ -131,18 +131,27 @@ export const SpaceBossDialogueOverlay: React.FC = () => {
                   <p className="text-xs sm:text-sm font-bold opacity-80 flex items-center gap-1.5 mt-0.5">
                     {dialogue.isMorAyi ? (
                       <span className="text-purple-400 flex items-center gap-1">
-                        <ShieldAlert className="w-4 h-4" /> Kırık Boynuzlu Kozmik Düşman
+                        <ShieldAlert className="w-3.5 h-3.5" /> Kırık Boynuzlu Kozmik Düşman
                       </span>
                     ) : (
                       <span className="text-amber-400 flex items-center gap-1">
-                        <Sparkles className="w-4 h-4" /> Cesur Ayıcık & Badem'in Dostu
+                        <Sparkles className="w-3.5 h-3.5" /> Cesur Ayıcık & Badem'in Dostu
                       </span>
                     )}
                   </p>
                 </div>
               </div>
-              <div className="px-3 py-1 rounded-full bg-white/10 text-xs font-black uppercase tracking-widest text-white/90 border border-white/20">
-                💬 Karşılaşma
+              <div className="flex items-center gap-2">
+                <div className="hidden sm:block px-3 py-1 rounded-full bg-white/10 text-xs font-black uppercase tracking-widest text-white/90 border border-white/20">
+                  💬 Karşılaşma
+                </div>
+                <button
+                  onClick={handleNextDialogue}
+                  className="p-2 rounded-2xl bg-white/10 hover:bg-white/20 text-white transition active:scale-95 cursor-pointer border border-white/20"
+                  title="Kapat"
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
             </div>
 

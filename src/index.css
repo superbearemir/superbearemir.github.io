@@ -15,3 +15,14 @@ body,
     Oxygen, Ubuntu, Cantarell, Open Sans, Helvetica Neue, sans-serif;
   overflow: hidden;
 }
+
+/* Ensure modals and dialogue cards fit within screen in landscape mode */
+@media (max-height: 520px) {
+  .modal-container,
+  [role="dialog"] > div,
+  .dialog-content {
+    max-height: 94vh !important;
+    padding: 0.5rem !important;
+  }
+}
+

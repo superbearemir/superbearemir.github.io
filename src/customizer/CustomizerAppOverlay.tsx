@@ -11,6 +11,7 @@ import { UndergroundTrailerModal } from '../components/UndergroundTrailerModal';
 import { ArcadeGamesModal } from '../components/ArcadeGamesModal';
 import { DeviceSelectionModal, ControlMode } from '../components/DeviceSelectionModal';
 import { TouchDragController } from '../components/TouchDragController';
+import { LandscapeOrientationHandler } from '../components/LandscapeOrientationHandler';
 import { ShoppingBag, Gamepad2 } from 'lucide-react';
 
 export const CustomizerAppOverlay: React.FC = () => {
@@ -320,6 +321,9 @@ export const CustomizerAppOverlay: React.FC = () => {
         isOpen={isDeviceModalOpen}
         onSelectMode={handleSelectDeviceMode}
       />
+
+      {/* Automatic Mobile Landscape Helper */}
+      <LandscapeOrientationHandler />
     </>
   );
 };

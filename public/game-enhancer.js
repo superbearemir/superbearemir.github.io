@@ -1982,6 +1982,9 @@ function buildMorisSecretDenAndMountains(THREE, villageGroup) {
     snow.position.set(m.x, m.y + m.h * 0.33, m.z);
     villageGroup.add(snow);
 
+    // ADD REAL PHYSICAL COLLIDER FOR MOUNTAIN PEAK & BASE
+    addDenCollider(m.x - m.r * 0.72, 0, m.z - m.r * 0.72, m.x + m.r * 0.72, m.y + m.h * 0.55, m.z + m.r * 0.72);
+
     // Pine trees on slopes
     for (let t = 0; t < 4; t++) {
       const tree = new THREE.Group();
@@ -1992,8 +1995,14 @@ function buildMorisSecretDenAndMountains(THREE, villageGroup) {
       foliage.position.y = 3;
       tree.add(foliage);
       const angle = t * 1.57;
-      tree.position.set(m.x + Math.sin(angle) * (m.r * 0.65), 1.0, m.z + Math.cos(angle) * (m.r * 0.65));
+      const tx = m.x + Math.sin(angle) * (m.r * 0.65);
+      const tz = m.z + Math.cos(angle) * (m.r * 0.65);
+      tree.position.set(tx, 1.0, tz);
       villageGroup.add(tree);
+
+      // ADD REAL PHYSICAL COLLIDERS FOR PINE TREE TRUNK & CANOPY
+      addDenCollider(tx - 0.5, 0, tz - 0.5, tx + 0.5, 2.5, tz + 0.5);
+      addDenCollider(tx - 1.6, 2.0, tz - 1.6, tx + 1.6, 5.5, tz + 1.6);
     }
   });
 
