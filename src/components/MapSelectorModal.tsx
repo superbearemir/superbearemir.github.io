@@ -9,9 +9,18 @@ interface MapSelectorModalProps {
 export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onClose }) => {
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'earth' | 'space' | 'poneix' | 'phelix'>('all');
 
+  const [unlockedMax] = useState<number>(() => {
+    const saved = localStorage.getItem('super_bear_unlocked_levels_max');
+    return saved ? parseInt(saved, 10) : 14;
+  });
+
   if (!isOpen) return null;
 
-  const handleSelectLevel = (regionId: string) => {
+  const handleSelectLevel = (regionId: string, levelNo: number, isWorld: boolean) => {
+    // Only allow entering if level is within unlocked limit (First 14 levels open)
+    if (!isWorld || levelNo > unlockedMax) {
+      return;
+    }
     const game = (window as any).__superBearGame;
     const poneix = (window as any).__superBearPoneixLevels;
     const phelix = (window as any).__superBearPhelixLevels;
@@ -329,32 +338,51 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                {earthLevels.map((lvl) => (
-                  <button
-                    key={lvl.id}
-                    onClick={() => handleSelectLevel(lvl.id)}
-                    className="p-3.5 rounded-2xl bg-slate-800/80 hover:bg-emerald-950/40 border border-slate-700 hover:border-emerald-500/60 transition transform hover:-translate-y-0.5 text-left flex flex-col justify-between group cursor-pointer shadow-md"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xl">{lvl.icon}</span>
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black font-mono">
-                          Dünya #{lvl.no}
-                        </span>
+                {earthLevels.map((lvl) => {
+                  const isLocked = lvl.no > 14;
+                  return (
+                    <button
+                      key={lvl.id}
+                      disabled={isLocked}
+                      onClick={() => handleSelectLevel(lvl.id, lvl.no, true)}
+                      className={`p-3.5 rounded-2xl border transition text-left flex flex-col justify-between shadow-md ${
+                        isLocked
+                          ? 'bg-slate-900/30 border-dashed border-slate-700/50 opacity-40 backdrop-blur-sm cursor-not-allowed select-none'
+                          : 'bg-slate-800/80 hover:bg-emerald-950/40 border-slate-700 hover:border-emerald-500/60 transform hover:-translate-y-0.5 group cursor-pointer'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xl">{lvl.icon}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black font-mono ${
+                            isLocked
+                              ? 'bg-slate-800 text-slate-400 flex items-center gap-1'
+                              : 'bg-emerald-500/20 text-emerald-300'
+                          }`}>
+                            {isLocked && <Lock className="w-2.5 h-2.5" />}
+                            Dünya #{lvl.no} {isLocked ? '(Kilitli)' : ''}
+                          </span>
+                        </div>
+                        <h4 className={`font-bold text-sm transition-colors ${
+                          isLocked ? 'text-slate-400' : 'text-slate-100 group-hover:text-emerald-300'
+                        }`}>
+                          {lvl.name}
+                        </h4>
+                        <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
+                          {isLocked ? '🔒 Bu bölüme girmek için ilk 14 seviyeyi tamamlamalısın.' : lvl.desc}
+                        </p>
                       </div>
-                      <h4 className="font-bold text-sm text-slate-100 group-hover:text-emerald-300 transition-colors">
-                        {lvl.name}
-                      </h4>
-                      <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">
-                        {lvl.desc}
-                      </p>
-                    </div>
-                    <div className="mt-3 flex items-center justify-between text-[11px] font-bold text-emerald-400 pt-2 border-t border-slate-700/60">
-                      <span>Bölüme Işınlan</span>
-                      <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
-                    </div>
-                  </button>
-                ))}
+                      <div className={`mt-3 flex items-center justify-between text-[11px] font-bold pt-2 border-t ${
+                        isLocked
+                          ? 'text-slate-500 border-slate-800'
+                          : 'text-emerald-400 border-slate-700/60'
+                      }`}>
+                        <span>{isLocked ? '🔒 Kilitli Bölüm' : 'Bölüme Işınlan'}</span>
+                        {!isLocked && <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />}
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -391,44 +419,27 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
                   return (
                     <button
                       key={lvl.id}
-                      onClick={() => handleSelectLevel(lvl.id)}
-                      className={`p-3.5 rounded-2xl border transition transform hover:-translate-y-0.5 text-left flex flex-col justify-between group cursor-pointer shadow-md ${
-                        isBoss
-                          ? 'bg-purple-950/40 hover:bg-purple-900/60 border-purple-500/60 hover:border-purple-400'
-                          : 'bg-slate-800/80 hover:bg-indigo-950/40 border-slate-700 hover:border-indigo-500/60'
-                      }`}
+                      disabled={true}
+                      onClick={() => handleSelectLevel(lvl.id, lvl.no + 15, false)}
+                      className="p-3.5 rounded-2xl border border-dashed border-slate-700/50 bg-slate-900/30 opacity-40 backdrop-blur-sm cursor-not-allowed select-none text-left flex flex-col justify-between shadow-inner"
                     >
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
                           <span className="text-xl">{lvl.icon}</span>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black font-mono ${
-                            isBoss ? 'bg-pink-500/30 text-pink-300 animate-pulse' : 'bg-indigo-500/20 text-indigo-300'
-                          }`}>
-                            {lvl.boss ? '👑 BOSS' : `Uzay #${lvl.no}`}
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black font-mono bg-slate-800 text-slate-400 flex items-center gap-1">
+                            <Lock className="w-2.5 h-2.5" />
+                            {lvl.boss ? '👑 BOSS (Kilitli)' : `Uzay #${lvl.no} (Kilitli)`}
                           </span>
                         </div>
-                        <h4 className="font-bold text-sm text-slate-100 group-hover:text-indigo-300 transition-colors">
+                        <h4 className="font-bold text-sm text-slate-400">
                           {lvl.name}
                         </h4>
-                        {lvl.boss && (
-                          <div className="text-[10px] font-black text-amber-300 mt-0.5">
-                            {lvl.boss}
-                          </div>
-                        )}
-                        {lvl.npc && (
-                          <div className="text-[10px] font-bold text-cyan-300 mt-0.5">
-                            🧑‍🚀 {lvl.npc}
-                          </div>
-                        )}
-                        <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">
-                          {lvl.desc}
+                        <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
+                          🔒 Bu uzay bölümü kilitlidir. İlk 14 Dünya bölümünü tamamlayarak açın.
                         </p>
                       </div>
-                      <div className={`mt-3 flex items-center justify-between text-[11px] font-bold pt-2 border-t ${
-                        isBoss ? 'text-pink-400 border-purple-500/30' : 'text-indigo-400 border-slate-700/60'
-                      }`}>
-                        <span>Uzaya Işınlan</span>
-                        <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                      <div className="mt-3 flex items-center justify-between text-[11px] font-bold pt-2 border-t text-slate-500 border-slate-800">
+                        <span>🔒 Kilitli Bölüm</span>
                       </div>
                     </button>
                   );
@@ -472,53 +483,30 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {poneixLevels.map((lvl) => {
-                  const isBoss = !!lvl.boss;
                   return (
                     <button
                       key={lvl.id}
-                      onClick={() => handleSelectLevel(lvl.id)}
-                      className={`p-3.5 rounded-2xl border transition transform hover:-translate-y-0.5 text-left flex flex-col justify-between group cursor-pointer shadow-md ${
-                        isBoss
-                          ? 'bg-emerald-950/60 hover:bg-emerald-900/80 border-emerald-400/80 hover:border-emerald-300 shadow-emerald-500/20'
-                          : 'bg-slate-800/80 hover:bg-emerald-950/40 border-slate-700 hover:border-emerald-500/60'
-                      }`}
+                      disabled={true}
+                      onClick={() => handleSelectLevel(lvl.id, lvl.no + 22, false)}
+                      className="p-3.5 rounded-2xl border border-dashed border-slate-700/50 bg-slate-900/30 opacity-40 backdrop-blur-sm cursor-not-allowed select-none text-left flex flex-col justify-between shadow-inner"
                     >
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
                           <span className="text-xl">{lvl.icon}</span>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black font-mono ${
-                            isBoss ? 'bg-amber-500/30 text-amber-300 animate-pulse' : 'bg-emerald-500/20 text-emerald-300'
-                          }`}>
-                            {lvl.boss ? '👑 FİNAL FÜZYON' : `Poneix #${lvl.no}`}
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black font-mono bg-slate-800 text-slate-400 flex items-center gap-1">
+                            <Lock className="w-2.5 h-2.5" />
+                            {lvl.boss ? '👑 FİNAL (Kilitli)' : `Poneix #${lvl.no} (Kilitli)`}
                           </span>
                         </div>
-                        <h4 className="font-bold text-sm text-slate-100 group-hover:text-emerald-300 transition-colors">
+                        <h4 className="font-bold text-sm text-slate-400">
                           {lvl.name}
                         </h4>
-                        {lvl.badge && (
-                          <div className="text-[10px] font-black text-amber-300 mt-0.5">
-                            ✨ {lvl.badge}
-                          </div>
-                        )}
-                        {lvl.boss && (
-                          <div className="text-[10px] font-black text-rose-300 mt-0.5">
-                            ⚔️ {lvl.boss}
-                          </div>
-                        )}
-                        {lvl.npc && (
-                          <div className="text-[10px] font-bold text-cyan-300 mt-0.5">
-                            🧑‍🚀 {lvl.npc}
-                          </div>
-                        )}
-                        <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">
-                          {lvl.desc}
+                        <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
+                          🔒 Bu Poneix gezegeni bölümü kilitlidir. İlk 14 Dünya bölümünü tamamlayarak açın.
                         </p>
                       </div>
-                      <div className={`mt-3 flex items-center justify-between text-[11px] font-bold pt-2 border-t ${
-                        isBoss ? 'text-amber-300 border-emerald-500/40' : 'text-emerald-400 border-slate-700/60'
-                      }`}>
-                        <span>Poneix'e Işınlan</span>
-                        <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                      <div className="mt-3 flex items-center justify-between text-[11px] font-bold pt-2 border-t text-slate-500 border-slate-800">
+                        <span>🔒 Kilitli Bölüm</span>
                       </div>
                     </button>
                   );
@@ -562,48 +550,30 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {phelixLevels.map((lvl) => {
-                  const isBoss = !!lvl.boss;
                   return (
                     <button
                       key={lvl.id}
-                      onClick={() => handleSelectLevel(lvl.id)}
-                      className={`p-3.5 rounded-2xl border transition transform hover:-translate-y-0.5 text-left flex flex-col justify-between group cursor-pointer shadow-md ${
-                        isBoss
-                          ? 'bg-sky-950/60 hover:bg-sky-900/80 border-sky-400/80 hover:border-sky-300 shadow-sky-500/20'
-                          : 'bg-slate-800/80 hover:bg-sky-950/40 border-slate-700 hover:border-sky-500/60'
-                      }`}
+                      disabled={true}
+                      onClick={() => handleSelectLevel(lvl.id, lvl.no + 29, false)}
+                      className="p-3.5 rounded-2xl border border-dashed border-slate-700/50 bg-slate-900/30 opacity-40 backdrop-blur-sm cursor-not-allowed select-none text-left flex flex-col justify-between shadow-inner"
                     >
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
                           <span className="text-xl">{lvl.icon}</span>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black font-mono ${
-                            isBoss ? 'bg-amber-500/30 text-amber-300 animate-pulse' : 'bg-sky-500/20 text-sky-300'
-                          }`}>
-                            {lvl.boss ? '👑 BÜYÜK FİNAL' : `Phelix #${lvl.no}`}
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black font-mono bg-slate-800 text-slate-400 flex items-center gap-1">
+                            <Lock className="w-2.5 h-2.5" />
+                            {lvl.boss ? '👑 FİNAL (Kilitli)' : `Phelix #${lvl.no} (Kilitli)`}
                           </span>
                         </div>
-                        <h4 className="font-bold text-sm text-slate-100 group-hover:text-sky-300 transition-colors">
+                        <h4 className="font-bold text-sm text-slate-400">
                           {lvl.name}
                         </h4>
-                        {lvl.badge && (
-                          <div className="text-[10px] font-black text-amber-300 mt-0.5">
-                            ✨ {lvl.badge}
-                          </div>
-                        )}
-                        {lvl.boss && (
-                          <div className="text-[10px] font-black text-rose-300 mt-0.5">
-                            🦊 {lvl.boss}
-                          </div>
-                        )}
-                        <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">
-                          {lvl.desc}
+                        <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
+                          🔒 Bu Phelix gezegeni bölümü kilitlidir. İlk 14 Dünya bölümünü tamamlayarak açın.
                         </p>
                       </div>
-                      <div className={`mt-3 flex items-center justify-between text-[11px] font-bold pt-2 border-t ${
-                        isBoss ? 'text-amber-300 border-sky-500/40' : 'text-sky-400 border-slate-700/60'
-                      }`}>
-                        <span>Phelix'e Işınlan</span>
-                        <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
+                      <div className="mt-3 flex items-center justify-between text-[11px] font-bold pt-2 border-t text-slate-500 border-slate-800">
+                        <span>🔒 Kilitli Bölüm</span>
                       </div>
                     </button>
                   );

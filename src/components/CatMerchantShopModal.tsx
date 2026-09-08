@@ -59,26 +59,50 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
 
   const [coins, setCoins] = useState<number>(() => {
     const saved = localStorage.getItem('super_bear_coins');
-    return saved ? parseInt(saved, 10) : 999999;
+    // If no saved coins or was old 999999 / 1000000 test amount, start with 150 coins
+    if (!saved || parseInt(saved, 10) >= 900000) {
+      localStorage.setItem('super_bear_coins', '150');
+      return 150;
+    }
+    return parseInt(saved, 10);
   });
   
   const [purchasedIds, setPurchasedIds] = useState<string[]>(() => {
-    // All 300 items unlocked by default as requested
     const saved = localStorage.getItem('super_bear_purchased_items');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length >= 250) {
+        if (Array.isArray(parsed) && parsed.length > 0) {
           return parsed;
         }
       } catch (e) {}
     }
-    return SHOP_ITEMS.map(i => i.id);
+    // New player starts with starter cape unlocked
+    const starterPurchased = ['back_royal_cape'];
+    localStorage.setItem('super_bear_purchased_items', JSON.stringify(starterPurchased));
+    return starterPurchased;
   });
   
   const [equippedIds, setEquippedIds] = useState<string[]>(() => {
     const saved = localStorage.getItem('super_bear_equipped_items');
-    return saved ? JSON.parse(saved) : ['hat_wizard', 'face_glasses_cool'];
+    if (!saved) {
+      const defaultEquipped = ['back_royal_cape'];
+      localStorage.setItem('super_bear_equipped_items', JSON.stringify(defaultEquipped));
+      return defaultEquipped;
+    }
+    try {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) {
+        // If had the old wizard hat or cool glasses default, clean it to starter cape only
+        if (parsed.includes('hat_wizard') && parsed.includes('face_glasses_cool')) {
+          const cleaned = ['back_royal_cape'];
+          localStorage.setItem('super_bear_equipped_items', JSON.stringify(cleaned));
+          return cleaned;
+        }
+        return parsed;
+      }
+    } catch (e) {}
+    return ['back_royal_cape'];
   });
   
   const [notice, setNotice] = useState<string | null>(null);

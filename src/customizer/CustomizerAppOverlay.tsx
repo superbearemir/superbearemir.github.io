@@ -9,6 +9,8 @@ import { SpaceBossDialogueOverlay } from '../components/SpaceBossDialogueOverlay
 import { MapSelectorModal } from '../components/MapSelectorModal';
 import { UndergroundTrailerModal } from '../components/UndergroundTrailerModal';
 import { ArcadeGamesModal } from '../components/ArcadeGamesModal';
+import { DeviceSelectionModal, ControlMode } from '../components/DeviceSelectionModal';
+import { TouchDragController } from '../components/TouchDragController';
 import { ShoppingBag, Gamepad2 } from 'lucide-react';
 
 export const CustomizerAppOverlay: React.FC = () => {
@@ -18,12 +20,25 @@ export const CustomizerAppOverlay: React.FC = () => {
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [isTrailerOpen, setIsTrailerOpen] = useState(false);
   const [isArcadeGamesOpen, setIsArcadeGamesOpen] = useState(false);
+  
+  // Device Selection Welcome Modal (white background selection on entry)
+  const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(true);
+  const [controlMode, setControlMode] = useState<ControlMode>(() => {
+    const saved = localStorage.getItem('super_bear_control_mode');
+    return (saved === 'mouse' || saved === 'touch') ? saved : 'touch';
+  });
 
   const [isNearCatMerchant, setIsNearCatMerchant] = useState(false);
   const [isNearArcade, setIsNearArcade] = useState(false);
 
   const [aliensRescued, setAliensRescued] = useState(0);
   const [, setActiveDesign] = useState<CustomCharacterDesign>(getCurrentSavedDesign);
+
+  const handleSelectDeviceMode = (mode: ControlMode) => {
+    setControlMode(mode);
+    localStorage.setItem('super_bear_control_mode', mode);
+    setIsDeviceModalOpen(false);
+  };
 
   useEffect(() => {
     // Expose open helper globally
@@ -271,6 +286,18 @@ export const CustomizerAppOverlay: React.FC = () => {
             enhancer.triggerSubterraneanRupture();
           }
         }}
+      />
+
+      {/* Global Touch / Mouse Drag Controls for All Modes */}
+      <TouchDragController
+        mode={controlMode}
+        onSwitchMode={() => setIsDeviceModalOpen(true)}
+      />
+
+      {/* Initial Clean White Entry Screen for Device Selection */}
+      <DeviceSelectionModal
+        isOpen={isDeviceModalOpen}
+        onSelectMode={handleSelectDeviceMode}
       />
     </>
   );
