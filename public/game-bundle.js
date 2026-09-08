@@ -6414,23 +6414,13 @@ const Zw = [
         E.jsx("span",{className:"text-[9px] text-sky-300 bg-sky-950/80 px-1.5 py-0.2 rounded font-mono",children:"🗺️ Harita"})
       ]}),
 
-      // Right: Music & Master Menu Actions
+      // Right: Menu & Music Actions (Menu placed left of Music, single modal trigger)
       E.jsxs("div",{className:"flex items-center gap-1 sm:gap-2",children:[
-        E.jsxs("button",{onClick:()=>b(!0),className:"px-2.5 py-1 rounded-full bg-pink-950/70 hover:bg-pink-900/80 text-pink-200 border border-pink-500/50 text-xs font-black flex items-center gap-1 shadow cursor-pointer transition active:scale-95",title:"Dinamik Müzik Çalar",children:[
-          E.jsx(DA,{className:"w-3.5 h-3.5 text-pink-400"}),
-          E.jsx("span",{className:"hidden md:inline",children:"Müzik"})
-        ]}),
-        E.jsx("button",{onClick:y,className:"p-1.5 rounded-full bg-slate-900/80 text-slate-300 hover:text-white border border-slate-700 cursor-pointer shadow",title:x?"Sesi Aç":"Sesi Kapat",children:
-          x?E.jsx(Gv,{className:"w-3.5 h-3.5 text-rose-400"}):E.jsx(Fv,{className:"w-3.5 h-3.5 text-emerald-400"})
-        }),
-        E.jsxs("button",{onClick:()=>{v(!0);if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-master-menu"));},className:"px-3 py-1 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-black text-xs flex items-center gap-1.5 border border-purple-300 shadow-xl cursor-pointer transition active:scale-95",title:"Menü ve Güçler",children:[
-          E.jsx(CA,{className:"w-3.5 h-3.5 text-yellow-300"}),
-          E.jsx("span",{children:"🌌 Menü & Güçler"})
-        ]})
+        E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-master-menu"));},className:"px-3 py-1 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-amber-500 hover:from-purple-500 hover:to-amber-400 text-white font-black text-xs flex items-center gap-1.5 border border-purple-300 shadow-xl cursor-pointer transition active:scale-95",title:"Menü ve Güçler",children:[          E.jsx(CA,{className:"w-3.5 h-3.5 text-yellow-300"}),          E.jsx("span",{children:"🌌 Menü & Güçler"})        ]}),
+        E.jsxs("button",{onClick:()=>b(!0),className:"px-2.5 py-1 rounded-full bg-pink-950/70 hover:bg-pink-900/80 text-pink-200 border border-pink-500/50 text-xs font-black flex items-center gap-1 shadow cursor-pointer transition active:scale-95",title:"Dinamik Müzik Çalar",children:[          E.jsx(DA,{className:"w-3.5 h-3.5 text-pink-400"}),          E.jsx("span",{className:"hidden md:inline",children:"Müzik"})        ]}),
+        E.jsx("button",{onClick:y,className:"p-1.5 rounded-full bg-slate-900/80 text-slate-300 hover:text-white border border-slate-700 cursor-pointer shadow",title:x?"Sesi Aç":"Sesi Kapat",children:          x?E.jsx(Gv,{className:"w-3.5 h-3.5 text-rose-400"}):E.jsx(Fv,{className:"w-3.5 h-3.5 text-emerald-400"})        })
       ]})
-    ]}),
-
-    // Responsive Centered Dynamic Music Modal (Guaranteed safe bounds, never overflows)
+    ]}),    // Responsive Centered Dynamic Music Modal (Guaranteed safe bounds, never overflows)
     R&&E.jsx("div",{className:"fixed inset-0 z-[120] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 pointer-events-auto select-none",onClick:D=>{if(D.target===D.currentTarget)b(!1)},children:
       E.jsxs("div",{className:"bg-slate-900 border-2 border-pink-500/50 rounded-3xl p-4 sm:p-5 w-full max-w-md max-h-[85vh] shadow-2xl flex flex-col gap-3 text-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-150",children:[
         E.jsxs("div",{className:"flex items-center justify-between border-b border-slate-800 pb-2.5",children:[
