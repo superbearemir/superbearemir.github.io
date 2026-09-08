@@ -47,7 +47,7 @@ export const LandscapeOrientationHandler: React.FC = () => {
   if (!isPortrait) return null;
 
   return (
-    <div className="fixed top-3 left-1/2 -translate-x-1/2 z-[250] pointer-events-auto animate-in slide-in-from-top-4 duration-300">
+    <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[250] pointer-events-auto animate-in slide-in-from-bottom-4 duration-300">
       <div className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 text-white border-2 border-purple-300 shadow-2xl backdrop-blur-md flex items-center gap-3 text-xs font-black">
         <div className="w-8 h-8 rounded-xl bg-slate-950 flex items-center justify-center text-amber-300 animate-spin" style={{ animationDuration: '6s' }}>
           <RotateCw className="w-5 h-5 text-amber-300" />

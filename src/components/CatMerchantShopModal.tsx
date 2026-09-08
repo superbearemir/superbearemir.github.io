@@ -51,6 +51,7 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<'featured' | 'name' | 'price_low' | 'price_high' | 'rarity'>('featured');
   const [bearPose, setBearPose] = useState<'idle' | 'dance' | 'roar' | 'punch' | 'wave' | 'spin'>('idle');
+  const bearPoseRef = useRef(bearPose);
   
   // Pagination State
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -121,8 +122,8 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
     prevY: 0,
     rotY: 0.3,
     rotX: 0.15,
-    distance: 3.2,
-    targetY: 1.0,
+    distance: 6.2,
+    targetY: 0.35,
   });
 
   // Sync state to localStorage & Game Instance
@@ -330,7 +331,7 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
 
       // Bear pose animation
       if (bearModelRef.current) {
-        bearModelRef.current.setAnimationPose(bearPose, time);
+        bearModelRef.current.setAnimationPose(bearPoseRef.current, time);
       }
 
       renderer.render(scene, camera);
@@ -367,6 +368,7 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
 
   // Update bear pose animation
   useEffect(() => {
+    bearPoseRef.current = bearPose;
     if (bearModelRef.current) {
       bearModelRef.current.setAnimationPose(bearPose, 0);
     }
@@ -395,9 +397,19 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
   };
 
   const handleFreeCoins = () => {
-    setCoins(prev => prev + 50000);
-    setPurchasedIds(SHOP_ITEMS.map(i => i.id));
-    showNotification('🎁 +50,000 Altın Para & Tüm 180+ İtem Ücretsiz Açıldı!');
+    const today = new Date().toISOString().split('T')[0];
+    const lastClaimDate = localStorage.getItem('super_bear_last_free_coin_date');
+    if (lastClaimDate === today) {
+      showNotification('⏳ Bugünlük bedava altın hakkınızı (+2,000) kullandınız! Yarın tekrar bekleriz.');
+      return;
+    }
+    localStorage.setItem('super_bear_last_free_coin_date', today);
+    setCoins(prev => {
+      const next = prev + 2000;
+      localStorage.setItem('super_bear_coins', next.toString());
+      return next;
+    });
+    showNotification('🎁 Günlük +2,000 Bedava Altın Cüzdanınıza Eklendi!');
   };
 
   const handleUnequipAll = () => {
@@ -578,7 +590,7 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
     <div className="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200">
       
       {/* Giant Studio Modal Container */}
-      <div className="relative w-full max-w-7xl bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border-2 border-amber-500/70 rounded-3xl shadow-2xl overflow-hidden flex flex-col h-[94vh]">
+      <div className="relative w-full max-w-7xl bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border-2 border-amber-500/70 rounded-3xl shadow-2xl overflow-y-auto flex flex-col h-auto min-h-[90vh] max-h-[96vh]">
         
         {/* Header */}
         <div className="relative p-3 sm:p-4 bg-gradient-to-r from-amber-600 via-orange-500 to-amber-700 text-slate-950 flex items-center justify-between border-b-2 border-amber-400/50 shrink-0">
@@ -655,7 +667,7 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
         )}
 
         {/* Main Split-Screen Layout: Left 3D Bear Studio Canvas, Right Shop Grid */}
-        <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
+        <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden min-h-0">
           
           {/* LEFT PANEL: Live 3D Bear Character Preview */}
           <div className="w-full md:w-[400px] lg:w-[440px] bg-slate-950 border-r border-slate-800 flex flex-col p-3 shrink-0 relative">
@@ -674,7 +686,7 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
-              className="w-full flex-1 min-h-[300px] bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 rounded-2xl border border-amber-500/40 shadow-inner relative cursor-grab active:cursor-grabbing overflow-hidden"
+              className="w-full h-[185px] sm:h-[210px] bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 rounded-2xl border border-amber-500/40 shadow-inner relative cursor-grab active:cursor-grabbing overflow-hidden shrink-0"
             >
               {/* Overlay Guidance */}
               <div className="absolute bottom-2 left-2 right-2 px-3 py-1.5 bg-slate-950/80 backdrop-blur-md rounded-xl border border-slate-800 text-[11px] text-slate-300 flex items-center justify-between pointer-events-none">

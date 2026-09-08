@@ -83,8 +83,8 @@ export const CharacterStudioModal: React.FC<CharacterStudioModalProps> = ({
     prevY: 0,
     rotY: 0.3,
     rotX: 0.15,
-    distance: 3.6,
-    targetY: 1.0,
+    distance: 6.2,
+    targetY: 0.35,
   });
 
   const showToast = (msg: string) => {
