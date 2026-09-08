@@ -34,6 +34,25 @@ export const CustomizerAppOverlay: React.FC = () => {
   const [aliensRescued, setAliensRescued] = useState(0);
   const [, setActiveDesign] = useState<CustomCharacterDesign>(getCurrentSavedDesign);
 
+  // Synchronize modal open status to prevent touch/joystick conflicts
+  const isAnyModalOpen =
+    isOpen ||
+    isDrawingModalOpen ||
+    isCatShopOpen ||
+    isMapModalOpen ||
+    isTrailerOpen ||
+    isArcadeGamesOpen ||
+    isDeviceModalOpen;
+
+  useEffect(() => {
+    (window as any).__superBearModalOpen = isAnyModalOpen;
+    if (isAnyModalOpen) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+    }
+  }, [isAnyModalOpen]);
+
   const handleSelectDeviceMode = (mode: ControlMode) => {
     setControlMode(mode);
     localStorage.setItem('super_bear_control_mode', mode);
@@ -110,11 +129,11 @@ export const CustomizerAppOverlay: React.FC = () => {
         setIsTrailerOpen((prev) => !prev);
       } else if (e.code === 'KeyM' || e.key === 'm' || e.key === 'M') {
         setIsMapModalOpen((prev) => !prev);
-      } else if (e.code === 'KeyB' || e.key === 'b' || e.key === 'B' || e.code === 'KeyE' || e.key === 'e' || e.key === 'E') {
+      } else if (e.code === 'KeyE' || e.key === 'e' || e.key === 'E') {
         if (isNearArcade) {
           setIsArcadeGamesOpen(true);
-        } else {
-          setIsCatShopOpen((prev) => !prev);
+        } else if (isNearCatMerchant) {
+          setIsCatShopOpen(true);
         }
       } else if (e.code === 'KeyC' || e.key === 'c' || e.key === 'C') {
         setIsOpen((prev) => !prev);
@@ -190,6 +209,8 @@ export const CustomizerAppOverlay: React.FC = () => {
         onOpenCatShop={() => setIsCatShopOpen(true)}
         onOpenMapModal={() => setIsMapModalOpen(true)}
         aliensRescued={aliensRescued}
+        controlMode={controlMode}
+        onOpenDeviceSelector={() => setIsDeviceModalOpen(true)}
       />
 
       {/* Cat Merchant Proximity Interactive Floating Banner */}
