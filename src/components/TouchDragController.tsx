@@ -1,16 +1,33 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ControlMode } from './DeviceSelectionModal';
-import { Smartphone, Monitor, Shield, Zap, RefreshCw, Crosshair, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
+import { QualityProfile, optimizeGameRenderer } from '../utils/mobilePerformanceOptimizer';
+import { Smartphone, Monitor, Zap, RefreshCw, Sparkles, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
 
 interface TouchDragControllerProps {
-  controlMode: ControlMode;
-  onOpenDeviceSelector: () => void;
+  mode?: ControlMode;
+  controlMode?: ControlMode;
+  onSwitchMode?: () => void;
+  onOpenDeviceSelector?: () => void;
 }
 
 export const TouchDragController: React.FC<TouchDragControllerProps> = ({
-  controlMode,
+  mode,
+  controlMode: controlModeProp,
+  onSwitchMode,
   onOpenDeviceSelector,
 }) => {
+  const activeMode: ControlMode = mode || controlModeProp || 'touch';
+  const handleOpenSelector = onSwitchMode || onOpenDeviceSelector || (() => {});
+
+  const [perfProfile, setPerfProfile] = useState<QualityProfile>(() => {
+    return (localStorage.getItem('super_bear_perf_profile') as QualityProfile) || 'smooth60';
+  });
+
+  const togglePerformanceProfile = () => {
+    const nextProfile: QualityProfile = perfProfile === 'smooth60' ? 'ultra' : perfProfile === 'ultra' ? 'balanced' : 'smooth60';
+    setPerfProfile(nextProfile);
+    optimizeGameRenderer(nextProfile);
+  };
   const [isLeftTouching, setIsLeftTouching] = useState(false);
   const [touchPos, setTouchPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [touchStartPos, setTouchStartPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -148,7 +165,7 @@ export const TouchDragController: React.FC<TouchDragControllerProps> = ({
 
   // Mouse Drag Steering for PC / Computer Mode
   useEffect(() => {
-    if (controlMode !== 'mouse') return;
+    if (activeMode !== 'mouse') return;
 
     const handleMouseDown = (e: MouseEvent) => {
       // Only drag if left click on canvas or game area
@@ -190,7 +207,7 @@ export const TouchDragController: React.FC<TouchDragControllerProps> = ({
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [controlMode]);
+  }, [activeMode]);
 
   // Action Triggers
   const handleJump = () => {
@@ -240,19 +257,35 @@ export const TouchDragController: React.FC<TouchDragControllerProps> = ({
     <>
       {/* Top Header Mode Indicator & Quick Switch Badge */}
       <div className="fixed top-3 right-4 z-[90] flex items-center gap-2 pointer-events-auto">
+        {/* Anti-Lag / 60 FPS Performance Toggle */}
         <button
-          onClick={onOpenDeviceSelector}
+          onClick={togglePerformanceProfile}
+          title="Performans ve FPS Modunu Değiştir"
+          className="px-2.5 py-1.5 rounded-full bg-slate-900/90 text-white border border-slate-700 hover:border-amber-400 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:bg-slate-800"
+        >
+          <Zap className={`w-3.5 h-3.5 ${perfProfile === 'smooth60' ? 'text-amber-400 animate-pulse' : perfProfile === 'ultra' ? 'text-cyan-400' : 'text-emerald-400'}`} />
+          <span className="hidden sm:inline">
+            {perfProfile === 'smooth60' ? '⚡ 60 FPS Akıcı' : perfProfile === 'ultra' ? '💎 Ultra' : '⚖️ Dengeli'}
+          </span>
+          <span className="sm:hidden text-[11px]">
+            {perfProfile === 'smooth60' ? '⚡ 60 FPS' : perfProfile === 'ultra' ? '💎 Ultra' : '⚖️ Dengeli'}
+          </span>
+        </button>
+
+        {/* Device Switcher */}
+        <button
+          onClick={handleOpenSelector}
           className="px-3 py-1.5 rounded-full bg-white/95 text-slate-800 border-2 border-slate-200 hover:border-amber-400 shadow-md backdrop-blur-md flex items-center gap-2 text-xs font-black transition transform active:scale-95 cursor-pointer hover:bg-slate-50"
         >
-          {controlMode === 'touch' ? (
+          {activeMode === 'touch' ? (
             <>
               <Smartphone className="w-3.5 h-3.5 text-emerald-600" />
-              <span>📱 Mobil Modu</span>
+              <span>📱 Mobil</span>
             </>
           ) : (
             <>
               <Monitor className="w-3.5 h-3.5 text-indigo-600" />
-              <span>💻 Bilgisayar Modu</span>
+              <span>💻 PC</span>
             </>
           )}
           <span className="text-[10px] text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded font-bold border border-amber-200">
@@ -262,7 +295,7 @@ export const TouchDragController: React.FC<TouchDragControllerProps> = ({
       </div>
 
       {/* MOBILE / TABLET MODE TOUCH CONTROLS */}
-      {controlMode === 'touch' && (
+      {activeMode === 'touch' && (
         <div className="fixed inset-0 pointer-events-none z-[80] select-none">
           
           {/* Dynamic Touch Joystick Visual Indicator on Left Thumb */}

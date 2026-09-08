@@ -4,8 +4,12 @@ import * as THREE from 'three';
 import './index.css';
 
 import { CustomizerAppOverlay } from './customizer/CustomizerAppOverlay';
+import { initMobilePerformanceOptimizer } from './utils/mobilePerformanceOptimizer';
 
 (window as unknown as { THREE: typeof THREE }).THREE = THREE;
+
+// Start Anti-Lag Mobile / Tablet Performance Engine
+initMobilePerformanceOptimizer();
 
 const portalEl = document.getElementById('customizer-portal');
 if (portalEl) {

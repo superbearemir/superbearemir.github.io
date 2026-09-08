@@ -115,11 +115,15 @@ export const DeviceSelectionModal: React.FC<DeviceSelectionModalProps> = ({
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="text-emerald-600 font-black">✓</span>
-                  <span>Dokunmatik zıplama tuşu ve joystick desteği</span>
+                  <span className="text-emerald-700 font-bold">⚡ Kasmayan 60 FPS Akıcı Mod: Tablet & telefonlarda donmayı önleyen özel optimizasyon</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="text-emerald-600 font-black">✓</span>
-                  <span>Retro Arcade mini oyunlarında parmakla yönlendirme</span>
+                  <span>Dokunmatik zıplama tuşu ve sanal joystick desteği</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="text-emerald-600 font-black">✓</span>
+                  <span>Retro Arcade mini oyunlarında parmakla sürükleme</span>
                 </div>
               </div>
 
