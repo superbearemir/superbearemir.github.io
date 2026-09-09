@@ -320,19 +320,20 @@ export function createCustomBear3D(initialDesign?: CustomCharacterDesign): Built
   capeGroup.position.set(0, 0.35, -0.45);
   bodyMesh.add(capeGroup);
 
-  const capeGeo = new THREE.PlaneGeometry(0.8, 1.1, 8, 8);
+  // Compact hero cape stopping well above the ground
+  const capeGeo = new THREE.PlaneGeometry(0.72, 0.62, 8, 8);
   // Curve the cape slightly
   const posAttr = capeGeo.attributes.position;
   for (let i = 0; i < posAttr.count; i++) {
     const y = posAttr.getY(i);
-    const z = Math.sin((y + 0.5) * Math.PI) * 0.1;
+    const z = Math.sin((y + 0.3) * Math.PI) * 0.08;
     posAttr.setZ(i, z);
   }
   capeGeo.computeVertexNormals();
 
   let capeMesh: THREE.Mesh | null = new THREE.Mesh(capeGeo, capeMat);
-  capeMesh.position.set(0, -0.5, -0.1);
-  capeMesh.rotation.x = 0.15;
+  capeMesh.position.set(0, -0.28, -0.06);
+  capeMesh.rotation.x = 0.14;
   capeMesh.castShadow = true;
   capeGroup.add(capeMesh);
 

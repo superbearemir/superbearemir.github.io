@@ -314,11 +314,11 @@ export function buildBackMesh(itemId: string, itemColorHex = 0xf59e0b): THREE.Gr
     carrotGreens.position.set(0.15, 0.42, 0.05);
     group.add(carrotGreens);
   } else {
-    // Flowing Cape
-    const capeGeo = new THREE.PlaneGeometry(0.85, 1.3, 6, 10);
+    // Flowing Cape - High-waist hero cape that never touches the ground
+    const capeGeo = new THREE.PlaneGeometry(0.72, 0.62, 6, 8);
     const cape = new THREE.Mesh(capeGeo, mainMat);
-    cape.position.set(0, -0.45, 0);
-    cape.rotation.x = 0.18;
+    cape.position.set(0, -0.22, 0);
+    cape.rotation.x = 0.16;
     group.add(cape);
   }
 

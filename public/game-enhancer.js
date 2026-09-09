@@ -670,11 +670,24 @@ function playKrakenSound(type) {
 
 
 let spaceState = {
-  aliensRescued: 0,
+  aliensRescued: (function() {
+    if (typeof window !== 'undefined' && window.__superBearSaveManager) {
+      return window.__superBearSaveManager.getRescuedAliens();
+    }
+    try {
+      const saved = localStorage.getItem('super_bear_aliens_rescued');
+      return saved ? parseInt(saved, 10) : 0;
+    } catch(e) { return 0; }
+  })(),
   maxAliens: 30,
   companionActive: true,
   currentRegion: 'hub',
-  lairUnlocked: false
+  lairUnlocked: (function() {
+    try {
+      const saved = localStorage.getItem('super_bear_aliens_rescued');
+      return saved ? parseInt(saved, 10) >= 30 : false;
+    } catch(e) { return false; }
+  })()
 };
 
 let spaceObjects = [];
@@ -14226,6 +14239,11 @@ function triggerEmote(type) {
         spaceState.aliensRescued = Math.min(spaceState.maxAliens, spaceState.aliensRescued + count);
         if (spaceState.aliensRescued >= spaceState.maxAliens) {
             spaceState.lairUnlocked = true;
+        }
+        if (typeof window !== 'undefined' && window.__superBearSaveManager) {
+            window.__superBearSaveManager.setRescuedAliens(spaceState.aliensRescued);
+        } else {
+            try { localStorage.setItem('super_bear_aliens_rescued', spaceState.aliensRescued.toString()); } catch(e){}
         }
         notifySpaceState();
         if (gameRef && gameRef.callbacks && gameRef.callbacks.onShowNotice) {

@@ -408,8 +408,9 @@ export const DrawingInspectorModal: React.FC<DrawingInspectorModalProps> = ({
                   <button
                     onClick={() => {
                       // Call the teleport function globally if available
-                      if (window.__superBearSpaceEnhancer && window.__superBearSpaceEnhancer.teleportToJokerooms) {
-                        window.__superBearSpaceEnhancer.teleportToJokerooms();
+                      const enhancer = (window as any).__superBearSpaceEnhancer;
+                      if (enhancer && enhancer.teleportToJokerooms) {
+                        enhancer.teleportToJokerooms();
                         onClose();
                       } else {
                         // Fallback: alert or try raw teleport

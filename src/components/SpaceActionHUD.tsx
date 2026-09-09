@@ -13,16 +13,20 @@ import {
   Fish,
   Smartphone,
   Monitor,
-  Check
+  Check,
+  Save,
+  CheckCircle2
 } from 'lucide-react';
 import { QualityProfile, optimizeGameRenderer } from '../utils/mobilePerformanceOptimizer';
 import { ControlMode } from './DeviceSelectionModal';
+import { useGameSave } from '../utils/saveManager';
 
 interface SpaceActionHUDProps {
   onOpenDrawingModal: () => void;
   onOpenCatShop?: () => void;
   onOpenMapModal?: () => void;
   onOpenArcade?: () => void;
+  onOpenSaveModal?: () => void;
   aliensRescued?: number;
   controlMode?: ControlMode;
   onOpenDeviceSelector?: () => void;
@@ -33,6 +37,7 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
   onOpenCatShop,
   onOpenMapModal,
   onOpenArcade,
+  onOpenSaveModal,
   aliensRescued = 0,
   controlMode = 'touch',
   onOpenDeviceSelector,
@@ -50,6 +55,21 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
   const [isNearInteractable, setIsNearInteractable] = useState(false);
   const [activeTab, setActiveTab] = useState<'powers' | 'emotes' | 'shop' | 'settings'>('powers');
   const [selectedPowerId, setSelectedPowerId] = useState<'teleport' | 'laser' | 'rocket' | 'ground_pound' | 'roll' | 'fish' | 'spray' | 'companion' | 'dance' | 'triple_jump' | 'interact'>('laser');
+
+  // Game Persistence & Auto-Save Manager hook
+  const { saveData, lastSaveToast, manualSave } = useGameSave();
+  const [saveFlash, setSaveFlash] = useState(false);
+
+  const handleQuickSave = () => {
+    manualSave();
+    setSaveFlash(true);
+    setTimeout(() => setSaveFlash(false), 1200);
+    if (onOpenSaveModal) {
+      onOpenSaveModal();
+    } else {
+      window.dispatchEvent(new CustomEvent('superbear:open-save-modal'));
+    }
+  };
 
   // Listen for proximity and powers rack events
   useEffect(() => {
@@ -512,6 +532,16 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
           <span>Arcade</span>
         </button>
 
+        {/* Loot Boxes Quick Button */}
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('superbear:open-lootboxes'))}
+          title="Şans Kutuları & Sandıklar (1x, 15x, Efsanevi 1 ve Efsanevi 5 Kutu)"
+          className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-500 text-slate-950 border border-amber-300 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:brightness-110 animate-pulse"
+        >
+          <span className="text-xs">🎁</span>
+          <span>Kutular</span>
+        </button>
+
         {/* Anti-Lag / 60 FPS Toggle Button */}
         <button
           onClick={togglePerformanceProfile}
@@ -544,7 +574,30 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
             )}
           </button>
         )}
+
+        {/* Quick Save & Progress Manager Button */}
+        <button
+          onClick={handleQuickSave}
+          title="Oyun İlerlemesini ve Altınları Kaydet (Yerel Hafıza)"
+          className={`pointer-events-auto px-2.5 py-1 rounded-full text-white border shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition-all transform active:scale-95 cursor-pointer ${
+            saveFlash
+              ? 'bg-emerald-500 border-emerald-200 text-slate-950 scale-105 shadow-emerald-500/50'
+              : 'bg-gradient-to-r from-emerald-600 to-teal-700 border-emerald-400/80 hover:from-emerald-500 hover:to-teal-600'
+          }`}
+        >
+          <Save className={`w-3.5 h-3.5 ${saveFlash ? 'animate-spin text-slate-950' : 'text-emerald-200'}`} />
+          <span>{saveFlash ? 'Kaydedildi!' : 'Kaydet'}</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse"></span>
+        </button>
       </div>
+
+      {/* Floating Auto-Save Success Notification Banner */}
+      {lastSaveToast && (
+        <div className="fixed top-2 sm:top-3.5 left-1/2 -translate-x-1/2 z-[100] pointer-events-none select-none px-3.5 py-1.5 rounded-full bg-slate-950/90 border border-emerald-400/90 shadow-2xl backdrop-blur-md flex items-center gap-2 text-xs font-black text-emerald-300 animate-in fade-in slide-in-from-top-3 duration-200">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 animate-pulse shrink-0" />
+          <span>{lastSaveToast.message}</span>
+        </div>
+      )}
 
       {/* Responsive Centered Modal Dialog (Guaranteed strictly within screen bounds on any device) */}
       {isMenuOpen && (
@@ -948,6 +1001,24 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
                       </div>
                     </div>
                     <span className="text-[10px] bg-slate-950 text-amber-300 px-2 py-1 rounded-lg font-mono">Dükkan</span>
+                  </button>
+
+                  {/* Şans Kutuları & Sandıklar (Loot Boxes) */}
+                  <button
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      window.dispatchEvent(new CustomEvent('superbear:open-lootboxes'));
+                    }}
+                    className="w-full p-3 bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs rounded-2xl border border-amber-200 shadow-lg flex items-center justify-between transition active:scale-95 cursor-pointer animate-pulse"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span className="text-xl">🎁</span>
+                      <div className="text-left">
+                        <div className="font-black text-slate-950 text-xs sm:text-sm">Şans Kutuları & Sandıklar</div>
+                        <div className="text-[10px] text-slate-900 font-bold">1x, 15x, Efsanevi 1 ve Efsanevi 5 Kutu</div>
+                      </div>
+                    </div>
+                    <span className="text-[10px] bg-slate-950 text-amber-300 px-2 py-1 rounded-lg font-mono font-black">4 Paket</span>
                   </button>
 
                   {/* Retro Arcade Games */}

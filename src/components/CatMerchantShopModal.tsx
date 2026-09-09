@@ -35,6 +35,7 @@ import { SHOP_ITEMS, ShopItem } from '../data/shopItemsData';
 import { createCustomBear3D, BuiltBearModel } from '../customizer/3dBearBuilder';
 import { buildHatMesh, buildFaceMesh, buildBackMesh, buildHandMesh } from '../customizer/equipmentMeshBuilder';
 import { hexToInt } from '../customizer/ImageAnalyzer';
+import { LootBoxModal } from './LootBoxModal';
 
 interface CatMerchantShopModalProps {
   isOpen: boolean;
@@ -43,11 +44,13 @@ interface CatMerchantShopModalProps {
 
 type CategoryType = 'all' | 'hats' | 'face' | 'back' | 'skins' | 'hand' | 'auras' | 'potions';
 type RarityType = 'all' | 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
+type FilterStatusType = 'all' | 'equipped' | 'owned' | 'paid' | 'free';
 
 export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<CategoryType>('all');
   const [selectedRarity, setSelectedRarity] = useState<RarityType>('all');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'equipped' | 'owned'>('all');
+  const [filterStatus, setFilterStatus] = useState<FilterStatusType>('all');
+  const [isLootBoxModalOpen, setIsLootBoxModalOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<'featured' | 'name' | 'price_low' | 'price_high' | 'rarity'>('featured');
   const [bearPose, setBearPose] = useState<'idle' | 'dance' | 'roar' | 'punch' | 'wave' | 'spin'>('idle');
@@ -59,6 +62,9 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
   const [jumpPageInput, setJumpPageInput] = useState<string>('');
 
   const [coins, setCoins] = useState<number>(() => {
+    if (typeof window !== 'undefined' && (window as any).__superBearSaveManager) {
+      return (window as any).__superBearSaveManager.getSaveData().goldBalance;
+    }
     const saved = localStorage.getItem('super_bear_coins');
     // If no saved coins or was old 999999 / 1000000 test amount, start with 150 coins
     if (!saved || parseInt(saved, 10) >= 900000) {
@@ -78,8 +84,8 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
         }
       } catch (e) {}
     }
-    // New player starts with starter cape unlocked
-    const starterPurchased = ['back_royal_cape'];
+    // Clean out ground-touching duplicate cape from initial load
+    const starterPurchased: string[] = [];
     localStorage.setItem('super_bear_purchased_items', JSON.stringify(starterPurchased));
     return starterPurchased;
   });
@@ -87,23 +93,22 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
   const [equippedIds, setEquippedIds] = useState<string[]>(() => {
     const saved = localStorage.getItem('super_bear_equipped_items');
     if (!saved) {
-      const defaultEquipped = ['back_royal_cape'];
+      const defaultEquipped: string[] = [];
       localStorage.setItem('super_bear_equipped_items', JSON.stringify(defaultEquipped));
       return defaultEquipped;
     }
     try {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed)) {
-        // If had the old wizard hat or cool glasses default, clean it to starter cape only
-        if (parsed.includes('hat_wizard') && parsed.includes('face_glasses_cool')) {
-          const cleaned = ['back_royal_cape'];
+        // Remove ground-touching duplicate cape from equipped items
+        const cleaned = parsed.filter(id => id !== 'back_royal_cape');
+        if (cleaned.length !== parsed.length) {
           localStorage.setItem('super_bear_equipped_items', JSON.stringify(cleaned));
-          return cleaned;
         }
-        return parsed;
+        return cleaned;
       }
     } catch (e) {}
-    return ['back_royal_cape'];
+    return [];
   });
   
   const [notice, setNotice] = useState<string | null>(null);
@@ -129,17 +134,40 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
   // Sync state to localStorage & Game Instance
   useEffect(() => {
     localStorage.setItem('super_bear_coins', coins.toString());
+    if (typeof window !== 'undefined' && (window as any).__superBearSaveManager) {
+      (window as any).__superBearSaveManager.updateGold(coins);
+    }
   }, [coins]);
 
   useEffect(() => {
     localStorage.setItem('super_bear_purchased_items', JSON.stringify(purchasedIds));
+    if (typeof window !== 'undefined' && (window as any).__superBearSaveManager) {
+      (window as any).__superBearSaveManager.saveGame({ shopPurchasedIds: purchasedIds }, { immediate: false });
+    }
   }, [purchasedIds]);
 
   useEffect(() => {
     localStorage.setItem('super_bear_equipped_items', JSON.stringify(equippedIds));
+    if (typeof window !== 'undefined' && (window as any).__superBearSaveManager) {
+      (window as any).__superBearSaveManager.saveGame({ shopEquippedIds: equippedIds }, { immediate: true });
+    }
     syncShopEquipmentsToGameInstance(equippedIds);
     update3DBearEquipments();
   }, [equippedIds]);
+
+  // Listen for coins updated from other sources (levels, quests, arcade)
+  useEffect(() => {
+    const handleCoinsUpdated = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && typeof detail.coins === 'number') {
+        setCoins(detail.coins);
+      }
+    };
+    window.addEventListener('superbear:coins-updated', handleCoinsUpdated);
+    return () => {
+      window.removeEventListener('superbear:coins-updated', handleCoinsUpdated);
+    };
+  }, []);
 
   const showNotification = (msg: string) => {
     setNotice(msg);
@@ -475,7 +503,7 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { all: SHOP_ITEMS.length };
     SHOP_ITEMS.forEach(item => {
-      const cat = item.category === 'aliens' ? 'potions' : item.category;
+      const cat = (item.category as string) === 'aliens' ? 'potions' : item.category;
       counts[cat] = (counts[cat] || 0) + 1;
     });
     return counts;
@@ -484,7 +512,7 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
   // Process items: Filter -> Status -> Search -> Sort
   const processedItems = useMemo(() => {
     let list = SHOP_ITEMS.filter(item => {
-      const matchesTab = activeTab === 'all' || item.category === activeTab || (activeTab === 'potions' && (item.category === 'potions' || item.category === 'aliens'));
+      const matchesTab = activeTab === 'all' || item.category === activeTab || (activeTab === 'potions' && ((item.category as string) === 'potions' || (item.category as string) === 'aliens'));
       const matchesRarity = selectedRarity === 'all' || item.rarity === selectedRarity;
       
       let matchesStatus = true;
@@ -492,6 +520,10 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
         matchesStatus = equippedIds.includes(item.id);
       } else if (filterStatus === 'owned') {
         matchesStatus = purchasedIds.includes(item.id);
+      } else if (filterStatus === 'paid') {
+        matchesStatus = item.price > 0;
+      } else if (filterStatus === 'free') {
+        matchesStatus = item.price === 0;
       }
 
       const query = searchQuery.toLowerCase().trim();
@@ -576,11 +608,11 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
       case 'legendary':
         return <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/50 font-black text-[10px]">EFSANEVİ 👑</span>;
       case 'epic':
-        return <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/50 font-black text-[10px]">EPİK 💜</span>;
+        return <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/50 font-black text-[10px]">SÜPER ENDER ⚡</span>;
       case 'rare':
-        return <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/50 font-black text-[10px]">NADİR 💙</span>;
+        return <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/50 font-black text-[10px]">ENDER 💎</span>;
       default:
-        return <span className="px-2 py-0.5 rounded-full bg-slate-700 text-slate-300 font-bold text-[10px]">SIK 🤍</span>;
+        return <span className="px-2 py-0.5 rounded-full bg-slate-700/80 text-slate-300 border border-slate-600 font-bold text-[10px]">YAYGIN ☘️</span>;
     }
   };
 
@@ -638,6 +670,15 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
             >
               <Gift className="w-4 h-4" />
               <span>+2,000 Altın Bedava Al!</span>
+            </button>
+
+            <button
+              onClick={() => setIsLootBoxModalOpen(true)}
+              className="px-4 py-1 bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs rounded-xl border border-amber-200 flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-lg shadow-amber-500/30 animate-pulse"
+              title="Şans Kutularını Aç (1x, 15x, Efsanevi Tek ve Efsanevi 5 Kutu)"
+            >
+              <Gift className="w-4 h-4 text-slate-950" />
+              <span>🎁 ŞANS KUTULARI (4 PAKET)</span>
             </button>
           </div>
 
@@ -768,18 +809,18 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
                   onChange={e => setSelectedRarity(e.target.value as RarityType)}
                   className="px-2.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-amber-300 font-bold focus:outline-none focus:border-amber-500 cursor-pointer shrink-0"
                 >
-                  <option value="all">Tüm Nadirlikler</option>
-                  <option value="common">Sık (Common)</option>
-                  <option value="rare">Nadir (Rare)</option>
-                  <option value="epic">Epik (Epic)</option>
-                  <option value="legendary">Efsanevi (Legendary)</option>
-                  <option value="mythic">Mitik (Mythic)</option>
+                  <option value="all">Tüm Enderlikler</option>
+                  <option value="legendary">👑 Efsanevi (Legendary)</option>
+                  <option value="epic">⚡ Süper Ender (Super Rare)</option>
+                  <option value="rare">💎 Ender (Rare)</option>
+                  <option value="common">☘️ Yaygın (Common)</option>
+                  <option value="mythic">🌟 Mitik (Mythic)</option>
                 </select>
               </div>
 
               {/* Status Quick Filter Pills */}
               <div className="flex items-center justify-between gap-2 flex-wrap text-xs border-t border-slate-800/80 pt-2">
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-[11px] font-bold text-slate-400 mr-1 hidden sm:inline">Filtre:</span>
                   
                   <button
@@ -795,6 +836,30 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
                   </button>
 
                   <button
+                    onClick={() => setFilterStatus('paid')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                      filterStatus === 'paid'
+                        ? 'bg-amber-500 text-slate-950 font-black shadow-md'
+                        : 'bg-slate-950 text-amber-300 hover:text-amber-200 border border-amber-500/40'
+                    }`}
+                  >
+                    <Coins className="w-3 h-3" />
+                    <span>🟡 Paralı (250)</span>
+                  </button>
+
+                  <button
+                    onClick={() => setFilterStatus('free')}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
+                      filterStatus === 'free'
+                        ? 'bg-emerald-500 text-slate-950 font-black shadow-md'
+                        : 'bg-slate-950 text-emerald-400 hover:text-emerald-300 border border-emerald-500/40'
+                    }`}
+                  >
+                    <Gift className="w-3 h-3" />
+                    <span>🎁 Ücretsiz (50)</span>
+                  </button>
+
+                  <button
                     onClick={() => setFilterStatus('equipped')}
                     className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
                       filterStatus === 'equipped'
@@ -803,7 +868,7 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
                     }`}
                   >
                     <CheckCircle2 className="w-3 h-3 text-amber-400" />
-                    <span>✨ Sadece Takılı ({equippedIds.length})</span>
+                    <span>✨ Takılı ({equippedIds.length})</span>
                   </button>
 
                   <button
@@ -1180,6 +1245,16 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
         </div>
 
       </div>
+
+      {/* Standalone Loot Box Opening Modal with Animations & 4 Bundles */}
+      <LootBoxModal
+        isOpen={isLootBoxModalOpen}
+        onClose={() => setIsLootBoxModalOpen(false)}
+        playerGold={coins}
+        onGoldChange={setCoins}
+        purchasedIds={purchasedIds}
+        onItemsPurchased={setPurchasedIds}
+      />
 
     </div>
   );

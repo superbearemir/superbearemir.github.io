@@ -14,6 +14,8 @@ import { ArcadeGamesModal } from '../components/ArcadeGamesModal';
 import { DeviceSelectionModal, ControlMode } from '../components/DeviceSelectionModal';
 import { TouchDragController } from '../components/TouchDragController';
 import { LandscapeOrientationHandler } from '../components/LandscapeOrientationHandler';
+import { SaveManagerModal } from '../components/SaveManagerModal';
+import { LootBoxModal } from '../components/LootBoxModal';
 import { ShoppingBag, Gamepad2 } from 'lucide-react';
 
 export const CustomizerAppOverlay: React.FC = () => {
@@ -25,8 +27,31 @@ export const CustomizerAppOverlay: React.FC = () => {
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [isTrailerOpen, setIsTrailerOpen] = useState(false);
   const [isArcadeGamesOpen, setIsArcadeGamesOpen] = useState(false);
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [isLootBoxModalOpen, setIsLootBoxModalOpen] = useState(false);
 
-  const [playerStats, setPlayerStats] = useState({ coins: 150, currentHp: 100, maxHp: 100, honeyGems: 2 });
+  const [purchasedIds, setPurchasedIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('super_bear_purchased_items');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return [];
+  });
+
+  const [playerStats, setPlayerStats] = useState(() => {
+    if (typeof window !== 'undefined' && (window as any).__superBearSaveManager) {
+      const save = (window as any).__superBearSaveManager.getSaveData();
+      return {
+        coins: save.goldBalance ?? 150,
+        currentHp: save.currentHp ?? 100,
+        maxHp: save.maxHp ?? 100,
+        honeyGems: save.honeyGems ?? 2
+      };
+    }
+    return { coins: 150, currentHp: 100, maxHp: 100, honeyGems: 2 };
+  });
   
   // Device Selection Welcome Modal (white background selection on entry)
   const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(true);
@@ -38,7 +63,15 @@ export const CustomizerAppOverlay: React.FC = () => {
   const [isNearCatMerchant, setIsNearCatMerchant] = useState(false);
   const [isNearArcade, setIsNearArcade] = useState(false);
 
-  const [aliensRescued, setAliensRescued] = useState(0);
+  const [aliensRescued, setAliensRescued] = useState(() => {
+    if (typeof window !== 'undefined' && (window as any).__superBearSaveManager) {
+      return (window as any).__superBearSaveManager.getRescuedAliens();
+    }
+    try {
+      const s = localStorage.getItem('super_bear_aliens_rescued');
+      return s ? parseInt(s, 10) : 0;
+    } catch(e) { return 0; }
+  });
   const [, setActiveDesign] = useState<CustomCharacterDesign>(getCurrentSavedDesign);
 
   // Synchronize modal open status to prevent touch/joystick conflicts
@@ -49,7 +82,9 @@ export const CustomizerAppOverlay: React.FC = () => {
     isMapModalOpen ||
     isTrailerOpen ||
     isArcadeGamesOpen ||
-    isDeviceModalOpen;
+    isDeviceModalOpen ||
+    isSaveModalOpen ||
+    isLootBoxModalOpen;
 
   useEffect(() => {
     (window as any).__superBearModalOpen = isAnyModalOpen;
@@ -102,6 +137,32 @@ export const CustomizerAppOverlay: React.FC = () => {
 
     const handleOpenArcade = () => setIsArcadeGamesOpen(true);
     window.addEventListener('superbear:open-arcade-games', handleOpenArcade);
+
+    const handleOpenSaveModal = () => setIsSaveModalOpen(true);
+    window.addEventListener('superbear:open-save-modal', handleOpenSaveModal);
+
+    const handleOpenLootBoxes = () => setIsLootBoxModalOpen(true);
+    window.addEventListener('superbear:open-lootboxes', handleOpenLootBoxes);
+
+    const handleShopPurchase = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && Array.isArray(detail.purchasedIds)) {
+        setPurchasedIds(detail.purchasedIds);
+      }
+    };
+    window.addEventListener('superbear:shop-purchase', handleShopPurchase);
+
+    const handleCoinsUpdated = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && typeof detail.coins === 'number') {
+        setPlayerStats(prev => ({
+          ...prev,
+          coins: detail.coins,
+          honeyGems: typeof detail.honeyGems === 'number' ? detail.honeyGems : prev.honeyGems
+        }));
+      }
+    };
+    window.addEventListener('superbear:coins-updated', handleCoinsUpdated);
 
     // Proximity events
     const handleCatMerchantProximity = (e: Event) => {
@@ -198,6 +259,10 @@ export const CustomizerAppOverlay: React.FC = () => {
       window.removeEventListener('superbear:open-map-selector', handleOpenMapSelector);
       window.removeEventListener('superbear:open-trailer', handleOpenTrailer);
       window.removeEventListener('superbear:open-arcade-games', handleOpenArcade);
+      window.removeEventListener('superbear:open-save-modal', handleOpenSaveModal);
+      window.removeEventListener('superbear:open-lootboxes', handleOpenLootBoxes);
+      window.removeEventListener('superbear:shop-purchase', handleShopPurchase);
+      window.removeEventListener('superbear:coins-updated', handleCoinsUpdated);
       window.removeEventListener('superbear:cat-merchant-proximity', handleCatMerchantProximity);
       window.removeEventListener('superbear:arcade-proximity', handleArcadeProximity);
       window.removeEventListener('superbear:space-state-update', handleSpaceStateUpdate);
@@ -223,6 +288,9 @@ export const CustomizerAppOverlay: React.FC = () => {
       game.stats.coins = Math.max(0, game.stats.coins - cost);
       if (game.callbacks && game.callbacks.onStatsUpdate) {
         game.callbacks.onStatsUpdate(game.stats);
+      }
+      if (typeof window !== 'undefined' && (window as any).__superBearSaveManager) {
+        (window as any).__superBearSaveManager.updateGold(game.stats.coins);
       }
       setPlayerStats({
         coins: game.stats.coins,
@@ -254,6 +322,7 @@ export const CustomizerAppOverlay: React.FC = () => {
         onOpenCatShop={() => setIsCatShopOpen(true)}
         onOpenMapModal={() => setIsMapModalOpen(true)}
         onOpenArcade={() => setIsArcadeGamesOpen(true)}
+        onOpenSaveModal={() => setIsSaveModalOpen(true)}
         aliensRescued={aliensRescued}
         controlMode={controlMode}
         onOpenDeviceSelector={() => setIsDeviceModalOpen(true)}
@@ -361,6 +430,12 @@ export const CustomizerAppOverlay: React.FC = () => {
         onClose={() => setIsMapModalOpen(false)}
       />
 
+      {/* Save & Game Progress Manager Modal */}
+      <SaveManagerModal
+        isOpen={isSaveModalOpen}
+        onClose={() => setIsSaveModalOpen(false)}
+      />
+
       {/* 5-Minute 20:00 Subterranean World Update Trailer Modal */}
       <UndergroundTrailerModal
         isOpen={isTrailerOpen}
@@ -383,6 +458,20 @@ export const CustomizerAppOverlay: React.FC = () => {
       <DeviceSelectionModal
         isOpen={isDeviceModalOpen}
         onSelectMode={handleSelectDeviceMode}
+      />
+
+      {/* Standalone Loot Box Opening Modal with 4 Bundles & Shaking Animations */}
+      <LootBoxModal
+        isOpen={isLootBoxModalOpen}
+        onClose={() => setIsLootBoxModalOpen(false)}
+        playerGold={playerStats.coins}
+        onGoldChange={(newGold) => {
+          setPlayerStats(prev => ({ ...prev, coins: newGold }));
+        }}
+        purchasedIds={purchasedIds}
+        onItemsPurchased={(newItems) => {
+          setPurchasedIds(newItems);
+        }}
       />
 
       {/* Automatic Mobile Landscape Helper */}

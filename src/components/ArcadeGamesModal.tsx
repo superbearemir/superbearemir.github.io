@@ -226,13 +226,17 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
 
       const savedCoins = localStorage.getItem('super_bear_coins');
       const curCoins = savedCoins ? parseInt(savedCoins, 10) : 0;
-      localStorage.setItem('super_bear_coins', (curCoins + 150).toString());
+      const nextCoins = curCoins + 150;
+      localStorage.setItem('super_bear_coins', nextCoins.toString());
 
       const savedTokens = localStorage.getItem('super_bear_arcade_tokens');
       const curTokens = savedTokens ? parseInt(savedTokens, 10) : 0;
       localStorage.setItem('super_bear_arcade_tokens', (curTokens + 5).toString());
 
-      window.dispatchEvent(new CustomEvent('superbear:coins-updated', { detail: { coins: curCoins + 150 } }));
+      if (typeof window !== 'undefined' && (window as any).__superBearSaveManager) {
+        (window as any).__superBearSaveManager.updateGold(nextCoins);
+      }
+      window.dispatchEvent(new CustomEvent('superbear:coins-updated', { detail: { coins: nextCoins } }));
       playSound(587.33, 'triangle', 0.25);
     } catch (e) {}
   };
@@ -263,13 +267,17 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
     try {
       const savedCoins = localStorage.getItem('super_bear_coins');
       const curCoins = savedCoins ? parseInt(savedCoins, 10) : 0;
-      localStorage.setItem('super_bear_coins', (curCoins + earnedCoins).toString());
+      const nextCoins = curCoins + earnedCoins;
+      localStorage.setItem('super_bear_coins', nextCoins.toString());
 
       const savedTokens = localStorage.getItem('super_bear_arcade_tokens');
       const curTokens = savedTokens ? parseInt(savedTokens, 10) : 0;
       localStorage.setItem('super_bear_arcade_tokens', (curTokens + earnedTokens).toString());
 
-      window.dispatchEvent(new CustomEvent('superbear:coins-updated', { detail: { coins: curCoins + earnedCoins } }));
+      if (typeof window !== 'undefined' && (window as any).__superBearSaveManager) {
+        (window as any).__superBearSaveManager.updateGold(nextCoins);
+      }
+      window.dispatchEvent(new CustomEvent('superbear:coins-updated', { detail: { coins: nextCoins } }));
     } catch (e) {}
 
     if (onRewardEarned) {

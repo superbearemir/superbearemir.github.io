@@ -213,9 +213,11 @@ export async function syncDesignToGameInstance(design: CustomCharacterDesign) {
       if (pb.rightLeg) pb.rightLeg.scale.set(m.legScale, m.legScale, m.legScale);
     }
 
-    // 5. Cape visibility
+    // 5. Cape visibility - Ensure only ONE cape exists! If backContainer has an equipped item, hide pb.capeGroup
     if (pb.capeGroup) {
-      pb.capeGroup.visible = design.capeEnabled;
+      const backContainer = pb.root ? pb.root.getObjectByName('player_back_container') : null;
+      const hasBackEquipped = backContainer && backContainer.children && backContainer.children.length > 0;
+      pb.capeGroup.visible = !hasBackEquipped && design.capeEnabled;
     }
   }
 

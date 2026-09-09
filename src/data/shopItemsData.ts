@@ -3,6 +3,146 @@
 // Şapkalar, Yüz & Maskeler, Kanatlar & Pelerinler, Kostümler, Silahlar, Auralar, İksirler
 // ============================================================================
 
+export type ItemRarity = 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
+
+export const RARITY_INFO: Record<ItemRarity, {
+  label: string;
+  color: string;
+  badgeBg: string;
+  badgeText: string;
+  glowColor: string;
+  border: string;
+  rank: number;
+}> = {
+  common: {
+    label: 'Yaygın',
+    color: '#94a3b8',
+    badgeBg: 'bg-slate-700/60',
+    badgeText: 'text-slate-200',
+    glowColor: 'rgba(148, 163, 184, 0.4)',
+    border: 'border-slate-500/50',
+    rank: 1
+  },
+  rare: {
+    label: 'Ender',
+    color: '#38bdf8',
+    badgeBg: 'bg-sky-500/20',
+    badgeText: 'text-sky-300',
+    glowColor: 'rgba(56, 189, 248, 0.6)',
+    border: 'border-sky-400/60',
+    rank: 2
+  },
+  epic: {
+    label: 'Süper Ender',
+    color: '#a855f7',
+    badgeBg: 'bg-purple-500/20',
+    badgeText: 'text-purple-300',
+    glowColor: 'rgba(168, 85, 247, 0.7)',
+    border: 'border-purple-400/70',
+    rank: 3
+  },
+  legendary: {
+    label: 'Efsanevi',
+    color: '#f59e0b',
+    badgeBg: 'bg-amber-500/20',
+    badgeText: 'text-amber-300',
+    glowColor: 'rgba(245, 158, 11, 0.8)',
+    border: 'border-amber-400/80',
+    rank: 4
+  },
+  mythic: {
+    label: 'Mitik',
+    color: '#ec4899',
+    badgeBg: 'bg-pink-500/20',
+    badgeText: 'text-pink-300',
+    glowColor: 'rgba(236, 72, 153, 0.9)',
+    border: 'border-pink-400/80',
+    rank: 5
+  }
+};
+
+export interface LootBoxPackage {
+  id: 'single_box' | 'bundle_15_box' | 'legendary_single' | 'legendary_5_box';
+  name: string;
+  subtitle: string;
+  count: number;
+  isLegendaryTier: boolean;
+  price: number;
+  originalPrice?: number;
+  badge?: string;
+  rates: {
+    common: number;
+    rare: number;
+    epic: number;
+    legendary: number;
+    mythic: number;
+  };
+  guaranteeText: string;
+  icon: string;
+  themeGradient: string;
+  glowClass: string;
+}
+
+export const LOOT_BOX_PACKAGES: LootBoxPackage[] = [
+  {
+    id: 'single_box',
+    name: '1x Standart Şans Kutusu',
+    subtitle: 'Tek Kutu Açılışı',
+    count: 1,
+    isLegendaryTier: false,
+    price: 100,
+    rates: { common: 40, rare: 40, epic: 16, legendary: 4, mythic: 0 },
+    icon: '📦',
+    themeGradient: 'from-blue-600 via-sky-600 to-indigo-700',
+    glowClass: 'shadow-blue-500/30',
+    guaranteeText: 'Rastgele Yaygın, Ender veya Süper Ender eşya çıkarma şansı'
+  },
+  {
+    id: 'bundle_15_box',
+    name: '15x Şans Kutusu Paketi',
+    subtitle: '15 Kutulu Büyük Paket',
+    count: 15,
+    isLegendaryTier: false,
+    price: 1250,
+    originalPrice: 1500,
+    badge: '15 KUTULU & İNDİRİMLİ',
+    rates: { common: 35, rare: 40, epic: 19, legendary: 6, mythic: 0 },
+    icon: '🎁',
+    themeGradient: 'from-emerald-600 via-teal-600 to-cyan-700',
+    glowClass: 'shadow-emerald-500/40',
+    guaranteeText: 'Toplu açılış! En az 1 Adet Süper Ender veya üzeri GARANTİLİ'
+  },
+  {
+    id: 'legendary_single',
+    name: '1x Efsanevi Şans Kutusu',
+    subtitle: 'Efsanevi Bir Kutu',
+    count: 1,
+    isLegendaryTier: true,
+    price: 450,
+    badge: 'YÜKSEK ŞANS',
+    rates: { common: 0, rare: 20, epic: 52, legendary: 25, mythic: 3 },
+    icon: '👑',
+    themeGradient: 'from-amber-600 via-yellow-500 to-orange-600',
+    glowClass: 'shadow-amber-500/50',
+    guaranteeText: 'Sıradan eşyalar ÇIKMAZ! Yüksek Efsanevi ve Süper Ender şansı'
+  },
+  {
+    id: 'legendary_5_box',
+    name: '5x Efsanevi Kutu Paketi',
+    subtitle: 'Efsanevi 5 Kutu',
+    count: 5,
+    isLegendaryTier: true,
+    price: 1900,
+    originalPrice: 2250,
+    badge: 'GARANTİLİ EFSANEVİ',
+    rates: { common: 0, rare: 15, epic: 48, legendary: 32, mythic: 5 },
+    icon: '🏆',
+    themeGradient: 'from-purple-700 via-pink-600 to-amber-600',
+    glowClass: 'shadow-purple-500/50',
+    guaranteeText: '5 Kutu! En az 1 Adet EFSANEVİ Eşya KESİN GARANTİLİ!'
+  }
+];
+
 export interface ShopItem {
   id: string;
   name: string;
@@ -11,7 +151,7 @@ export interface ShopItem {
   price: number;
   icon: string;
   description: string;
-  rarity: 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
+  rarity: ItemRarity;
   color: string;
   stats?: {
     attack?: number;
@@ -1861,3 +2001,51 @@ while (SHOP_ITEMS.length < 300) {
   });
   counter++;
 }
+
+// ============================================================================
+// STRICT 50 FREE & 250 PAID ITEMS ENFORCEMENT (300 EŞYANIN 250'Sİ PARALI, 50'Sİ ÜCRETSİZ)
+// ============================================================================
+const FREE_CATEGORY_TARGETS: Record<string, number> = {
+  hats: 14,
+  face: 8,
+  back: 8,
+  skins: 5,
+  hand: 10,
+  auras: 3,
+  potions: 2
+};
+
+const freeCountTracker: Record<string, number> = {
+  hats: 0,
+  face: 0,
+  back: 0,
+  skins: 0,
+  hand: 0,
+  auras: 0,
+  potions: 0
+};
+
+export const FREE_SHOP_ITEM_IDS: string[] = [];
+
+SHOP_ITEMS.forEach((item) => {
+  const cat = item.category;
+  if ((freeCountTracker[cat] || 0) < (FREE_CATEGORY_TARGETS[cat] || 0)) {
+    item.price = 0;
+    item.rarity = 'common';
+    item.description = `[BAŞLANGIÇ EŞYASI - ÜCRETSİZ] ${item.description}`;
+    freeCountTracker[cat] = (freeCountTracker[cat] || 0) + 1;
+    FREE_SHOP_ITEM_IDS.push(item.id);
+  } else {
+    // Ensure all remaining 250 items have a positive price based on rarity
+    if (item.price === 0) {
+      item.price = 120;
+    }
+    // Polish pricing curve based on rarity
+    if (item.rarity === 'common' && item.price < 60) item.price = 75;
+    if (item.rarity === 'rare' && item.price < 150) item.price = 220;
+    if (item.rarity === 'epic' && item.price < 350) item.price = 480;
+    if (item.rarity === 'legendary' && item.price < 750) item.price = 950;
+    if (item.rarity === 'mythic' && item.price < 1400) item.price = 1800;
+  }
+});
+
