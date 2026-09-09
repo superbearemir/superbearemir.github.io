@@ -186,7 +186,8 @@
         detail: {
           saveData: { ...saveObj },
           showToast: !!options.showToast,
-          message: options.message || `💾 Oyun Kaydedildi (${saveObj.goldBalance} Altın)`
+          message: options.message || `💾 Oyun Kaydedildi (${saveObj.goldBalance} Altın)`,
+          timestamp: now
         }
       }));
 

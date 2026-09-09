@@ -111,9 +111,10 @@ export function useGameSave() {
         setSaveData({ ...detail.saveData });
       }
       if (detail && detail.showToast && detail.message) {
-        setLastSaveToast({ message: detail.message, timestamp: Date.now() });
+        const ts = detail.timestamp || Date.now();
+        setLastSaveToast({ message: detail.message, timestamp: ts });
         setTimeout(() => {
-          setLastSaveToast((prev) => (prev && prev.timestamp === detail.timestamp ? null : prev));
+          setLastSaveToast((prev) => (prev && prev.timestamp === ts ? null : prev));
         }, 3500);
       }
     };

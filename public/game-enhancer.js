@@ -2352,6 +2352,133 @@ function buildMorisSecretDenAndMountains(THREE, villageGroup) {
 
   // Solid desk collider
   addDenCollider(10.2, 7.5, -76.8, 13.8, 9.8, -73.2);
+
+  // =========================================================================
+  // --- GİZLİ DAĞ TÜNELLERİ VE MAĞARA MACERASI (SECRET MOUNTAIN TUNNELS & CAVE ADVENTURE) ---
+  // =========================================================================
+  
+  // Prominent Visible Stone Cave Entrance Archway at Mountain Base (x: 12, y: 1.0, z: -72)
+  const caveArchGroup = new THREE.Group();
+  caveArchGroup.position.set(12.0, 1.0, -72.0);
+
+  const leftPillar = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.9, 4.5, 12), rockMat);
+  leftPillar.position.set(-2.2, 2.25, 0);
+  caveArchGroup.add(leftPillar);
+
+  const rightPillar = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.9, 4.5, 12), rockMat);
+  rightPillar.position.set(2.2, 2.25, 0);
+  caveArchGroup.add(rightPillar);
+
+  const archTopCave = new THREE.Mesh(new THREE.BoxGeometry(5.6, 1.2, 1.8), rockMat);
+  archTopCave.position.set(0, 4.8, 0);
+  caveArchGroup.add(archTopCave);
+
+  // Glowing Cave Entrance Signboard
+  const caveSignCanvas = document.createElement('canvas');
+  caveSignCanvas.width = 512;
+  caveSignCanvas.height = 180;
+  const csCtx = caveSignCanvas.getContext('2d');
+  if (csCtx) {
+    csCtx.fillStyle = '#0f172a';
+    csCtx.fillRect(0, 0, 512, 180);
+    csCtx.strokeStyle = '#f59e0b';
+    csCtx.lineWidth = 8;
+    csCtx.strokeRect(6, 6, 500, 168);
+    csCtx.fillStyle = '#fef08a';
+    csCtx.font = 'bold 26px sans-serif';
+    csCtx.textAlign = 'center';
+    csCtx.fillText('⚠️ GİZLİ DAĞ MAĞARASI GİRİŞİ ➔', 256, 55);
+    csCtx.fillStyle = '#38bdf8';
+    csCtx.font = '20px sans-serif';
+    csCtx.fillText('Tüneller, Altınlar ve Hazine Sandıkları!', 256, 100);
+    csCtx.fillStyle = '#f97316';
+    csCtx.font = '18px sans-serif';
+    csCtx.fillText('⛏️ İçeri Gir ve Maceraya Atıl!', 256, 145);
+  }
+  const caveSignTex = new THREE.CanvasTexture(caveSignCanvas);
+  const caveSignMesh = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 1.4), new THREE.MeshBasicMaterial({ map: caveSignTex }));
+  caveSignMesh.position.set(0, 5.8, 0.5);
+  caveArchGroup.add(caveSignMesh);
+
+  // Blazing Torches at Cave Entrance
+  [-2.2, 2.2].forEach(tx => {
+    const torchH = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 1.5, 8), woodMat);
+    torchH.position.set(tx, 2.5, 0.9);
+    torchH.rotation.x = 0.3;
+    caveArchGroup.add(torchH);
+    const torchF = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 10), new THREE.MeshBasicMaterial({ color: 0xf97316 }));
+    torchF.position.set(tx, 3.3, 1.1);
+    caveArchGroup.add(torchF);
+  });
+
+  villageGroup.add(caveArchGroup);
+
+  // Tunnel interior group extending inside mountain
+  const tunnelGroup = new THREE.Group();
+  tunnelGroup.position.set(12.0, 7.6, -78.0);
+
+  const tunnelFloor = new THREE.Mesh(new THREE.BoxGeometry(8, 0.4, 35), rockMat);
+  tunnelFloor.position.set(0, 0, -17);
+  tunnelGroup.add(tunnelFloor);
+
+  const tunnelRoof = new THREE.Mesh(new THREE.BoxGeometry(8, 4.5, 35), rockMat);
+  tunnelRoof.position.set(0, 2.4, -17);
+  tunnelGroup.add(tunnelRoof);
+
+  const tunnelTorchMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
+  [-3.8, 3.8].forEach(tx => {
+    for (let tz = -2; tz > -32; tz -= 8) {
+      const tHolder = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.8, 6), woodMat);
+      tHolder.position.set(tx, 1.5, tz);
+      tunnelGroup.add(tHolder);
+      const tFlame = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), tunnelTorchMat);
+      tFlame.position.set(tx > 0 ? tx - 0.2 : tx + 0.2, 1.8, tz);
+      tunnelGroup.add(tFlame);
+    }
+  });
+
+  villageGroup.add(tunnelGroup);
+
+  window.__secretCaveCollectibles = [
+    { id: 'cave_coin_1', pos: new THREE.Vector3(12, 8.4, -84), collected: false, type: 'coin', val: 25 },
+    { id: 'cave_coin_2', pos: new THREE.Vector3(10, 8.4, -92), collected: false, type: 'coin', val: 25 },
+    { id: 'cave_food_1', pos: new THREE.Vector3(14, 8.4, -96), collected: false, type: 'food', val: 50 },
+    { id: 'cave_coin_3', pos: new THREE.Vector3(12, 8.8, -102), collected: false, type: 'coin', val: 35 },
+    { id: 'cave_food_2', pos: new THREE.Vector3(9, 8.8, -106), collected: false, type: 'food', val: 50 },
+  ];
+
+  window.__secretCaveChests = [
+    { id: 'cave_chest_1', pos: new THREE.Vector3(8, 8.4, -98), opened: false, reward: { coins: 150, xp: 200, gems: 3 } },
+    { id: 'cave_chest_2', pos: new THREE.Vector3(16, 9.8, -112), opened: false, reward: { coins: 250, xp: 350, gems: 5 } }
+  ];
+
+  const caveNpcGroup = new THREE.Group();
+  caveNpcGroup.position.set(12.0, 1.2, -70.5);
+  const npcBody = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 1.4, 10), new THREE.MeshStandardMaterial({ color: 0x3b82f6 }));
+  npcBody.position.y = 0.7;
+  caveNpcGroup.add(npcBody);
+  const npcHeadMesh = new THREE.Mesh(new THREE.SphereGeometry(0.42, 12, 12), new THREE.MeshStandardMaterial({ color: 0xfde047 }));
+  npcHeadMesh.position.y = 1.55;
+  caveNpcGroup.add(npcHeadMesh);
+  villageGroup.add(caveNpcGroup);
+
+  if (!window.__superBearGame.currentLevel.npcs) {
+    window.__superBearGame.currentLevel.npcs = [];
+  }
+  window.__superBearGame.currentLevel.npcs.push({
+    id: 'npc_cave_guide',
+    name: 'Kıdemli Mağara Kılavuzu & Bilge Kaşif (Köstebek Kılavuz ⛏️🐹)',
+    role: 'Dağ Tünelleri & Mağara Macerası Rehberi',
+    pos: new THREE.Vector3(12.0, 1.2, -70.5),
+    mesh: caveNpcGroup,
+    avatarIcon: '⛏️',
+    dialogue: [
+      "⚠️ TEHLİKELİ VE ZORLU DAĞ MAĞARASI MACERASINA HOŞ GELDİN SÜPER AYI!",
+      "İçerideki derin dağ tünellerinde lav tuzakları, karanlık dehlizler ve zorlu parkurlar var.",
+      "Ancak bu gizli yerlerde efsanevi Hazine Sandıkları, parlayan altınlar ve lezzetli bal yiyecekleri saklı!",
+      "Hepsini toplayarak rekor puanlar, altınlar ve özel ödüller kazanabilirsin. Dikkatli ol ve maceraya atıl!"
+    ]
+  });
 }
 
 // Interactive proximity handler for Moris's Diary Notes in Kedi Köyü
@@ -2375,6 +2502,47 @@ function updateMorisSecretDenInteraction(game) {
     }
   } else {
     isMorisDiaryOpen = false;
+  }
+
+  // Check secret cave collectibles proximity
+  if (window.__secretCaveCollectibles) {
+    window.__secretCaveCollectibles.forEach(item => {
+      if (!item.collected && game.playerPos.distanceTo(item.pos) < 2.2) {
+        item.collected = true;
+        game.stats.coins = (game.stats.coins || 0) + item.val;
+        game.stats.xp = (game.stats.xp || 0) + (item.val * 2);
+        if (game.callbacks && game.callbacks.onShowNotice) {
+          game.callbacks.onShowNotice(item.type === 'food' ? `🍯 Lezzetli Bal Yiyeceği Toplandı! (+${item.val} Altın, +${item.val*2} XP)` : `💰 Mağara Altını Toplandı! (+${item.val} Altın)`, "success");
+        }
+        if (game.callbacks && game.callbacks.onStatsUpdate) {
+          game.callbacks.onStatsUpdate(game.stats);
+        }
+        if (window.__superBearSaveManager) {
+          window.__superBearSaveManager.saveGame({ goldBalance: game.stats.coins }, { immediate: false });
+        }
+      }
+    });
+  }
+
+  // Check secret cave chests proximity
+  if (window.__secretCaveChests) {
+    window.__secretCaveChests.forEach(chest => {
+      if (!chest.opened && game.playerPos.distanceTo(chest.pos) < 2.5) {
+        chest.opened = true;
+        game.stats.coins = (game.stats.coins || 0) + chest.reward.coins;
+        game.stats.xp = (game.stats.xp || 0) + chest.reward.xp;
+        game.stats.honeyGems = (game.stats.honeyGems || 0) + chest.reward.gems;
+        if (game.callbacks && game.callbacks.onShowNotice) {
+          game.callbacks.onShowNotice(`🎁 GİZLİ MAĞARA HAZİNE SANDIĞI AÇILDI! (+${chest.reward.coins} Altın, +${chest.reward.xp} XP, +${chest.reward.gems} Mücevher)`, "success");
+        }
+        if (game.callbacks && game.callbacks.onStatsUpdate) {
+          game.callbacks.onStatsUpdate(game.stats);
+        }
+        if (window.__superBearSaveManager) {
+          window.__superBearSaveManager.saveGame({ goldBalance: game.stats.coins, honeyGems: game.stats.honeyGems }, { immediate: true, showToast: true, message: `🎁 Mağara Sandığı Açıldı! (+${chest.reward.coins} Altın)` });
+        }
+      }
+    });
   }
 }
 
