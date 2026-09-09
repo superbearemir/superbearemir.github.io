@@ -318,6 +318,7 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
             <button
               onClick={() => {
                 onClose();
+                window.dispatchEvent(new CustomEvent('superbear:close-map-selector'));
                 window.dispatchEvent(new CustomEvent('superbear:open-trailer'));
               }}
               className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-white font-black text-xs border border-amber-300 shadow-md flex items-center gap-2 shrink-0 cursor-pointer"

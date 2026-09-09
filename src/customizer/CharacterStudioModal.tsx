@@ -559,7 +559,7 @@ export const CharacterStudioModal: React.FC<CharacterStudioModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-1 sm:p-4 bg-slate-950/90 backdrop-blur-md select-none animate-fade-in text-slate-100 overflow-hidden font-sans">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center p-1 sm:p-4 bg-slate-950/90 backdrop-blur-md select-none animate-fade-in text-slate-100 overflow-hidden font-sans">
       <div className="relative w-full max-w-6xl h-[96vh] bg-slate-900 border-2 border-amber-500/50 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
         
         {/* --- Top Navigation Header --- */}

@@ -11,7 +11,6 @@ import { SpaceBossDialogueOverlay } from '../components/SpaceBossDialogueOverlay
 import { MapSelectorModal } from '../components/MapSelectorModal';
 import { UndergroundTrailerModal } from '../components/UndergroundTrailerModal';
 import { ArcadeGamesModal } from '../components/ArcadeGamesModal';
-import { DeviceSelectionModal, ControlMode } from '../components/DeviceSelectionModal';
 import { TouchDragController } from '../components/TouchDragController';
 import { LandscapeOrientationHandler } from '../components/LandscapeOrientationHandler';
 import { SaveManagerModal } from '../components/SaveManagerModal';
@@ -53,12 +52,8 @@ export const CustomizerAppOverlay: React.FC = () => {
     return { coins: 150, currentHp: 100, maxHp: 100, honeyGems: 2 };
   });
   
-  // Device Selection Welcome Modal (white background selection on entry)
-  const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(true);
-  const [controlMode, setControlMode] = useState<ControlMode>(() => {
-    const saved = localStorage.getItem('super_bear_control_mode');
-    return (saved === 'mouse' || saved === 'touch') ? saved : 'touch';
-  });
+  // Locked to Mobile and Tablet touch mode
+  const controlMode = 'touch';
 
   const [isNearCatMerchant, setIsNearCatMerchant] = useState(false);
   const [isNearArcade, setIsNearArcade] = useState(false);
@@ -82,7 +77,6 @@ export const CustomizerAppOverlay: React.FC = () => {
     isMapModalOpen ||
     isTrailerOpen ||
     isArcadeGamesOpen ||
-    isDeviceModalOpen ||
     isSaveModalOpen ||
     isLootBoxModalOpen;
 
@@ -95,11 +89,9 @@ export const CustomizerAppOverlay: React.FC = () => {
     }
   }, [isAnyModalOpen]);
 
-  const handleSelectDeviceMode = (mode: ControlMode) => {
-    setControlMode(mode);
-    localStorage.setItem('super_bear_control_mode', mode);
-    setIsDeviceModalOpen(false);
-  };
+  useEffect(() => {
+    localStorage.setItem('super_bear_control_mode', 'touch');
+  }, []);
 
   useEffect(() => {
     // Expose open helper globally
@@ -107,6 +99,7 @@ export const CustomizerAppOverlay: React.FC = () => {
       setIsOpen(true);
     };
     (window as unknown as { __openTrailerModal?: () => void }).__openTrailerModal = () => {
+      setIsMapModalOpen(false);
       setIsTrailerOpen(true);
     };
     (window as any).__openArcadeGames = () => {
@@ -132,8 +125,14 @@ export const CustomizerAppOverlay: React.FC = () => {
     const handleOpenMapSelector = () => setIsMapModalOpen(true);
     window.addEventListener('superbear:open-map-selector', handleOpenMapSelector);
 
-    const handleOpenTrailer = () => setIsTrailerOpen(true);
+    const handleOpenTrailer = () => {
+      setIsMapModalOpen(false);
+      setIsTrailerOpen(true);
+    };
     window.addEventListener('superbear:open-trailer', handleOpenTrailer);
+
+    const handleCloseMapSelector = () => setIsMapModalOpen(false);
+    window.addEventListener('superbear:close-map-selector', handleCloseMapSelector);
 
     const handleOpenArcade = () => setIsArcadeGamesOpen(true);
     window.addEventListener('superbear:open-arcade-games', handleOpenArcade);
@@ -316,20 +315,21 @@ export const CustomizerAppOverlay: React.FC = () => {
 
   return (
     <>
-      {/* Space HUD Bar */}
-      <SpaceActionHUD
-        onOpenDrawingModal={() => setIsDrawingModalOpen(true)}
-        onOpenCatShop={() => setIsCatShopOpen(true)}
-        onOpenMapModal={() => setIsMapModalOpen(true)}
-        onOpenArcade={() => setIsArcadeGamesOpen(true)}
-        onOpenSaveModal={() => setIsSaveModalOpen(true)}
-        aliensRescued={aliensRescued}
-        controlMode={controlMode}
-        onOpenDeviceSelector={() => setIsDeviceModalOpen(true)}
-      />
+      {/* Space HUD Bar - Automatically hidden when 3D Character Studio or modals are active */}
+      {!isOpen && (
+        <SpaceActionHUD
+          onOpenDrawingModal={() => setIsDrawingModalOpen(true)}
+          onOpenCatShop={() => setIsCatShopOpen(true)}
+          onOpenMapModal={() => setIsMapModalOpen(true)}
+          onOpenArcade={() => setIsArcadeGamesOpen(true)}
+          onOpenSaveModal={() => setIsSaveModalOpen(true)}
+          aliensRescued={aliensRescued}
+          controlMode="touch"
+        />
+      )}
 
       {/* Cat Merchant Proximity Interactive Floating Banner */}
-      {isNearCatMerchant && !isCatShopOpen && (
+      {!isOpen && isNearCatMerchant && !isCatShopOpen && (
         <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[85] pointer-events-auto animate-in slide-in-from-bottom-4 duration-200">
           <button
             onClick={() => setIsCatShopOpen(true)}
@@ -353,7 +353,7 @@ export const CustomizerAppOverlay: React.FC = () => {
       )}
 
       {/* Retro Arcade Proximity Floating Banner - Positioned top-center so it never blocks mobile controls */}
-      {isNearArcade && !isArcadeGamesOpen && (
+      {!isOpen && isNearArcade && !isArcadeGamesOpen && (
         <div className="fixed top-20 sm:top-24 left-1/2 -translate-x-1/2 z-[90] pointer-events-auto animate-in slide-in-from-top-4 duration-200">
           <button
             onClick={() => setIsArcadeGamesOpen(true)}
@@ -424,9 +424,9 @@ export const CustomizerAppOverlay: React.FC = () => {
       {/* Space 7 Mor Ayı Giant Dialogue & Badem Rescue Overlay */}
       <SpaceBossDialogueOverlay />
 
-      {/* 22-Level Map Selector Modal (15 Earth + Red Line + 7 Space) */}
+      {/* 22-Level Map Selector Modal (Hidden immediately when Trailer opens) */}
       <MapSelectorModal
-        isOpen={isMapModalOpen}
+        isOpen={isMapModalOpen && !isTrailerOpen}
         onClose={() => setIsMapModalOpen(false)}
       />
 
@@ -448,17 +448,12 @@ export const CustomizerAppOverlay: React.FC = () => {
         }}
       />
 
-      {/* Global Touch / Mouse Drag Controls for All Modes */}
-      <TouchDragController
-        mode={controlMode}
-        onSwitchMode={() => setIsDeviceModalOpen(true)}
-      />
-
-      {/* Initial Clean White Entry Screen for Device Selection */}
-      <DeviceSelectionModal
-        isOpen={isDeviceModalOpen}
-        onSelectMode={handleSelectDeviceMode}
-      />
+      {/* Global Mobile / Tablet Touch Controls (Hidden during Studio) */}
+      {!isOpen && (
+        <TouchDragController
+          mode="touch"
+        />
+      )}
 
       {/* Standalone Loot Box Opening Modal with 4 Bundles & Shaking Animations */}
       <LootBoxModal
