@@ -1422,65 +1422,96 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
         </div>
 
         {/* Content Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto space-y-5 flex-1">
+        {/* Content Body */}
+        <div className="p-3 sm:p-5 overflow-y-auto space-y-4 flex-1 overscroll-contain">
           
-          {/* Game Selection Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 gap-2.5">
-            {displayGames.map(g => {
-              const isSel = selectedGame === g.id;
-              const hs = highScores[g.id] || 0;
-              const isFeatured = g.id === featuredGame.id;
+          {/* Game Selection Grid (Collapsed when actively playing to maximize mobile play area) */}
+          {!isPlaying ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 gap-2 sm:gap-2.5">
+              {displayGames.map(g => {
+                const isSel = selectedGame === g.id;
+                const hs = highScores[g.id] || 0;
+                const isFeatured = g.id === featuredGame.id;
 
-              return (
-                <button
-                  key={g.id}
-                  disabled={isPlaying}
-                  onClick={() => {
-                    setSelectedGame(g.id);
-                    setGameOver(false);
-                    setScore(0);
-                  }}
-                  className={`p-3 rounded-2xl border-2 text-left transition transform duration-150 flex flex-col justify-between relative overflow-hidden ${
-                    isSel
-                      ? 'border-purple-400 bg-purple-950/60 shadow-lg shadow-purple-500/20 scale-[1.02]'
-                      : 'border-slate-800 bg-slate-900/60 hover:bg-slate-800/50 opacity-85 hover:opacity-100 cursor-pointer'
-                  } ${isPlaying ? 'cursor-not-allowed opacity-50' : ''}`}
-                >
-                  {isFeatured && (
-                    <span className="absolute top-0 right-0 px-2 py-0.5 bg-gradient-to-l from-amber-400 to-yellow-500 text-slate-950 font-black text-[9px] rounded-bl-lg shadow">
-                      ⭐ GÜNÜN OYUNU
-                    </span>
-                  )}
-
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-2xl">{g.icon}</span>
-                    <span className="text-[9px] font-bold text-purple-300 px-1.5 py-0.5 rounded bg-purple-950/80 border border-purple-800/50">
-                      {g.accentBadge}
-                    </span>
-                  </div>
-
-                  <h4 className="font-black text-sm text-white leading-tight">{g.title}</h4>
-                  
-                  <div className="mt-2.5 flex items-center justify-between text-[11px] font-bold">
-                    <div className="text-amber-300 flex items-center gap-1">
-                      <Trophy className="w-3 h-3 text-amber-400" />
-                      <span>{hs}</span>
-                    </div>
+                return (
+                  <button
+                    key={g.id}
+                    disabled={isPlaying}
+                    onClick={() => {
+                      setSelectedGame(g.id);
+                      setGameOver(false);
+                      setScore(0);
+                    }}
+                    className={`p-2.5 sm:p-3 rounded-2xl border-2 text-left transition transform duration-150 flex flex-col justify-between relative overflow-hidden ${
+                      isSel
+                        ? 'border-purple-400 bg-purple-950/60 shadow-lg shadow-purple-500/20 scale-[1.02]'
+                        : 'border-slate-800 bg-slate-900/60 hover:bg-slate-800/50 opacity-85 hover:opacity-100 cursor-pointer'
+                    } ${isPlaying ? 'cursor-not-allowed opacity-50' : ''}`}
+                  >
                     {isFeatured && (
-                      <span className="text-[10px] text-amber-400 font-black">2X 🍯</span>
+                      <span className="absolute top-0 right-0 px-2 py-0.5 bg-gradient-to-l from-amber-400 to-yellow-500 text-slate-950 font-black text-[9px] rounded-bl-lg shadow">
+                        ⭐ GÜNÜN OYUNU
+                      </span>
+                    )}
+
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-2xl">{g.icon}</span>
+                      <span className="text-[9px] font-bold text-purple-300 px-1.5 py-0.5 rounded bg-purple-950/80 border border-purple-800/50">
+                        {g.accentBadge}
+                      </span>
+                    </div>
+
+                    <h4 className="font-black text-sm text-white leading-tight">{g.title}</h4>
+                    
+                    <div className="mt-2 flex items-center justify-between text-[11px] font-bold">
+                      <div className="text-amber-300 flex items-center gap-1">
+                        <Trophy className="w-3 h-3 text-amber-400" />
+                        <span>{hs}</span>
+                      </div>
+                      {isFeatured && (
+                        <span className="text-[10px] text-amber-400 font-black">2X 🍯</span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex items-center justify-between p-2.5 sm:p-3 bg-purple-950/70 border border-purple-500/40 rounded-2xl shrink-0 animate-in fade-in duration-150">
+              <div className="flex items-center gap-2.5">
+                <span className="text-2xl sm:text-3xl">{currentMeta.icon}</span>
+                <div>
+                  <div className="font-black text-sm sm:text-base text-white flex items-center gap-2">
+                    <span>{currentMeta.title}</span>
+                    {isSelectedGameDaily && (
+                      <span className="px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 font-black text-[10px]">
+                        2X
+                      </span>
                     )}
                   </div>
-                </button>
-              );
-            })}
-          </div>
+                  <div className="text-xs text-amber-300 font-bold">
+                    Canlı Skor: {score} Puan
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setIsPlaying(false);
+                  setGameOver(false);
+                }}
+                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-purple-200 border border-purple-400/40 text-xs font-bold transition active:scale-95 cursor-pointer"
+              >
+                ◀ Oyun Değiştir
+              </button>
+            </div>
+          )}
 
           {/* Game Screen Canvas or Intro Box */}
-          <div className="relative rounded-2xl overflow-hidden border-2 border-purple-500/40 bg-slate-950 flex items-center justify-center min-h-[380px]">
+          <div className="relative rounded-2xl overflow-hidden border-2 border-purple-500/40 bg-slate-950 flex items-center justify-center min-h-[260px] sm:min-h-[380px]">
             {isPlaying ? (
               <canvas
                 ref={canvasRef}
-                className="w-full h-[380px] max-w-[680px] cursor-pointer"
+                className="w-full h-[260px] sm:h-[380px] max-w-[680px] cursor-pointer touch-none"
               />
             ) : (
               <div className="p-8 text-center max-w-lg space-y-4 animate-in zoom-in-95 duration-200">

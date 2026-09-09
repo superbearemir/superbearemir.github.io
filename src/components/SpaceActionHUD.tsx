@@ -22,6 +22,7 @@ interface SpaceActionHUDProps {
   onOpenDrawingModal: () => void;
   onOpenCatShop?: () => void;
   onOpenMapModal?: () => void;
+  onOpenArcade?: () => void;
   aliensRescued?: number;
   controlMode?: ControlMode;
   onOpenDeviceSelector?: () => void;
@@ -31,6 +32,7 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
   onOpenDrawingModal,
   onOpenCatShop,
   onOpenMapModal,
+  onOpenArcade,
   aliensRescued = 0,
   controlMode = 'touch',
   onOpenDeviceSelector,
@@ -133,6 +135,11 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
   }, [activeSprayColor, activeSprayShape, sprayText]);
 
   const handleJump = () => {
+    const game = (window as any).__superBearGame;
+    if (game && typeof game.handleJump === 'function') {
+      game.handleJump();
+      return;
+    }
     const enhancer = (window as any).__superBearSpaceEnhancer;
     if (enhancer && enhancer.triggerJump) {
       enhancer.triggerJump();
@@ -140,7 +147,7 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
       window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', key: ' ' }));
       setTimeout(() => {
         window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', key: ' ' }));
-      }, 200);
+      }, 60);
     }
   };
 
@@ -490,6 +497,19 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
         >
           <span className="text-xs">🗺️</span>
           <span>Harita</span>
+        </button>
+
+        {/* Quick Retro Arcade Games Button (Prominently visible on Mobile and PC) */}
+        <button
+          onClick={() => {
+            if (onOpenArcade) onOpenArcade();
+            else window.dispatchEvent(new CustomEvent('superbear:open-arcade-games'));
+          }}
+          title="Retro Arcade Mini Oyun Salonunu Aç (10 Nostaljik Atari Oyunu)"
+          className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 text-white border border-purple-300 shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-purple-500 hover:to-pink-500"
+        >
+          <span className="text-xs">🕹️</span>
+          <span>Arcade</span>
         </button>
 
         {/* Anti-Lag / 60 FPS Toggle Button */}
@@ -1064,17 +1084,17 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
         </div>
       )}
 
-      {/* Upward Expandable Superpower Action Pad & Vertical Round Button Cluster (Anchored bottom right) */}
-      <div className="fixed bottom-5 right-4 sm:right-6 z-[80] flex flex-col items-end gap-3 pointer-events-none select-none">
-        
-        {/* Expanded Superpower Panel (Rack) */}
-        {isPowersRackOpen && (
-          <div className="pointer-events-auto bg-slate-950/95 border-2 border-purple-400/80 rounded-3xl p-3 shadow-2xl backdrop-blur-xl w-72 sm:w-80 max-h-[60vh] overflow-y-auto overscroll-contain animate-in slide-in-from-bottom-3 duration-200 text-slate-100 flex flex-col gap-2 mb-1">
-            <div className="flex items-center justify-between pb-1.5 border-b border-purple-500/30">
-              <div className="flex items-center gap-1.5 font-black text-xs text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-300 to-cyan-300">
-                <Zap className="w-4 h-4 text-amber-300 fill-amber-300 animate-pulse" />
-                <span>GÜÇ SEÇİMİ (Tıkla & Buton Oluştur)</span>
-              </div>
+      {/* Horizontal Expandable Superpower Action Dock (Opens horizontally to the left of the button cluster) */}
+      {isPowersRackOpen && (
+        <div className="fixed bottom-5 right-20 sm:right-24 z-[85] pointer-events-auto max-w-[calc(100vw-95px)] sm:max-w-2xl bg-slate-950/95 border-2 border-purple-400/80 rounded-2xl p-2 sm:p-2.5 shadow-2xl backdrop-blur-xl animate-in slide-in-from-right-4 duration-200 text-slate-100 flex flex-col gap-1.5 select-none">
+          {/* Header */}
+          <div className="flex items-center justify-between px-1 pb-1 border-b border-purple-500/30">
+            <div className="flex items-center gap-1.5 font-black text-xs text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-300 to-cyan-300">
+              <Zap className="w-3.5 h-3.5 text-amber-300 fill-amber-300 animate-pulse" />
+              <span>⚡ KOZMİK GÜÇLER (Yatay Seçim)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-purple-300 font-bold hidden sm:inline">👈 Sağa/Sola Kaydır</span>
               <button
                 onClick={() => setIsPowersRackOpen(false)}
                 className="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center text-xs transition cursor-pointer"
@@ -1083,33 +1103,38 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
                 ✕
               </button>
             </div>
-
-            <div className="grid grid-cols-2 gap-1.5">
-              {Object.keys(powerDefinitions).map((key) => {
-                const power = powerDefinitions[key];
-                const isSelected = selectedPowerId === power.id;
-                return (
-                  <button
-                    key={power.id}
-                    onClick={() => selectAndExecutePower(power.id)}
-                    className={`p-2 rounded-xl text-left border flex flex-col justify-between transition active:scale-95 cursor-pointer ${
-                      isSelected
-                        ? 'bg-gradient-to-br from-amber-500 to-yellow-600 text-slate-950 border-yellow-200 ring-2 ring-yellow-300 shadow-lg font-black'
-                        : 'bg-slate-900/90 hover:bg-slate-800 border-slate-700 text-slate-200'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-base">{power.emoji}</span>
-                      <span className="text-[9px] font-mono opacity-75">{power.keyHint}</span>
-                    </div>
-                    <div className="mt-1 font-bold text-[11px] leading-tight">{power.name}</div>
-                    <div className="text-[9px] opacity-75">{power.description}</div>
-                  </button>
-                );
-              })}
-            </div>
           </div>
-        )}
+
+          {/* Horizontal Scrollable Power Items Row */}
+          <div className="flex flex-row items-center gap-2 overflow-x-auto py-1 px-0.5 scrollbar-thin scroll-smooth">
+            {Object.keys(powerDefinitions).map((key) => {
+              const power = powerDefinitions[key];
+              const isSelected = selectedPowerId === power.id;
+              return (
+                <button
+                  key={power.id}
+                  onClick={() => selectAndExecutePower(power.id)}
+                  className={`flex-shrink-0 min-w-[105px] sm:min-w-[120px] p-2 rounded-xl text-left border flex flex-col justify-between transition active:scale-95 cursor-pointer select-none ${
+                    isSelected
+                      ? 'bg-gradient-to-br from-amber-500 to-yellow-600 text-slate-950 border-yellow-200 ring-2 ring-yellow-300 shadow-lg font-black'
+                      : 'bg-slate-900/95 hover:bg-slate-800 border-slate-700 text-slate-200'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-lg leading-none">{power.emoji}</span>
+                    <span className="text-[9px] font-mono px-1 py-0.5 rounded bg-slate-950/60 opacity-80">{power.keyHint}</span>
+                  </div>
+                  <div className="mt-1 font-bold text-xs truncate leading-tight">{power.name}</div>
+                  <div className="text-[9px] opacity-75 truncate">{power.shortLabel}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Vertical Round Button Cluster (Anchored bottom right) */}
+      <div className="fixed bottom-5 right-4 sm:right-6 z-[80] flex flex-col items-end gap-3 pointer-events-none select-none">
 
         {/* Vertical Stack of Circular Action Buttons (Ordered bottom-up) */}
         <div className="flex flex-col-reverse items-center gap-3">

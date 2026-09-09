@@ -253,6 +253,7 @@ export const CustomizerAppOverlay: React.FC = () => {
         onOpenDrawingModal={() => setIsDrawingModalOpen(true)}
         onOpenCatShop={() => setIsCatShopOpen(true)}
         onOpenMapModal={() => setIsMapModalOpen(true)}
+        onOpenArcade={() => setIsArcadeGamesOpen(true)}
         aliensRescued={aliensRescued}
         controlMode={controlMode}
         onOpenDeviceSelector={() => setIsDeviceModalOpen(true)}
@@ -282,9 +283,9 @@ export const CustomizerAppOverlay: React.FC = () => {
         </div>
       )}
 
-      {/* Retro Arcade Proximity Floating Banner - ONLY shown when standing next to Arcade Machine */}
+      {/* Retro Arcade Proximity Floating Banner - Positioned top-center so it never blocks mobile controls */}
       {isNearArcade && !isArcadeGamesOpen && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[85] pointer-events-auto animate-in slide-in-from-bottom-4 duration-200">
+        <div className="fixed top-20 sm:top-24 left-1/2 -translate-x-1/2 z-[90] pointer-events-auto animate-in slide-in-from-top-4 duration-200">
           <button
             onClick={() => setIsArcadeGamesOpen(true)}
             className="px-5 py-3 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-sm border-2 border-purple-300 shadow-2xl backdrop-blur-md flex items-center gap-3 transition transform active:scale-95 hover:scale-105 cursor-pointer"

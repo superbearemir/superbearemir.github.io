@@ -12985,16 +12985,22 @@ function enhanceGame() {
 function triggerJump() {
   const game = window.__superBearGame;
   if (game) {
-    if (game.inputs) game.inputs.jump = true;
-    setTimeout(() => {
-      if (game && game.inputs) game.inputs.jump = false;
-    }, 250);
+    if (typeof game.handleJump === 'function') {
+      game.handleJump();
+      return;
+    }
+    if (game.inputs) {
+      game.inputs.jump = true;
+      setTimeout(() => {
+        if (game && game.inputs) game.inputs.jump = false;
+      }, 60);
+    }
   }
   try {
     window.dispatchEvent(new KeyboardEvent('keydown', { code: 'Space', key: ' ' }));
     setTimeout(() => {
       window.dispatchEvent(new KeyboardEvent('keyup', { code: 'Space', key: ' ' }));
-    }, 200);
+    }, 60);
   } catch(err) {}
 }
 
