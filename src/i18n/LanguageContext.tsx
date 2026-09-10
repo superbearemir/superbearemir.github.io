@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { Language, TRANSLATIONS, TranslationKey } from './translations';
+import { Language, TRANSLATIONS, TranslationKey, SUPPORTED_LANGUAGES } from './translations';
 import { CountryInfo, COUNTRIES, getCountryByCode } from './countriesData';
 
 interface LanguageContextValue {
@@ -12,14 +12,15 @@ interface LanguageContextValue {
 
 const LanguageContext = createContext<LanguageContextValue | undefined>(undefined);
 
-const STORAGE_LANG_KEY = 'super_bear_selected_language_v1';
-const STORAGE_COUNTRY_KEY = 'super_bear_selected_country_v1';
+const STORAGE_LANG_KEY = 'super_bear_selected_language_v2';
+const STORAGE_COUNTRY_KEY = 'super_bear_selected_country_v2';
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
-    const saved = localStorage.getItem(STORAGE_LANG_KEY);
-    if (saved === 'tr' || saved === 'en') return saved;
-    // Default to Turkish as per project baseline, or browser detection
+    const saved = localStorage.getItem(STORAGE_LANG_KEY) as Language;
+    if (saved && (saved === 'tr' || saved === 'en' || saved === 'es' || saved === 'de' || saved === 'it')) {
+      return saved;
+    }
     return 'tr';
   });
 
@@ -40,9 +41,16 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const targetCountry = getCountryByCode(code);
     setCountryCodeState(targetCountry.code);
     localStorage.setItem(STORAGE_COUNTRY_KEY, targetCountry.code);
-    // If the country has a default language recommendation and user didn't manually lock
-    if (targetCountry.code === 'TR' || targetCountry.code === 'AZ' || targetCountry.code === 'CY') {
+
+    // Smart language binding based on country
+    if (['TR', 'AZ', 'CY'].includes(targetCountry.code)) {
       setLanguage('tr');
+    } else if (['ES', 'MX', 'AR', 'CO', 'CL', 'PE', 'VE', 'EC', 'GT', 'CU', 'BO', 'DO', 'HN', 'PY', 'SV', 'NI', 'CR', 'PA', 'UY', 'GQ'].includes(targetCountry.code)) {
+      setLanguage('es');
+    } else if (['DE', 'AT', 'CH', 'LI'].includes(targetCountry.code)) {
+      setLanguage('de');
+    } else if (['IT', 'SM', 'VA'].includes(targetCountry.code)) {
+      setLanguage('it');
     } else {
       setLanguage('en');
     }

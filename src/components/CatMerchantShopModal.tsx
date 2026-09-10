@@ -213,9 +213,9 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
     const hatContainer = new THREE.Group();
     hatContainer.name = 'preview_hat_container';
     if (bearModelRef.current.headGroup) {
-      hatContainer.position.set(0, 0.44, 0.02);
+      hatContainer.position.set(0, 0, 0);
     } else {
-      hatContainer.position.set(0, 1.55, 0.05);
+      hatContainer.position.set(0, 1.25, 0);
     }
     headGroup.add(hatContainer);
 

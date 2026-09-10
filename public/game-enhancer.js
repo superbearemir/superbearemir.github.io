@@ -701,6 +701,191 @@ function notifySpaceState() {
   window.dispatchEvent(new CustomEvent('superbear:space-state-update', { detail: { ...spaceState } }));
 }
 
+// =========================================================================
+// --- IN-GAME SIGNS & CANVAS LOCALIZATION SYSTEM (TR, EN, ES, DE, IT) ---
+// =========================================================================
+const IN_GAME_SIGN_TRANSLATIONS = {
+  tr: {
+    gate: {
+      title: '🏔️ KUZEY DAĞLARI VE GİZLİ MAĞARA GEÇİDİ ➔',
+      subtitle: "Moris'in Gizli Dağ İni ve Hazine Tünelleri İleride!"
+    },
+    capi: {
+      title: '🐱 CAPI BAKKALI 🛍️',
+      subtitle: '[E] Kostüm & Özel Eşyalar Dükkanı'
+    },
+    arcade: {
+      title: '🕹️ SUPER BEAR ARCADE 🎮',
+      sub1: '[E Tuşu] 10 Harika Atari Oyunu Oyna!',
+      sub2: 'Günün Oyunları • Çifte Ödüller • Liderlik'
+    },
+    mountainRoad: {
+      line1: '⛏️ GİZLİ DAĞ MAĞARASI VE HAZİNELER ➔',
+      line2: 'Düz İlerle! Büyük Mağara Kapısı Karşıda!',
+      line3: '🎁 Yiyecekler, Altınlar, Zıplama Parkuru & Sandıklar!'
+    },
+    cavePortal: {
+      line1: '⛏️ KUZEY DAĞLARI GİZLİ MAĞARASI ⬇️',
+      line2: "Moris'in İni • Zıplama Uçurumu • Hazine Odası",
+      line3: 'İçeri Gir, Engelleri Aş ve Hazineleri Topla!'
+    },
+    training: {
+      line1: '🥋 ACEMİ AYI ALIŞTIRMA PARKURU 🎯',
+      line2: '🍞 Tonton Fırıncı Yanı Antrenman Sahası'
+    }
+  },
+  en: {
+    gate: {
+      title: '🏔️ NORTH MOUNTAINS & SECRET CAVE GATEWAY ➔',
+      subtitle: "Moris's Secret Mountain Den & Treasure Tunnels Ahead!"
+    },
+    capi: {
+      title: '🐱 CAPI GROCERY 🛍️',
+      subtitle: '[E] Costumes & Special Items Shop'
+    },
+    arcade: {
+      title: '🕹️ SUPER BEAR ARCADE 🎮',
+      sub1: '[E Key] Play 10 Awesome Arcade Games!',
+      sub2: 'Daily Games • Double Rewards • High Scores'
+    },
+    mountainRoad: {
+      line1: '⛏️ SECRET MOUNTAIN CAVE & TREASURES ➔',
+      line2: 'Go Straight! Grand Cave Gate Ahead!',
+      line3: '🎁 Food, Gold, Jump Parkour & Chests!'
+    },
+    cavePortal: {
+      line1: '⛏️ NORTH MOUNTAINS SECRET CAVE ⬇️',
+      line2: "Moris's Den • Abyss Jump • Treasure Vault",
+      line3: 'Enter, Overcome Obstacles & Collect Treasures!'
+    },
+    training: {
+      line1: '🥋 BEAR TRAINING GROUND 🎯',
+      line2: '🍞 Practice Arena Next to Bakery'
+    }
+  },
+  es: {
+    gate: {
+      title: '🏔️ MONTAÑAS DEL NORTE Y PASO A LA CUEVA ➔',
+      subtitle: '¡La Guarida Secreta de Moris y los Túneles del Tesoro!'
+    },
+    capi: {
+      title: '🐱 TIENDA DE CAPI 🛍️',
+      subtitle: '[E] Tienda de Disfraces y Objetos Especiales'
+    },
+    arcade: {
+      title: '🕹️ SUPER BEAR ARCADE 🎮',
+      sub1: '[Tecla E] ¡Juega 10 Grandes Juegos Arcade!',
+      sub2: 'Juegos del Día • Doble Recompensa • Récords'
+    },
+    mountainRoad: {
+      line1: '⛏️ CUEVA SECRETA DE LA MONTAÑA ➔',
+      line2: '¡Sigue recto! ¡Gran Puerta de Cueva adelante!',
+      line3: '🎁 ¡Comida, Oro, Parkour y Cofres!'
+    },
+    cavePortal: {
+      line1: '⛏️ CUEVA SECRETA DEL NORTE ⬇️',
+      line2: 'Guarida de Moris • Salto al Abismo • Cámara del Tesoro',
+      line3: '¡Entra, supera obstáculos y reúne tesoros!'
+    },
+    training: {
+      line1: '🥋 CAMPO DE ENTRENAMIENTO 🎯',
+      line2: '🍞 Campo de Práctica junto a la Panadería'
+    }
+  },
+  de: {
+    gate: {
+      title: '🏔️ NORD-BERGE & GEHEIMES HÖHLENTOR ➔',
+      subtitle: "Moris' Geheime Berghöhle & Schatztunnel voraus!"
+    },
+    capi: {
+      title: '🐱 CAPIS LADEN 🛍️',
+      subtitle: '[E] Kostüme & Spezialartikel-Laden'
+    },
+    arcade: {
+      title: '🕹️ SUPER BEAR ARCADE 🎮',
+      sub1: '[E-Taste] 10 Tolle Arcade-Spiele spielen!',
+      sub2: 'Spiele des Tages • Doppelte Belohnung • Highscores'
+    },
+    mountainRoad: {
+      line1: '⛏️ GEHEIME BERGHÖHLE & SCHÄTZE ➔',
+      line2: 'Geradeaus! Großes Höhlentor voraus!',
+      line3: '🎁 Essen, Gold, Sprung-Parcours & Truhen!'
+    },
+    cavePortal: {
+      line1: '⛏️ GEHEIME NORD-BERGHÖHLE ⬇️',
+      line2: "Moris' Höhle • Abgrund-Sprung • Schatzkammer",
+      line3: 'Eintreten, Hindernisse überwinden & Schätze sammeln!'
+    },
+    training: {
+      line1: '🥋 BÄREN-TRAININGSPLATZ 🎯',
+      line2: '🍞 Trainingsplatz neben der Bäckerei'
+    }
+  },
+  it: {
+    gate: {
+      title: '🏔️ MONTI DEL NORD E PASSAGGIO DELLA GROTTA ➔',
+      subtitle: 'Il Covo Segreto di Moris e i Tunnel del Tesoro!'
+    },
+    capi: {
+      title: '🐱 BOTTEGA DI CAPI 🛍️',
+      subtitle: '[E] Negozio di Costumi & Oggetti Speciali'
+    },
+    arcade: {
+      title: '🕹️ SUPER BEAR ARCADE 🎮',
+      sub1: '[Tasto E] Gioca a 10 fantastici giochi arcade!',
+      sub2: 'Giochi del giorno • Doppie ricompense • Record'
+    },
+    mountainRoad: {
+      line1: '⛏️ GROTTA SEGRETA DELLA MONTAGNA ➔',
+      line2: 'Dritto! La Grande Porta della Grotta è avanti!',
+      line3: '🎁 Cibo, Oro, Percorso di Salti & Forzieri!'
+    },
+    cavePortal: {
+      line1: '⛏️ GROTTA SEGRETA DEI MONTI DEL NORD ⬇️',
+      line2: "Covo di Moris • Salto nel Vuoto • Stanza del Tesoro",
+      line3: 'Entra, supera gli ostacoli e raccogli i tesori!'
+    },
+    training: {
+      line1: '🥋 CAMPO DI ADDESTRAMENTO 🎯',
+      line2: '🍞 Campo di Addestramento vicino al Forno'
+    }
+  }
+};
+
+window.__superBearSignRegistry = window.__superBearSignRegistry || [];
+
+function registerSignboard(canvas, tex, drawFn) {
+  const signItem = { canvas, tex, drawFn };
+  window.__superBearSignRegistry.push(signItem);
+  const currentLang = (typeof window !== 'undefined' && window.__superBearCurrentLang) || 'tr';
+  const langSigns = IN_GAME_SIGN_TRANSLATIONS[currentLang] || IN_GAME_SIGN_TRANSLATIONS.en;
+  drawFn(canvas, tex, langSigns);
+  return signItem;
+}
+
+function redrawAllInGameSigns(lang) {
+  const currentLang = lang || (typeof window !== 'undefined' && window.__superBearCurrentLang) || 'tr';
+  const langSigns = IN_GAME_SIGN_TRANSLATIONS[currentLang] || IN_GAME_SIGN_TRANSLATIONS.en;
+  if (window.__superBearSignRegistry) {
+    window.__superBearSignRegistry.forEach(item => {
+      try {
+        item.drawFn(item.canvas, item.tex, langSigns);
+      } catch (err) {
+        console.warn("Error redrawing sign:", err);
+      }
+    });
+  }
+}
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('superbear:language-changed', (e) => {
+    const lang = e.detail && e.detail.lang;
+    if (lang) {
+      redrawAllInGameSigns(lang);
+    }
+  });
+}
+
 // Helper to create glowing materials
 function createGlowMat(colorHex, emissiveHex = colorHex, opacity = 1) {
   return new window.THREE.MeshStandardMaterial({
@@ -1236,22 +1421,27 @@ function buildSpaceGalaxyWorld(scene) {
   const gateSignCanvas = document.createElement('canvas');
   gateSignCanvas.width = 512;
   gateSignCanvas.height = 120;
-  const gsCtx = gateSignCanvas.getContext('2d');
-  if (gsCtx) {
-    gsCtx.fillStyle = '#451a03';
-    gsCtx.fillRect(0, 0, 512, 120);
-    gsCtx.strokeStyle = '#f59e0b';
-    gsCtx.lineWidth = 6;
-    gsCtx.strokeRect(4, 4, 504, 112);
-    gsCtx.fillStyle = '#ffffff';
-    gsCtx.font = 'bold 24px sans-serif';
-    gsCtx.textAlign = 'center';
-    gsCtx.fillText('🏔️ KUZEY DAĞLARI VE GİZLİ MAĞARA GEÇİDİ ➔', 256, 48);
-    gsCtx.fillStyle = '#fef08a';
-    gsCtx.font = '18px sans-serif';
-    gsCtx.fillText('Moris\'in Gizli Dağ İni ve Hazine Tünelleri İleride!', 256, 92);
-  }
   const gateSignTex = new window.THREE.CanvasTexture(gateSignCanvas);
+
+  registerSignboard(gateSignCanvas, gateSignTex, (canvas, tex, signs) => {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const gData = (signs && signs.gate) || IN_GAME_SIGN_TRANSLATIONS.en.gate;
+    ctx.fillStyle = '#451a03';
+    ctx.fillRect(0, 0, 512, 120);
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(4, 4, 504, 112);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(gData.title, 256, 48);
+    ctx.fillStyle = '#fef08a';
+    ctx.font = '17px sans-serif';
+    ctx.fillText(gData.subtitle, 256, 92);
+    tex.needsUpdate = true;
+  });
+
   const gateSignMesh = new window.THREE.Mesh(new window.THREE.PlaneGeometry(5.6, 1.3), new window.THREE.MeshBasicMaterial({ map: gateSignTex }));
   gateSignMesh.position.set(0, 4.4, 0.4);
   barrierFenceGroup.add(gateSignMesh);
@@ -1539,26 +1729,31 @@ function buildSpaceGalaxyWorld(scene) {
   miniHat.position.set(1.4, 2.35, -1.45);
   bakkal.add(miniHat);
 
-  // Front Signboard on the Table: "🐱 CAPITOOLOS BAKKAL"
+  // Front Signboard on the Table: CAPI BAKKAL
   const signCanvas = document.createElement('canvas');
   signCanvas.width = 512;
   signCanvas.height = 128;
-  const sCtx = signCanvas.getContext('2d');
-  if (sCtx) {
-    sCtx.fillStyle = '#451a03';
-    sCtx.fillRect(0, 0, 512, 128);
-    sCtx.strokeStyle = '#f59e0b';
-    sCtx.lineWidth = 6;
-    sCtx.strokeRect(4, 4, 504, 120);
-    sCtx.fillStyle = '#fef08a';
-    sCtx.font = 'bold 28px sans-serif';
-    sCtx.textAlign = 'center';
-    sCtx.fillText('🐱 CAPI BAKKALI 🛍️', 256, 52);
-    sCtx.fillStyle = '#ffffff';
-    sCtx.font = '20px sans-serif';
-    sCtx.fillText('[E] Kostüm & Özel Eşyalar Dükkanı', 256, 96);
-  }
   const signTex = new window.THREE.CanvasTexture(signCanvas);
+
+  registerSignboard(signCanvas, signTex, (canvas, tex, signs) => {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const cData = (signs && signs.capi) || IN_GAME_SIGN_TRANSLATIONS.en.capi;
+    ctx.fillStyle = '#451a03';
+    ctx.fillRect(0, 0, 512, 128);
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(4, 4, 504, 120);
+    ctx.fillStyle = '#fef08a';
+    ctx.font = 'bold 28px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(cData.title, 256, 52);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '20px sans-serif';
+    ctx.fillText(cData.subtitle, 256, 96);
+    tex.needsUpdate = true;
+  });
+
   const signMesh = new window.THREE.Mesh(
     new window.THREE.PlaneGeometry(3.6, 0.9),
     new window.THREE.MeshBasicMaterial({ map: signTex })
@@ -1637,25 +1832,30 @@ function buildSpaceGalaxyWorld(scene) {
   const arcadeCanvas = document.createElement('canvas');
   arcadeCanvas.width = 512;
   arcadeCanvas.height = 140;
-  const aCtx = arcadeCanvas.getContext('2d');
-  if (aCtx) {
-    aCtx.fillStyle = '#2e1065';
-    aCtx.fillRect(0, 0, 512, 140);
-    aCtx.strokeStyle = '#c084fc';
-    aCtx.lineWidth = 6;
-    aCtx.strokeRect(4, 4, 504, 132);
-    aCtx.fillStyle = '#f43f5e';
-    aCtx.font = 'bold 30px sans-serif';
-    aCtx.textAlign = 'center';
-    aCtx.fillText('🕹️ SUPER BEAR ARCADE 🎮', 256, 50);
-    aCtx.fillStyle = '#fde047';
-    aCtx.font = 'bold 22px sans-serif';
-    aCtx.fillText('[E Tuşu] 4 Yeni Mini Oyun Oyna!', 256, 95);
-    aCtx.fillStyle = '#e9d5ff';
-    aCtx.font = '16px sans-serif';
-    aCtx.fillText('Bal Koşusu • Baloncuk • Asteroit • Kartlar', 256, 126);
-  }
   const arcadeTex = new window.THREE.CanvasTexture(arcadeCanvas);
+
+  registerSignboard(arcadeCanvas, arcadeTex, (canvas, tex, signs) => {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const aData = (signs && signs.arcade) || IN_GAME_SIGN_TRANSLATIONS.en.arcade;
+    ctx.fillStyle = '#2e1065';
+    ctx.fillRect(0, 0, 512, 140);
+    ctx.strokeStyle = '#c084fc';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(4, 4, 504, 132);
+    ctx.fillStyle = '#f43f5e';
+    ctx.font = 'bold 28px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(aData.title, 256, 48);
+    ctx.fillStyle = '#fde047';
+    ctx.font = 'bold 20px sans-serif';
+    ctx.fillText(aData.sub1, 256, 92);
+    ctx.fillStyle = '#e9d5ff';
+    ctx.font = '15px sans-serif';
+    ctx.fillText(aData.sub2, 256, 124);
+    tex.needsUpdate = true;
+  });
+
   const marqueeSign = new window.THREE.Mesh(
     new window.THREE.PlaneGeometry(4.0, 1.2),
     new window.THREE.MeshBasicMaterial({ map: arcadeTex })
@@ -2082,25 +2282,30 @@ function buildMorisSecretDenAndMountains(THREE, villageGroup) {
   const signCanvas = document.createElement('canvas');
   signCanvas.width = 512;
   signCanvas.height = 180;
-  const sCtx = signCanvas.getContext('2d');
-  if (sCtx) {
-    sCtx.fillStyle = '#0f172a';
-    sCtx.fillRect(0, 0, 512, 180);
-    sCtx.strokeStyle = '#f59e0b';
-    sCtx.lineWidth = 8;
-    sCtx.strokeRect(6, 6, 500, 168);
-    sCtx.fillStyle = '#fef08a';
-    sCtx.font = 'bold 28px sans-serif';
-    sCtx.textAlign = 'center';
-    sCtx.fillText('⛏️ GİZLİ DAĞ MAĞARASI VE HAZİNELER ➔', 256, 55);
-    sCtx.fillStyle = '#38bdf8';
-    sCtx.font = '22px sans-serif';
-    sCtx.fillText('Düz İlerle! Büyük Mağara Kapısı Karşıda!', 256, 100);
-    sCtx.fillStyle = '#4ade80';
-    sCtx.font = '20px sans-serif';
-    sCtx.fillText('🎁 Yiyecekler, Altınlar, Zıplama Parkuru & Sandıklar!', 256, 145);
-  }
   const signTex = new THREE.CanvasTexture(signCanvas);
+
+  registerSignboard(signCanvas, signTex, (canvas, tex, signs) => {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const mData = (signs && signs.mountainRoad) || IN_GAME_SIGN_TRANSLATIONS.en.mountainRoad;
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(0, 0, 512, 180);
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(6, 6, 500, 168);
+    ctx.fillStyle = '#fef08a';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(mData.line1, 256, 55);
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = '20px sans-serif';
+    ctx.fillText(mData.line2, 256, 100);
+    ctx.fillStyle = '#4ade80';
+    ctx.font = '18px sans-serif';
+    ctx.fillText(mData.line3, 256, 145);
+    tex.needsUpdate = true;
+  });
+
   const signFace = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 1.4), new THREE.MeshBasicMaterial({ map: signTex }));
   signFace.position.set(0, 2.7, 0.17);
   signGroup.add(signFace);
@@ -2138,25 +2343,30 @@ function buildMorisSecretDenAndMountains(THREE, villageGroup) {
   const portalCanvas = document.createElement('canvas');
   portalCanvas.width = 512;
   portalCanvas.height = 160;
-  const pCtx = portalCanvas.getContext('2d');
-  if (pCtx) {
-    pCtx.fillStyle = '#09090b';
-    pCtx.fillRect(0, 0, 512, 160);
-    pCtx.strokeStyle = '#eab308';
-    pCtx.lineWidth = 6;
-    pCtx.strokeRect(6, 6, 500, 148);
-    pCtx.fillStyle = '#fde047';
-    pCtx.font = 'bold 30px sans-serif';
-    pCtx.textAlign = 'center';
-    pCtx.fillText('⛏️ KUZEY DAĞLARI GİZLİ MAĞARASI ⬇️', 256, 52);
-    pCtx.fillStyle = '#38bdf8';
-    pCtx.font = '22px sans-serif';
-    pCtx.fillText('Moris\'in İni • Zıplama Uçurumu • Hazine Odası', 256, 96);
-    pCtx.fillStyle = '#f97316';
-    pCtx.font = 'bold 20px sans-serif';
-    pCtx.fillText('İçeri Gir, Engelleri Aş ve Hazineleri Topla!', 256, 136);
-  }
   const portalTex = new THREE.CanvasTexture(portalCanvas);
+
+  registerSignboard(portalCanvas, portalTex, (canvas, tex, signs) => {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const pData = (signs && signs.cavePortal) || IN_GAME_SIGN_TRANSLATIONS.en.cavePortal;
+    ctx.fillStyle = '#09090b';
+    ctx.fillRect(0, 0, 512, 160);
+    ctx.strokeStyle = '#eab308';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(6, 6, 500, 148);
+    ctx.fillStyle = '#fde047';
+    ctx.font = 'bold 26px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(pData.line1, 256, 52);
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = '20px sans-serif';
+    ctx.fillText(pData.line2, 256, 96);
+    ctx.fillStyle = '#f97316';
+    ctx.font = 'bold 18px sans-serif';
+    ctx.fillText(pData.line3, 256, 136);
+    tex.needsUpdate = true;
+  });
+
   const portalSign = new THREE.Mesh(new THREE.PlaneGeometry(8.5, 2.4), new THREE.MeshBasicMaterial({ map: portalTex }));
   portalSign.position.set(0, 9.4, 1.2);
   caveArchGroup.add(portalSign);
@@ -2198,20 +2408,78 @@ function buildMorisSecretDenAndMountains(THREE, villageGroup) {
   if (!window.__superBearGame.currentLevel.npcs) {
     window.__superBearGame.currentLevel.npcs = [];
   }
-  window.__superBearGame.currentLevel.npcs.push({
+  const caveGuideTranslations = {
+    tr: {
+      name: 'Kıdemli Mağara Rehberi (Köstebek Kılavuz ⛏️🐹)',
+      role: 'Dağ Tünelleri & Mağara Macerası Rehberi',
+      dialogue: [
+        "⚠️ MAĞARANIN İÇİ AÇILDI SÜPER AYI! DOĞRUDAN İÇERİ GİREBİLİRSİN!",
+        "Mağara 4 derin odadan oluşuyor: 1. Moris'in Kampı & Yiyecekleri, 2. Tehlikeli Zıplama Uçurumu, 3. Kristal Kileri ve 4. Moris'in Dev Hazine Odası!",
+        "İçerideki bal küplerini, kızarmış etleri, meyveleri ve altınları toplayarak canını ve altınlarını fulle!",
+        "Zıplama parkurundaki hareketli taşlara dikkat et. En dipteki 3 Hazine Sandığını açtığında arkadaki Mavi Işınlanma Kapısından anında buraya dönebilirsin!"
+      ]
+    },
+    en: {
+      name: 'Senior Cave Guide (Mole Guide ⛏️🐹)',
+      role: 'Mountain Tunnels & Cave Adventure Guide',
+      dialogue: [
+        "⚠️ THE CAVE INTERIOR IS OPEN, SUPER BEAR! ENTER FREELY!",
+        "The cave consists of 4 deep chambers: 1. Moris's Camp & Food Stash, 2. Dangerous Chasm Jump, 3. Crystal Cellar, and 4. Moris's Grand Treasure Vault!",
+        "Gather honey pots, roast meats, fruits and gold coins inside to replenish your health and gold!",
+        "Watch out for moving stepping stones across the chasm. Opening the 3 grand treasure chests lets you use the Blue Portal at the back to instantly return here!"
+      ]
+    },
+    es: {
+      name: 'Guía de Cuevas Experto (Topo Guía ⛏️🐹)',
+      role: 'Guía de Túneles de Montaña y Aventuras',
+      dialogue: [
+        "⚠️ ¡EL INTERIOR DE LA CUEVA ESTÁ ABIERTO, SÚPER OSO! ¡ENTRA LIBREMENTE!",
+        "La cueva tiene 4 cámaras profundas: 1. Campamento de Moris, 2. Salto del Abismo Peligroso, 3. Bodega de Cristales y 4. ¡La Gran Cámara del Tesoro de Moris!",
+        "¡Recoge vasijas de miel, carnes asadas, frutas y monedas para recargar tu vida y tu oro!",
+        "Cuidado con las plataformas móviles del abismo. Al abrir los 3 cofres del tesoro, ¡el portal azul del fondo te traerá de vuelta aquí al instante!"
+      ]
+    },
+    de: {
+      name: 'Erfahrener Höhlenführer (Maulwurf-Führer ⛏️🐹)',
+      role: 'Bergtunnel & Höhlenabenteuer-Führer',
+      dialogue: [
+        "⚠️ DAS HÖHLENINNERE IST GEÖFFNET, SUPERBÄR! TRITT EIN!",
+        "Die Höhle besteht aus 4 tiefen Kammern: 1. Moris' Lager & Vorräte, 2. Gefährlicher Abgrund-Sprung, 3. Kristallkeller und 4. Moris' Große Schatzkammer!",
+        "Sammle Honigtöpfe, Braten, Früchte und Goldmünzen, um dein Leben und Gold aufzufüllen!",
+        "Achte auf die beweglichen Trittsteine im Abgrund. Nach dem Öffnen der 3 Schatztruhen bringt dich das blaue Portal hinten sofort hierher zurück!"
+      ]
+    },
+    it: {
+      name: 'Guida Esperta delle Grotte (Talpa Guida ⛏️🐹)',
+      role: 'Guida dei Tunnel Montani e Avventure',
+      dialogue: [
+        "⚠️ L'INTERNO DELLA GROTTA È APERTO, SUPER ORSO! ENTRA LIBERAMENTE!",
+        "La grotta è formata da 4 grandi sale: 1. Campo di Moris, 2. Salto del Baratro, 3. Cantina dei Cristalli e 4. Grande Stanza del Tesoro di Moris!",
+        "Raccogli vasi di miele, arrosti, frutti e monete d'oro per ricaricare salute e monete!",
+        "Attento alle piattaforme mobili nel baratro. Aprendo i 3 forzieri, il portale blu in fondo ti riporterà subito qui!"
+      ]
+    }
+  };
+
+  const moleNpcObj = {
     id: 'npc_cave_guide',
-    name: 'Kıdemli Mağara Rehberi (Köstebek Kılavuz ⛏️🐹)',
-    role: 'Dağ Tünelleri & Mağara Macerası Rehberi',
     pos: new THREE.Vector3(5.5, 3.2, -66.5),
     mesh: caveNpcGroup,
     avatarIcon: '⛏️',
-    dialogue: [
-      "⚠️ MAĞARANIN İÇİ AÇILDI SÜPER AYI! DOĞRUDAN İÇERİ GİREBİLİRSİN!",
-      "Mağara 4 derin odadan oluşuyor: 1. Moris'in Kampı & Yiyecekleri, 2. Tehlikeli Zıplama Uçurumu, 3. Kristal Kileri ve 4. Moris'in Dev Hazine Odası!",
-      "İçerideki bal küplerini, kızarmış etleri, meyveleri ve altınları toplayarak canını ve altınlarını fulle!",
-      "Zıplama parkurundaki hareketli taşlara dikkat et. En dipteki 3 Hazine Sandığını açtığında arkadaki Mavi Işınlanma Kapısından anında buraya dönebilirsin!"
-    ]
-  });
+    get name() {
+      const lang = (typeof window !== 'undefined' && window.__superBearCurrentLang) || 'tr';
+      return (caveGuideTranslations[lang] || caveGuideTranslations.en).name;
+    },
+    get role() {
+      const lang = (typeof window !== 'undefined' && window.__superBearCurrentLang) || 'tr';
+      return (caveGuideTranslations[lang] || caveGuideTranslations.en).role;
+    },
+    get dialogue() {
+      const lang = (typeof window !== 'undefined' && window.__superBearCurrentLang) || 'tr';
+      return (caveGuideTranslations[lang] || caveGuideTranslations.en).dialogue;
+    }
+  };
+  window.__superBearGame.currentLevel.npcs.push(moleNpcObj);
 
   // =========================================================================
   // D) CAVE INTERIOR - 4 GRAND, VIBRANT, CHALLENGING CHAMBERS (z: -68 to -185)
@@ -2931,16 +3199,64 @@ function updateMorisSecretDenInteraction(game) {
 function openMorisSecretDiary(game) {
   if (!game || !game.callbacks || !game.callbacks.onDialogueOpen) return;
 
+  const currentLang = (typeof window !== 'undefined' && window.__superBearCurrentLang) || 'tr';
+
+  const DIARY_TRANSLATIONS = {
+    tr: {
+      name: "Moris'in Gizli Günlüğü 📜",
+      role: "Kırık Boynuzlu Ayı'nın Gizli Notları",
+      notes: [
+        "📜 GÜNLÜK NOTU 1 (Sığınağım ve Huzur): Kedi Köyü halkı beni anlamadı... Tek başıma dağın derinliklerine bu büyük sığınağı ve hazine mahzenini oydum. Kendi ellerimle kestiğim kütük karyolamı, yumuşak ot yatağımı seviyorum. Raflardaki petek ballarım ve fıçılardaki taze ballar bana sonsuz güç veriyor!",
+        "📜 GÜNLÜK NOTU 2 (Kırık Boynuzun Acı Sırrı): Sağ boynuzum neden mi kırık? Dark Lord ile o karanlık kalede kozmik güç için savaştım! Devasa çekicimi taşa vururken boynuzum bir kayaya çarpıp paramparça oldu... Sol boynuzum ise hala altın gibi parlıyor ve uzayın kozmik enerjisini emiyor!",
+        "📜 GÜNLÜK NOTU 3 (Uzay ve Kozmik Geçit): O sarı kanatlı kuşu uzaya kaçırdım... Yıldızların ötesinde, derin uzaydaki o devasa mor parlayan kapıya yaklaştığım anda gemi şiddetle sarsıldı ve uzayın derinliklerinden gelen bir ses: 'Geri dön, çünkü uzayın sırrı yalnızca...' [SÖZÜ ANİDEN YARIDA KESİLMİŞ, SAYFA BURADAN YIRTILMIŞ! ⚡📜]"
+      ]
+    },
+    en: {
+      name: "Moris's Secret Diary 📜",
+      role: "Broken-Horned Bear's Secret Notes",
+      notes: [
+        "📜 DIARY NOTE 1 (My Sanctuary & Solitude): The villagers of Cat Village never understood me... Alone, I carved this vast sanctuary and treasure vault into the heart of the mountain. My wooden cot and soft hay bed bring me peace, while fresh honey pots grant me limitless vigor!",
+        "📜 DIARY NOTE 2 (The Secret of the Broken Horn): Why is my right horn shattered? I clashed with the Dark Lord inside that cursed citadel! As I slammed my great war hammer down, my horn smashed against obsidian rock... Yet my left horn still radiates golden cosmic starlight!",
+        "📜 DIARY NOTE 3 (Outer Space & The Cosmic Gate): I carried the yellow-winged bird into deep space... Far beyond the stars, as I approached that gigantic glowing purple gate, the spacecraft violently shook and a booming voice echoed from the abyss: 'Turn back, for the cosmic secret of space may only...' [THE SENTENCE CUTS OFF ABRUPTLY, THE PAGE IS TORN AWAY! ⚡📜]"
+      ]
+    },
+    es: {
+      name: "El Diario Secreto de Moris 📜",
+      role: "Notas Secretas del Oso de Cuerno Roto",
+      notes: [
+        "📜 NOTA DEL DIARIO 1 (Mi Refugio): Nadie en la Aldea Felina me comprendía... Esculpí este santuario en la roca con mis propias manos. Mi cama de heno y los barriles de miel me otorgan poder infinito.",
+        "📜 NOTA DEL DIARIO 2 (El Cuerno Roto): ¿Por qué está roto mi cuerno derecho? ¡Luché contra el Señor Oscuro por la energía cósmica! Al golpear mi martillo, el cuerno se estrelló contra la roca... Pero mi cuerno izquierdo aún brilla con luz astral.",
+        "📜 NOTA DEL DIARIO 3 (El Espacio y el Portal Cósmico): Me llevé al ave de alas amarillas al espacio exterior... Más allá de las estrellas, al acercarme a ese gigantesco portal púrpura brillante, la nave tembló y una voz del vacío cósmico dijo: 'Regresa, pues el secreto del espacio solo...' [¡LA FRASE SE CORTA ABRUPTAMENTE, LA PÁGINA ESTÁ ARRANCADA! ⚡📜]"
+      ]
+    },
+    de: {
+      name: "Moris' Geheimtagebuch 📜",
+      role: "Geheime Aufzeichnungen des Einhorn-Bären",
+      notes: [
+        "📜 TAGEBUCHNOTIZ 1 (Mein Zufluchtsort): Die Dorfbewohner verstanden mich nie... Allein meißelte ich diesen Unterschlupf in den Berg. Mein Holzbett und die Honigfässer schenken mir unbändige Kraft!",
+        "📜 TAGEBUCHNOTIZ 2 (Das Geheimnis des zerbrochenen Horns): Mein rechtes Horn brach im epischen Kampf gegen den Dunklen Lord... Doch mein linkes Horn leuchtet noch immer mit kosmischer Energie!",
+        "📜 TAGEBUCHNOTIZ 3 (Der Weltraum & das kosmische Portal): Ich brachte den gelben Vogel in den Weltraum... Jenseits der Sterne, als ich mich dem riesigen lila leuchtenden Portal näherte, bebte das Schiff und eine Stimme aus den Tiefen des Alls sprach: 'Kehre um, denn das Geheimnis des Weltraums kann nur...' [DER SATZ BRICHT PLÖTZLICH AB, DIE SEITE IST HIER ABGERISSEN! ⚡📜]"
+      ]
+    },
+    it: {
+      name: "Il Diario Segreto di Moris 📜",
+      role: "Appunti Segreti dell'Orso dal Corno Spezzato",
+      notes: [
+        "📜 NOTA DEL DIARIO 1 (Il Mio Rifugio): Gli abitanti del villaggio non mi hanno mai capito... Ho scavato questa caverna nella roccia da solo. I barili di miele mi donano forza infinita!",
+        "📜 NOTA DEL DIARIO 2 (Il Corno Spezzato): Ho combattuto contro l'Oscuro Signore nella fortezza cosmica! Il mio corno destro si è infranto sulla roccia, ma il sinistro risplende ancora di potere stellare!",
+        "📜 NOTA DEL DIARIO 3 (Lo Spazio & il Portale Cosmico): Ho portato l'uccellino dalle ali gialle nello spazio profondo... Oltre le stelle, mentre mi avvicinavo a quel gigantesco portale viola splendente, la nave tremò e una voce dal vuoto cosmico disse: 'Torna indietro, poiché il segreto dello spazio può solo...' [LA FRASE SI INTERROMPE BRUSCAMENTE, LA PAGINA È STRAPPATA! ⚡📜]"
+      ]
+    }
+  };
+
+  const activeDiary = DIARY_TRANSLATIONS[currentLang] || DIARY_TRANSLATIONS.en;
+
   const diaryData = {
     npcId: "moris_secret_diary",
-    npcName: "Moris'in Gizli Günlüğü 📜",
-    npcRole: "Kırık Boynuzlu Ayı'nın Gizli Notları",
+    npcName: activeDiary.name,
+    npcRole: activeDiary.role,
     avatarIcon: "🐻‍❄️",
-    dialogue: [
-      "📜 GÜNLÜK NOTU 1 (Sığınağım ve Huzur): Kedi Köyü halkı beni anlamadı... Tek başıma dağın derinliklerine bu büyük sığınağı ve hazine mahzenini oydum. Kendi ellerimle kestiğim kütük karyolamı, yumuşak ot yatağımı seviyorum. Raflardaki petek ballarım ve fıçılardaki taze ballar bana sonsuz güç veriyor!",
-      "📜 GÜNLÜK NOTU 2 (Kırık Boynuzun Acı Sırrı): Sağ boynuzum neden mi kırık? Dark Lord ile o karanlık kalede kozmik güç için savaştım! Devasa çekicimi taşa vururken boynuzum bir kayaya çarpıp paramparça oldu... Sol boynuzum ise hala altın gibi parlıyor ve uzayın kozmik enerjisini emiyor!",
-      "📜 GÜNLÜK NOTU 3 (Tutsak Sarı Kuş Badem & Hazineler): O sevimli sarı kanatlı kuşu (Badem) uzaydaki 7. Bölüm Kozmik Kolezyumu'ndaki altın kafese kilitledim. Bu mağaranın en dibine ise en değerli 3 Hazine Sandığımı bıraktım. Eğer oraya ulaştıysan, gerçek bir süper ayı kaşifisin!"
-    ]
+    dialogue: activeDiary.notes
   };
 
   game.callbacks.onDialogueOpen(diaryData);
@@ -3011,22 +3327,27 @@ function buildBeginnerTrainingGround(THREE, villageGroup) {
   const signCanvas = document.createElement('canvas');
   signCanvas.width = 512;
   signCanvas.height = 140;
-  const sCtx = signCanvas.getContext('2d');
-  if (sCtx) {
-    sCtx.fillStyle = '#b45309';
-    sCtx.fillRect(0, 0, 512, 140);
-    sCtx.strokeStyle = '#fde047';
-    sCtx.lineWidth = 6;
-    sCtx.strokeRect(4, 4, 504, 132);
-    sCtx.fillStyle = '#ffffff';
-    sCtx.font = 'bold 28px sans-serif';
-    sCtx.textAlign = 'center';
-    sCtx.fillText('🥋 ACEMİ AYI ALIŞTIRMA PARKURU 🎯', 256, 50);
-    sCtx.fillStyle = '#fde047';
-    sCtx.font = '20px sans-serif';
-    sCtx.fillText('🍞 Tonton Fırıncı Yanı Antrenman Sahası', 256, 95);
-  }
   const signTex = new THREE.CanvasTexture(signCanvas);
+
+  registerSignboard(signCanvas, signTex, (canvas, tex, signs) => {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const tData = (signs && signs.training) || IN_GAME_SIGN_TRANSLATIONS.en.training;
+    ctx.fillStyle = '#b45309';
+    ctx.fillRect(0, 0, 512, 140);
+    ctx.strokeStyle = '#fde047';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(4, 4, 504, 132);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(tData.line1, 256, 50);
+    ctx.fillStyle = '#fde047';
+    ctx.font = '18px sans-serif';
+    ctx.fillText(tData.line2, 256, 95);
+    tex.needsUpdate = true;
+  });
+
   const signMesh = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 1.3), new THREE.MeshBasicMaterial({ map: signTex }));
   signMesh.rotation.y = -Math.PI / 2;
   signMesh.position.set(-0.35, 3.6, 0);
@@ -10015,30 +10336,32 @@ function updateSpaceLoop() {
       const pPos = game.playerPos;
       const pVel = game.playerVel || { x: 0, y: 0, z: 0 };
       
-      // Determine if player is inside any body of water:
-      // 1. Ayı Köyü River: x in [-45, 45], z in [14, 32], y in [-2.0, 0.85] (ONLY in Hub and NOT in parkour)
-      const inVillageRiver = (isHub && pPos.x >= -45 && pPos.x <= 45 && pPos.z >= 14 && pPos.z <= 32 && pPos.y <= 0.85 && pPos.y >= -2.0);
-      // 2. Fishing Pond 1: near (-26, -8)
+      // Strict water check: Player must actually be inside sunken water bodies below ground level
+      // Village water surface is at y = -0.5 (ground is y >= 0.0)
+      const inVillageRiver = Boolean(isHub && pPos.x >= -35 && pPos.x <= 35 && pPos.z >= 17 && pPos.z <= 25 && pPos.y <= -0.55 && pPos.y >= -2.5);
+      
+      // Fishing Ponds (sunken depressions with y <= -0.55)
       const dPond1 = Math.sqrt((pPos.x + 26) * (pPos.x + 26) + (pPos.z + 8) * (pPos.z + 8));
-      const inPond1 = (isHub && dPond1 <= 9.0 && pPos.y <= 0.85 && pPos.y >= -2.0);
-      // 3. Fishing Pond 2: near (-10, 38)
+      const inPond1 = Boolean(isHub && dPond1 <= 5.5 && pPos.y <= -0.55 && pPos.y >= -2.5);
+      
       const dPond2 = Math.sqrt((pPos.x + 10) * (pPos.x + 10) + (pPos.z - 38) * (pPos.z - 38));
-      const inPond2 = (isHub && dPond2 <= 8.0 && pPos.y <= 0.85 && pPos.y >= -2.0);
-      // 4. Level-defined water surfaces
-      const inLevelWater = (game.currentLevel && game.currentLevel.waterLevel !== undefined && pPos.y <= game.currentLevel.waterLevel + 0.3 && pPos.y >= game.currentLevel.waterLevel - 3.0);
+      const inPond2 = Boolean(isHub && dPond2 <= 5.0 && pPos.y <= -0.55 && pPos.y >= -2.5);
+      
+      // Level-defined water surfaces (must have explicit waterLevel and be submerged)
+      const inLevelWater = Boolean(!isHub && game.currentLevel && game.currentLevel.hasWater && game.currentLevel.waterLevel !== undefined && pPos.y <= (game.currentLevel.waterLevel - 0.1) && pPos.y >= (game.currentLevel.waterLevel - 3.0));
 
       const inWater = Boolean(inVillageRiver || inPond1 || inPond2 || inLevelWater);
 
       if (inWater) {
-        let waterSurfaceY = 0.6;
-        if (inLevelWater && game.currentLevel) {
+        let waterSurfaceY = -0.5;
+        if (inLevelWater && game.currentLevel && game.currentLevel.waterLevel !== undefined) {
           waterSurfaceY = game.currentLevel.waterLevel;
         }
 
         if (!game._isSwimmingActive) {
           game._isSwimmingActive = true;
           if (game.spawnSparkleParticles) {
-            game.spawnSparkleParticles(pPos, 22, 0x38bdf8);
+            game.spawnSparkleParticles(pPos, 20, 0x38bdf8);
           }
           if (window.St && typeof window.St.playWaterSplash === 'function') {
             window.St.playWaterSplash();
@@ -10050,7 +10373,7 @@ function updateSpaceLoop() {
 
         // Buoyancy float force: gently push toward water surface
         const depth = waterSurfaceY - pPos.y;
-        if (depth > 0.1) {
+        if (depth > 0.05) {
           pVel.y = Math.min(0.28, pVel.y + 0.065);
         } else if (depth < -0.1) {
           pVel.y = Math.max(-0.08, pVel.y - 0.02);

@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   Gift
 } from 'lucide-react';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface ArcadeGamesModalProps {
   isOpen: boolean;
@@ -43,114 +44,537 @@ export interface ArcadeGameMeta {
   rules: string[];
 }
 
-export const ALL_ARCADE_GAMES: ArcadeGameMeta[] = [
-  {
-    id: 'honey_rush',
-    title: 'Bal & Altın Koşusu',
-    subtitle: 'Hızlı Koşu & Engelden Kaçış',
-    icon: '🍯',
-    themeColor: 'from-amber-500 to-yellow-600',
-    accentBadge: 'Refleks & Hız',
-    description: 'Ayımızla koşarken dikenli kutulardan ve kayalardan kaçın, parıldayan altın petekleri ve bal kavanozlarını toplayarak rekor kır!',
-    rules: ['Boşluk veya Tık: Zıpla', 'Bal Kavanozu: +10 Puan', 'Altın Petek: +25 Puan', 'Çarparsan oyun biter!']
+export const ARCADE_TRANSLATIONS: Record<string, {
+  headerTitle: string;
+  gameCount: string;
+  gameOfTheDay: string;
+  claimDailyGift: string;
+  tabDaily: string;
+  tabAll: string;
+  tabSubtitle: string;
+  liveScore: string;
+  changeGame: string;
+  howToPlay: string;
+  gameOver: string;
+  highScore: string;
+  points: string;
+  playBtn: string;
+  playAgainBtn: string;
+  bonusAdded: string;
+  footerTitle: string;
+  footerDesc: string;
+  closeBtn: string;
+  games: Record<ArcadeGameId, {
+    title: string;
+    subtitle: string;
+    badge: string;
+    description: string;
+    rules: string[];
+  }>;
+}> = {
+  tr: {
+    headerTitle: 'SUPER BEAR RETRO ARCADE SALONU',
+    gameCount: '10 FARKLI OYUN 🔥',
+    gameOfTheDay: 'Günün Oyunu',
+    claimDailyGift: 'Günün Hediyesini Al! (+150 🍯)',
+    tabDaily: 'Günün Yeni Oyunları (Rotasyon)',
+    tabAll: 'Tüm 10 Atari Oyunu',
+    tabSubtitle: 'Her Gün Yepyeni Oyunlar & 2X Çifte Kazanç!',
+    liveScore: 'Canlı Skor',
+    changeGame: '◀ Oyun Değiştir',
+    howToPlay: 'Nasıl Oynanır?',
+    gameOver: 'Oyun Bitti!',
+    highScore: 'En Yüksek Skor',
+    points: 'Puan',
+    playBtn: 'Oyunu Başlat',
+    playAgainBtn: 'Tekrar Oyna',
+    bonusAdded: '2X Çifte Ödül Hesabına Eklendi!',
+    footerTitle: '🎁 Günlük Atari Ödül Sistemi:',
+    footerDesc: 'Her gün atari salonunu ziyaret et, günün 2X oyununu oyna ve bolca Altın ile Atari Jetonu topla!',
+    closeBtn: 'Kapat',
+    games: {
+      honey_rush: {
+        title: 'Bal & Altın Koşusu',
+        subtitle: 'Hızlı Koşu & Engelden Kaçış',
+        badge: 'Refleks & Hız',
+        description: 'Ayımızla koşarken dikenli kutulardan ve kayalardan kaçın, parıldayan altın petekleri ve bal kavanozlarını toplayarak rekor kır!',
+        rules: ['Boşluk veya Tık: Zıpla', 'Bal Kavanozu: +10 Puan', 'Altın Petek: +25 Puan', 'Çarparsan oyun biter!']
+      },
+      bubble_jump: {
+        title: 'Baloncuk Zıplama & Patlatma',
+        subtitle: 'Gökyüzü Baloncuk Trambolini',
+        badge: 'Zamanlama & Kombo',
+        description: 'Yükselen renkli su baloncuklarının üzerine basarak yukarı zıpla! Baloncukları tam zamanında patlatıp gökyüzü bulutlarına ulaş!',
+        rules: ['Sol/Sağ Tuşları veya Mouse: Hareket et', 'Baloncuğa bas: Süper Zıplama', 'Gökkuşağı Balon: +50 Puan', 'Aşağı düşme!']
+      },
+      space_invaders: {
+        title: 'Galaktik Ayı İstilası',
+        subtitle: 'Kozmik Atari & Lazer Savaşı',
+        badge: 'Kozmik Savaş',
+        description: 'Uzay gemini yönlendir, dalga dalga inen mutant uzay arılarını ve UFO patronlarını lazer atışlarıyla patlat!',
+        rules: ['Mouse veya Sol/Sağ: Hareket', 'Boşluk veya Tık: Lazer Ateşle', 'Düşman Arı: +20 Puan', 'UFO Boss: +60 Puan']
+      },
+      flappy_bear: {
+        title: 'Uçan Bal Ayısı',
+        subtitle: 'Kanat Çırp & Bal Peteği Uçuşu',
+        badge: 'Beceri & Uçuş',
+        description: 'Küçük peri kanatlarını çırparak bal sütunları ve bambu engelleri arasından süzül! En uzak mesafeye uç!',
+        rules: ['Tık veya Boşluk: Kanat Çırp', 'Engellerin arasından geç: +10 Puan', 'Ortadaki Bal: +25 Puan', 'Zemine veya direğe çarpma!']
+      },
+      brick_breaker: {
+        title: 'Bal Tuğlası Kırıcı',
+        subtitle: 'Klasik Arkanoid & Enerji Topu',
+        badge: 'Retro Kırıcı',
+        description: 'Paleti kontrol et, enerji küresini sektirerek renkli bal peteklerini ve şeker tuğlalarını kır!',
+        rules: ['Mouse veya Sol/Sağ Tuşlar: Raket', 'Kırılan Her Tuğla: +15 Puan', 'Hepsini temizle: +200 Bonus', 'Topu düşürme!']
+      },
+      bear_snake: {
+        title: 'Çilek Avcısı Piksel Yılan',
+        subtitle: 'Efsanevi Yılan & Meyve Ziyafeti',
+        badge: 'Nostaljik Yılan',
+        description: 'Klasik atari yılanı! Çilekleri topla, uzadıkça uzayan kuyruğuna ve duvarlara çarpmadan devasa bir skora ulaş!',
+        rules: ['Ok Tuşları veya WASD: Yön Değiştir', 'Kırmızı Çilek: +10 Puan & Büyüme', 'Altın Ananas: +50 Puan', 'Kuyruğuna çarpma!']
+      },
+      meteor_dodge: {
+        title: 'Meteor Yağmuru Kaçış',
+        subtitle: 'Ateşli Göktaşı & Hayatta Kalma',
+        badge: 'Hayatta Kalma',
+        description: 'Gökyüzünden yağan kızgın lav meteorlarından kaç! Düşen parıldayan uzay elmaslarını kapıp hayatta kal!',
+        rules: ['Mouse veya Sol/Sağ: Kaç', 'Uzay Elması: +25 Puan', 'Hayatta Kalınan Her Saniye: +3 Puan', 'Meteordan kaç!']
+      },
+      whack_mole: {
+        title: 'Hırsız Arı & Köstebek Yakala',
+        subtitle: 'Refleks & Hızlı Tıklama Poligonu',
+        badge: 'Hızlı Refleks',
+        description: 'Ağaç kovuklarından ve bal küplerinden kafasını çıkaran yaramaz hırsızlara hemen tıkla, kaçmadan yakala!',
+        rules: ['Çıkan Hırsıza Hızlıca Tıkla', 'Normal Hırsız: +20 Puan', 'Altın Kraliçe: +50 Puan', 'Süre: 30 Saniye']
+      },
+      target_blaster: {
+        title: 'Hedef Vurma & Meşe Poligonu',
+        subtitle: 'Nişan Al & Bullseye Vuruşu',
+        badge: 'Nişancılık & Odak',
+        description: 'Ekranda beliren ve hareket eden renkli hedeflere, altın balonlara ve palamutlara tıkla! Zaman dolmadan en yüksek puanı topla!',
+        rules: ['Hedefe Tıkla: Vur', 'Merkez Bullseye: +30 Puan', 'Altın Balon: +50 Puan & +3 sn', 'Süre: 30 Saniye']
+      },
+      retro_runner: {
+        title: '8-Bit Piksel Parkur',
+        subtitle: 'Klasik Chiptune Engel Yarışı',
+        badge: 'Chiptune Klasik',
+        description: 'Retro piksel grafiklerle hazırlanan nostaljik atari oyunu! Giderek hızlanan platformlarda zıpla ve en uzun mesafeye koş!',
+        rules: ['Boşluk veya Tık: Zıpla', 'Çift Zıplama Destekli', 'Piksel Elmasları: +15 Puan', 'Hız sürekli artar!']
+      }
+    }
   },
-  {
-    id: 'bubble_jump',
-    title: 'Baloncuk Zıplama & Patlatma',
-    subtitle: 'Gökyüzü Baloncuk Trambolini',
-    icon: '🫧',
-    themeColor: 'from-cyan-500 to-blue-600',
-    accentBadge: 'Zamanlama & Kombo',
-    description: 'Yükselen renkli su baloncuklarının üzerine basarak yukarı zıpla! Baloncukları tam zamanında patlatıp gökyüzü bulutlarına ulaş!',
-    rules: ['Sol/Sağ Tuşları veya Mouse: Hareket et', 'Baloncuğa bas: Süper Zıplama', 'Gökkuşağı Balon: +50 Puan', 'Aşağı düşme!']
+  en: {
+    headerTitle: 'SUPER BEAR RETRO ARCADE HALL',
+    gameCount: '10 DIFFERENT GAMES 🔥',
+    gameOfTheDay: 'Game of the Day',
+    claimDailyGift: 'Claim Daily Gift! (+150 🍯)',
+    tabDaily: "Today's Games (Rotation)",
+    tabAll: 'All 10 Arcade Games',
+    tabSubtitle: 'New Daily Lineup & 2X Double Rewards!',
+    liveScore: 'Live Score',
+    changeGame: '◀ Switch Game',
+    howToPlay: 'How to Play?',
+    gameOver: 'Game Over!',
+    highScore: 'High Score',
+    points: 'Pts',
+    playBtn: 'Start Game',
+    playAgainBtn: 'Play Again',
+    bonusAdded: '2X Double Rewards Added to Account!',
+    footerTitle: '🎁 Daily Arcade Reward System:',
+    footerDesc: 'Visit the arcade daily, play the 2X Game of the Day, and collect Honey Coins and Arcade Tokens!',
+    closeBtn: 'Close',
+    games: {
+      honey_rush: {
+        title: 'Honey & Gold Rush',
+        subtitle: 'Fast Sprint & Hazard Evasion',
+        badge: 'Reflex & Speed',
+        description: 'Dash as our hero bear, dodge spiky crates and rocks, and collect radiant honey jars and golden combs!',
+        rules: ['Space or Click: Jump', 'Honey Jar: +10 Pts', 'Gold Honeycomb: +25 Pts', 'Collision ends game!']
+      },
+      bubble_jump: {
+        title: 'Bubble Jump & Pop',
+        subtitle: 'Sky Bubble Trampoline',
+        badge: 'Timing & Combo',
+        description: 'Bounce upon rising colorful bubbles! Pop bubbles at the perfect instant to ascend into the clouds!',
+        rules: ['Left/Right or Mouse: Move', 'Bounce on Bubble: Super Jump', 'Rainbow Bubble: +50 Pts', "Don't fall!"]
+      },
+      space_invaders: {
+        title: 'Galactic Bear Invaders',
+        subtitle: 'Cosmic Arcade & Laser War',
+        badge: 'Cosmic Battle',
+        description: 'Pilot your starfighter and obliterate invading alien swarms and giant UFO bosses with rapid laser strikes!',
+        rules: ['Mouse or Left/Right: Move', 'Space or Click: Fire Laser', 'Alien Bee: +20 Pts', 'UFO Boss: +60 Pts']
+      },
+      flappy_bear: {
+        title: 'Flappy Honey Bear',
+        subtitle: 'Wing Flap & Hive Navigation',
+        badge: 'Skill & Flight',
+        description: 'Flap tiny fairy wings through tight honey pillars and bamboo towers to achieve maximum flight distance!',
+        rules: ['Click or Space: Flap Wings', 'Clear Obstacle: +10 Pts', 'Center Honey: +25 Pts', 'Avoid ground and pipes!']
+      },
+      brick_breaker: {
+        title: 'Honey Brick Breaker',
+        subtitle: 'Classic Arkanoid & Energy Sphere',
+        badge: 'Retro Breaker',
+        description: 'Command the bottom paddle, rebound energy spheres, and shatter colorful sugar bricks and honey blocks!',
+        rules: ['Mouse or Left/Right: Move Paddle', 'Break Brick: +15 Pts', 'Clear Screen: +200 Bonus', "Don't drop ball!"]
+      },
+      bear_snake: {
+        title: 'Pixel Strawberry Snake',
+        subtitle: 'Legendary Snake & Fruit Feast',
+        badge: 'Nostalgic Snake',
+        description: 'The nostalgic classic! Devour ripe berries, avoid your ever-growing tail and boundary walls to score big!',
+        rules: ['Arrow Keys or WASD: Turn', 'Strawberry: +10 Pts & Grow', 'Golden Pineapple: +50 Pts', 'Avoid tail!']
+      },
+      meteor_dodge: {
+        title: 'Meteor Shower Dodge',
+        subtitle: 'Fiery Asteroids & Survival',
+        badge: 'Survival',
+        description: 'Evade raining molten asteroids from deep space and collect glowing stardust diamonds to survive!',
+        rules: ['Mouse or Left/Right: Dodge', 'Cosmic Diamond: +25 Pts', 'Each Second Survived: +3 Pts', 'Dodge meteors!']
+      },
+      whack_mole: {
+        title: 'Whack-a-Thief & Mole',
+        subtitle: 'Fast Reflex Target Arena',
+        badge: 'Fast Reflex',
+        description: 'Rapidly strike mischievous thieves popping out of honey barrels and tree hollows before they vanish!',
+        rules: ['Click Thief Quickly', 'Normal Thief: +20 Pts', 'Golden Queen: +50 Pts', 'Time: 30 Seconds']
+      },
+      target_blaster: {
+        title: 'Target Blaster & Shooting Range',
+        subtitle: 'Aim & Bullseye Mastery',
+        badge: 'Precision & Focus',
+        description: 'Aim and shoot moving targets, golden bonus balloons, and flying acorns before time expires!',
+        rules: ['Click Target: Hit', 'Bullseye Center: +30 Pts', 'Golden Balloon: +50 Pts & +3s', 'Time: 30 Seconds']
+      },
+      retro_runner: {
+        title: '8-Bit Pixel Runner',
+        subtitle: 'Classic Chiptune Obstacle Race',
+        badge: 'Chiptune Classic',
+        description: 'A nostalgic retro pixel run! Leap across accelerating platforms and leap over pits to run the furthest!',
+        rules: ['Space or Click: Jump', 'Double Jump Supported', 'Pixel Diamond: +15 Pts', 'Speed accelerates!']
+      }
+    }
   },
-  {
-    id: 'space_invaders',
-    title: 'Galaktik Ayı İstilası',
-    subtitle: 'Kozmik Atari & Lazer Savaşı',
-    icon: '🚀',
-    themeColor: 'from-violet-600 to-fuchsia-600',
-    accentBadge: 'Kozmik Savaş',
-    description: 'Uzay gemini yönlendir, dalga dalga inen mutant uzay arılarını ve UFO patronlarını lazer atışlarıyla patlat!',
-    rules: ['Mouse veya Sol/Sağ: Hareket', 'Boşluk veya Tık: Lazer Ateşle', 'Düşman Arı: +20 Puan', 'UFO Boss: +60 Puan']
+  es: {
+    headerTitle: 'SALÓN RETRO ARCADE SUPER BEAR',
+    gameCount: '10 JUEGOS DIFERENTES 🔥',
+    gameOfTheDay: 'Juego del Día',
+    claimDailyGift: '¡Reclamar Regalo Diario! (+150 🍯)',
+    tabDaily: 'Juegos de Hoy (Rotación)',
+    tabAll: 'Los 10 Juegos Arcade',
+    tabSubtitle: '¡Nuevos Juegos Diarios y 2X Recompensa Doble!',
+    liveScore: 'Puntuación',
+    changeGame: '◀ Cambiar Juego',
+    howToPlay: '¿Cómo Jugar?',
+    gameOver: '¡Juego Terminado!',
+    highScore: 'Récord',
+    points: 'Pts',
+    playBtn: 'Iniciar Juego',
+    playAgainBtn: 'Jugar de Nuevo',
+    bonusAdded: '¡Doble Recompensa 2X Agregada!',
+    footerTitle: '🎁 Sistema de Premios Arcade:',
+    footerDesc: '¡Visita el salón a diario, juega al Juego 2X y acumula monedas de miel y fichas arcade!',
+    closeBtn: 'Cerrar',
+    games: {
+      honey_rush: {
+        title: 'Carrera de Miel y Oro',
+        subtitle: 'Sprint Rápido y Evasión',
+        badge: 'Reflejo y Velocidad',
+        description: '¡Corre con nuestro oso, esquiva cajas con púas y rocas, y recoge miel y panales dorados!',
+        rules: ['Espacio o Clic: Saltar', 'Tarro de Miel: +10 Pts', 'Panal Dorado: +25 Pts', '¡Chocar termina el juego!']
+      },
+      bubble_jump: {
+        title: 'Salto y Estallido de Burbujas',
+        subtitle: 'Trampolín Celestial',
+        badge: 'Tiempo y Combo',
+        description: '¡Rebota sobre las burbujas de colores y elévate hasta las nubes celestiales!',
+        rules: ['Teclas Izq/Der o Ratón: Moverse', 'Pisar Burbuja: Súper Salto', 'Burbuja Arcoíris: +50 Pts', '¡No caigas!']
+      },
+      space_invaders: {
+        title: 'Invasores Galácticos',
+        subtitle: 'Batalla Láser Espacial',
+        badge: 'Guerra Cósmica',
+        description: '¡Pilota tu nave espacial y destruye las hordas alienígenas y jefes OVNI con disparos láser!',
+        rules: ['Ratón o Izq/Der: Mover', 'Espacio o Clic: Disparar', 'Abeja Alien: +20 Pts', 'Jefe OVNI: +60 Pts']
+      },
+      flappy_bear: {
+        title: 'Oso Volador de Miel',
+        subtitle: 'Vuelo y Esquive de Obstáculos',
+        badge: 'Habilidad y Vuelo',
+        description: '¡Aletea a través de columnas de miel y tubos de bambú para alcanzar la máxima distancia!',
+        rules: ['Clic o Espacio: Aletear', 'Superar Obstáculo: +10 Pts', 'Miel Central: +25 Pts', '¡Evita chocar!']
+      },
+      brick_breaker: {
+        title: 'Rompe Ladrillos de Miel',
+        subtitle: 'Arkanoid Clásico y Bola de Energía',
+        badge: 'Retro Rompedor',
+        description: '¡Controla la pala, rebota la esfera de energía y destruye ladrillos dulces!',
+        rules: ['Ratón o Flechas: Mover Pala', 'Ladrillo Roto: +15 Pts', 'Pantalla Limpia: +200 Bonus', '¡No dejes caer la bola!']
+      },
+      bear_snake: {
+        title: 'Serpiente Come Fresas',
+        subtitle: 'Serpiente Legendaria y Frutas',
+        badge: 'Serpiente Nostálgica',
+        description: '¡El clásico arcade! Come fresas, evita tu propia cola creciente y rompe tu récord.',
+        rules: ['Flechas o WASD: Girar', 'Fresa: +10 Pts y Crecer', 'Piña Dorada: +50 Pts', '¡No choques tu cola!']
+      },
+      meteor_dodge: {
+        title: 'Esquiva de Meteoros',
+        subtitle: 'Asteroides y Supervivencia',
+        badge: 'Supervivencia',
+        description: '¡Esquiva los meteoros ardientes del espacio exterior y recoge diamantes estelares!',
+        rules: ['Ratón o Izq/Der: Esquivar', 'Diamante Cósmico: +25 Pts', 'Por Segundo Vivo: +3 Pts', '¡Esquiva meteoros!']
+      },
+      whack_mole: {
+        title: 'Golpea al Ladrón y Topo',
+        subtitle: 'Reflejos y Clics Rápidos',
+        badge: 'Reflejo Rápido',
+        description: '¡Golpea a los traviesos ladrones que asoman la cabeza por los barriles de miel!',
+        rules: ['Clic Rápido al Ladrón', 'Ladrón Normal: +20 Pts', 'Reina Dorada: +50 Pts', 'Tiempo: 30 Segundos']
+      },
+      target_blaster: {
+        title: 'Tiro al Blanco y Polígono',
+        subtitle: 'Puntería y Diana',
+        badge: 'Puntería y Enfoque',
+        description: '¡Apunta y dispara a las dianas móviles, globos dorados y bellotas voladoras!',
+        rules: ['Clic en Diana: Acertar', 'Centro Diana: +30 Pts', 'Globo Dorado: +50 Pts y +3s', 'Tiempo: 30 Segundos']
+      },
+      retro_runner: {
+        title: 'Corredor 8-Bit Pixel',
+        subtitle: 'Carrera Chiptune Clásica',
+        badge: 'Clásico Chiptune',
+        description: '¡Salta en plataformas aceleradas y supera abismos en este nostálgico juego pixelado!',
+        rules: ['Espacio o Clic: Saltar', 'Doble Salto Disponible', 'Diamante Pixel: +15 Pts', '¡La velocidad aumenta!']
+      }
+    }
   },
-  {
-    id: 'flappy_bear',
-    title: 'Uçan Bal Ayısı',
-    subtitle: 'Kanat Çırp & Bal Peteği Uçuşu',
-    icon: '🐝',
-    themeColor: 'from-yellow-500 to-amber-600',
-    accentBadge: 'Beceri & Uçuş',
-    description: 'Küçük peri kanatlarını çırparak bal sütunları ve bambu engelleri arasından süzül! En uzak mesafeye uç!',
-    rules: ['Tık veya Boşluk: Kanat Çırp', 'Engellerin arasından geç: +10 Puan', 'Ortadaki Bal: +25 Puan', 'Zemine veya direğe çarpma!']
+  de: {
+    headerTitle: 'SUPER BÄR RETRO-ARCADE-HALLE',
+    gameCount: '10 VERSCHIEDENE SPIELE 🔥',
+    gameOfTheDay: 'Spiel des Tages',
+    claimDailyGift: 'Tagesbelohnung abholen! (+150 🍯)',
+    tabDaily: 'Heutige Spiele (Rotation)',
+    tabAll: 'Alle 10 Arcade-Spiele',
+    tabSubtitle: 'Täglich neue Spiele & 2X Doppel-Belohnung!',
+    liveScore: 'Live-Punktestand',
+    changeGame: '◀ Spiel Wechseln',
+    howToPlay: 'Spielanleitung',
+    gameOver: 'Spiel Vorbei!',
+    highScore: 'Bester Punktestand',
+    points: 'Pkt',
+    playBtn: 'Spiel Starten',
+    playAgainBtn: 'Erneut Spielen',
+    bonusAdded: '2X Doppel-Belohnung Gutgeschrieben!',
+    footerTitle: '🎁 Tägliches Arcade-Belohnungssystem:',
+    footerDesc: 'Besuche die Spielhalle täglich, spiele das 2X-Spiel und sammle Honigmünzen und Arcade-Tokens!',
+    closeBtn: 'Schließen',
+    games: {
+      honey_rush: {
+        title: 'Honig- & Gold-Rausch',
+        subtitle: 'Schneller Sprint & Hindernislauf',
+        badge: 'Reflex & Tempo',
+        description: 'Rase mit unserem Bären, weiche Stachelkisten aus und sammle goldene Honigwaben!',
+        rules: ['Leertaste oder Klick: Springen', 'Honigtopf: +10 Pkt', 'Goldwabe: +25 Pkt', 'Kollision beendet das Spiel!']
+      },
+      bubble_jump: {
+        title: 'Blasensprung & Platzen',
+        subtitle: 'Himmelsblasen-Trampolin',
+        badge: 'Timing & Kombo',
+        description: 'Springe auf aufsteigende Seifenblasen und klettere empor bis in die Wolken!',
+        rules: ['Pfeiltasten oder Maus: Bewegen', 'Auf Blase springen: Super-Sprung', 'Regenbogenblase: +50 Pkt', 'Nicht abstürzen!']
+      },
+      space_invaders: {
+        title: 'Galaktische Bären-Invasoren',
+        subtitle: 'Kosmischer Laser-Krieg',
+        badge: 'Weltraum-Schlacht',
+        description: 'Steuere dein Raumschiff und vernichte feindliche Alien-Scharen mit Lasern!',
+        rules: ['Maus oder Links/Rechts: Bewegen', 'Leertaste/Klick: Schießen', 'Alien-Biene: +20 Pkt', 'UFO-Boss: +60 Pkt']
+      },
+      flappy_bear: {
+        title: 'Fliegender Honigbär',
+        subtitle: 'Flügelschlag & Hindernisflug',
+        badge: 'Geschick & Flug',
+        description: 'Schlage mit den Feenflügeln und gleite durch enge Honigsäulen und Bambusrohre!',
+        rules: ['Klick oder Leertaste: Flügelschlag', 'Hindernis passieren: +10 Pkt', 'Mittel-Honig: +25 Pkt', 'Nicht anstoßen!']
+      },
+      brick_breaker: {
+        title: 'Honigziegel-Brecher',
+        subtitle: 'Klassischer Arkanoid-Brecher',
+        badge: 'Retro-Brecher',
+        description: 'Lenke das Paddel, reflektiere die Energiekugel und zerschlage bunte Zuckerziegel!',
+        rules: ['Maus oder Pfeiltasten: Paddel', 'Ziegel zerstört: +15 Pkt', 'Feld geräumt: +200 Bonus', 'Ball nicht fallen lassen!']
+      },
+      bear_snake: {
+        title: 'Pixel-Erdbeer-Schlange',
+        subtitle: 'Legendäre Schlange & Früchte',
+        badge: 'Retro-Schlange',
+        description: 'Der Klassiker! Sammle Erdbeeren, weiche deinem langen Schwanz aus und hole den Rekord!',
+        rules: ['Pfeiltasten oder WASD: Lenken', 'Erdbeere: +10 Pkt & Wachsen', 'Gold-Ananas: +50 Pkt', 'Schwanz meiden!']
+      },
+      meteor_dodge: {
+        title: 'Meteoriten-Ausweichen',
+        subtitle: 'Glühende Asteroiden & Überleben',
+        badge: 'Überleben',
+        description: 'Weiche herabregnenden Lavameteoriten aus und sammle glitzernde Sternendiamanten!',
+        rules: ['Maus oder Links/Rechts: Ausweichen', 'Kosmischer Diamant: +25 Pkt', 'Überlebte Sekunde: +3 Pkt', 'Meteoren ausweichen!']
+      },
+      whack_mole: {
+        title: 'Hau-den-Maulwurf & Dieb',
+        subtitle: 'Schnelle Reflexe & Zielklicks',
+        badge: 'Schneller Reflex',
+        description: 'Treffe die frechen Diebe, die aus den Honigfässern hervorschauen, bevor sie entkommen!',
+        rules: ['Schnell auf Dieb klicken', 'Normaler Dieb: +20 Pkt', 'Goldene Königin: +50 Pkt', 'Zeit: 30 Sekunden']
+      },
+      target_blaster: {
+        title: 'Zielschießen & Schießstand',
+        subtitle: 'Zielen & Volltreffer',
+        badge: 'Präzision & Fokus',
+        description: 'Triff bewegliche Zielscheiben, goldene Bonusballons und Eicheln in der Zeit!',
+        rules: ['Klick auf Ziel: Treffer', 'Zentrum / Bullseye: +30 Pkt', 'Goldballon: +50 Pkt & +3s', 'Zeit: 30 Sekunden']
+      },
+      retro_runner: {
+        title: '8-Bit Pixel-Läufer',
+        subtitle: 'Klassischer Chiptune-Hindernislauf',
+        badge: 'Chiptune-Klassiker',
+        description: 'Nostalgischer Pixel-Sprint! Springe über Plattformen und Schluchten für die weiteste Distanz!',
+        rules: ['Leertaste oder Klick: Springen', 'Doppelsprung verfügbar', 'Pixel-Diamant: +15 Pkt', 'Tempo steigt ständig!']
+      }
+    }
   },
-  {
-    id: 'brick_breaker',
-    title: 'Bal Tuğlası Kırıcı',
-    subtitle: 'Klasik Arkanoid & Enerji Topu',
-    icon: '🧱',
-    themeColor: 'from-pink-500 to-rose-600',
-    accentBadge: 'Retro Kırıcı',
-    description: 'Paleti kontrol et, enerji küresini sektirerek renkli bal peteklerini ve şeker tuğlalarını kır!',
-    rules: ['Mouse veya Sol/Sağ Tuşlar: Raket', 'Kırılan Her Tuğla: +15 Puan', 'Hepsini temizle: +200 Bonus', 'Topu düşürme!']
-  },
-  {
-    id: 'bear_snake',
-    title: 'Çilek Avcısı Piksel Yılan',
-    subtitle: 'Efsanevi Yılan & Meyve Ziyafeti',
-    icon: '🐍',
-    themeColor: 'from-emerald-500 to-teal-600',
-    accentBadge: 'Nostaljik Yılan',
-    description: 'Klasik atari yılanı! Çilekleri topla, uzadıkça uzayan kuyruğuna ve duvarlara çarpmadan devasa bir skora ulaş!',
-    rules: ['Ok Tuşları veya WASD: Yön Değiştir', 'Kırmızı Çilek: +10 Puan & Büyüme', 'Altın Ananas: +50 Puan', 'Kuyruğuna çarpma!']
-  },
-  {
-    id: 'meteor_dodge',
-    title: 'Meteor Yağmuru Kaçış',
-    subtitle: 'Ateşli Göktaşı & Hayatta Kalma',
-    icon: '☄️',
-    themeColor: 'from-orange-500 to-red-600',
-    accentBadge: 'Hayatta Kalma',
-    description: 'Gökyüzünden yağan kızgın lav meteorlarından kaç! Düşen parıldayan uzay elmaslarını kapıp hayatta kal!',
-    rules: ['Mouse veya Sol/Sağ: Kaç', 'Uzay Elması: +25 Puan', 'Hayatta Kalınan Her Saniye: +3 Puan', 'Meteordan kaç!']
-  },
-  {
-    id: 'whack_mole',
-    title: 'Hırsız Arı & Köstebek Yakala',
-    subtitle: 'Refleks & Hızlı Tıklama Poligonu',
-    icon: '🦔',
-    themeColor: 'from-lime-500 to-green-600',
-    accentBadge: 'Hızlı Refleks',
-    description: 'Ağaç kovuklarından ve bal küplerinden kafasını çıkaran yaramaz hırsızlara hemen tıkla, kaçmadan yakala!',
-    rules: ['Çıkan Hırsıza Hızlıca Tıkla', 'Normal Hırsız: +20 Puan', 'Altın Kraliçe: +50 Puan', 'Süre: 30 Saniye']
-  },
-  {
-    id: 'target_blaster',
-    title: 'Hedef Vurma & Meşe Poligonu',
-    subtitle: 'Nişan Al & Bullseye Vuruşu',
-    icon: '🎯',
-    themeColor: 'from-rose-500 to-red-600',
-    accentBadge: 'Nişancılık & Odak',
-    description: 'Ekranda beliren ve hareket eden renkli hedeflere, altın balonlara ve palamutlara tıkla! Zaman dolmadan en yüksek puanı topla!',
-    rules: ['Hedefe Tıkla: Vur', 'Merkez Bullseye: +30 Puan', 'Altın Balon: +50 Puan & +3 sn', 'Süre: 30 Saniye']
-  },
-  {
-    id: 'retro_runner',
-    title: '8-Bit Piksel Parkur',
-    subtitle: 'Klasik Chiptune Engel Yarışı',
-    icon: '👾',
-    themeColor: 'from-purple-500 to-indigo-600',
-    accentBadge: 'Chiptune Klasik',
-    description: 'Retro piksel grafiklerle hazırlanan nostaljik atari oyunu! Giderek hızlanan platformlarda zıpla ve en uzun mesafeye koş!',
-    rules: ['Boşluk veya Tık: Zıpla', 'Çift Zıplama Destekli', 'Piksel Elmasları: +15 Puan', 'Hız sürekli artar!']
+  it: {
+    headerTitle: 'SALA RETRO ARCADE SUPER BEAR',
+    gameCount: '10 GIOCHI DIVERSI 🔥',
+    gameOfTheDay: 'Gioco del Giorno',
+    claimDailyGift: 'Riscatta Regalo del Giorno! (+150 🍯)',
+    tabDaily: 'Giochi di Oggi (Rotazione)',
+    tabAll: 'Tutti i 10 Giochi Arcade',
+    tabSubtitle: 'Nuovi Giochi Ogni Giorno & 2X Doppia Ricompensa!',
+    liveScore: 'Punteggio',
+    changeGame: '◀ Cambia Gioco',
+    howToPlay: 'Come Giocare?',
+    gameOver: 'Partita Finita!',
+    highScore: 'Punteggio Più Alto',
+    points: 'Pti',
+    playBtn: 'Inizia Partita',
+    playAgainBtn: 'Gioca Ancora',
+    bonusAdded: '2X Doppia Ricompensa Aggiunta!',
+    footerTitle: '🎁 Sistema Premi Arcade Giornaliero:',
+    footerDesc: 'Visita la sala giochi ogni giorno, gioca al Gioco 2X e raccogli monete di miele e gettoni arcade!',
+    closeBtn: 'Chiudi',
+    games: {
+      honey_rush: {
+        title: 'Corsa di Miele & Oro',
+        subtitle: 'Sprint Rapido & Schivata',
+        badge: 'Riflessi & Velocità',
+        description: 'Corri col nostro orso, schiva casse con spine e rocce, e raccogli vasi di miele e favi d’oro!',
+        rules: ['Spazio o Clic: Salta', 'Vaso di Miele: +10 Pti', 'Favo Dorato: +25 Pti', 'Gli impatti terminano il gioco!']
+      },
+      bubble_jump: {
+        title: 'Salto e Scoppio di Bolle',
+        subtitle: 'Trampolino Celeste',
+        badge: 'Tempismo & Combo',
+        description: 'Rimbalza sulle bolle d’acqua colorate e sali verso le nuvole celesti!',
+        rules: ['Tasti Sin/Des o Mouse: Muoviti', 'Salta sulla Bolla: Super Salto', 'Bolla Arcobaleno: +50 Pti', 'Non cadere!']
+      },
+      space_invaders: {
+        title: 'Invasori Galattici',
+        subtitle: 'Guerra Laser Cosmica',
+        badge: 'Battaglia Spaziale',
+        description: 'Pilota la tua astronave e annienta sciami alieni e boss UFO con potenti colpi laser!',
+        rules: ['Mouse o Sin/Des: Muovi', 'Spazio o Clic: Spara Laser', 'Ape Aliena: +20 Pti', 'Boss UFO: +60 Pti']
+      },
+      flappy_bear: {
+        title: 'Orso Volante di Miele',
+        subtitle: 'Battito d’Ali & Volo tra Colonne',
+        badge: 'Abilità & Volo',
+        description: 'Batti le ali fatate e plana tra colonne di miele e canne di bambù per volare più lontano possibile!',
+        rules: ['Clic o Spazio: Batti le ali', 'Supera Ostacolo: +10 Pti', 'Miele Centrale: +25 Pti', 'Evita il suolo e i tubi!']
+      },
+      brick_breaker: {
+        title: 'Spacca Mattoni di Miele',
+        subtitle: 'Arkanoid Classico & Sfera d’Energia',
+        badge: 'Retro Breaker',
+        description: 'Controlla la racchetta, fai rimbalzare la sfera d’energia e distruggi mattoni di zucchero!',
+        rules: ['Mouse o Frecce: Muovi Racchetta', 'Mattone Rotto: +15 Pti', 'Schermo Pulito: +200 Bonus', 'Non far cadere la palla!']
+      },
+      bear_snake: {
+        title: 'Serpente Pixel Mangia Fragole',
+        subtitle: 'Serpente Leggendario & Frutta',
+        badge: 'Serpente Classico',
+        description: 'Il classico arcade! Raccogli fragole, evita la coda che cresce sempre di più e fai il record!',
+        rules: ['Frecce o WASD: Direzione', 'Fragola: +10 Pti & Cresci', 'Ananas d’Oro: +50 Pti', 'Evita la coda!']
+      },
+      meteor_dodge: {
+        title: 'Schiva Pioggia di Meteore',
+        subtitle: 'Asteroidi Infuocati & Sopravvivenza',
+        badge: 'Sopravvivenza',
+        description: 'Schiva i meteoriti infuocati che cadono dallo spazio e raccogli diamanti stellari!',
+        rules: ['Mouse o Sin/Des: Schiva', 'Diamante Cosmico: +25 Pti', 'Ogni Secondo Vivo: +3 Pti', 'Schiva le meteore!']
+      },
+      whack_mole: {
+        title: 'Colpisci la Talpa e il Ladro',
+        subtitle: 'Riflessi Rapidi & Bersagli',
+        badge: 'Riflessi Veloci',
+        description: 'Colpisci rapidamente i ladruncoli che spuntano dai barili di miele prima che scappino!',
+        rules: ['Clic Rapido sul Ladro', 'Ladro Normale: +20 Pti', 'Regina Dorata: +50 Pti', 'Tempo: 30 Secondi']
+      },
+      target_blaster: {
+        title: 'Tiro a Segno & Bersagli',
+        subtitle: 'Mira & Centro Perfetto',
+        badge: 'Precisione & Mira',
+        description: 'Mira e spara ai bersagli in movimento, ai palloncini dorati e alle ghiande prima dello scadere del tempo!',
+        rules: ['Clic sul Bersaglio: Colpisci', 'Centro Bersaglio: +30 Pti', 'Palloncino d’Oro: +50 Pti & +3s', 'Tempo: 30 Secondi']
+      },
+      retro_runner: {
+        title: 'Corridore 8-Bit Pixel',
+        subtitle: 'Corsa a Ostacoli Chiptune',
+        badge: 'Classico Chiptune',
+        description: 'Corsa pixel retrò! Salta su piattaforme sempre più veloci e supera i baratri!',
+        rules: ['Spazio o Clic: Salta', 'Doppio Salto Disponibile', 'Diamante Pixel: +15 Pti', 'La velocità aumenta!']
+      }
+    }
   }
+};
+
+export const BASE_ARCADE_GAMES_LIST: { id: ArcadeGameId; icon: string; themeColor: string }[] = [
+  { id: 'honey_rush', icon: '🍯', themeColor: 'from-amber-500 to-yellow-600' },
+  { id: 'bubble_jump', icon: '🫧', themeColor: 'from-cyan-500 to-blue-600' },
+  { id: 'space_invaders', icon: '🚀', themeColor: 'from-violet-600 to-fuchsia-600' },
+  { id: 'flappy_bear', icon: '🐝', themeColor: 'from-yellow-500 to-amber-600' },
+  { id: 'brick_breaker', icon: '🧱', themeColor: 'from-pink-500 to-rose-600' },
+  { id: 'bear_snake', icon: '🐍', themeColor: 'from-emerald-500 to-teal-600' },
+  { id: 'meteor_dodge', icon: '☄️', themeColor: 'from-orange-500 to-red-600' },
+  { id: 'whack_mole', icon: '🦔', themeColor: 'from-lime-500 to-green-600' },
+  { id: 'target_blaster', icon: '🎯', themeColor: 'from-rose-500 to-red-600' },
+  { id: 'retro_runner', icon: '👾', themeColor: 'from-purple-500 to-indigo-600' }
 ];
+
+export function getLocalizedArcadeGames(lang: string): ArcadeGameMeta[] {
+  const trans = ARCADE_TRANSLATIONS[lang] || ARCADE_TRANSLATIONS.en;
+  return BASE_ARCADE_GAMES_LIST.map(base => {
+    const gTrans = trans.games[base.id] || ARCADE_TRANSLATIONS.en.games[base.id];
+    return {
+      id: base.id,
+      icon: base.icon,
+      themeColor: base.themeColor,
+      title: gTrans.title,
+      subtitle: gTrans.subtitle,
+      accentBadge: gTrans.badge,
+      description: gTrans.description,
+      rules: gTrans.rules
+    };
+  });
+}
 
 export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
   isOpen,
   onClose,
   onRewardEarned
 }) => {
+  const { language } = useLanguage();
   const [selectedGame, setSelectedGame] = useState<ArcadeGameId>('space_invaders');
   const [isPlaying, setIsPlaying] = useState(false);
   const [score, setScore] = useState(0);
@@ -158,10 +582,20 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
   const [activeTab, setActiveTab] = useState<'daily' | 'all' | 'rewards'>('daily');
   const [dailyClaimed, setDailyClaimed] = useState(false);
 
+  const t = ARCADE_TRANSLATIONS[language] || ARCADE_TRANSLATIONS.en;
+  const allLocalizedGames = getLocalizedArcadeGames(language);
+
   // Daily seed calculations
   const now = new Date();
   const todayDayNumber = Math.floor((now.getTime() - new Date(2026, 0, 1).getTime()) / 86400000);
-  const todayDateStr = new Intl.DateTimeFormat('tr-TR', { 
+  const dateLocaleMap: Record<string, string> = {
+    tr: 'tr-TR',
+    en: 'en-US',
+    es: 'es-ES',
+    de: 'de-DE',
+    it: 'it-IT'
+  };
+  const todayDateStr = new Intl.DateTimeFormat(dateLocaleMap[language] || 'en-US', { 
     weekday: 'long', 
     day: 'numeric', 
     month: 'long', 
@@ -169,15 +603,15 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
   }).format(now);
 
   // Today's featured Game of the Day (2x bonus rewards!)
-  const featuredGameIndex = Math.abs(todayDayNumber) % ALL_ARCADE_GAMES.length;
-  const featuredGame = ALL_ARCADE_GAMES[featuredGameIndex];
+  const featuredGameIndex = Math.abs(todayDayNumber) % allLocalizedGames.length;
+  const featuredGame = allLocalizedGames[featuredGameIndex];
 
   // Daily 4-game rotation lineup
   const dailyRotationGames = [
-    ALL_ARCADE_GAMES[featuredGameIndex],
-    ALL_ARCADE_GAMES[(featuredGameIndex + 2) % ALL_ARCADE_GAMES.length],
-    ALL_ARCADE_GAMES[(featuredGameIndex + 5) % ALL_ARCADE_GAMES.length],
-    ALL_ARCADE_GAMES[(featuredGameIndex + 7) % ALL_ARCADE_GAMES.length]
+    allLocalizedGames[featuredGameIndex],
+    allLocalizedGames[(featuredGameIndex + 2) % allLocalizedGames.length],
+    allLocalizedGames[(featuredGameIndex + 5) % allLocalizedGames.length],
+    allLocalizedGames[(featuredGameIndex + 7) % allLocalizedGames.length]
   ];
 
   const [highScores, setHighScores] = useState<Record<string, number>>({});
@@ -1342,12 +1776,12 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
 
   if (!isOpen) return null;
 
-  const currentMeta = ALL_ARCADE_GAMES.find(g => g.id === selectedGame) || ALL_ARCADE_GAMES[0];
+  const currentMeta = allLocalizedGames.find(g => g.id === selectedGame) || allLocalizedGames[0];
   const isSelectedGameDaily = selectedGame === featuredGame.id;
 
   const displayGames = activeTab === 'daily' 
     ? dailyRotationGames 
-    : ALL_ARCADE_GAMES;
+    : allLocalizedGames;
 
   return (
     <div 
@@ -1367,17 +1801,17 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h2 className="text-base sm:text-2xl font-black tracking-wider text-white">
-                  SUPER BEAR RETRO ARCADE SALONU
+                  {t.headerTitle}
                 </h2>
                 <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-xs border border-amber-300 shadow">
-                  10 FARKLI OYUN 🔥
+                  {t.gameCount}
                 </span>
               </div>
               <div className="flex items-center gap-2 text-xs text-purple-200 mt-0.5 font-medium">
                 <Calendar className="w-3.5 h-3.5 text-amber-300" />
                 <span>{todayDateStr}</span>
                 <span className="text-purple-400">•</span>
-                <span className="text-amber-300 font-bold">Günün Oyunu: {featuredGame.title} (2X ÖDÜL!)</span>
+                <span className="text-amber-300 font-bold">{t.gameOfTheDay}: {featuredGame.title} (2X!)</span>
               </div>
             </div>
           </div>
@@ -1389,14 +1823,14 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
                 className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
               >
                 <Gift className="w-4 h-4 animate-bounce" />
-                <span>Günün Hediyesini Al! (+150 🍯)</span>
+                <span>{t.claimDailyGift}</span>
               </button>
             )}
             <button
               onClick={onClose}
               className="min-w-[42px] min-h-[42px] p-2 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black flex items-center justify-center transition active:scale-95 cursor-pointer border-2 border-rose-300 shadow-md"
-              title="Kapat (ESC)"
-              aria-label="Pencereyi Kapat"
+              title={t.closeBtn}
+              aria-label={t.closeBtn}
             >
               <X className="w-6 h-6 stroke-[3]" />
             </button>
@@ -1415,7 +1849,7 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
               }`}
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Günün Yeni Oyunları (Rotasyon)</span>
+              <span>{t.tabDaily}</span>
             </button>
             <button
               onClick={() => setActiveTab('all')}
@@ -1426,21 +1860,20 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
               }`}
             >
               <Gamepad2 className="w-3.5 h-3.5 text-cyan-300" />
-              <span>Tüm 10 Atari Oyunu</span>
+              <span>{t.tabAll}</span>
             </button>
           </div>
 
           <div className="text-[11px] font-bold text-amber-300 flex items-center gap-1.5 hidden sm:flex">
             <Flame className="w-4 h-4 text-orange-400" />
-            <span>Her Gün Yepyeni Oyunlar & 2X Çifte Kazanç!</span>
+            <span>{t.tabSubtitle}</span>
           </div>
         </div>
 
         {/* Content Body */}
-        {/* Content Body */}
         <div className="p-3 sm:p-5 overflow-y-auto space-y-4 flex-1 overscroll-contain">
           
-          {/* Game Selection Grid (Collapsed when actively playing to maximize mobile play area) */}
+          {/* Game Selection Grid */}
           {!isPlaying ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 gap-2 sm:gap-2.5">
               {displayGames.map(g => {
@@ -1465,7 +1898,7 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
                   >
                     {isFeatured && (
                       <span className="absolute top-0 right-0 px-2 py-0.5 bg-gradient-to-l from-amber-400 to-yellow-500 text-slate-950 font-black text-[9px] rounded-bl-lg shadow">
-                        ⭐ GÜNÜN OYUNU
+                        ⭐ 2X
                       </span>
                     )}
 
@@ -1505,7 +1938,7 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
                     )}
                   </div>
                   <div className="text-xs text-amber-300 font-bold">
-                    Canlı Skor: {score} Puan
+                    {t.liveScore}: {score} {t.points}
                   </div>
                 </div>
               </div>
@@ -1516,7 +1949,7 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
                 }}
                 className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-purple-200 border border-purple-400/40 text-xs font-bold transition active:scale-95 cursor-pointer"
               >
-                ◀ Oyun Değiştir
+                {t.changeGame}
               </button>
             </div>
           )}
@@ -1536,7 +1969,7 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
                     <h3 className="text-2xl font-black text-white">{currentMeta.title}</h3>
                     {isSelectedGameDaily && (
                       <span className="px-2 py-0.5 bg-amber-400 text-slate-950 font-black rounded-lg text-xs">
-                        🌟 2X GÜNÜN OYUNU
+                        🌟 2X
                       </span>
                     )}
                   </div>
@@ -1550,7 +1983,7 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
                 <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-1 text-left inline-block w-full">
                   <div className="font-black text-purple-300 mb-1 flex items-center gap-1.5">
                     <Gamepad2 className="w-4 h-4" />
-                    <span>Nasıl Oynanır?</span>
+                    <span>{t.howToPlay}</span>
                   </div>
                   {currentMeta.rules.map((rule, idx) => (
                     <div key={idx} className="flex items-center gap-2">
@@ -1563,9 +1996,9 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
                 {gameOver && (
                   <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 font-black text-sm flex items-center justify-center gap-3">
                     <Award className="w-5 h-5 text-amber-400" />
-                    <span>Oyun Bitti! Skorun: {score} Puan!</span>
+                    <span>{t.gameOver} {score} {t.points}!</span>
                     <span className="text-emerald-400 text-xs">
-                      {isSelectedGameDaily ? '(2X Çifte Ödül Hesabına Eklendi!)' : '(Ödüller Hesabına Eklendi!)'}
+                      {isSelectedGameDaily ? `(${t.bonusAdded})` : ''}
                     </span>
                   </div>
                 )}
@@ -1580,7 +2013,7 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
                     className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600 hover:from-purple-400 hover:to-indigo-400 text-white font-black text-base shadow-xl flex items-center gap-2 mx-auto transition transform active:scale-95 cursor-pointer"
                   >
                     <Play className="w-5 h-5 fill-current" />
-                    <span>{gameOver ? 'Tekrar Oyna' : 'Oyunu Başlat'}</span>
+                    <span>{gameOver ? t.playAgainBtn : t.playBtn}</span>
                   </button>
                 </div>
               </div>
@@ -1592,15 +2025,15 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
         {/* Footer */}
         <div className="p-4 bg-slate-950 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400 shrink-0">
           <div className="flex items-center gap-2">
-            <span className="text-amber-400 font-bold">🎁 Günlük Atari Ödül Sistemi:</span>
-            <span>Her gün atari salonunu ziyaret et, günün 2X oyununu oyna ve bolca Altın ile Atari Jetonu topla!</span>
+            <span className="text-amber-400 font-bold">{t.footerTitle}</span>
+            <span>{t.footerDesc}</span>
           </div>
 
           <button
             onClick={onClose}
             className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition cursor-pointer border border-slate-700"
           >
-            Kapat
+            {t.closeBtn}
           </button>
         </div>
 

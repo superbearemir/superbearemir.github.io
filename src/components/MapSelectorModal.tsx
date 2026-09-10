@@ -307,42 +307,6 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
         {/* Scrollable Levels Container */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-6">
 
-          {/* 20:00 BIG UNDERGROUND UPDATE TRAILER BANNER */}
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-red-950/80 via-amber-950/70 to-slate-950 border-2 border-amber-500/70 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-red-600 via-orange-500 to-amber-400 p-0.5 shadow-lg flex-shrink-0">
-                <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center text-2xl animate-bounce">
-                  🌋
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-black text-amber-300 uppercase tracking-wide">
-                    20:00 BÜYÜK GÜNCELLEMESİ & YERALTI DÜNYASI FRAGMANI
-                  </span>
-                  <span className="px-2 py-0.5 text-[9px] font-black bg-red-600 text-white rounded-full animate-pulse">
-                    5 DAKİKA
-                  </span>
-                </div>
-                <p className="text-xs text-slate-300 mt-0.5">
-                  9 Farklı Yeraltı Bölümü, Köstebekler, Dev Magma Solucanları ve Zemin Yarılması Felaketi!
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => {
-                onClose();
-                window.dispatchEvent(new CustomEvent('superbear:close-map-selector'));
-                window.dispatchEvent(new CustomEvent('superbear:open-trailer'));
-              }}
-              className="px-4 py-2 rounded-xl bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-white font-black text-xs border border-amber-300 shadow-md flex items-center gap-2 shrink-0 cursor-pointer"
-            >
-              <span>🎬 Fragmanı İzle [H]</span>
-              <ChevronRight className="w-4 h-4" />
-            </button>
-          </div>
-          
           {/* SECTION 1: 15 DÜNYA BÖLÜMÜ */}
           {(selectedFilter === 'all' || selectedFilter === 'earth') && (
             <div>

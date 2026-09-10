@@ -264,9 +264,9 @@ export function syncShopEquipmentsToGameInstance(equippedIds: string[]) {
   const hatContainer = new THREE.Group();
   hatContainer.name = 'player_hat_container';
   if (hatParent === pb.head || hatParent !== root) {
-    hatContainer.position.set(0, 0.44, 0.02);
+    hatContainer.position.set(0, 0, 0);
   } else {
-    hatContainer.position.set(0, 1.55, 0.05);
+    hatContainer.position.set(0, 1.25, 0);
   }
   hatParent.add(hatContainer);
 

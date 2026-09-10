@@ -6494,7 +6494,7 @@ const Zw = [
       ]}),
 
       // Center: Region Badge
-      E.jsxs("button",{onClick:(evt)=>{if(h)h(evt);if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-map-selector"));},className:"flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/90 border border-slate-700 hover:border-sky-400 text-slate-200 text-xs font-extrabold cursor-pointer transition active:scale-95 shadow",children:[
+      E.jsxs("button",{onClick:(evt)=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-map-selector"));},className:"flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/90 border border-slate-700 hover:border-sky-400 text-slate-200 text-xs font-extrabold cursor-pointer transition active:scale-95 shadow",children:[
         E.jsx("span",{className:"text-sm",children:e.icon}),
         E.jsx("span",{className:"text-white max-w-[140px] truncate",children:e.titleTr}),
         E.jsx("span",{className:"text-[9px] text-sky-300 bg-sky-950/80 px-1.5 py-0.2 rounded font-mono",children:"🗺️ Harita"})

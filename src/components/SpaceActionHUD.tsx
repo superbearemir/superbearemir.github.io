@@ -20,6 +20,7 @@ import {
 import { QualityProfile, optimizeGameRenderer } from '../utils/mobilePerformanceOptimizer';
 import { ControlMode } from './DeviceSelectionModal';
 import { useGameSave } from '../utils/saveManager';
+import { useLanguage } from '../i18n/LanguageContext';
 
 interface SpaceActionHUDProps {
   onOpenDrawingModal: () => void;
@@ -55,6 +56,7 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
   const [isNearInteractable, setIsNearInteractable] = useState(false);
   const [activeTab, setActiveTab] = useState<'powers' | 'emotes' | 'shop' | 'settings'>('powers');
   const [selectedPowerId, setSelectedPowerId] = useState<'teleport' | 'laser' | 'rocket' | 'ground_pound' | 'roll' | 'fish' | 'spray' | 'companion' | 'dance' | 'triple_jump' | 'interact'>('laser');
+  const { t, language } = useLanguage();
 
   // Game Persistence & Auto-Save Manager hook
   const { saveData, lastSaveToast, manualSave } = useGameSave();
@@ -512,11 +514,11 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
             if (onOpenMapModal) onOpenMapModal();
             else window.dispatchEvent(new CustomEvent('superbear:open-map-selector'));
           }}
-          title="38 Bölümlü Harita Seçiciyi Aç"
+          title={t('map')}
           className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-sky-600 to-teal-600 text-white border border-sky-300 shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-sky-500 hover:to-teal-500"
         >
           <span className="text-xs">🗺️</span>
-          <span>Harita</span>
+          <span>{t('map')}</span>
         </button>
 
         {/* Quick Retro Arcade Games Button (Prominently visible on Mobile and PC) */}
@@ -525,31 +527,31 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
             if (onOpenArcade) onOpenArcade();
             else window.dispatchEvent(new CustomEvent('superbear:open-arcade-games'));
           }}
-          title="Retro Arcade Mini Oyun Salonunu Aç (10 Nostaljik Atari Oyunu)"
+          title={t('arcade')}
           className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 text-white border border-purple-300 shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-purple-500 hover:to-pink-500"
         >
           <span className="text-xs">🕹️</span>
-          <span>Arcade</span>
+          <span>{t('arcade')}</span>
         </button>
 
         {/* Quick Country & Language Selector Button */}
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('superbear:open-language-modal'))}
-          title="Dil & Ülke Seçimi (Dünyadaki Tüm Ülkeler Alfabetik Sırayla)"
+          title={t('languageSelect')}
           className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-emerald-600 to-teal-700 text-white border border-emerald-300 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-emerald-500 hover:to-teal-600"
         >
           <span className="text-xs">🌍</span>
-          <span>Dil / Lang</span>
+          <span>{language.toUpperCase()}</span>
         </button>
 
         {/* Loot Boxes Quick Button */}
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('superbear:open-lootboxes'))}
-          title="Şans Kutuları & Sandıklar (1x, 15x, Efsanevi 1 ve Efsanevi 5 Kutu)"
+          title={t('boxes')}
           className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-500 text-slate-950 border border-amber-300 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:brightness-110 animate-pulse"
         >
           <span className="text-xs">🎁</span>
-          <span>Kutular</span>
+          <span>{t('boxes')}</span>
         </button>
 
         {/* Anti-Lag / 60 FPS Toggle Button */}
