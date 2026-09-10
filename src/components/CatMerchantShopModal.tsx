@@ -28,7 +28,8 @@ import {
   Filter,
   CheckCircle2,
   PackageCheck,
-  Grid
+  Grid,
+  UserCheck
 } from 'lucide-react';
 import { getCurrentSavedDesign, syncShopEquipmentsToGameInstance } from '../customizer/GameBridge';
 import { SHOP_ITEMS, ShopItem } from '../data/shopItemsData';
@@ -54,6 +55,7 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [sortBy, setSortBy] = useState<'featured' | 'name' | 'price_low' | 'price_high' | 'rarity'>('featured');
   const [bearPose, setBearPose] = useState<'idle' | 'dance' | 'roar' | 'punch' | 'wave' | 'spin'>('idle');
+  const [mobileViewMode, setMobileViewMode] = useState<'catalog' | 'preview'>('catalog');
   const bearPoseRef = useRef(bearPose);
   
   // Pagination State
@@ -66,7 +68,6 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
       return (window as any).__superBearSaveManager.getSaveData().goldBalance;
     }
     const saved = localStorage.getItem('super_bear_coins');
-    // If no saved coins or was old 999999 / 1000000 test amount, start with 150 coins
     if (!saved || parseInt(saved, 10) >= 900000) {
       localStorage.setItem('super_bear_coins', '150');
       return 150;
@@ -84,7 +85,6 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
         }
       } catch (e) {}
     }
-    // Clean out ground-touching duplicate cape from initial load
     const starterPurchased: string[] = [];
     localStorage.setItem('super_bear_purchased_items', JSON.stringify(starterPurchased));
     return starterPurchased;
@@ -100,7 +100,6 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
     try {
       const parsed = JSON.parse(saved);
       if (Array.isArray(parsed)) {
-        // Remove ground-touching duplicate cape from equipped items
         const cleaned = parsed.filter(id => id !== 'back_royal_cape');
         if (cleaned.length !== parsed.length) {
           localStorage.setItem('super_bear_equipped_items', JSON.stringify(cleaned));
@@ -113,7 +112,7 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
   
   const [notice, setNotice] = useState<string | null>(null);
 
-  // 3D Canvas Refs for Live Bear Preview inside Shop
+  // 3D Canvas Refs
   const canvasContainerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -130,6 +129,17 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
     distance: 6.2,
     targetY: 0.35,
   });
+
+  // ESC key to close modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen && !isLootBoxModalOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, isLootBoxModalOpen, onClose]);
 
   // Sync state to localStorage & Game Instance
   useEffect(() => {
@@ -155,7 +165,7 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
     update3DBearEquipments();
   }, [equippedIds]);
 
-  // Listen for coins updated from other sources (levels, quests, arcade)
+  // Listen for coins updated from other sources
   useEffect(() => {
     const handleCoinsUpdated = (e: Event) => {
       const detail = (e as CustomEvent).detail;
@@ -179,42 +189,64 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
     if (!bearModelRef.current) return;
     const activeIds = targetEquippedIds || equippedIds;
     const bearRoot = bearModelRef.current.root;
+    const headGroup = bearModelRef.current.headGroup || bearRoot;
+    const rightArmGroup = bearModelRef.current.rightArmGroup || bearRoot;
+    const bodyMesh = bearModelRef.current.bodyMesh || bearRoot;
     if (!bearRoot) return;
 
-    // Find or create slot containers
-    let hatContainer = bearRoot.getObjectByName('preview_hat_container');
+    // 1. Hat container
+    let hatContainer = headGroup.getObjectByName('preview_hat_container');
     if (!hatContainer) {
       hatContainer = new THREE.Group();
       hatContainer.name = 'preview_hat_container';
-      hatContainer.position.set(0, 1.55, 0.05);
-      bearRoot.add(hatContainer);
+      if (bearModelRef.current.headGroup) {
+        hatContainer.position.set(0, 0.42, 0.05);
+      } else {
+        hatContainer.position.set(0, 1.55, 0.05);
+      }
+      headGroup.add(hatContainer);
     }
 
-    let faceContainer = bearRoot.getObjectByName('preview_face_container');
+    // 2. Face container
+    let faceContainer = headGroup.getObjectByName('preview_face_container');
     if (!faceContainer) {
       faceContainer = new THREE.Group();
       faceContainer.name = 'preview_face_container';
-      faceContainer.position.set(0, 1.35, 0.38);
-      bearRoot.add(faceContainer);
+      if (bearModelRef.current.headGroup) {
+        faceContainer.position.set(0, -0.05, 0.45);
+      } else {
+        faceContainer.position.set(0, 1.35, 0.38);
+      }
+      headGroup.add(faceContainer);
     }
 
-    let backContainer = bearRoot.getObjectByName('preview_back_container');
+    // 3. Back container
+    let backContainer = bodyMesh.getObjectByName('preview_back_container');
     if (!backContainer) {
       backContainer = new THREE.Group();
       backContainer.name = 'preview_back_container';
-      backContainer.position.set(0, 0.7, -0.42);
-      bearRoot.add(backContainer);
+      if (bearModelRef.current.bodyMesh) {
+        backContainer.position.set(0, 0.1, -0.42);
+      } else {
+        backContainer.position.set(0, 0.7, -0.42);
+      }
+      bodyMesh.add(backContainer);
     }
 
-    let handContainer = bearRoot.getObjectByName('preview_hand_container');
+    // 4. Hand container
+    let handContainer = rightArmGroup.getObjectByName('preview_hand_container');
     if (!handContainer) {
       handContainer = new THREE.Group();
       handContainer.name = 'preview_hand_container';
-      handContainer.position.set(0.45, 0.5, 0.25);
-      bearRoot.add(handContainer);
+      if (bearModelRef.current.rightArmGroup) {
+        handContainer.position.set(0, -0.38, 0.15);
+      } else {
+        handContainer.position.set(0.45, 0.5, 0.25);
+      }
+      rightArmGroup.add(handContainer);
     }
 
-    // Clear existing
+    // Clear existing children
     [hatContainer, faceContainer, backContainer, handContainer].forEach(container => {
       if (container && container.children) {
         while (container.children.length > 0) {
@@ -225,7 +257,7 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
 
     const design = getCurrentSavedDesign();
 
-    // Attach current equipped items
+    // Attach active items
     activeIds.forEach(id => {
       const itemData = SHOP_ITEMS.find(item => item.id === id);
       const colorInt = itemData?.color ? hexToInt(itemData.color) : 0xf59e0b;
@@ -276,8 +308,8 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
   useEffect(() => {
     if (!isOpen || !canvasContainerRef.current) return;
     const container = canvasContainerRef.current;
-    const width = container.clientWidth || 360;
-    const height = container.clientHeight || 450;
+    const width = container.clientWidth || 340;
+    const height = container.clientHeight || 300;
 
     // 1. Scene
     const scene = new THREE.Scene();
@@ -302,7 +334,7 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
     scene.add(ring);
 
     // 2. Camera
-    const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100);
+    const camera = new THREE.PerspectiveCamera(40, width / Math.max(height, 1), 0.1, 100);
     cameraRef.current = camera;
 
     // 3. Renderer
@@ -348,18 +380,50 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
       animFrameRef.current = requestAnimationFrame(animate);
       const time = clock.getElapsedTime();
 
-      // Orbit camera positioning
-      const { rotY, rotX, distance, targetY } = orbitState.current;
-      const x = Math.sin(rotY) * Math.cos(rotX) * distance;
-      const y = targetY + Math.sin(rotX) * distance;
-      const z = Math.cos(rotY) * Math.cos(rotX) * distance;
-
+      // Camera Orbit
+      const orbit = orbitState.current;
+      const x = orbit.distance * Math.sin(orbit.rotY) * Math.cos(orbit.rotX);
+      const y = orbit.targetY + orbit.distance * Math.sin(orbit.rotX);
+      const z = orbit.distance * Math.cos(orbit.rotY) * Math.cos(orbit.rotX);
       camera.position.set(x, y, z);
-      camera.lookAt(0, targetY, 0);
+      camera.lookAt(0, orbit.targetY, 0);
 
-      // Bear pose animation
-      if (bearModelRef.current) {
-        bearModelRef.current.setAnimationPose(bearPoseRef.current, time);
+      // Animation poses
+      const model = bearModelRef.current;
+      if (model) {
+        const pose = bearPoseRef.current;
+        if (pose === 'idle') {
+          if (model.headGroup) model.headGroup.rotation.y = Math.sin(time * 1.5) * 0.12;
+          if (model.headGroup) model.headGroup.rotation.x = Math.sin(time * 2.0) * 0.05;
+          if (model.bodyMesh) model.bodyMesh.position.y = 0.75 + Math.sin(time * 3.0) * 0.03;
+          if (model.leftArmGroup) model.leftArmGroup.rotation.x = Math.sin(time * 2.0) * 0.1;
+          if (model.rightArmGroup) model.rightArmGroup.rotation.x = -Math.sin(time * 2.0) * 0.1;
+        } else if (pose === 'dance') {
+          model.root.rotation.y = Math.sin(time * 4) * 0.35;
+          if (model.bodyMesh) model.bodyMesh.position.y = 0.75 + Math.abs(Math.sin(time * 6)) * 0.2;
+          if (model.leftArmGroup) model.leftArmGroup.rotation.z = Math.sin(time * 6) * 0.8 + 0.4;
+          if (model.rightArmGroup) model.rightArmGroup.rotation.z = -Math.sin(time * 6) * 0.8 - 0.4;
+        } else if (pose === 'roar') {
+          if (model.headGroup) {
+            model.headGroup.rotation.x = -0.35 + Math.sin(time * 8) * 0.05;
+            model.headGroup.rotation.y = Math.sin(time * 12) * 0.08;
+          }
+          if (model.leftArmGroup) model.leftArmGroup.rotation.x = -1.2 + Math.sin(time * 8) * 0.1;
+          if (model.rightArmGroup) model.rightArmGroup.rotation.x = -1.2 - Math.sin(time * 8) * 0.1;
+        } else if (pose === 'punch') {
+          if (model.rightArmGroup) {
+            model.rightArmGroup.rotation.x = -1.5 + Math.sin(time * 10) * 0.8;
+            model.rightArmGroup.rotation.y = Math.sin(time * 10) * 0.4;
+          }
+        } else if (pose === 'wave') {
+          if (model.rightArmGroup) {
+            model.rightArmGroup.rotation.x = -1.6;
+            model.rightArmGroup.rotation.z = Math.sin(time * 8) * 0.5 - 0.3;
+          }
+        } else if (pose === 'spin') {
+          model.root.rotation.y = time * 3.5;
+          if (model.bodyMesh) model.bodyMesh.position.y = 0.75 + Math.sin(time * 6) * 0.1;
+        }
       }
 
       renderer.render(scene, camera);
@@ -367,42 +431,31 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
 
     animate();
 
-    // Resize Handler
     const handleResize = () => {
       if (!container || !renderer || !camera) return;
-      const w = container.clientWidth;
-      const h = container.clientHeight;
-      camera.aspect = w / h;
+      const w = container.clientWidth || 340;
+      const h = container.clientHeight || 300;
+      camera.aspect = w / Math.max(h, 1);
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
     };
 
-    window.addEventListener('resize', handleResize);
+    const resizeObserver = new ResizeObserver(handleResize);
+    resizeObserver.observe(container);
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-      if (rendererRef.current) rendererRef.current.dispose();
-      if (bearModelRef.current) bearModelRef.current.destroy();
+      renderer.dispose();
     };
-  }, [isOpen]);
+  }, [isOpen, mobileViewMode, update3DBearEquipments]);
 
-  // Separate effect to update bear equipments without re-creating the entire WebGL scene
-  useEffect(() => {
-    if (isOpen && bearModelRef.current) {
-      update3DBearEquipments();
-    }
-  }, [equippedIds, isOpen, update3DBearEquipments]);
-
-  // Update bear pose animation
+  // Sync bear pose
   useEffect(() => {
     bearPoseRef.current = bearPose;
-    if (bearModelRef.current) {
-      bearModelRef.current.setAnimationPose(bearPose, 0);
-    }
   }, [bearPose]);
 
-  // Orbit Control Mouse Handlers
+  // Pointer/Mouse Orbit Events
   const handleMouseDown = (e: React.MouseEvent) => {
     orbitState.current.isDragging = true;
     orbitState.current.prevX = e.clientX;
@@ -416,87 +469,89 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
     orbitState.current.prevX = e.clientX;
     orbitState.current.prevY = e.clientY;
 
-    orbitState.current.rotY += deltaX * 0.008;
-    orbitState.current.rotX = Math.max(-0.4, Math.min(0.8, orbitState.current.rotX + deltaY * 0.008));
+    orbitState.current.rotY -= deltaX * 0.01;
+    orbitState.current.rotX = Math.max(-0.4, Math.min(0.7, orbitState.current.rotX + deltaY * 0.01));
   };
 
   const handleMouseUp = () => {
     orbitState.current.isDragging = false;
   };
 
-  const handleFreeCoins = () => {
-    const today = new Date().toISOString().split('T')[0];
-    const lastClaimDate = localStorage.getItem('super_bear_last_free_coin_date');
-    if (lastClaimDate === today) {
-      showNotification('⏳ Bugünlük bedava altın hakkınızı (+2,000) kullandınız! Yarın tekrar bekleriz.');
+  // Touch Orbit Events for Mobile
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      orbitState.current.isDragging = true;
+      orbitState.current.prevX = e.touches[0].clientX;
+      orbitState.current.prevY = e.touches[0].clientY;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!orbitState.current.isDragging || e.touches.length !== 1) return;
+    const deltaX = e.touches[0].clientX - orbitState.current.prevX;
+    const deltaY = e.touches[0].clientY - orbitState.current.prevY;
+    orbitState.current.prevX = e.touches[0].clientX;
+    orbitState.current.prevY = e.touches[0].clientY;
+
+    orbitState.current.rotY -= deltaX * 0.012;
+    orbitState.current.rotX = Math.max(-0.4, Math.min(0.7, orbitState.current.rotX + deltaY * 0.012));
+  };
+
+  // Buy or Equip Item
+  const handleBuyOrEquip = (item: ShopItem) => {
+    const isOwned = purchasedIds.includes(item.id);
+    const isEquipped = equippedIds.includes(item.id);
+
+    if (isEquipped) {
+      // Unequip item
+      const nextEquipped = equippedIds.filter(id => id !== item.id);
+      setEquippedIds(nextEquipped);
+      showNotification(`ℹ️ "${item.name}" çıkarıldı.`);
       return;
     }
-    localStorage.setItem('super_bear_last_free_coin_date', today);
-    setCoins(prev => {
-      const next = prev + 2000;
-      localStorage.setItem('super_bear_coins', next.toString());
-      return next;
+
+    if (isOwned) {
+      // Equip item: Filter out items in same slot if single slot
+      const otherEquipped = equippedIds.filter(id => {
+        const otherItem = SHOP_ITEMS.find(i => i.id === id);
+        return otherItem?.slot !== item.slot;
+      });
+      const nextEquipped = [...otherEquipped, item.id];
+      setEquippedIds(nextEquipped);
+      showNotification(`✨ "${item.name}" kuşanıldı & karaktere giydirildi!`);
+      return;
+    }
+
+    // Purchase & Equip
+    if (coins < item.price) {
+      showNotification(`❌ Yetersiz Altın! ${item.price} 🪙 gerekiyor.`);
+      return;
+    }
+
+    const nextCoins = coins - item.price;
+    setCoins(nextCoins);
+    const nextPurchased = [...purchasedIds, item.id];
+    setPurchasedIds(nextPurchased);
+
+    const otherEquipped = equippedIds.filter(id => {
+      const otherItem = SHOP_ITEMS.find(i => i.id === id);
+      return otherItem?.slot !== item.slot;
     });
-    showNotification('🎁 Günlük +2,000 Bedava Altın Cüzdanınıza Eklendi!');
+    const nextEquipped = [...otherEquipped, item.id];
+    setEquippedIds(nextEquipped);
+
+    showNotification(`🎉 "${item.name}" satın alındı ve kuşanıldı! (-${item.price} 🪙)`);
   };
 
   const handleUnequipAll = () => {
     setEquippedIds([]);
-    localStorage.setItem('super_bear_equipped_items', JSON.stringify([]));
-    syncShopEquipmentsToGameInstance([]);
-    update3DBearEquipments([]);
-    showNotification('🧹 Tüm Kuşanılan İtemler Çıkarıldı.');
+    showNotification('🧹 Tüm kostüm ve aksesuarlar çıkarıldı.');
   };
 
-  const handleBuyOrEquip = (item: ShopItem) => {
-    // 1. Ensure item is marked as purchased / unlocked for free if not owned
-    if (!purchasedIds.includes(item.id)) {
-      setPurchasedIds(prev => [...prev, item.id]);
-      setCoins(prev => Math.max(0, prev - (item.price || 0)));
-    }
-
-    // 2. Handle Instant Bundles / Buffs
-    if (item.effectType === 'add_aliens') {
-      const enhancer = (window as any).__superBearSpaceEnhancer;
-      if (enhancer && enhancer.updateAliensRescued) {
-        enhancer.updateAliensRescued(item.effectValue);
-        showNotification(`👽 +${item.effectValue} Uzaylı Göreve Eklendi!`);
-      }
-      return;
-    }
-
-    if (item.effectType === 'buff_speed') {
-      const enhancer = (window as any).__superBearSpaceEnhancer;
-      if (enhancer && enhancer.teleportDash) {
-        enhancer.teleportDash();
-      }
-      showNotification('⚡ Süper Hız Işınlanması Aktif Edildi!');
-      return;
-    }
-
-    // 3. Toggle Equip/Unequip based on Slot (Hat, Face, Back, Skin, Hand, Aura)
-    let nextEquipped = [...equippedIds];
-    const isCurrentlyEquipped = equippedIds.includes(item.id);
-
-    if (isCurrentlyEquipped) {
-      // Unequip item
-      nextEquipped = nextEquipped.filter(id => id !== item.id);
-      showNotification(`❌ ${item.name} Çıkarıldı.`);
-    } else {
-      // Equip item: replace items in the SAME SLOT so only 1 item per slot is active
-      nextEquipped = nextEquipped.filter(id => {
-        const match = SHOP_ITEMS.find(i => i.id === id);
-        const itemSlot = match?.slot || (id.includes('hat') ? 'hat' : id.includes('face') ? 'face' : id.includes('back') ? 'back' : id.includes('hand') ? 'hand' : id.includes('skin') ? 'skin' : 'aura');
-        return itemSlot !== item.slot;
-      });
-      nextEquipped.push(item.id);
-      showNotification(`✨ ${item.name} Ayıya Giydirildi!`);
-    }
-
-    setEquippedIds(nextEquipped);
-    localStorage.setItem('super_bear_equipped_items', JSON.stringify(nextEquipped));
-    syncShopEquipmentsToGameInstance(nextEquipped);
-    update3DBearEquipments(nextEquipped);
+  const handleFreeCoins = () => {
+    const nextCoins = coins + 2000;
+    setCoins(nextCoins);
+    showNotification('🎁 +2,000 Altın hesabına eklendi!');
   };
 
   // Category counts map
@@ -581,7 +636,7 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
 
   const getPaginationPages = () => {
     const pages: (number | string)[] = [];
-    if (totalPages <= 7) {
+    if (totalPages <= 5) {
       for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
       pages.push(1);
@@ -604,130 +659,159 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
   const getRarityBadge = (rarity?: string) => {
     switch (rarity) {
       case 'mythic':
-        return <span className="px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-400/50 font-black text-[10px]">MİTİK 🌟</span>;
+        return <span className="px-1.5 py-0.5 rounded bg-pink-500/20 text-pink-300 border border-pink-400/50 font-black text-[9px] sm:text-[10px]">MİTİK 🌟</span>;
       case 'legendary':
-        return <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/50 font-black text-[10px]">EFSANEVİ 👑</span>;
+        return <span className="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-400/50 font-black text-[9px] sm:text-[10px]">EFSANEVİ 👑</span>;
       case 'epic':
-        return <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-400/50 font-black text-[10px]">SÜPER ENDER ⚡</span>;
+        return <span className="px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-300 border border-purple-400/50 font-black text-[9px] sm:text-[10px]">SÜPER ENDER ⚡</span>;
       case 'rare':
-        return <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-400/50 font-black text-[10px]">ENDER 💎</span>;
+        return <span className="px-1.5 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-400/50 font-black text-[9px] sm:text-[10px]">ENDER 💎</span>;
       default:
-        return <span className="px-2 py-0.5 rounded-full bg-slate-700/80 text-slate-300 border border-slate-600 font-bold text-[10px]">YAYGIN ☘️</span>;
+        return <span className="px-1.5 py-0.5 rounded bg-slate-700/80 text-slate-300 border border-slate-600 font-bold text-[9px] sm:text-[10px]">YAYGIN ☘️</span>;
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-1.5 sm:p-4 animate-in fade-in duration-200">
-      {/* Floating Emergency Direct Close Button */}
-      <button
-        onClick={onClose}
-        aria-label="Pencereyi Kapat"
-        className="fixed top-2 right-2 sm:top-4 sm:right-4 z-[250] min-w-[46px] min-h-[46px] p-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black shadow-2xl border-2 border-rose-300 flex items-center justify-center transition active:scale-90 cursor-pointer"
-        title="Kapat (X)"
-      >
-        <X className="w-7 h-7 stroke-[3]" />
-      </button>
-
-      {/* Giant Studio Modal Container */}
-      <div className="relative w-full max-w-7xl bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border-2 border-amber-500/70 rounded-3xl shadow-2xl flex flex-col h-[94vh] max-h-[96dvh] overflow-hidden">
+    <div 
+      className="fixed inset-0 z-[100] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-1 sm:p-3 animate-in fade-in duration-200 select-none"
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isLootBoxModalOpen) {
+          onClose();
+        }
+      }}
+    >
+      {/* Modal Container */}
+      <div className="relative w-full max-w-7xl bg-slate-900 border-2 border-amber-500/80 rounded-3xl shadow-2xl flex flex-col h-[96dvh] max-h-[96vh] overflow-hidden">
         
-        {/* Pinned Sticky Header */}
-        <div className="sticky top-0 z-40 p-2.5 sm:p-4 bg-gradient-to-r from-amber-600 via-orange-500 to-amber-700 text-slate-950 flex items-center justify-between border-b-2 border-amber-400/50 shrink-0 shadow-md">
-          <div className="flex items-center gap-2.5 sm:gap-3">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-slate-950 border-2 border-amber-200 flex items-center justify-center text-xl sm:text-2xl shadow-xl relative animate-bounce shrink-0">
+        {/* Header Bar */}
+        <div className="p-2.5 sm:p-3.5 bg-gradient-to-r from-amber-600 via-orange-500 to-amber-700 text-slate-950 flex items-center justify-between border-b-2 border-amber-400/60 shrink-0 shadow-md">
+          <div className="flex items-center gap-2 sm:gap-2.5">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-slate-950 border-2 border-amber-200 flex items-center justify-center text-lg sm:text-xl shadow-lg shrink-0">
               🐱
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-2xl font-black tracking-wider text-slate-950 line-clamp-1">
-                  BAKKAL KEDİ CAPİ & 3D AYI KOSTÜM MAĞAZASI
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h2 className="text-sm sm:text-lg font-black tracking-wider text-slate-950 line-clamp-1">
+                  KEDİ CAPİ & AYI KOSTÜM MAĞAZASI
                 </h2>
-                <span className="px-2 py-0.5 rounded-full bg-slate-950 text-amber-300 font-black text-[11px] sm:text-xs border border-amber-400/50 hidden xs:inline-block">
+                <span className="px-2 py-0.5 rounded-full bg-slate-950 text-amber-300 font-black text-[10px] sm:text-xs border border-amber-400/50 hidden xs:inline-block">
                   180+ İtem 🏪
                 </span>
               </div>
-              <p className="text-xs font-bold text-slate-900 opacity-90 hidden md:block">
-                "İstediğin zırh, kılıç, gözlük veya pelerini giydir; 3D Ayı üzerinde ANINDA CANLI GÖR!"
+              <p className="text-[11px] font-bold text-slate-950 opacity-90 hidden sm:block">
+                İtemleri seç, karakter üzerinde anında canlı gör ve giydir!
               </p>
             </div>
           </div>
 
+          {/* Header Actions */}
           <div className="flex items-center gap-2">
+            <div className="px-2.5 py-1 bg-slate-950/90 border border-amber-400 rounded-xl flex items-center gap-1 text-amber-300 font-black text-xs sm:text-sm shadow-inner">
+              <Coins className="w-3.5 h-3.5 text-amber-400 animate-spin" />
+              <span>{coins.toLocaleString()} 🪙</span>
+            </div>
+
             <button
               onClick={onClose}
-              className="min-w-[42px] min-h-[42px] p-2 rounded-2xl bg-slate-950 hover:bg-rose-600 text-amber-300 hover:text-white transition active:scale-95 cursor-pointer border-2 border-amber-400 flex items-center justify-center shadow-lg"
-              title="Kapat"
+              className="min-w-[42px] min-h-[42px] p-2 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black transition active:scale-95 cursor-pointer border-2 border-rose-300 flex items-center justify-center shadow-lg"
+              title="Kapat (ESC)"
+              aria-label="Pencereyi Kapat"
             >
-              <X className="w-6 h-6 stroke-[2.5]" />
+              <X className="w-6 h-6 stroke-[3]" />
             </button>
           </div>
         </div>
 
-        {/* Wallet & Quick Status Bar */}
-        <div className="px-4 py-2 bg-slate-900/90 border-b border-amber-500/30 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
-          <div className="flex items-center gap-3">
-            <span className="font-bold text-slate-300">Cüzdan Bakiye:</span>
-            <div className="px-3.5 py-1 bg-amber-500/20 border border-amber-400/60 rounded-xl flex items-center gap-1.5 font-black text-amber-300 text-sm shadow-inner">
-              <Coins className="w-4 h-4 text-amber-400 animate-spin" />
-              <span>{coins.toLocaleString()} 🪙 Altın</span>
-            </div>
-
+        {/* Quick Toolbar Bar */}
+        <div className="px-3 py-1.5 bg-slate-950/95 border-b border-amber-500/30 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={handleFreeCoins}
-              className="px-3.5 py-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs rounded-xl border border-emerald-300 flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-md"
+              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[11px] sm:text-xs rounded-xl border border-emerald-300 flex items-center gap-1 transition active:scale-95 cursor-pointer shadow"
             >
-              <Gift className="w-4 h-4" />
-              <span>+2,000 Altın Bedava Al!</span>
+              <Gift className="w-3.5 h-3.5" />
+              <span>+2,000 Altın Al</span>
             </button>
 
             <button
               onClick={() => setIsLootBoxModalOpen(true)}
-              className="px-4 py-1 bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-xs rounded-xl border border-amber-200 flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-lg shadow-amber-500/30 animate-pulse"
-              title="Şans Kutularını Aç (1x, 15x, Efsanevi Tek ve Efsanevi 5 Kutu)"
+              className="px-3 py-1 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-black text-[11px] sm:text-xs rounded-xl border border-amber-200 flex items-center gap-1 transition active:scale-95 cursor-pointer shadow"
+              title="Şans Kutularını Aç"
             >
-              <Gift className="w-4 h-4 text-slate-950" />
-              <span>🎁 ŞANS KUTULARI (4 PAKET)</span>
+              <Gift className="w-3.5 h-3.5 text-slate-950" />
+              <span>🎁 ŞANS KUTULARI</span>
             </button>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="px-3 py-1 bg-slate-800/90 border border-slate-700 rounded-xl text-slate-300 text-xs font-bold flex items-center gap-2">
-              <Shirt className="w-4 h-4 text-amber-400" />
-              <span>Şu An Ayının Üzerinde: <strong className="text-amber-300 font-black">{equippedIds.length} İtem</strong></span>
+            {/* Mobile View Mode Switcher (Visible on small screens < md) */}
+            <div className="flex md:hidden items-center bg-slate-900 p-0.5 rounded-xl border border-slate-700">
+              <button
+                onClick={() => setMobileViewMode('catalog')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-black transition cursor-pointer flex items-center gap-1 ${
+                  mobileViewMode === 'catalog'
+                    ? 'bg-amber-500 text-slate-950 shadow'
+                    : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                <ShoppingBag className="w-3.5 h-3.5" />
+                <span>Katalog</span>
+              </button>
+              <button
+                onClick={() => setMobileViewMode('preview')}
+                className={`px-2.5 py-1 rounded-lg text-xs font-black transition cursor-pointer flex items-center gap-1 ${
+                  mobileViewMode === 'preview'
+                    ? 'bg-amber-500 text-slate-950 shadow'
+                    : 'text-slate-300 hover:text-white'
+                }`}
+              >
+                <Eye className="w-3.5 h-3.5" />
+                <span>3D Ayı ({equippedIds.length})</span>
+              </button>
             </div>
 
-            {equippedIds.length > 0 && (
-              <button
-                onClick={handleUnequipAll}
-                className="px-3 py-1 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/40 text-rose-300 font-bold text-xs rounded-xl flex items-center gap-1 transition cursor-pointer"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Tümünü Çıkar</span>
-              </button>
-            )}
+            <div className="hidden md:flex items-center gap-2">
+              <div className="px-2.5 py-1 bg-slate-800 rounded-xl text-slate-300 text-xs font-bold flex items-center gap-1.5 border border-slate-700">
+                <Shirt className="w-3.5 h-3.5 text-amber-400" />
+                <span>Giyili: <strong className="text-amber-300">{equippedIds.length}</strong></span>
+              </div>
+
+              {equippedIds.length > 0 && (
+                <button
+                  onClick={handleUnequipAll}
+                  className="px-2.5 py-1 bg-rose-500/20 hover:bg-rose-500/30 border border-rose-400/40 text-rose-300 font-bold text-xs rounded-xl flex items-center gap-1 transition cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3" />
+                  <span>Çıkar</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Notification Toast */}
+        {/* Notice Toast */}
         {notice && (
-          <div className="mx-4 mt-2 p-2.5 rounded-xl bg-amber-500 text-slate-950 font-black text-xs text-center border border-amber-200 shadow-xl animate-in fade-in slide-in-from-top-2 shrink-0">
+          <div className="mx-3 mt-1.5 p-2 rounded-xl bg-amber-500 text-slate-950 font-black text-xs text-center border border-amber-200 shadow-xl animate-in fade-in slide-in-from-top-2 shrink-0">
             {notice}
           </div>
         )}
 
-        {/* Main Split-Screen Layout: Left 3D Bear Studio Canvas, Right Shop Grid */}
-        <div className="flex-1 flex flex-col md:flex-row overflow-y-auto md:overflow-hidden min-h-0">
+        {/* Main Content Area: Left 3D Bear (hidden on mobile when in catalog mode), Right Catalog Grid */}
+        <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
           
-          {/* LEFT PANEL: Live 3D Bear Character Preview */}
-          <div className="w-full md:w-[400px] lg:w-[440px] bg-slate-950 border-r border-slate-800 flex flex-col p-3 shrink-0 relative">
-            <div className="flex items-center justify-between mb-2 px-1">
-              <div className="flex items-center gap-1.5 text-amber-300 font-black text-sm">
+          {/* LEFT PANEL: 3D Bear Character Studio Preview */}
+          <div className={`${
+            mobileViewMode === 'preview' ? 'flex' : 'hidden md:flex'
+          } w-full md:w-[320px] lg:w-[360px] bg-slate-950 border-r border-slate-800 flex-col p-2.5 sm:p-3 shrink-0 relative overflow-y-auto`}>
+            
+            <div className="flex items-center justify-between mb-1.5 px-1">
+              <div className="flex items-center gap-1.5 text-amber-300 font-black text-xs sm:text-sm">
                 <Eye className="w-4 h-4 text-amber-400 animate-pulse" />
-                <span>CANLI 3D AYI ÖNİZLEMESİ</span>
+                <span>CANLI 3D AYI ÖNİZLEME</span>
               </div>
-              <span className="text-[10px] text-slate-400 font-medium">3D Fare ile Döndür</span>
+              <span className="text-[10px] text-slate-400">Döndür / İncele</span>
             </div>
 
             {/* Three.js Canvas Container */}
@@ -737,314 +821,244 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
-              className="w-full h-[185px] sm:h-[210px] bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 rounded-2xl border border-amber-500/40 shadow-inner relative cursor-grab active:cursor-grabbing overflow-hidden shrink-0"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleMouseUp}
+              className="w-full h-[200px] sm:h-[220px] md:h-[240px] bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 rounded-2xl border border-amber-500/40 shadow-inner relative cursor-grab active:cursor-grabbing overflow-hidden shrink-0 touch-none"
             >
-              {/* Overlay Guidance */}
-              <div className="absolute bottom-2 left-2 right-2 px-3 py-1.5 bg-slate-950/80 backdrop-blur-md rounded-xl border border-slate-800 text-[11px] text-slate-300 flex items-center justify-between pointer-events-none">
-                <span>🔄 Çevir / Yakınlaş</span>
-                <span className="text-amber-400 font-black">CANLI 3D DÖNÜŞÜM</span>
+              <div className="absolute bottom-1.5 left-2 right-2 px-2.5 py-1 bg-slate-950/80 backdrop-blur-md rounded-xl border border-slate-800 text-[10px] text-slate-300 flex items-center justify-between pointer-events-none">
+                <span>🔄 360° Çevir</span>
+                <span className="text-amber-400 font-black">CANLI SENKRON</span>
               </div>
             </div>
 
-            {/* Animation Pose Controls for the Bear */}
-            <div className="mt-2.5 p-2 bg-slate-900/90 rounded-2xl border border-slate-800 space-y-1.5">
-              <span className="text-[11px] font-black text-amber-300 px-1 block">🐻 Ayı Hareket Testi:</span>
+            {/* Animation Pose Controls */}
+            <div className="mt-2 p-2 bg-slate-900/90 rounded-2xl border border-slate-800 space-y-1">
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-300">
+                <span className="flex items-center gap-1 text-amber-400">
+                  <Play className="w-3 h-3" /> Hareket Duruşu:
+                </span>
+                <span className="text-[10px] text-slate-400 capitalize">{bearPose}</span>
+              </div>
+
               <div className="grid grid-cols-3 gap-1">
-                {(['idle', 'dance', 'roar', 'punch', 'wave', 'spin'] as const).map(pose => (
+                {[
+                  { id: 'idle', label: '😌 Duruş' },
+                  { id: 'dance', label: '💃 Dans' },
+                  { id: 'roar', label: '🦁 Kükre' },
+                  { id: 'punch', label: '🥊 Saldır' },
+                  { id: 'wave', label: '👋 Selam' },
+                  { id: 'spin', label: '🌪️ Dönüş' },
+                ].map(p => (
                   <button
-                    key={pose}
-                    onClick={() => setBearPose(pose)}
-                    className={`py-1 px-2 rounded-xl text-[11px] font-bold capitalize transition cursor-pointer flex items-center justify-center gap-1 ${
-                      bearPose === pose
-                        ? 'bg-amber-500 text-slate-950 font-black shadow-md'
-                        : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                    key={p.id}
+                    onClick={() => setBearPose(p.id as any)}
+                    className={`py-1 rounded-xl text-[10px] font-black transition cursor-pointer ${
+                      bearPose === p.id
+                        ? 'bg-amber-500 text-slate-950 shadow-md font-black'
+                        : 'bg-slate-800/80 hover:bg-slate-700 text-slate-300'
                     }`}
                   >
-                    <Play className="w-3 h-3" />
-                    <span>{pose === 'idle' ? 'Duruş' : pose === 'dance' ? 'Dans' : pose === 'roar' ? 'Kükre' : pose === 'punch' ? 'Yumruk' : pose === 'wave' ? 'El Salla' : 'Dön'}</span>
+                    {p.label}
                   </button>
                 ))}
               </div>
             </div>
+
+            {/* Equipped Items List in Preview */}
+            <div className="mt-2 p-2 bg-slate-900/90 rounded-2xl border border-slate-800 flex-1 min-h-[90px] flex flex-col">
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-300 mb-1.5">
+                <span className="flex items-center gap-1 text-amber-300">
+                  <Shirt className="w-3.5 h-3.5" /> Şu An Takılı Olanlar ({equippedIds.length}):
+                </span>
+                {equippedIds.length > 0 && (
+                  <button
+                    onClick={handleUnequipAll}
+                    className="text-[10px] text-rose-400 hover:text-rose-300 font-bold transition cursor-pointer"
+                  >
+                    Tümünü Çıkar
+                  </button>
+                )}
+              </div>
+
+              {equippedIds.length === 0 ? (
+                <div className="flex-1 flex items-center justify-center text-[11px] text-slate-500 text-center py-2">
+                  Henüz hiçbir kostüm veya aksesuar takılmadı.
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-1 overflow-y-auto max-h-[110px] pr-1">
+                  {equippedIds.map(id => {
+                    const itm = SHOP_ITEMS.find(i => i.id === id);
+                    if (!itm) return null;
+                    return (
+                      <div
+                        key={id}
+                        className="px-2 py-0.5 rounded-lg bg-amber-500/15 border border-amber-400/40 text-amber-200 text-[10px] font-bold flex items-center gap-1"
+                      >
+                        <span>{itm.name}</span>
+                        <button
+                          onClick={() => handleBuyOrEquip(itm)}
+                          className="hover:text-rose-400 font-black cursor-pointer ml-0.5"
+                          title="Çıkar"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Switch back to catalog button on mobile */}
+            <button
+              onClick={() => setMobileViewMode('catalog')}
+              className="mt-2 md:hidden w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl shadow transition cursor-pointer"
+            >
+              🛍️ İtem Kataloğuna Geri Dön
+            </button>
           </div>
 
-          {/* RIGHT PANEL: 180+ Shop Catalog & Categories */}
-          <div className="flex-1 flex flex-col bg-slate-950 min-h-0">
+          {/* RIGHT PANEL: Shop Catalog & Filter Grid */}
+          <div className={`${
+            mobileViewMode === 'catalog' ? 'flex' : 'hidden md:flex'
+          } flex-1 flex-col min-w-0 bg-slate-900/60 overflow-hidden`}>
             
-            {/* Search & Filter Bar */}
-            <div className="p-3 bg-slate-900/90 border-b border-slate-800 space-y-2.5 shrink-0">
+            {/* Filter Toolbar Area */}
+            <div className="p-2 sm:p-2.5 bg-slate-950/80 border-b border-slate-800/80 space-y-1.5 shrink-0">
               
-              {/* Top Control Row: Search + Sort + Rarity */}
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              {/* Row 1: Search + Status Chips + Sort */}
+              <div className="flex flex-wrap items-center justify-between gap-1.5">
                 
-                {/* Search Bar */}
-                <div className="relative flex-1">
-                  <Search className="w-4 h-4 text-amber-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                {/* Search Input */}
+                <div className="relative flex-1 min-w-[140px] max-w-sm">
+                  <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                   <input
                     type="text"
-                    placeholder="180+ İtem ara... (örn: Tac, Viking, Kılıç, Ejderha, Alev, Pelerin)"
                     value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    className="w-full pl-9 pr-8 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 font-medium"
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="İtem ara (isim, slot, özellik)..."
+                    className="w-full pl-8 pr-7 py-1 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500"
                   />
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery('')}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs font-black p-1"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
                     >
-                      ✕
+                      <X className="w-3.5 h-3.5" />
                     </button>
                   )}
                 </div>
 
-                {/* Sort Dropdown */}
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <ArrowUpDown className="w-3.5 h-3.5 text-amber-400 hidden sm:block" />
-                  <select
-                    value={sortBy}
-                    onChange={e => setSortBy(e.target.value as any)}
-                    className="px-2.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-amber-300 font-bold focus:outline-none focus:border-amber-500 cursor-pointer"
-                  >
-                    <option value="featured">Sıralama: Öne Çıkanlar</option>
-                    <option value="name">Sıralama: İsim (A-Z)</option>
-                    <option value="price_low">Sıralama: Fiyat (Düşük ➔ Yüksek)</option>
-                    <option value="price_high">Sıralama: Fiyat (Yüksek ➔ Düşük)</option>
-                    <option value="rarity">Sıralama: En Nadirler</option>
-                  </select>
-                </div>
-
-                {/* Rarity Dropdown Filter */}
-                <select
-                  value={selectedRarity}
-                  onChange={e => setSelectedRarity(e.target.value as RarityType)}
-                  className="px-2.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-amber-300 font-bold focus:outline-none focus:border-amber-500 cursor-pointer shrink-0"
-                >
-                  <option value="all">Tüm Enderlikler</option>
-                  <option value="legendary">👑 Efsanevi (Legendary)</option>
-                  <option value="epic">⚡ Süper Ender (Super Rare)</option>
-                  <option value="rare">💎 Ender (Rare)</option>
-                  <option value="common">☘️ Yaygın (Common)</option>
-                  <option value="mythic">🌟 Mitik (Mythic)</option>
-                </select>
-              </div>
-
-              {/* Status Quick Filter Pills */}
-              <div className="flex items-center justify-between gap-2 flex-wrap text-xs border-t border-slate-800/80 pt-2">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-[11px] font-bold text-slate-400 mr-1 hidden sm:inline">Filtre:</span>
-                  
-                  <button
-                    onClick={() => setFilterStatus('all')}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                      filterStatus === 'all'
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-400/50'
-                        : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
-                    }`}
-                  >
-                    <Grid className="w-3 h-3" />
-                    <span>Tümü ({SHOP_ITEMS.length})</span>
-                  </button>
-
-                  <button
-                    onClick={() => setFilterStatus('paid')}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                      filterStatus === 'paid'
-                        ? 'bg-amber-500 text-slate-950 font-black shadow-md'
-                        : 'bg-slate-950 text-amber-300 hover:text-amber-200 border border-amber-500/40'
-                    }`}
-                  >
-                    <Coins className="w-3 h-3" />
-                    <span>🟡 Paralı (250)</span>
-                  </button>
-
-                  <button
-                    onClick={() => setFilterStatus('free')}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                      filterStatus === 'free'
-                        ? 'bg-emerald-500 text-slate-950 font-black shadow-md'
-                        : 'bg-slate-950 text-emerald-400 hover:text-emerald-300 border border-emerald-500/40'
-                    }`}
-                  >
-                    <Gift className="w-3 h-3" />
-                    <span>🎁 Ücretsiz (50)</span>
-                  </button>
-
-                  <button
-                    onClick={() => setFilterStatus('equipped')}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                      filterStatus === 'equipped'
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-400/50'
-                        : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
-                    }`}
-                  >
-                    <CheckCircle2 className="w-3 h-3 text-amber-400" />
-                    <span>✨ Takılı ({equippedIds.length})</span>
-                  </button>
-
-                  <button
-                    onClick={() => setFilterStatus('owned')}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1 ${
-                      filterStatus === 'owned'
-                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/50'
-                        : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
-                    }`}
-                  >
-                    <PackageCheck className="w-3 h-3 text-emerald-400" />
-                    <span>✅ Envanterim ({purchasedIds.length})</span>
-                  </button>
-                </div>
-
-                {/* Items per Page Selector */}
-                <div className="flex items-center gap-1.5 text-[11px] text-slate-400">
-                  <span>Sayfa Başına:</span>
-                  {[12, 18, 24, 36].map(size => (
+                {/* Status Chips */}
+                <div className="flex items-center gap-1 overflow-x-auto pb-0.5">
+                  {[
+                    { id: 'all', label: 'Tümü' },
+                    { id: 'paid', label: '🪙 Paralı' },
+                    { id: 'free', label: '🎁 Ücretsiz' },
+                    { id: 'equipped', label: `✨ Takılı (${equippedIds.length})` },
+                    { id: 'owned', label: `✅ Envanterim (${purchasedIds.length})` },
+                  ].map(st => (
                     <button
-                      key={size}
-                      onClick={() => setItemsPerPage(size)}
-                      className={`px-2 py-0.5 rounded text-[11px] font-bold transition ${
-                        itemsPerPage === size
-                          ? 'bg-amber-500 text-slate-950 font-black'
-                          : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
+                      key={st.id}
+                      onClick={() => setFilterStatus(st.id as any)}
+                      className={`px-2 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer whitespace-nowrap ${
+                        filterStatus === st.id
+                          ? 'bg-amber-500 text-slate-950 font-black shadow'
+                          : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800'
                       }`}
                     >
-                      {size}
+                      {st.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Sort Dropdown */}
+                <div className="flex items-center gap-1 text-[11px] text-slate-400 shrink-0">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as any)}
+                    className="bg-slate-900 border border-slate-700 text-amber-300 font-bold rounded-lg px-2 py-1 text-[11px] focus:outline-none focus:border-amber-500"
+                  >
+                    <option value="featured">✨ Öne Çıkan</option>
+                    <option value="price_low">🪙 Fiyat (Artan)</option>
+                    <option value="price_high">🪙 Fiyat (Azalan)</option>
+                    <option value="rarity">👑 Nadirlik</option>
+                    <option value="name">🔤 İsim (A-Z)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 2: Category Tabs Scrollbar */}
+              <div className="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-thin">
+                {[
+                  { id: 'all', label: `Tümü (${categoryCounts.all || 0})`, icon: SlidersHorizontal },
+                  { id: 'skins', label: `👑 Zırh & Deri (${categoryCounts.skins || 0})`, icon: Crown },
+                  { id: 'hand', label: `⚔️ Silah (${categoryCounts.hand || 0})`, icon: Swords },
+                  { id: 'hats', label: `🧙‍♂️ Şapkalar (${categoryCounts.hats || 0})`, icon: Wand2 },
+                  { id: 'face', label: `🕶️ Yüz (${categoryCounts.face || 0})`, icon: Glasses },
+                  { id: 'back', label: `🎒 Sırt & Pelerin (${categoryCounts.back || 0})`, icon: Shirt },
+                  { id: 'auras', label: `✨ Auralar (${categoryCounts.auras || 0})`, icon: Flame },
+                  { id: 'potions', label: `🧪 İksirler (${categoryCounts.potions || 0})`, icon: Zap },
+                ].map(cat => (
+                  <button
+                    key={cat.id}
+                    onClick={() => setActiveTab(cat.id as any)}
+                    className={`px-2.5 py-1 rounded-xl text-[11px] font-black transition cursor-pointer whitespace-nowrap flex items-center gap-1 ${
+                      activeTab === cat.id
+                        ? 'bg-amber-500 text-slate-950 shadow-md'
+                        : 'bg-slate-900/90 text-slate-300 hover:bg-slate-800 border border-slate-800'
+                    }`}
+                  >
+                    <span>{cat.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Results Count & Sub-bar */}
+            <div className="px-3 py-1 bg-slate-950/50 border-b border-slate-800/60 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
+              <span className="font-bold text-slate-300">
+                Gösterilen: <strong className="text-amber-300">{totalItems === 0 ? 0 : startIndex + 1}-{endIndex}</strong> / <strong className="text-amber-300">{totalItems}</strong> İtem
+              </span>
+
+              <div className="flex items-center gap-2">
+                <span className="text-slate-400">
+                  Sayfa <strong className="text-amber-300">{validPage}</strong> / {totalPages}
+                </span>
+
+                {/* Items Per Page */}
+                <div className="hidden sm:flex items-center gap-1 text-[10px]">
+                  <span>Adet:</span>
+                  {[12, 18, 24].map(s => (
+                    <button
+                      key={s}
+                      onClick={() => setItemsPerPage(s)}
+                      className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                        itemsPerPage === s ? 'bg-amber-500 text-slate-950' : 'bg-slate-800 text-slate-400'
+                      }`}
+                    >
+                      {s}
                     </button>
                   ))}
                 </div>
               </div>
-
-              {/* Category Tabs */}
-              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-thin">
-                <button
-                  onClick={() => setActiveTab('all')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
-                    activeTab === 'all'
-                      ? 'bg-amber-500 text-slate-950 shadow-lg'
-                      : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
-                  }`}
-                >
-                  <SlidersHorizontal className="w-3.5 h-3.5" />
-                  <span>Tüm İtemler ({categoryCounts.all || 0})</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('skins')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
-                    activeTab === 'skins'
-                      ? 'bg-amber-500 text-slate-950 shadow-lg'
-                      : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
-                  }`}
-                >
-                  <Crown className="w-3.5 h-3.5" />
-                  <span>👑 Zırh & Deriler ({categoryCounts.skins || 0})</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('hand')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
-                    activeTab === 'hand'
-                      ? 'bg-amber-500 text-slate-950 shadow-lg'
-                      : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
-                  }`}
-                >
-                  <Swords className="w-3.5 h-3.5" />
-                  <span>⚔️ Silah & Elde ({categoryCounts.hand || 0})</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('hats')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
-                    activeTab === 'hats'
-                      ? 'bg-amber-500 text-slate-950 shadow-lg'
-                      : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
-                  }`}
-                >
-                  <Wand2 className="w-3.5 h-3.5" />
-                  <span>🧙‍♂️ Şapkalar ({categoryCounts.hats || 0})</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('face')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
-                    activeTab === 'face'
-                      ? 'bg-amber-500 text-slate-950 shadow-lg'
-                      : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
-                  }`}
-                >
-                  <Glasses className="w-3.5 h-3.5" />
-                  <span>🕶️ Yüz & Gözlük ({categoryCounts.face || 0})</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('back')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
-                    activeTab === 'back'
-                      ? 'bg-amber-500 text-slate-950 shadow-lg'
-                      : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
-                  }`}
-                >
-                  <Shirt className="w-3.5 h-3.5" />
-                  <span>🎒 Sırt & Pelerin ({categoryCounts.back || 0})</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('auras')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
-                    activeTab === 'auras'
-                      ? 'bg-amber-500 text-slate-950 shadow-lg'
-                      : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
-                  }`}
-                >
-                  <Flame className="w-3.5 h-3.5" />
-                  <span>✨ Auralar ({categoryCounts.auras || 0})</span>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('potions')}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black flex items-center gap-1.5 transition cursor-pointer whitespace-nowrap ${
-                    activeTab === 'potions'
-                      ? 'bg-amber-500 text-slate-950 shadow-lg'
-                      : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'
-                  }`}
-                >
-                  <Zap className="w-3.5 h-3.5" />
-                  <span>🧪 İksirler ({categoryCounts.potions || 0})</span>
-                </button>
-              </div>
             </div>
 
-            {/* Results Header Info Bar */}
-            <div className="px-3 py-1.5 bg-slate-900/60 border-b border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
-              <div className="flex items-center gap-2">
-                <span className="font-bold text-slate-300">
-                  Gösterilen: <strong className="text-amber-300">{totalItems === 0 ? 0 : startIndex + 1} - {endIndex}</strong> / Toplam <strong className="text-amber-300">{totalItems}</strong> İtem
-                </span>
-                {searchQuery && (
-                  <span className="px-2 py-0.5 bg-amber-500/20 text-amber-300 rounded border border-amber-400/40 text-[10px] font-bold">
-                    Arama: "{searchQuery}"
-                  </span>
-                )}
-              </div>
-
-              <div className="font-bold text-slate-400">
-                Sayfa <span className="text-amber-300 font-black">{validPage}</span> / {totalPages}
-              </div>
-            </div>
-
-            {/* Item Catalog Grid Container */}
-            <div className="p-3 sm:p-4 overflow-y-auto flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-slate-100 scrollbar-thin">
+            {/* Item Catalog Grid (Dedicated Scroll Container) */}
+            <div className="p-2 sm:p-3 overflow-y-auto flex-1 min-h-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-2.5 text-slate-100 scrollbar-thin">
               {paginatedItems.length === 0 ? (
-                <div className="col-span-full py-16 flex flex-col items-center justify-center text-slate-400 gap-3">
-                  <div className="w-16 h-16 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-3xl">
+                <div className="col-span-full py-12 flex flex-col items-center justify-center text-slate-400 gap-2.5">
+                  <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-2xl">
                     🔍
                   </div>
                   <div className="text-center">
-                    <p className="font-black text-sm text-amber-200">Aradığınız kriterlere uygun item bulunamadı.</p>
-                    <p className="text-xs text-slate-500 mt-1">Arama terimini değiştirmeyi veya filtreleri temizlemeyi deneyin.</p>
+                    <p className="font-black text-xs sm:text-sm text-amber-200">Aradığınız kriterlere uygun item bulunamadı.</p>
+                    <p className="text-[11px] text-slate-500 mt-0.5">Arama terimini değiştirmeyi veya filtreleri temizlemeyi deneyin.</p>
                   </div>
                   <button
                     onClick={handleClearFilters}
-                    className="mt-2 px-4 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold text-xs rounded-xl border border-amber-400/40 transition cursor-pointer"
+                    className="px-3.5 py-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-bold text-xs rounded-xl border border-amber-400/40 transition cursor-pointer"
                   >
                     🧹 Tüm Filtreleri Temizle
                   </button>
@@ -1058,51 +1072,53 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
                     <div
                       key={item.id}
                       onClick={() => handleBuyOrEquip(item)}
-                      className={`p-3.5 rounded-2xl border flex flex-col justify-between transition-all duration-200 relative overflow-hidden cursor-pointer hover:scale-[1.02] active:scale-[0.98] select-none ${
+                      className={`p-2.5 sm:p-3 rounded-2xl border flex flex-col justify-between transition-all duration-150 relative overflow-hidden cursor-pointer select-none active:scale-[0.98] ${
                         isEquipped
-                          ? 'bg-gradient-to-br from-amber-950/90 to-slate-900 border-amber-400 shadow-xl shadow-amber-500/20 ring-2 ring-amber-400/60'
+                          ? 'bg-amber-950/60 border-amber-400 shadow-lg shadow-amber-500/20 ring-2 ring-amber-400/80'
                           : isOwned
                           ? 'bg-slate-900/90 border-emerald-500/60 hover:border-emerald-400'
-                          : 'bg-slate-900/50 border-slate-800 hover:border-amber-500/50'
+                          : 'bg-slate-900/60 border-slate-800 hover:border-amber-500/40'
                       }`}
                     >
                       <div>
-                        {/* Item Card Header */}
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <div className="flex-1">
-                            <h3 className="font-black text-xs sm:text-sm text-amber-200 leading-tight">
+                        {/* Header: Title, Rarity & Price */}
+                        <div className="flex items-start justify-between gap-1.5 mb-1.5">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-black text-xs sm:text-sm text-amber-200 leading-tight truncate">
                               {item.name}
                             </h3>
-                            <div className="mt-1 flex items-center gap-1.5 flex-wrap">
+                            <div className="mt-1 flex items-center gap-1 flex-wrap">
                               {getRarityBadge(item.rarity)}
-                              <span className="text-[10px] text-slate-400 font-mono capitalize">
-                                [{item.slot}]
+                              <span className="text-[9px] text-slate-400 font-mono capitalize bg-slate-950/60 px-1 py-0.5 rounded border border-slate-800">
+                                {item.slot}
                               </span>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-1 bg-amber-500/10 border border-amber-400/30 px-2.5 py-1 rounded-xl text-amber-300 font-black text-xs shrink-0">
-                            <span>{item.price}</span>
-                            <span>🪙</span>
+                          <div className="flex items-center gap-1 bg-amber-500/15 border border-amber-400/30 px-2 py-0.5 rounded-lg text-amber-300 font-black text-xs shrink-0">
+                            <span>{item.price === 0 ? 'Ücretsiz' : `${item.price} 🪙`}</span>
                           </div>
                         </div>
 
-                        <p className="text-[11px] text-slate-300 font-medium mb-3 leading-snug">
+                        <p className="text-[10px] sm:text-[11px] text-slate-300 font-medium mb-2 leading-tight line-clamp-2">
                           {item.description}
                         </p>
                       </div>
 
-                      {/* Item Card Action Button */}
-                      <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
-                        <span className="text-[10px] font-bold text-slate-400">
-                          {isEquipped ? '✨ Ayının Üzerinde Takılı' : isOwned ? '✅ Envanterinde' : '🛒 Satın Alınabilir'}
+                      {/* Action Row */}
+                      <div className="flex items-center justify-between pt-1.5 border-t border-slate-800/80">
+                        <span className="text-[9px] sm:text-[10px] font-bold text-slate-400">
+                          {isEquipped ? '✨ Karakterde Giydirildi' : isOwned ? '✅ Envanterinde' : '🛒 Satın Alınabilir'}
                         </span>
 
                         <button
-                          onClick={() => handleBuyOrEquip(item)}
-                          className={`px-3.5 py-1.5 rounded-xl font-black text-xs flex items-center gap-1.5 transition active:scale-95 cursor-pointer shadow-md ${
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBuyOrEquip(item);
+                          }}
+                          className={`px-2.5 py-1 rounded-xl font-black text-[11px] sm:text-xs flex items-center gap-1 transition active:scale-95 cursor-pointer shadow ${
                             isEquipped
-                              ? 'bg-amber-500 text-slate-950 hover:bg-amber-400 ring-2 ring-amber-300'
+                              ? 'bg-amber-500 text-slate-950 hover:bg-amber-400 ring-1 ring-amber-300'
                               : isOwned
                               ? 'bg-emerald-600 text-white hover:bg-emerald-500'
                               : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950'
@@ -1110,18 +1126,18 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
                         >
                           {isEquipped ? (
                             <>
-                              <Check className="w-3.5 h-3.5" />
+                              <Check className="w-3 h-3 stroke-[3]" />
                               <span>Çıkar</span>
                             </>
                           ) : isOwned ? (
                             <>
-                              <Sparkles className="w-3.5 h-3.5 animate-spin" />
+                              <Sparkles className="w-3 h-3 animate-spin" />
                               <span>Dene & Giydir</span>
                             </>
                           ) : (
                             <>
-                              <ShoppingBag className="w-3.5 h-3.5" />
-                              <span>{item.price} 🪙 Al & Dene</span>
+                              <ShoppingBag className="w-3 h-3" />
+                              <span>{item.price === 0 ? 'Bedava Al' : `${item.price} 🪙 Al`}</span>
                             </>
                           )}
                         </button>
@@ -1133,37 +1149,33 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
             </div>
 
             {/* Pagination Controls Bar */}
-            <div className="p-2.5 bg-slate-900 border-t border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
+            <div className="p-2 bg-slate-950 border-t border-slate-800 flex flex-wrap items-center justify-between gap-1.5 text-xs shrink-0">
               
-              {/* Pagination Page Number Buttons */}
-              <div className="flex items-center gap-1 flex-wrap">
-                
-                {/* First Page Button */}
+              {/* Page Buttons */}
+              <div className="flex items-center gap-1">
                 <button
                   onClick={() => handlePageChange(1)}
                   disabled={validPage === 1}
-                  className="p-1.5 rounded-lg bg-slate-950 border border-slate-700 text-slate-300 hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
+                  className="p-1 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
                   title="İlk Sayfa"
                 >
-                  <ChevronsLeft className="w-4 h-4 text-amber-400" />
+                  <ChevronsLeft className="w-3.5 h-3.5 text-amber-400" />
                 </button>
 
-                {/* Previous Page Button */}
                 <button
                   onClick={() => handlePageChange(validPage - 1)}
                   disabled={validPage === 1}
-                  className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-700 text-slate-300 hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer flex items-center gap-1 font-bold text-xs"
+                  className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer flex items-center gap-0.5 font-bold text-xs"
                 >
-                  <ChevronLeft className="w-4 h-4 text-amber-400" />
+                  <ChevronLeft className="w-3.5 h-3.5 text-amber-400" />
                   <span className="hidden sm:inline">Önceki</span>
                 </button>
 
-                {/* Page Number Buttons */}
-                <div className="flex items-center gap-1 mx-1">
+                <div className="flex items-center gap-1 mx-0.5">
                   {getPaginationPages().map((page, idx) => {
                     if (typeof page === 'string') {
                       return (
-                        <span key={`ellipsis-${idx}`} className="px-1.5 py-1 text-slate-500 font-bold">
+                        <span key={`ellipsis-${idx}`} className="px-1 text-slate-500 font-bold text-xs">
                           ...
                         </span>
                       );
@@ -1174,10 +1186,10 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
                       <button
                         key={page}
                         onClick={() => handlePageChange(page)}
-                        className={`min-w-[32px] h-[30px] px-2 rounded-lg text-xs font-black transition cursor-pointer ${
+                        className={`min-w-[28px] h-[26px] px-1.5 rounded-lg text-xs font-black transition cursor-pointer ${
                           isActive
-                            ? 'bg-amber-500 text-slate-950 shadow-md ring-2 ring-amber-300'
-                            : 'bg-slate-950 text-slate-300 hover:bg-slate-800 border border-slate-800'
+                            ? 'bg-amber-500 text-slate-950 shadow ring-1 ring-amber-300'
+                            : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800'
                         }`}
                       >
                         {page}
@@ -1186,28 +1198,26 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
                   })}
                 </div>
 
-                {/* Next Page Button */}
                 <button
                   onClick={() => handlePageChange(validPage + 1)}
                   disabled={validPage === totalPages}
-                  className="px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-700 text-slate-300 hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer flex items-center gap-1 font-bold text-xs"
+                  className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer flex items-center gap-0.5 font-bold text-xs"
                 >
                   <span className="hidden sm:inline">Sonraki</span>
-                  <ChevronRight className="w-4 h-4 text-amber-400" />
+                  <ChevronRight className="w-3.5 h-3.5 text-amber-400" />
                 </button>
 
-                {/* Last Page Button */}
                 <button
                   onClick={() => handlePageChange(totalPages)}
                   disabled={validPage === totalPages}
-                  className="p-1.5 rounded-lg bg-slate-950 border border-slate-700 text-slate-300 hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
+                  className="p-1 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 hover:bg-slate-800 disabled:opacity-30 disabled:pointer-events-none transition cursor-pointer"
                   title="Son Sayfa"
                 >
-                  <ChevronsRight className="w-4 h-4 text-amber-400" />
+                  <ChevronsRight className="w-3.5 h-3.5 text-amber-400" />
                 </button>
               </div>
 
-              {/* Direct Page Jump Form */}
+              {/* Direct Jump */}
               <form
                 onSubmit={e => {
                   e.preventDefault();
@@ -1217,9 +1227,9 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
                     setJumpPageInput('');
                   }
                 }}
-                className="flex items-center gap-1.5 text-slate-400 text-xs font-bold"
+                className="flex items-center gap-1 text-slate-400 text-[11px] font-bold"
               >
-                <span>Sayfaya Git:</span>
+                <span>Git:</span>
                 <input
                   type="number"
                   min={1}
@@ -1227,11 +1237,11 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
                   placeholder={validPage.toString()}
                   value={jumpPageInput}
                   onChange={e => setJumpPageInput(e.target.value)}
-                  className="w-12 px-2 py-1 bg-slate-950 border border-slate-700 rounded-lg text-center text-amber-300 font-black text-xs focus:outline-none focus:border-amber-500"
+                  className="w-10 px-1 py-0.5 bg-slate-900 border border-slate-700 rounded text-center text-amber-300 font-bold text-xs focus:outline-none focus:border-amber-500"
                 />
                 <button
                   type="submit"
-                  className="px-2.5 py-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 rounded-lg font-bold transition cursor-pointer"
+                  className="px-2 py-0.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-400/40 rounded font-bold transition cursor-pointer"
                 >
                   Git
                 </button>
@@ -1243,12 +1253,14 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
 
         </div>
 
-        {/* Footer */}
-        <div className="p-3 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 shrink-0">
-          <span>🐱 Bakkal Kedi Capi • Toplam {SHOP_ITEMS.length} Adet Takı, Zırh ve Kostüm • Canlı 3D Önizleme Destekli</span>
+        {/* Modal Footer */}
+        <div className="p-2 sm:p-2.5 bg-slate-950 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
+          <span className="hidden sm:inline">🐱 Bakkal Kedi Capi • {SHOP_ITEMS.length} Kostüm & İtem • Canlı 3D Önizleme</span>
+          <span className="sm:hidden">🐱 {SHOP_ITEMS.length} İtem</span>
+
           <button
             onClick={onClose}
-            className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-black transition cursor-pointer border border-slate-700"
+            className="px-4 py-1.5 bg-slate-800 hover:bg-rose-600 text-white rounded-xl font-black text-xs transition cursor-pointer border border-slate-700 shadow"
           >
             Kapat ve Oyuna Dön
           </button>

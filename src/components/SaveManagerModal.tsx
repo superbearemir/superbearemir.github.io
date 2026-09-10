@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Save, CheckCircle2, RotateCcw, Copy, Download, Upload, Shield, Coins, Sparkles, X, Heart, Globe, Award } from 'lucide-react';
 import { useGameSave } from '../utils/saveManager';
 
@@ -14,6 +14,14 @@ export const SaveManagerModal: React.FC<SaveManagerModalProps> = ({ isOpen, onCl
   const [showImportBox, setShowImportBox] = useState(false);
   const [saveFeedback, setSaveFeedback] = useState<string | null>(null);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -65,27 +73,22 @@ export const SaveManagerModal: React.FC<SaveManagerModalProps> = ({ isOpen, onCl
   };
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-2 sm:p-4 select-none">
-      {/* Floating Direct Close Button */}
-      <button
-        onClick={onClose}
-        aria-label="Pencereyi Kapat"
-        className="fixed top-2 right-2 sm:top-4 sm:right-4 z-[250] min-w-[46px] min-h-[46px] p-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black shadow-2xl border-2 border-rose-300 flex items-center justify-center transition active:scale-90 cursor-pointer"
-        title="Kapat"
-      >
-        <X className="w-7 h-7 stroke-[3]" />
-      </button>
-
-      <div className="relative w-full max-w-xl bg-slate-900 border-2 border-emerald-500/60 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] sm:max-h-[92vh] animate-in zoom-in-95 duration-200 text-slate-100">
+    <div 
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-2 sm:p-4 select-none animate-in fade-in duration-150"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="relative w-full max-w-xl bg-slate-900 border-2 border-emerald-500/60 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] sm:max-h-[92vh] text-slate-100">
         
         {/* Pinned Sticky Header */}
-        <div className="sticky top-0 z-40 px-3 sm:px-5 py-3 sm:py-4 bg-gradient-to-r from-emerald-900/90 via-teal-900/90 to-slate-900 border-b border-emerald-500/30 flex items-center justify-between shrink-0 shadow-md">
+        <div className="p-3 sm:p-4 bg-gradient-to-r from-emerald-900/90 via-teal-900/90 to-slate-900 border-b border-emerald-500/30 flex items-center justify-between shrink-0 shadow-md">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-xl shadow-inner shrink-0">
               💾
             </div>
             <div>
-              <h2 className="font-black text-base sm:text-xl text-white tracking-wide flex items-center gap-2">
+              <h2 className="font-black text-base sm:text-lg text-white tracking-wide flex items-center gap-2">
                 Oyun Kayıt & İlerleme
                 <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded-full bg-emerald-500/30 border border-emerald-400/50 text-emerald-200 hidden xs:inline-block">
                   Yerel Hafıza
@@ -98,10 +101,11 @@ export const SaveManagerModal: React.FC<SaveManagerModalProps> = ({ isOpen, onCl
           </div>
           <button
             onClick={onClose}
-            className="min-w-[40px] min-h-[40px] rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white flex items-center justify-center transition active:scale-95 cursor-pointer border border-slate-700"
-            title="Kapat"
+            className="min-w-[42px] min-h-[42px] p-2 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black flex items-center justify-center transition active:scale-95 cursor-pointer border-2 border-rose-300 shadow-md"
+            title="Kapat (ESC)"
+            aria-label="Pencereyi Kapat"
           >
-            <X className="w-6 h-6 stroke-[2.5]" />
+            <X className="w-6 h-6 stroke-[3]" />
           </button>
         </div>
 

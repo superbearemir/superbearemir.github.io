@@ -237,37 +237,60 @@ export function syncShopEquipmentsToGameInstance(equippedIds: string[]) {
   const root = pb.root || game.scene;
   if (!root) return;
 
-  // 1. Find or create 4 slot containers: Hat, Face, Back, Hand
-  let hatContainer = root.getObjectByName('player_hat_container');
+  // 1. Determine parent nodes for realistic attachment:
+  // If playerBear has head, attach hat and face items to pb.head so they move with head rotation
+  const hatParent = pb.head || root;
+  const faceParent = pb.head || root;
+  const backParent = pb.body || root;
+  const handParent = pb.rightArm || root;
+
+  // 2. Find or create slot containers
+  let hatContainer = hatParent.getObjectByName('player_hat_container');
   if (!hatContainer) {
     hatContainer = new THREE.Group();
     hatContainer.name = 'player_hat_container';
-    hatContainer.position.set(0, 1.55, 0.05);
-    root.add(hatContainer);
+    if (pb.head) {
+      hatContainer.position.set(0, 0.42, 0.05);
+    } else {
+      hatContainer.position.set(0, 1.55, 0.05);
+    }
+    hatParent.add(hatContainer);
   }
 
-  let faceContainer = root.getObjectByName('player_face_container');
+  let faceContainer = faceParent.getObjectByName('player_face_container');
   if (!faceContainer) {
     faceContainer = new THREE.Group();
     faceContainer.name = 'player_face_container';
-    faceContainer.position.set(0, 1.35, 0.38);
-    root.add(faceContainer);
+    if (pb.head) {
+      faceContainer.position.set(0, -0.05, 0.45);
+    } else {
+      faceContainer.position.set(0, 1.35, 0.38);
+    }
+    faceParent.add(faceContainer);
   }
 
-  let backContainer = root.getObjectByName('player_back_container');
+  let backContainer = backParent.getObjectByName('player_back_container');
   if (!backContainer) {
     backContainer = new THREE.Group();
     backContainer.name = 'player_back_container';
-    backContainer.position.set(0, 0.7, -0.42);
-    root.add(backContainer);
+    if (pb.body) {
+      backContainer.position.set(0, 0.1, -0.42);
+    } else {
+      backContainer.position.set(0, 0.7, -0.42);
+    }
+    backParent.add(backContainer);
   }
 
-  let handContainer = root.getObjectByName('player_hand_container');
+  let handContainer = handParent.getObjectByName('player_hand_container');
   if (!handContainer) {
     handContainer = new THREE.Group();
     handContainer.name = 'player_hand_container';
-    handContainer.position.set(0.45, 0.5, 0.25);
-    root.add(handContainer);
+    if (pb.rightArm) {
+      handContainer.position.set(0, -0.38, 0.15);
+    } else {
+      handContainer.position.set(0.45, 0.5, 0.25);
+    }
+    handParent.add(handContainer);
   }
 
   // Clear existing accessories inside containers
