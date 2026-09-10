@@ -34,7 +34,7 @@ import {
 import { getCurrentSavedDesign, syncShopEquipmentsToGameInstance } from '../customizer/GameBridge';
 import { SHOP_ITEMS, ShopItem } from '../data/shopItemsData';
 import { createCustomBear3D, BuiltBearModel } from '../customizer/3dBearBuilder';
-import { buildHatMesh, buildFaceMesh, buildBackMesh, buildHandMesh } from '../customizer/equipmentMeshBuilder';
+import { buildHatMesh, buildFaceMesh, buildBackMesh, buildHandMesh, buildBodyOutfitMesh } from '../customizer/equipmentMeshBuilder';
 import { hexToInt } from '../customizer/ImageAnalyzer';
 import { LootBoxModal } from './LootBoxModal';
 
@@ -194,66 +194,66 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
     const bodyMesh = bearModelRef.current.bodyMesh || bearRoot;
     if (!bearRoot) return;
 
-    // 1. Hat container
-    let hatContainer = headGroup.getObjectByName('preview_hat_container');
-    if (!hatContainer) {
-      hatContainer = new THREE.Group();
-      hatContainer.name = 'preview_hat_container';
-      if (bearModelRef.current.headGroup) {
-        hatContainer.position.set(0, 0.42, 0.05);
-      } else {
-        hatContainer.position.set(0, 1.55, 0.05);
-      }
-      headGroup.add(hatContainer);
-    }
-
-    // 2. Face container
-    let faceContainer = headGroup.getObjectByName('preview_face_container');
-    if (!faceContainer) {
-      faceContainer = new THREE.Group();
-      faceContainer.name = 'preview_face_container';
-      if (bearModelRef.current.headGroup) {
-        faceContainer.position.set(0, -0.05, 0.45);
-      } else {
-        faceContainer.position.set(0, 1.35, 0.38);
-      }
-      headGroup.add(faceContainer);
-    }
-
-    // 3. Back container
-    let backContainer = bodyMesh.getObjectByName('preview_back_container');
-    if (!backContainer) {
-      backContainer = new THREE.Group();
-      backContainer.name = 'preview_back_container';
-      if (bearModelRef.current.bodyMesh) {
-        backContainer.position.set(0, 0.1, -0.42);
-      } else {
-        backContainer.position.set(0, 0.7, -0.42);
-      }
-      bodyMesh.add(backContainer);
-    }
-
-    // 4. Hand container
-    let handContainer = rightArmGroup.getObjectByName('preview_hand_container');
-    if (!handContainer) {
-      handContainer = new THREE.Group();
-      handContainer.name = 'preview_hand_container';
-      if (bearModelRef.current.rightArmGroup) {
-        handContainer.position.set(0, -0.38, 0.15);
-      } else {
-        handContainer.position.set(0.45, 0.5, 0.25);
-      }
-      rightArmGroup.add(handContainer);
-    }
-
-    // Clear existing children
-    [hatContainer, faceContainer, backContainer, handContainer].forEach(container => {
-      if (container && container.children) {
-        while (container.children.length > 0) {
-          container.remove(container.children[0]);
-        }
+    // Clean up any previously attached preview containers across the model to prevent duplicates
+    const containerNames = [
+      'preview_hat_container',
+      'preview_face_container',
+      'preview_back_container',
+      'preview_hand_container',
+      'preview_outfit_container'
+    ];
+    containerNames.forEach(cName => {
+      const existing = bearRoot.getObjectByName(cName);
+      if (existing && existing.parent) {
+        existing.parent.remove(existing);
       }
     });
+
+    // 1. Hat container
+    const hatContainer = new THREE.Group();
+    hatContainer.name = 'preview_hat_container';
+    if (bearModelRef.current.headGroup) {
+      hatContainer.position.set(0, 0.44, 0.02);
+    } else {
+      hatContainer.position.set(0, 1.55, 0.05);
+    }
+    headGroup.add(hatContainer);
+
+    // 2. Face container
+    const faceContainer = new THREE.Group();
+    faceContainer.name = 'preview_face_container';
+    if (bearModelRef.current.headGroup) {
+      faceContainer.position.set(0, 0.05, 0.42);
+    } else {
+      faceContainer.position.set(0, 1.35, 0.38);
+    }
+    headGroup.add(faceContainer);
+
+    // 3. Back container
+    const backContainer = new THREE.Group();
+    backContainer.name = 'preview_back_container';
+    if (bearModelRef.current.bodyMesh) {
+      backContainer.position.set(0, 0.1, -0.42);
+    } else {
+      backContainer.position.set(0, 0.7, -0.42);
+    }
+    bodyMesh.add(backContainer);
+
+    // 4. Hand container
+    const handContainer = new THREE.Group();
+    handContainer.name = 'preview_hand_container';
+    if (bearModelRef.current.rightArmGroup) {
+      handContainer.position.set(0, -0.38, 0.12);
+    } else {
+      handContainer.position.set(0.45, 0.5, 0.25);
+    }
+    rightArmGroup.add(handContainer);
+
+    // 5. Outfit container
+    const outfitContainer = new THREE.Group();
+    outfitContainer.name = 'preview_outfit_container';
+    outfitContainer.position.set(0, 0, 0);
+    bodyMesh.add(outfitContainer);
 
     const design = getCurrentSavedDesign();
 
@@ -272,6 +272,9 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
         } else if (itemData.slot === 'hand' && handContainer) {
           handContainer.add(buildHandMesh(id, colorInt));
         } else if (itemData.slot === 'skin') {
+          // Attach tailored 3D outfit mesh
+          outfitContainer.add(buildBodyOutfitMesh(id, colorInt));
+
           if (id.includes('gold')) {
             design.palette.furColor = '#f59e0b';
             design.palette.bellyColor = '#fef08a';

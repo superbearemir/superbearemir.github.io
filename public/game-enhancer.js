@@ -2045,7 +2045,7 @@ function buildMorisSecretDenAndMountains(THREE, villageGroup) {
   });
 
   // Mountain Bedrock Base Collider (z: -50 to -70)
-  addDenCollider(-40, 0, -70, 40, 3.2, -50, true);
+  addDenCollider(-40, 0, -70, 40, 3.2, -50, false);
 
   // =========================================================================
   // B) BROAD PAVED MOUNTAIN ROAD (North Gate to Cave Mouth at z: -68)
@@ -2054,7 +2054,7 @@ function buildMorisSecretDenAndMountains(THREE, villageGroup) {
   const roadMesh = new THREE.Mesh(new THREE.BoxGeometry(10.0, 0.4, roadLength), roadCobbleMat);
   roadMesh.position.set(0, 3.0, -59);
   villageGroup.add(roadMesh);
-  addDenCollider(-5.0, 0.0, -68.0, 5.0, 3.2, -50.0, true);
+  addDenCollider(-5.0, 0.0, -68.0, 5.0, 3.2, -50.0, false);
 
   // Roadside Flaming Torches and Glowing Crystal Lamps
   [-4.8, 4.8].forEach(rx => {
@@ -2225,7 +2225,7 @@ function buildMorisSecretDenAndMountains(THREE, villageGroup) {
   const ch1Floor = new THREE.Mesh(new THREE.BoxGeometry(20.0, 0.6, 26.0), darkRockMat);
   ch1Floor.position.set(0, 0.0, -81.0);
   caveInteriorGroup.add(ch1Floor);
-  addDenCollider(-10.0, 3.0, -94.0, 10.0, 3.5, -68.0, true);
+  addDenCollider(-10.0, 3.0, -94.0, 10.0, 3.5, -68.0, false);
 
   const ch1WallL = new THREE.Mesh(new THREE.BoxGeometry(1.5, 14.0, 26.0), caveWallMat);
   ch1WallL.position.set(-10.0, 6.0, -81.0);
@@ -2305,7 +2305,7 @@ function buildMorisSecretDenAndMountains(THREE, villageGroup) {
   const bridgeFloor = new THREE.Mesh(new THREE.BoxGeometry(6.0, 0.6, 32.0), roadCobbleMat);
   bridgeFloor.position.set(0, 0.0, -110.0);
   caveInteriorGroup.add(bridgeFloor);
-  addDenCollider(-3.0, 3.0, -126.0, 3.0, 3.5, -94.0, true);
+  addDenCollider(-3.0, 3.0, -126.0, 3.0, 3.5, -94.0, false);
 
   // Bridge Guard Rails & Glowing Crystal Lampposts
   for (let bz = -96; bz >= -124; bz -= 6.0) {
@@ -2361,7 +2361,7 @@ function buildMorisSecretDenAndMountains(THREE, villageGroup) {
     topCap.position.set(p.x, p.y + 0.2, p.z);
     caveInteriorGroup.add(topCap);
 
-    addDenCollider(p.x - p.w * 0.5, 0.0, p.z - p.d * 0.5, p.x + p.w * 0.5, 3.2 + p.y + 0.3, p.z + p.d * 0.5, true);
+    addDenCollider(p.x - p.w * 0.5, 0.0, p.z - p.d * 0.5, p.x + p.w * 0.5, 3.2 + p.y + 0.3, p.z + p.d * 0.5, false);
   });
 
   // Moving Floating Stone Platform in Center (z: -110.0)
@@ -2393,7 +2393,7 @@ function buildMorisSecretDenAndMountains(THREE, villageGroup) {
   const ch3Floor = new THREE.Mesh(new THREE.BoxGeometry(22.0, 0.6, 26.0), darkRockMat);
   ch3Floor.position.set(0, 0.0, -139.0);
   caveInteriorGroup.add(ch3Floor);
-  addDenCollider(-11.0, 3.0, -152.0, 11.0, 3.5, -126.0, true);
+  addDenCollider(-11.0, 3.0, -152.0, 11.0, 3.5, -126.0, false);
 
   const ch3WallL = new THREE.Mesh(new THREE.BoxGeometry(1.5, 16.0, 26.0), caveWallMat);
   ch3WallL.position.set(-11.0, 7.0, -139.0);
@@ -2447,7 +2447,7 @@ function buildMorisSecretDenAndMountains(THREE, villageGroup) {
   const ch4Floor = new THREE.Mesh(new THREE.BoxGeometry(24.0, 0.6, 33.0), darkRockMat);
   ch4Floor.position.set(0, 0.0, -168.0);
   caveInteriorGroup.add(ch4Floor);
-  addDenCollider(-12.0, 3.0, -185.0, 12.0, 3.5, -152.0, true);
+  addDenCollider(-12.0, 3.0, -185.0, 12.0, 3.5, -152.0, false);
 
   const ch4WallL = new THREE.Mesh(new THREE.BoxGeometry(1.5, 18.0, 33.0), caveWallMat);
   ch4WallL.position.set(-12.0, 8.0, -168.0);
@@ -2481,7 +2481,7 @@ function buildMorisSecretDenAndMountains(THREE, villageGroup) {
   const daisMesh = new THREE.Mesh(new THREE.BoxGeometry(14.0, 0.8, 10.0), rockMat);
   daisMesh.position.set(0, 0.4, -168.0);
   caveInteriorGroup.add(daisMesh);
-  addDenCollider(-7.0, 3.2, -173.0, 7.0, 4.4, -163.0, true);
+  addDenCollider(-7.0, 3.2, -173.0, 7.0, 4.4, -163.0, false);
 
   // Golden Bear King Statue on Dais
   const trophyBase = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.3, 1.5, 12), darkRockMat);

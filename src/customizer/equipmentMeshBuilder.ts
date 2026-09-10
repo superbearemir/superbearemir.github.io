@@ -101,15 +101,173 @@ export function buildHatMesh(itemId: string, itemColorHex = 0x3b82f6): THREE.Gro
       group.add(crest);
     }
   } else if (itemId.includes('astronaut') || itemId.includes('mecha') || itemId.includes('visor')) {
-    const glassMat = new THREE.MeshStandardMaterial({ color: itemColorHex || 0x38bdf8, transparent: true, opacity: 0.7, metalness: 0.9, roughness: 0.1, emissive: itemColorHex, emissiveIntensity: 0.4 });
-    const visor = new THREE.Mesh(new THREE.SphereGeometry(0.56, 20, 20), glassMat);
-    visor.position.set(0, 0.16, 0);
+    const glassMat = new THREE.MeshStandardMaterial({
+      color: itemColorHex || 0x38bdf8,
+      transparent: true,
+      opacity: 0.75,
+      metalness: 0.85,
+      roughness: 0.1,
+      emissive: itemColorHex || 0x0284c7,
+      emissiveIntensity: 0.35
+    });
+    // Fitted snugly over the bear's head
+    const visor = new THREE.Mesh(new THREE.SphereGeometry(0.52, 24, 24), glassMat);
+    visor.position.set(0, 0.05, 0.02);
     group.add(visor);
 
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.56, 0.05, 8, 24), new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8 }));
-    ring.rotation.x = Math.PI / 2;
-    ring.position.y = 0.16;
-    group.add(ring);
+    const collarRing = new THREE.Mesh(new THREE.TorusGeometry(0.53, 0.06, 8, 28), new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8, roughness: 0.3 }));
+    collarRing.rotation.x = Math.PI / 2;
+    collarRing.position.set(0, -0.35, 0.02);
+    group.add(collarRing);
+
+    const earCoverL = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.1, 14), new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.7 }));
+    earCoverL.rotation.z = Math.PI / 2;
+    earCoverL.position.set(-0.48, 0.05, 0.02);
+    group.add(earCoverL);
+
+    const earCoverR = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.1, 14), new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.7 }));
+    earCoverR.rotation.z = Math.PI / 2;
+    earCoverR.position.set(0.48, 0.05, 0.02);
+    group.add(earCoverR);
+  } else if (itemId.includes('cowboy') || itemId.includes('şerif')) {
+    // Wild West Sheriff Cowboy Hat
+    const feltMat = new THREE.MeshStandardMaterial({ color: itemColorHex || 0x78350f, roughness: 0.7 });
+    const leatherBand = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.4 });
+    const starGold = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.9, roughness: 0.2 });
+
+    const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.82, 0.04, 24), feltMat);
+    brim.scale.set(1.15, 1, 1.35);
+    brim.rotation.x = 0.06;
+    brim.position.set(0, 0.02, 0.02);
+    group.add(brim);
+
+    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.40, 0.46, 0.32, 18), feltMat);
+    crown.position.set(0, 0.18, 0.02);
+    group.add(crown);
+
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.47, 0.47, 0.06, 18), leatherBand);
+    band.position.set(0, 0.07, 0.02);
+    group.add(band);
+
+    const badge = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.1, 5), starGold);
+    badge.rotation.x = Math.PI / 2;
+    badge.position.set(0, 0.10, 0.49);
+    group.add(badge);
+  } else if (itemId.includes('pirate') || itemId.includes('korsan')) {
+    // Pirate Captain Tricorn Hat
+    const tricornMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.5 });
+    const goldTrim = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.85, roughness: 0.25 });
+
+    const tricorn = new THREE.Mesh(new THREE.ConeGeometry(0.82, 0.32, 3), tricornMat);
+    tricorn.rotation.x = Math.PI;
+    tricorn.position.set(0, 0.16, 0.02);
+    group.add(tricorn);
+
+    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 10), new THREE.MeshStandardMaterial({ color: 0xf8fafc }));
+    skull.position.set(0, 0.12, 0.42);
+    group.add(skull);
+
+    const trim = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.03, 6, 24), goldTrim);
+    trim.rotation.x = Math.PI / 2;
+    trim.position.set(0, 0.02, 0.02);
+    group.add(trim);
+  } else if (itemId.includes('chef') || itemId.includes('aşçı')) {
+    // Master Chef Tall Toque
+    const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
+    const redMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5 });
+
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.47, 0.14, 20), redMat);
+    band.position.set(0, 0.07, 0.02);
+    group.add(band);
+
+    const puff = new THREE.Mesh(new THREE.CylinderGeometry(0.58, 0.46, 0.45, 20), whiteMat);
+    puff.position.set(0, 0.34, 0.02);
+    group.add(puff);
+
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.58, 16, 12), whiteMat);
+    dome.scale.set(1, 0.45, 1);
+    dome.position.set(0, 0.55, 0.02);
+    group.add(dome);
+  } else if (itemId.includes('top_hat') || itemId.includes('silindir')) {
+    // Gentleman Top Hat
+    const silkMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2, metalness: 0.3 });
+    const satinRibbon = new THREE.MeshStandardMaterial({ color: itemColorHex || 0xef4444, roughness: 0.4 });
+
+    const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.74, 0.74, 0.04, 24), silkMat);
+    brim.position.set(0, 0.02, 0.02);
+    group.add(brim);
+
+    const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.45, 0.65, 20), silkMat);
+    tube.position.set(0, 0.34, 0.02);
+    group.add(tube);
+
+    const ribbon = new THREE.Mesh(new THREE.CylinderGeometry(0.46, 0.46, 0.1, 20), satinRibbon);
+    ribbon.position.set(0, 0.08, 0.02);
+    group.add(ribbon);
+  } else if (itemId.includes('fedora') || itemId.includes('fötr')) {
+    // Detective Fedora
+    const feltMat = new THREE.MeshStandardMaterial({ color: itemColorHex || 0x52525b, roughness: 0.6 });
+    const bandMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.3 });
+
+    const brim = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 0.75, 0.04, 22), feltMat);
+    brim.scale.set(1.08, 1, 1.25);
+    brim.position.set(0, 0.02, 0.03);
+    group.add(brim);
+
+    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.47, 0.28, 20), feltMat);
+    crown.position.set(0, 0.16, 0.02);
+    group.add(crown);
+
+    const band = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 0.06, 20), bandMat);
+    band.position.set(0, 0.06, 0.02);
+    group.add(band);
+  } else if (itemId.includes('cap') || itemId.includes('şapka') || itemId.includes('beanie')) {
+    // Sport / Baseball / Beanie Cap
+    const capMat = new THREE.MeshStandardMaterial({ color: itemColorHex || 0x2563eb, roughness: 0.4 });
+    const visorMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3 });
+
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.50, 20, 16, 0, Math.PI * 2, 0, Math.PI * 0.55), capMat);
+    dome.position.set(0, 0.04, 0.02);
+    group.add(dome);
+
+    const peak = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.04, 0.42), visorMat);
+    peak.position.set(0, 0.03, 0.48);
+    peak.rotation.x = 0.12;
+    group.add(peak);
+
+    const topButton = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), visorMat);
+    topButton.position.set(0, 0.35, 0.02);
+    group.add(topButton);
+  } else if (itemId.includes('sombrero')) {
+    // Mexican Festive Sombrero
+    const strawMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.7 });
+    const colorfulMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.5 });
+
+    const wideBrim = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 0.95, 0.06, 24), strawMat);
+    wideBrim.position.set(0, 0.03, 0.02);
+    group.add(wideBrim);
+
+    const peak = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.55, 18), colorfulMat);
+    peak.position.set(0, 0.32, 0.02);
+    group.add(peak);
+  } else if (itemId.includes('santa') || itemId.includes('noel')) {
+    // Santa Christmas Hat
+    const redMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.4 });
+    const furWhite = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8 });
+
+    const furTrim = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.08, 10, 24), furWhite);
+    furTrim.rotation.x = Math.PI / 2;
+    furTrim.position.set(0, 0.04, 0.02);
+    group.add(furTrim);
+
+    const cone = new THREE.Mesh(new THREE.ConeGeometry(0.44, 0.75, 16), redMat);
+    cone.position.set(0, 0.38, -0.05);
+    cone.rotation.x = -0.35;
+    group.add(cone);
+
+    const pompom = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), furWhite);
+    pompom.position.set(0, 0.65, -0.32);
+    group.add(pompom);
   } else if (itemId.includes('halo')) {
     const haloMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xf59e0b, emissiveIntensity: 0.9 });
     const halo = new THREE.Mesh(new THREE.TorusGeometry(0.48, 0.06, 12, 32), haloMat);
@@ -444,3 +602,211 @@ export function buildAuraMesh(itemId: string, itemColorHex = 0xf59e0b): THREE.Gr
 
   return group;
 }
+
+/**
+ * Creates 3D Mesh Group for Body / Outfit Slot items (Skins, Costumes & Armors)
+ * Fitted to wrap perfectly around the bear's torso & belly.
+ */
+export function buildBodyOutfitMesh(itemId: string, itemColorHex = 0x3b82f6): THREE.Group {
+  const group = new THREE.Group();
+  group.name = `mesh_outfit_${itemId}`;
+
+  if (itemId.includes('astronaut') || itemId.includes('astronot') || itemId.includes('space')) {
+    // NASA / Space Explorer Suit
+    const whiteMat = new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.35, metalness: 0.1 });
+    const techMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.7, roughness: 0.2 });
+    const goldMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.9, roughness: 0.15 });
+
+    // Torso suit shell
+    const torsoSuit = new THREE.Mesh(new THREE.SphereGeometry(0.74, 20, 20), whiteMat);
+    torsoSuit.scale.set(1.02, 1.16, 0.98);
+    group.add(torsoSuit);
+
+    // Life support chest module
+    const chestPack = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.45, 0.18), techMat);
+    chestPack.position.set(0, 0.05, 0.48);
+    group.add(chestPack);
+
+    // Mission patch badge
+    const badge = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.03, 16), goldMat);
+    badge.rotation.x = Math.PI / 2;
+    badge.position.set(-0.16, 0.16, 0.58);
+    group.add(badge);
+
+    // Status lights
+    const lightG = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), new THREE.MeshBasicMaterial({ color: 0x22c55e }));
+    lightG.position.set(0.14, 0.16, 0.58);
+    group.add(lightG);
+    const lightB = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+    lightB.position.set(0.14, 0.06, 0.58);
+    group.add(lightB);
+
+    // Shoulder rings
+    [-0.56, 0.56].forEach(sx => {
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.05, 8, 16), techMat);
+      ring.position.set(sx, 0.22, 0);
+      ring.rotation.y = Math.PI / 2;
+      group.add(ring);
+    });
+  } else if (itemId.includes('knight') || itemId.includes('şövalye') || itemId.includes('bronze') || itemId.includes('armor')) {
+    // Knight Breastplate & Pauldrons
+    const armorColor = itemId.includes('gold') ? 0xf59e0b : itemId.includes('bronze') ? 0xb45309 : 0x64748b;
+    const plateMat = new THREE.MeshStandardMaterial({ color: armorColor, metalness: 0.85, roughness: 0.25 });
+    const trimMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.9, roughness: 0.15 });
+
+    // Cuirass
+    const cuirass = new THREE.Mesh(new THREE.CylinderGeometry(0.66, 0.74, 0.85, 18), plateMat);
+    cuirass.position.set(0, 0.02, 0);
+    group.add(cuirass);
+
+    // Center chest crest
+    const crest = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.42, 0.12), trimMat);
+    crest.position.set(0, 0.12, 0.46);
+    group.add(crest);
+
+    // Shoulder Pauldrons
+    [-0.65, 0.65].forEach((px, idx) => {
+      const pauldron = new THREE.Mesh(new THREE.SphereGeometry(0.28, 12, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), plateMat);
+      pauldron.rotation.z = idx === 0 ? 0.35 : -0.35;
+      pauldron.position.set(px, 0.32, 0);
+      group.add(pauldron);
+    });
+  } else if (itemId.includes('doctor') || itemId.includes('doktor')) {
+    // White Doctor Lab Coat & Stethoscope
+    const coatMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
+    const blueMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.5 });
+    const metalMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 });
+
+    // Coat shell
+    const coat = new THREE.Mesh(new THREE.SphereGeometry(0.74, 20, 20), coatMat);
+    coat.scale.set(1.02, 1.18, 0.98);
+    group.add(coat);
+
+    // Inner blue shirt collar
+    const innerShirt = new THREE.Mesh(new THREE.ConeGeometry(0.24, 0.35, 3), blueMat);
+    innerShirt.position.set(0, 0.28, 0.46);
+    group.add(innerShirt);
+
+    // Stethoscope around neck
+    const stethTubing = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.03, 8, 20, Math.PI), metalMat);
+    stethTubing.position.set(0, 0.28, 0.35);
+    stethTubing.rotation.x = 0.4;
+    group.add(stethTubing);
+
+    const chestPiece = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.03, 14), metalMat);
+    chestPiece.rotation.x = Math.PI / 2;
+    chestPiece.position.set(0.12, 0.02, 0.5);
+    group.add(chestPiece);
+  } else if (itemId.includes('detective') || itemId.includes('dedektif')) {
+    // Trenchcoat with Double-Breasted Buttons and Tie
+    const trenchMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.6 });
+    const tieMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.4 });
+    const buttonMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.3 });
+
+    const coat = new THREE.Mesh(new THREE.SphereGeometry(0.74, 20, 20), trenchMat);
+    coat.scale.set(1.02, 1.18, 0.98);
+    group.add(coat);
+
+    // Necktie
+    const tie = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.38, 0.04), tieMat);
+    tie.position.set(0, 0.16, 0.48);
+    group.add(tie);
+
+    // Double-breasted buttons
+    [-0.14, 0.14].forEach(bx => {
+      [0.05, -0.12, -0.28].forEach(by => {
+        const btn = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.02, 10), buttonMat);
+        btn.rotation.x = Math.PI / 2;
+        btn.position.set(bx, by, 0.48);
+        group.add(btn);
+      });
+    });
+  } else if (itemId.includes('chef') || itemId.includes('aşçı')) {
+    // Chef Double-Breasted Jacket with Red Neckerchief
+    const jacketMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3 });
+    const scarfMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.4 });
+    const btnMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3 });
+
+    const jacket = new THREE.Mesh(new THREE.SphereGeometry(0.74, 20, 20), jacketMat);
+    jacket.scale.set(1.02, 1.18, 0.98);
+    group.add(jacket);
+
+    // Red Scarf
+    const scarf = new THREE.Mesh(new THREE.TorusGeometry(0.38, 0.06, 8, 18), scarfMat);
+    scarf.rotation.x = Math.PI / 2.3;
+    scarf.position.set(0, 0.35, 0.3);
+    group.add(scarf);
+
+    // Buttons
+    [-0.12, 0.12].forEach(bx => {
+      [0.15, 0.0, -0.15].forEach(by => {
+        const btn = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.02, 10), btnMat);
+        btn.rotation.x = Math.PI / 2;
+        btn.position.set(bx, by, 0.48);
+        group.add(btn);
+      });
+    });
+  } else if (itemId.includes('pirate') || itemId.includes('korsan')) {
+    // Pirate Captain Coat with Gold Trim and Crimson Sash
+    const coatMat = new THREE.MeshStandardMaterial({ color: 0x450a0a, roughness: 0.5 });
+    const sashMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.4 });
+    const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.85, roughness: 0.2 });
+
+    const coat = new THREE.Mesh(new THREE.SphereGeometry(0.74, 20, 20), coatMat);
+    coat.scale.set(1.02, 1.18, 0.98);
+    group.add(coat);
+
+    // Waist Sash
+    const sash = new THREE.Mesh(new THREE.TorusGeometry(0.68, 0.08, 8, 24), sashMat);
+    sash.rotation.x = Math.PI / 2;
+    sash.position.set(0, -0.22, 0);
+    group.add(sash);
+
+    // Golden Buckle
+    const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.14, 0.06), goldMat);
+    buckle.position.set(0, -0.22, 0.5);
+    group.add(buckle);
+  } else if (itemId.includes('cyber') || itemId.includes('ninja')) {
+    // Futuristic Cyber Suit with Glowing Circuitry
+    const cyberSuitMat = new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.25, metalness: 0.8 });
+    const neonMat = new THREE.MeshStandardMaterial({ color: itemColorHex || 0x06b6d4, emissive: itemColorHex || 0x06b6d4, emissiveIntensity: 0.9 });
+
+    const suit = new THREE.Mesh(new THREE.SphereGeometry(0.74, 20, 20), cyberSuitMat);
+    suit.scale.set(1.02, 1.18, 0.98);
+    group.add(suit);
+
+    // Glowing Neon Core
+    const core = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.04, 16), neonMat);
+    core.rotation.x = Math.PI / 2;
+    core.position.set(0, 0.12, 0.48);
+    group.add(core);
+
+    // Neon stripes
+    [-0.25, 0.25].forEach(sx => {
+      const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.45, 0.04), neonMat);
+      stripe.position.set(sx, -0.05, 0.46);
+      group.add(stripe);
+    });
+  } else {
+    // Default Adventurer Tunic & Belt
+    const tunicMat = new THREE.MeshStandardMaterial({ color: itemColorHex || 0x1d4ed8, roughness: 0.5 });
+    const beltMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.4 });
+    const buckleMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.85, roughness: 0.2 });
+
+    const tunic = new THREE.Mesh(new THREE.SphereGeometry(0.73, 20, 20), tunicMat);
+    tunic.scale.set(1.01, 1.16, 0.97);
+    group.add(tunic);
+
+    const belt = new THREE.Mesh(new THREE.TorusGeometry(0.66, 0.06, 8, 24), beltMat);
+    belt.rotation.x = Math.PI / 2;
+    belt.position.set(0, -0.2, 0);
+    group.add(belt);
+
+    const buckle = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.12, 0.05), buckleMat);
+    buckle.position.set(0, -0.2, 0.48);
+    group.add(buckle);
+  }
+
+  return group;
+}
+

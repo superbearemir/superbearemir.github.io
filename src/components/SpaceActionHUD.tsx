@@ -532,6 +532,16 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
           <span>Arcade</span>
         </button>
 
+        {/* Quick Country & Language Selector Button */}
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent('superbear:open-language-modal'))}
+          title="Dil & Ülke Seçimi (Dünyadaki Tüm Ülkeler Alfabetik Sırayla)"
+          className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-emerald-600 to-teal-700 text-white border border-emerald-300 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-emerald-500 hover:to-teal-600"
+        >
+          <span className="text-xs">🌍</span>
+          <span>Dil / Lang</span>
+        </button>
+
         {/* Loot Boxes Quick Button */}
         <button
           onClick={() => window.dispatchEvent(new CustomEvent('superbear:open-lootboxes'))}

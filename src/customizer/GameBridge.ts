@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { CustomCharacterDesign } from './types';
 import { createCompositeTexture, createCapeTexture, hexToInt } from './ImageAnalyzer';
 import { SHOP_ITEMS } from '../data/shopItemsData';
-import { buildHatMesh, buildFaceMesh, buildBackMesh, buildHandMesh } from './equipmentMeshBuilder';
+import { buildHatMesh, buildFaceMesh, buildBackMesh, buildHandMesh, buildBodyOutfitMesh } from './equipmentMeshBuilder';
 
 const STORAGE_KEY_CURRENT = 'super_bear_custom_design_current';
 const STORAGE_KEY_PRESETS = 'super_bear_custom_presets_v1';
@@ -237,70 +237,74 @@ export function syncShopEquipmentsToGameInstance(equippedIds: string[]) {
   const root = pb.root || game.scene;
   if (!root) return;
 
-  // 1. Determine parent nodes for realistic attachment:
-  // If playerBear has head, attach hat and face items to pb.head so they move with head rotation
-  const hatParent = pb.head || root;
-  const faceParent = pb.head || root;
-  const backParent = pb.body || root;
-  const handParent = pb.rightArm || root;
+  // Clean up any previously misplaced containers across the scene graph to prevent ghost equipment
+  const containerNames = [
+    'player_hat_container',
+    'player_face_container',
+    'player_back_container',
+    'player_hand_container',
+    'player_outfit_container'
+  ];
 
-  // 2. Find or create slot containers
-  let hatContainer = hatParent.getObjectByName('player_hat_container');
-  if (!hatContainer) {
-    hatContainer = new THREE.Group();
-    hatContainer.name = 'player_hat_container';
-    if (pb.head) {
-      hatContainer.position.set(0, 0.42, 0.05);
-    } else {
-      hatContainer.position.set(0, 1.55, 0.05);
-    }
-    hatParent.add(hatContainer);
-  }
-
-  let faceContainer = faceParent.getObjectByName('player_face_container');
-  if (!faceContainer) {
-    faceContainer = new THREE.Group();
-    faceContainer.name = 'player_face_container';
-    if (pb.head) {
-      faceContainer.position.set(0, -0.05, 0.45);
-    } else {
-      faceContainer.position.set(0, 1.35, 0.38);
-    }
-    faceParent.add(faceContainer);
-  }
-
-  let backContainer = backParent.getObjectByName('player_back_container');
-  if (!backContainer) {
-    backContainer = new THREE.Group();
-    backContainer.name = 'player_back_container';
-    if (pb.body) {
-      backContainer.position.set(0, 0.1, -0.42);
-    } else {
-      backContainer.position.set(0, 0.7, -0.42);
-    }
-    backParent.add(backContainer);
-  }
-
-  let handContainer = handParent.getObjectByName('player_hand_container');
-  if (!handContainer) {
-    handContainer = new THREE.Group();
-    handContainer.name = 'player_hand_container';
-    if (pb.rightArm) {
-      handContainer.position.set(0, -0.38, 0.15);
-    } else {
-      handContainer.position.set(0.45, 0.5, 0.25);
-    }
-    handParent.add(handContainer);
-  }
-
-  // Clear existing accessories inside containers
-  [hatContainer, faceContainer, backContainer, handContainer].forEach(container => {
-    if (container && container.children) {
-      while (container.children.length > 0) {
-        container.remove(container.children[0]);
-      }
+  containerNames.forEach(cName => {
+    const existing = root.getObjectByName(cName);
+    if (existing && existing.parent) {
+      existing.parent.remove(existing);
     }
   });
+
+  // Determine correct parent nodes for realistic attachment
+  const hatParent = pb.head || (pb.body && pb.body.children ? pb.body.children.find((c: any) => c.isGroup) : null) || root;
+  const faceParent = pb.head || hatParent;
+  const backParent = pb.body || root;
+  const handParent = pb.rightArm || root;
+  const outfitParent = pb.body || root;
+
+  // Create slot containers with precise offsets
+  const hatContainer = new THREE.Group();
+  hatContainer.name = 'player_hat_container';
+  if (hatParent === pb.head || hatParent !== root) {
+    hatContainer.position.set(0, 0.44, 0.02);
+  } else {
+    hatContainer.position.set(0, 1.55, 0.05);
+  }
+  hatParent.add(hatContainer);
+
+  const faceContainer = new THREE.Group();
+  faceContainer.name = 'player_face_container';
+  if (faceParent === pb.head || faceParent !== root) {
+    faceContainer.position.set(0, 0.05, 0.42);
+  } else {
+    faceContainer.position.set(0, 1.35, 0.38);
+  }
+  faceParent.add(faceContainer);
+
+  const backContainer = new THREE.Group();
+  backContainer.name = 'player_back_container';
+  if (backParent === pb.body || backParent !== root) {
+    backContainer.position.set(0, 0.1, -0.42);
+  } else {
+    backContainer.position.set(0, 0.7, -0.42);
+  }
+  backParent.add(backContainer);
+
+  const handContainer = new THREE.Group();
+  handContainer.name = 'player_hand_container';
+  if (handParent === pb.rightArm || handParent !== root) {
+    handContainer.position.set(0, -0.38, 0.12);
+  } else {
+    handContainer.position.set(0.45, 0.5, 0.25);
+  }
+  handParent.add(handContainer);
+
+  const outfitContainer = new THREE.Group();
+  outfitContainer.name = 'player_outfit_container';
+  if (outfitParent === pb.body || outfitParent !== root) {
+    outfitContainer.position.set(0, 0, 0);
+  } else {
+    outfitContainer.position.set(0, 0.9, 0);
+  }
+  outfitParent.add(outfitContainer);
 
   const currentDesign = getCurrentSavedDesign();
   let hasAuraItem = false;
@@ -321,12 +325,11 @@ export function syncShopEquipmentsToGameInstance(equippedIds: string[]) {
         currentDesign.capeEnabled = true;
       } else if (itemData.slot === 'hand' && handContainer) {
         handContainer.add(buildHandMesh(id, colorInt));
-      } else if (itemData.slot === 'aura' || itemData.effectType === 'aura') {
-        hasAuraItem = true;
-        currentDesign.auraType = itemData.effectValue?.auraType || (id.includes('fire') ? 'fire' : id.includes('cosmic') ? 'cosmic' : 'sparkles');
-        currentDesign.auraColor = itemData.color || '#facc15';
       } else if (itemData.slot === 'skin' || itemData.effectType?.startsWith('skin_')) {
         hasSkinItem = true;
+        // Attach tailored 3D outfit mesh
+        outfitContainer.add(buildBodyOutfitMesh(id, colorInt));
+
         if (id.includes('gold') || itemData.effectType === 'skin_gold') {
           currentDesign.materialType = 'gold';
           currentDesign.palette.furColor = '#f59e0b';
@@ -343,6 +346,10 @@ export function syncShopEquipmentsToGameInstance(equippedIds: string[]) {
           currentDesign.materialType = 'shiny';
           if (itemData.color) currentDesign.palette.furColor = itemData.color;
         }
+      } else if (itemData.slot === 'aura' || itemData.effectType === 'aura') {
+        hasAuraItem = true;
+        currentDesign.auraType = itemData.effectValue?.auraType || (id.includes('fire') ? 'fire' : id.includes('cosmic') ? 'cosmic' : 'sparkles');
+        currentDesign.auraColor = itemData.color || '#facc15';
       }
     } else {
       // Legacy item checks fallback

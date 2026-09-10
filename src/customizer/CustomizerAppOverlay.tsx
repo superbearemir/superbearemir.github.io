@@ -15,9 +15,12 @@ import { TouchDragController } from '../components/TouchDragController';
 import { LandscapeOrientationHandler } from '../components/LandscapeOrientationHandler';
 import { SaveManagerModal } from '../components/SaveManagerModal';
 import { LootBoxModal } from '../components/LootBoxModal';
-import { ShoppingBag, Gamepad2 } from 'lucide-react';
+import { CountryLanguageModal } from '../components/CountryLanguageModal';
+import { useLanguage } from '../i18n/LanguageContext';
+import { ShoppingBag, Gamepad2, Globe } from 'lucide-react';
 
 export const CustomizerAppOverlay: React.FC = () => {
+  const { language, country, t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
   const [isDrawingModalOpen, setIsDrawingModalOpen] = useState(false);
   const [isCatShopOpen, setIsCatShopOpen] = useState(false);
@@ -28,6 +31,7 @@ export const CustomizerAppOverlay: React.FC = () => {
   const [isArcadeGamesOpen, setIsArcadeGamesOpen] = useState(false);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isLootBoxModalOpen, setIsLootBoxModalOpen] = useState(false);
+  const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
 
   const [purchasedIds, setPurchasedIds] = useState<string[]>(() => {
     const saved = localStorage.getItem('super_bear_purchased_items');
@@ -78,7 +82,8 @@ export const CustomizerAppOverlay: React.FC = () => {
     isTrailerOpen ||
     isArcadeGamesOpen ||
     isSaveModalOpen ||
-    isLootBoxModalOpen;
+    isLootBoxModalOpen ||
+    isLanguageModalOpen;
 
   useEffect(() => {
     (window as any).__superBearModalOpen = isAnyModalOpen;
@@ -142,6 +147,10 @@ export const CustomizerAppOverlay: React.FC = () => {
 
     const handleOpenLootBoxes = () => setIsLootBoxModalOpen(true);
     window.addEventListener('superbear:open-lootboxes', handleOpenLootBoxes);
+
+    const handleOpenLanguageModal = () => setIsLanguageModalOpen(true);
+    window.addEventListener('superbear:open-language-modal', handleOpenLanguageModal);
+    (window as any).__openLanguageModal = handleOpenLanguageModal;
 
     const handleShopPurchase = (e: Event) => {
       const detail = (e as CustomEvent).detail;
@@ -260,6 +269,7 @@ export const CustomizerAppOverlay: React.FC = () => {
       window.removeEventListener('superbear:open-arcade-games', handleOpenArcade);
       window.removeEventListener('superbear:open-save-modal', handleOpenSaveModal);
       window.removeEventListener('superbear:open-lootboxes', handleOpenLootBoxes);
+      window.removeEventListener('superbear:open-language-modal', handleOpenLanguageModal);
       window.removeEventListener('superbear:shop-purchase', handleShopPurchase);
       window.removeEventListener('superbear:coins-updated', handleCoinsUpdated);
       window.removeEventListener('superbear:cat-merchant-proximity', handleCatMerchantProximity);
@@ -467,6 +477,12 @@ export const CustomizerAppOverlay: React.FC = () => {
         onItemsPurchased={(newItems) => {
           setPurchasedIds(newItems);
         }}
+      />
+
+      {/* Country and Language Selector Modal */}
+      <CountryLanguageModal
+        isOpen={isLanguageModalOpen}
+        onClose={() => setIsLanguageModalOpen(false)}
       />
 
       {/* Automatic Mobile Landscape Helper */}

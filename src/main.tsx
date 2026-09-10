@@ -5,6 +5,7 @@ import './index.css';
 
 import { CustomizerAppOverlay } from './customizer/CustomizerAppOverlay';
 import { initMobilePerformanceOptimizer } from './utils/mobilePerformanceOptimizer';
+import { LanguageProvider } from './i18n/LanguageContext';
 
 (window as unknown as { THREE: typeof THREE }).THREE = THREE;
 
@@ -16,7 +17,9 @@ if (portalEl) {
   const root = ReactDOM.createRoot(portalEl);
   root.render(
     <React.StrictMode>
-      <CustomizerAppOverlay />
+      <LanguageProvider>
+        <CustomizerAppOverlay />
+      </LanguageProvider>
     </React.StrictMode>
   );
 }
