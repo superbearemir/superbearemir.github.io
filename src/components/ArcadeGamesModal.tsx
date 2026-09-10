@@ -1350,21 +1350,31 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
     : ALL_ARCADE_GAMES;
 
   return (
-    <div className="fixed inset-0 z-[125] flex items-center justify-center p-2.5 sm:p-5 bg-slate-950/85 backdrop-blur-md animate-in fade-in select-none">
-      <div className="relative w-full max-w-5xl bg-slate-900/95 border-2 border-purple-500/50 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-slate-100">
+    <div className="fixed inset-0 z-[125] flex items-center justify-center p-1.5 sm:p-5 bg-slate-950/85 backdrop-blur-md animate-in fade-in select-none">
+      {/* Floating Emergency Direct Close Button */}
+      <button
+        onClick={onClose}
+        aria-label="Pencereyi Kapat"
+        className="fixed top-2 right-2 sm:top-4 sm:right-4 z-[250] min-w-[46px] min-h-[46px] p-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black shadow-2xl border-2 border-rose-300 flex items-center justify-center transition active:scale-90 cursor-pointer"
+        title="Kapat"
+      >
+        <X className="w-7 h-7 stroke-[3]" />
+      </button>
+
+      <div className="relative w-full max-w-5xl bg-slate-900/95 border-2 border-purple-500/50 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] sm:max-h-[92vh] text-slate-100">
         
-        {/* Header with Daily Rotation Badge */}
-        <div className="p-4 sm:p-5 bg-gradient-to-r from-purple-800 via-indigo-700 to-purple-900 text-white flex flex-wrap items-center justify-between gap-3 border-b-2 border-purple-400/50 shrink-0">
+        {/* Sticky Header with Daily Rotation Badge */}
+        <div className="sticky top-0 z-40 p-3 sm:p-5 bg-gradient-to-r from-purple-800 via-indigo-700 to-purple-900 text-white flex flex-wrap items-center justify-between gap-3 border-b-2 border-purple-400/50 shrink-0 shadow-md">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-slate-950 border-2 border-purple-300 flex items-center justify-center text-2xl shadow-xl animate-pulse">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-slate-950 border-2 border-purple-300 flex items-center justify-center text-xl sm:text-2xl shadow-xl animate-pulse shrink-0">
               🕹️
             </div>
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-lg sm:text-2xl font-black tracking-wider text-white">
+                <h2 className="text-base sm:text-2xl font-black tracking-wider text-white">
                   SUPER BEAR RETRO ARCADE SALONU
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-xs border border-amber-300 shadow">
+                <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-xs border border-amber-300 shadow">
                   10 FARKLI OYUN 🔥
                 </span>
               </div>
@@ -1389,9 +1399,10 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
             )}
             <button
               onClick={onClose}
-              className="w-10 h-10 rounded-xl bg-slate-950/40 hover:bg-slate-950/60 text-white flex items-center justify-center transition active:scale-90 cursor-pointer"
+              className="min-w-[42px] min-h-[42px] rounded-xl bg-slate-950/60 hover:bg-rose-600 text-white flex items-center justify-center transition active:scale-90 cursor-pointer border border-purple-300/40"
+              title="Kapat"
             >
-              <X className="w-6 h-6" />
+              <X className="w-6 h-6 stroke-[2.5]" />
             </button>
           </div>
         </div>

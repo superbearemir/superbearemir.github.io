@@ -619,28 +619,37 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200">
-      
+    <div className="fixed inset-0 z-[100] bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-1.5 sm:p-4 animate-in fade-in duration-200">
+      {/* Floating Emergency Direct Close Button */}
+      <button
+        onClick={onClose}
+        aria-label="Pencereyi Kapat"
+        className="fixed top-2 right-2 sm:top-4 sm:right-4 z-[250] min-w-[46px] min-h-[46px] p-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black shadow-2xl border-2 border-rose-300 flex items-center justify-center transition active:scale-90 cursor-pointer"
+        title="Kapat (X)"
+      >
+        <X className="w-7 h-7 stroke-[3]" />
+      </button>
+
       {/* Giant Studio Modal Container */}
-      <div className="relative w-full max-w-7xl bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border-2 border-amber-500/70 rounded-3xl shadow-2xl overflow-y-auto flex flex-col h-auto min-h-[90vh] max-h-[96vh]">
+      <div className="relative w-full max-w-7xl bg-gradient-to-b from-slate-900 via-slate-950 to-slate-950 border-2 border-amber-500/70 rounded-3xl shadow-2xl flex flex-col h-[94vh] max-h-[96dvh] overflow-hidden">
         
-        {/* Header */}
-        <div className="relative p-3 sm:p-4 bg-gradient-to-r from-amber-600 via-orange-500 to-amber-700 text-slate-950 flex items-center justify-between border-b-2 border-amber-400/50 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-slate-950 border-2 border-amber-200 flex items-center justify-center text-2xl shadow-xl relative animate-bounce">
+        {/* Pinned Sticky Header */}
+        <div className="sticky top-0 z-40 p-2.5 sm:p-4 bg-gradient-to-r from-amber-600 via-orange-500 to-amber-700 text-slate-950 flex items-center justify-between border-b-2 border-amber-400/50 shrink-0 shadow-md">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-slate-950 border-2 border-amber-200 flex items-center justify-center text-xl sm:text-2xl shadow-xl relative animate-bounce shrink-0">
               🐱
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-xl sm:text-2xl font-black tracking-wider text-slate-950">
-                  BAKKAL KEDİ CAPİ & CANLI 3D AYI KOSTÜM MAĞAZASI
+                <h2 className="text-base sm:text-2xl font-black tracking-wider text-slate-950 line-clamp-1">
+                  BAKKAL KEDİ CAPİ & 3D AYI KOSTÜM MAĞAZASI
                 </h2>
-                <span className="px-2.5 py-0.5 rounded-full bg-slate-950 text-amber-300 font-black text-xs border border-amber-400/50">
+                <span className="px-2 py-0.5 rounded-full bg-slate-950 text-amber-300 font-black text-[11px] sm:text-xs border border-amber-400/50 hidden xs:inline-block">
                   180+ İtem 🏪
                 </span>
               </div>
-              <p className="text-xs font-bold text-slate-900 opacity-90 hidden sm:block">
-                "Sağdaki dükkandan istediğin zırh, kılıç, gözlük veya pelerini giydir; soldaki 3D Ayı üzerinde ANINDA CANLI GÖR!"
+              <p className="text-xs font-bold text-slate-900 opacity-90 hidden md:block">
+                "İstediğin zırh, kılıç, gözlük veya pelerini giydir; 3D Ayı üzerinde ANINDA CANLI GÖR!"
               </p>
             </div>
           </div>
@@ -648,9 +657,10 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
           <div className="flex items-center gap-2">
             <button
               onClick={onClose}
-              className="p-2.5 rounded-2xl bg-slate-950/90 hover:bg-slate-950 text-amber-300 hover:text-white transition active:scale-95 cursor-pointer border border-amber-400/50 shadow-lg"
+              className="min-w-[42px] min-h-[42px] p-2 rounded-2xl bg-slate-950 hover:bg-rose-600 text-amber-300 hover:text-white transition active:scale-95 cursor-pointer border-2 border-amber-400 flex items-center justify-center shadow-lg"
+              title="Kapat"
             >
-              <X className="w-6 h-6" />
+              <X className="w-6 h-6 stroke-[2.5]" />
             </button>
           </div>
         </div>

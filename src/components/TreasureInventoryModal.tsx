@@ -113,12 +113,22 @@ export const TreasureInventoryModal: React.FC<TreasureInventoryModalProps> = ({
   const unlockedCount = treasures.filter(t => t.isUnlocked).length;
 
   return (
-    <div className="fixed inset-0 z-[150] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 select-none pointer-events-auto">
-      <div className="bg-slate-900 border-2 border-amber-500/50 rounded-3xl w-full max-w-2xl max-h-[90vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-        {/* Header */}
-        <div className="p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between shrink-0">
+    <div className="fixed inset-0 z-[150] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-5 select-none pointer-events-auto">
+      {/* Floating Direct Close Button */}
+      <button
+        onClick={onClose}
+        aria-label="Pencereyi Kapat"
+        className="fixed top-2 right-2 sm:top-4 sm:right-4 z-[250] min-w-[46px] min-h-[46px] p-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black shadow-2xl border-2 border-rose-300 flex items-center justify-center transition active:scale-90 cursor-pointer"
+        title="Kapat"
+      >
+        <X className="w-7 h-7 stroke-[3]" />
+      </button>
+
+      <div className="bg-slate-900 border-2 border-amber-500/50 rounded-3xl w-full max-w-2xl max-h-[92dvh] sm:max-h-[90vh] shadow-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        {/* Pinned Sticky Header */}
+        <div className="sticky top-0 z-40 p-3 sm:p-4 bg-slate-950 border-b border-slate-800 flex items-center justify-between shrink-0 shadow-md">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
               <Gem className="w-5 h-5" />
             </div>
             <div>
@@ -133,9 +143,10 @@ export const TreasureInventoryModal: React.FC<TreasureInventoryModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white transition cursor-pointer"
+            className="min-w-[40px] min-h-[40px] rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white flex items-center justify-center transition active:scale-95 cursor-pointer border border-slate-700"
+            title="Kapat"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5 stroke-[2.5]" />
           </button>
         </div>
 

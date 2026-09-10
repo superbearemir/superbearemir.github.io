@@ -324,41 +324,51 @@ export const LootBoxModal: React.FC<LootBoxModalProps> = ({
   return (
     <div
       id="lootbox-modal-overlay"
-      className="fixed inset-0 z-[120] bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-[120] bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-1.5 sm:p-4 animate-in fade-in duration-200"
     >
+      {/* Floating Direct Close Button */}
+      <button
+        onClick={onClose}
+        aria-label="Pencereyi Kapat"
+        className="fixed top-2 right-2 sm:top-4 sm:right-4 z-[250] min-w-[46px] min-h-[46px] p-2.5 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black shadow-2xl border-2 border-rose-300 flex items-center justify-center transition active:scale-90 cursor-pointer"
+        title="Kapat"
+      >
+        <X className="w-7 h-7 stroke-[3]" />
+      </button>
+
       <div
         id="lootbox-modal-container"
-        className="relative w-full max-w-4xl bg-slate-900 border-2 border-amber-500/70 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
+        className="relative w-full max-w-4xl bg-slate-900 border-2 border-amber-500/70 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] sm:max-h-[92vh]"
       >
-        {/* Modal Header */}
-        <div className="relative px-5 py-4 bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-slate-950 flex items-center justify-between border-b-2 border-amber-400/50 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-slate-950 border-2 border-amber-200 flex items-center justify-center text-2xl shadow-lg animate-bounce">
+        {/* Pinned Sticky Modal Header */}
+        <div className="sticky top-0 z-40 px-3 sm:px-5 py-3 sm:py-4 bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 text-slate-950 flex items-center justify-between border-b-2 border-amber-400/50 shrink-0 shadow-md">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-slate-950 border-2 border-amber-200 flex items-center justify-center text-xl sm:text-2xl shadow-lg animate-bounce shrink-0">
               🎁
             </div>
             <div>
-              <h2 className="text-xl sm:text-2xl font-black tracking-wider text-slate-950 flex items-center gap-2">
+              <h2 className="text-base sm:text-2xl font-black tracking-wider text-slate-950 flex items-center gap-2 line-clamp-1">
                 ŞANS KUTULARI & SANDIKLAR
               </h2>
-              <p className="text-xs font-bold text-slate-900/90">
+              <p className="text-xs font-bold text-slate-900/90 hidden sm:block">
                 300 Farklı Kostüm & Ekipmanı Topla | Nadir, Süper Ender ve Efsanevi Eşyalar!
               </p>
             </div>
           </div>
 
           {/* Right Status (Gold Balance & Close) */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-950/90 border border-amber-400 text-amber-300 text-sm font-black shadow-inner">
-              <Coins className="w-4 h-4 text-amber-400 animate-spin" />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full bg-slate-950/90 border border-amber-400 text-amber-300 text-xs sm:text-sm font-black shadow-inner">
+              <Coins className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400 animate-spin" />
               <span>{playerGold.toLocaleString('tr-TR')} 🟡</span>
             </div>
 
             <button
               onClick={onClose}
-              className="w-9 h-9 rounded-full bg-slate-950/80 hover:bg-red-600 text-white flex items-center justify-center transition border border-amber-300/40 cursor-pointer active:scale-95"
+              className="min-w-[40px] min-h-[40px] rounded-xl bg-slate-950/90 hover:bg-rose-600 text-white flex items-center justify-center transition border border-amber-300/40 cursor-pointer active:scale-95"
               title="Kapat"
             >
-              <X className="w-5 h-5" />
+              <X className="w-6 h-6 stroke-[2.5]" />
             </button>
           </div>
         </div>

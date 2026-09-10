@@ -1209,9 +1209,9 @@ function buildSpaceGalaxyWorld(scene) {
   canvasBoard.position.set(0, 5, 0);
   bannerGroup.add(canvasBoard);
   
-  // Village Border Wooden Fence & Stone Gateway (Central path open to mountains)
+  // Village Border Wooden Fence & Stone Gateway (Elevated to hill terrain at y: 3.0, z: -50)
   const barrierFenceGroup = new window.THREE.Group();
-  barrierFenceGroup.position.set(0, 0, -50);
+  barrierFenceGroup.position.set(0, 3.0, -50);
   
   const fenceMat = new window.THREE.MeshStandardMaterial({ color: 0x5c2b08, roughness: 0.8 });
   const stonePillarMat = new window.THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85 });
@@ -1246,13 +1246,13 @@ function buildSpaceGalaxyWorld(scene) {
     gsCtx.fillStyle = '#ffffff';
     gsCtx.font = 'bold 24px sans-serif';
     gsCtx.textAlign = 'center';
-    gsCtx.fillText('🏔️ KUZEY DAĞLARI GEÇİDİ ➔', 256, 48);
+    gsCtx.fillText('🏔️ KUZEY DAĞLARI VE GİZLİ MAĞARA GEÇİDİ ➔', 256, 48);
     gsCtx.fillStyle = '#fef08a';
     gsCtx.font = '18px sans-serif';
-    gsCtx.fillText('Moris\'in Gizli Dağ İni İleride!', 256, 92);
+    gsCtx.fillText('Moris\'in Gizli Dağ İni ve Hazine Tünelleri İleride!', 256, 92);
   }
   const gateSignTex = new window.THREE.CanvasTexture(gateSignCanvas);
-  const gateSignMesh = new window.THREE.Mesh(new window.THREE.PlaneGeometry(5.0, 1.2), new window.THREE.MeshBasicMaterial({ map: gateSignTex }));
+  const gateSignMesh = new window.THREE.Mesh(new window.THREE.PlaneGeometry(5.6, 1.3), new window.THREE.MeshBasicMaterial({ map: gateSignTex }));
   gateSignMesh.position.set(0, 4.4, 0.4);
   barrierFenceGroup.add(gateSignMesh);
 
@@ -1283,7 +1283,7 @@ function buildSpaceGalaxyWorld(scene) {
       new window.THREE.CylinderGeometry(2.5, 3.0, 0.6, 16),
       createGlowMat(0x0284c7, 0x38bdf8)
   );
-  hubTabel.position.set(-18, 0.3, -48); // Positioned safely on the west side
+  hubTabel.position.set(-18, 3.0, -48); // Positioned cleanly at hill height
   scene.add(hubTabel);
   spaceObjects.push(hubTabel);
 
@@ -1293,13 +1293,13 @@ function buildSpaceGalaxyWorld(scene) {
       createGlowMat(0x38bdf8, 0x7dd3fc)
   );
   gateRing.rotation.x = Math.PI / 2;
-  gateRing.position.set(-18, 0.65, -48);
+  gateRing.position.set(-18, 3.35, -48);
   scene.add(gateRing);
   spaceObjects.push(gateRing);
   
-  // Bakkal Kedi (Standing Cat Merchant Capitoolos) - Fully Visible 3D Shop & Model in front of the Northern Mountains
+  // Bakkal Kedi (Standing Cat Merchant Capitoolos) - Fully Visible 3D Shop & Model
   const bakkal = new window.THREE.Group();
-  bakkal.position.set(7, 0.2, -30); // Elevated and positioned in open flat space right in front of the Northern Mountain path
+  bakkal.position.set(7, 3.0, -32); // Elevated on hill plateau right in front of the Northern Mountain path
   bakkal.rotation.y = Math.PI; // Facing south towards village center & approaching player
   
   // Materials
@@ -1674,7 +1674,7 @@ function buildSpaceGalaxyWorld(scene) {
 
   // Tatlış Pelikan Piko (Standing Pelican NPC near pond in Ayı Köyü)
   const pelikanPiko = createCutePelicanMesh(window.THREE, false);
-  pelikanPiko.position.set(-14, 0.2, 6); // Positioned by the pond in Ayı Köyü
+  pelikanPiko.position.set(-14, 0.15, 6); // Positioned cleanly on meadow near pond bank
   pelikanPiko.rotation.y = 0.6; // Facing towards spawn area
   pelikanPiko.name = 'npc_pelican_piko';
   scene.add(pelikanPiko);
@@ -1685,16 +1685,16 @@ function buildSpaceGalaxyWorld(scene) {
   
   if (gameRef && gameRef.currentLevel && gameRef.currentLevel.colliders) {
       const THREE = window.THREE;
-      // West and East fence colliders (Central gateway x: -5 to +5 is open to the mountains)
+      // West and East fence colliders (Elevated to match fence at y: 3.0, Central gateway x: -5 to +5 is open to the mountains)
       gameRef.currentLevel.colliders.push({
-          min: new THREE.Vector3(-55, 0, -51),
-          max: new THREE.Vector3(-5.5, 3, -49),
+          min: new THREE.Vector3(-55, 3.0, -51),
+          max: new THREE.Vector3(-5.5, 6.0, -49),
           isToxic: false,
           isIce: false
       });
       gameRef.currentLevel.colliders.push({
-          min: new THREE.Vector3(5.5, 0, -51),
-          max: new THREE.Vector3(55, 3, -49),
+          min: new THREE.Vector3(5.5, 3.0, -51),
+          max: new THREE.Vector3(55, 6.0, -49),
           isToxic: false,
           isIce: false
       });
@@ -1739,39 +1739,40 @@ function buildExpandedKediKoyu(scene) {
   const woodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 });
   const grassHillMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.8 });
 
-  // 1. VOLEYBOL SAHASI (Volleyball Court) at (x: 28, y: 0.05, z: -15)
+  // 1. VOLEYBOL SAHASI (Volleyball Court on East Hill at y: 2.08)
+  const COURT_Y = 2.08;
   const courtGeo = new THREE.BoxGeometry(18, 0.2, 26);
   const courtMesh = new THREE.Mesh(courtGeo, sandMat);
-  courtMesh.position.set(28, 0.05, -15);
+  courtMesh.position.set(28, COURT_Y, -15);
   courtMesh.receiveShadow = true;
   villageGroup.add(courtMesh);
 
   // Court Border Lines (White)
   const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
   const lineHoriz = new THREE.Mesh(new THREE.BoxGeometry(18.2, 0.22, 0.3), lineMat);
-  lineHoriz.position.set(28, 0.06, -15);
+  lineHoriz.position.set(28, COURT_Y + 0.02, -15);
   villageGroup.add(lineHoriz);
 
   // Volleyball Net Poles (Left & Right)
   const poleGeo = new THREE.CylinderGeometry(0.15, 0.15, 4.5, 12);
   const poleL = new THREE.Mesh(poleGeo, woodMat);
-  poleL.position.set(18.8, 2.25, -15);
+  poleL.position.set(18.8, COURT_Y + 2.25, -15);
   villageGroup.add(poleL);
 
   const poleR = new THREE.Mesh(poleGeo, woodMat);
-  poleR.position.set(37.2, 2.25, -15);
+  poleR.position.set(37.2, COURT_Y + 2.25, -15);
   villageGroup.add(poleR);
 
   // Net Mesh Across
   const netGeo = new THREE.BoxGeometry(18.2, 2.0, 0.1);
   const netMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, transparent: true, opacity: 0.75, wireframe: true });
   const netMesh = new THREE.Mesh(netGeo, netMat);
-  netMesh.position.set(28, 3.2, -15);
+  netMesh.position.set(28, COURT_Y + 3.15, -15);
   villageGroup.add(netMesh);
 
   // Net Top Tape
   const tapeMesh = new THREE.Mesh(new THREE.BoxGeometry(18.2, 0.2, 0.15), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-  tapeMesh.position.set(28, 4.2, -15);
+  tapeMesh.position.set(28, COURT_Y + 4.15, -15);
   villageGroup.add(tapeMesh);
 
   // 3D Interactive Volleyball Ball
@@ -1780,7 +1781,7 @@ function buildExpandedKediKoyu(scene) {
   const ballMat = createGlowMat(0x38bdf8, 0xfde047);
   const ballMesh = new THREE.Mesh(ballGeo, ballMat);
   ballGroup.add(ballMesh);
-  ballGroup.position.set(28, 1.2, -15);
+  ballGroup.position.set(28, COURT_Y + 1.2, -15);
   villageGroup.add(ballGroup);
   villageVolleyball = ballGroup;
 
@@ -1821,16 +1822,16 @@ function buildExpandedKediKoyu(scene) {
     villageGroup.add(bridgeGroup);
   });
 
-  // Small Fishing Ponds
-  const pond1Geo = new THREE.CylinderGeometry(8, 8, 0.2, 24);
+  // Small Fishing Ponds (Positioned in open meadows without clipping into hills)
+  const pond1Geo = new THREE.CylinderGeometry(7, 7, 0.2, 24);
   const pond1Mesh = new THREE.Mesh(pond1Geo, deepWaterMat);
-  pond1Mesh.position.set(-26, 0.04, -8);
+  pond1Mesh.position.set(32, 0.04, 26);
   pond1Mesh.name = 'fishing_pond_1';
   villageGroup.add(pond1Mesh);
 
-  const pond1Rim = new THREE.Mesh(new THREE.TorusGeometry(8.2, 0.6, 12, 24), grassHillMat);
+  const pond1Rim = new THREE.Mesh(new THREE.TorusGeometry(7.2, 0.5, 12, 24), grassHillMat);
   pond1Rim.rotation.x = Math.PI / 2;
-  pond1Rim.position.set(-26, 0.2, -8);
+  pond1Rim.position.set(32, 0.18, 26);
   villageGroup.add(pond1Rim);
 
   const pond2Mesh = new THREE.Mesh(new THREE.CylinderGeometry(7, 7, 0.2, 24), waterMat);
@@ -1844,7 +1845,7 @@ function buildExpandedKediKoyu(scene) {
 
   for (let i = 0; i < 4; i++) {
     const fish = createFishMesh(THREE, fishColors[i % fishColors.length]);
-    fish.position.set(-25 + i * 16, 0.3, 22);
+    fish.position.set(-25 + i * 16, 0.25, 22);
     villageGroup.add(fish);
     villageFishList.push({
       mesh: fish,
@@ -1858,24 +1859,24 @@ function buildExpandedKediKoyu(scene) {
 
   for (let i = 0; i < 2; i++) {
     const fish = createFishMesh(THREE, fishColors[(i + 2) % fishColors.length]);
-    fish.position.set(-26 + i * 2, 0.3, -8 + i * 2);
+    fish.position.set(32 + i * 2, 0.25, 26 + i * 2);
     villageGroup.add(fish);
     villageFishList.push({
       mesh: fish,
-      baseX: -26,
-      baseZ: -8,
-      radius: 5,
+      baseX: 32,
+      baseZ: 26,
+      radius: 4,
       speed: 0.015,
       phase: i * 3.14
     });
   }
 
-  // 3. ANIMAL NPCS (FOX, BUNNY, GIRAFFE)
+  // 3. ANIMAL NPCS (FOX, BUNNY, GIRAFFE) - Positioned with clear ground heights
   villageNpcsList = [];
 
   // A) Tilki Kurnaz Rüstem 🦊
   const foxMesh = createFoxMesh(THREE);
-  foxMesh.position.set(-18, 0.2, 10);
+  foxMesh.position.set(-18, 0.1, 10);
   foxMesh.rotation.y = 0.8;
   foxMesh.name = 'npc_fox_rustem';
   villageGroup.add(foxMesh);
@@ -1893,9 +1894,9 @@ function buildExpandedKediKoyu(scene) {
     ]
   });
 
-  // B) Tavşan Zıpzıp Pamuk 🐰
+  // B) Tavşan Zıpzıp Pamuk 🐰 (Stands on East hill by the Volleyball court)
   const bunnyMesh = createBunnyMesh(THREE);
-  bunnyMesh.position.set(22, 0.2, -12);
+  bunnyMesh.position.set(22, 2.1, -12);
   bunnyMesh.rotation.y = -0.6;
   bunnyMesh.name = 'npc_bunny_pamuk';
   villageGroup.add(bunnyMesh);
@@ -1915,7 +1916,7 @@ function buildExpandedKediKoyu(scene) {
 
   // C) Zürafa Uzunboy Zeki 🦒
   const giraffeMesh = createGiraffeMesh(THREE);
-  giraffeMesh.position.set(12, 0.2, 30);
+  giraffeMesh.position.set(12, 0.1, 30);
   giraffeMesh.rotation.y = 2.8;
   giraffeMesh.name = 'npc_giraffe_zeki';
   villageGroup.add(giraffeMesh);
@@ -1941,17 +1942,35 @@ function buildExpandedKediKoyu(scene) {
 }
 
 // Global reference for Moris's diary desk in Kedi Köyü (Beyond the barrier in Mountain 3)
-let morisDiaryDeskPos = new THREE.Vector3(12.0, 7.6, -75.0);
+let morisDiaryDeskPos = new THREE.Vector3(6.0, 4.0, -82.0);
 let isMorisDiaryOpen = false;
 
+// Dynamic tracking arrays for cave interactive elements
+window.__secretCaveCollectibles = [];
+window.__secretCaveChests = [];
+window.__secretCaveMovingPlatforms = [];
+window.__secretCaveSpikeTraps = [];
+
 function buildMorisSecretDenAndMountains(THREE, villageGroup) {
+  console.log("⛏️ Building Grand Mountain Range & Multi-Chamber Secret Mountain Cave...");
+
   const rockMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85, metalness: 0.1 });
+  const darkRockMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9 });
+  const caveWallMat = new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.95 });
   const snowMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5 });
+  const roadCobbleMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.8 });
   const woodMat = new THREE.MeshStandardMaterial({ color: 0x5c2b08, roughness: 0.8 });
   const strawMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.9 });
   const honeyGoldMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.2, metalness: 0.3, emissive: 0xb45309, emissiveIntensity: 0.4 });
   const waxMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.6 });
   const pineLeafMat = new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.8 });
+  const goldMetalMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.85, roughness: 0.25 });
+  const ironMetalMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.7, roughness: 0.4 });
+  const bronzeMat = new THREE.MeshStandardMaterial({ color: 0xb45309, metalness: 0.6, roughness: 0.4 });
+  const redFruitMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.3 });
+  const cookedMeatMat = new THREE.MeshStandardMaterial({ color: 0x7c2d12, roughness: 0.7 });
+  const boneWhiteMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5 });
+  const fishSkinMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.4, metalness: 0.2 });
 
   // Helper to add REAL physical collider to level
   function addDenCollider(minX, minY, minZ, maxX, maxY, maxZ, climbable = false) {
@@ -1967,39 +1986,49 @@ function buildMorisSecretDenAndMountains(THREE, villageGroup) {
     });
   }
 
-  // A) BORDER MOUNTAIN RANGE BEYOND THE BARRIERS ("Bariyerlerin bi tık ilerilerine dağlar ekle")
-  // The barrier gateway is at z: -50. Mountains are placed from z: -68 to -135 across the northern horizon.
+  // Reset tracking arrays
+  window.__secretCaveCollectibles = [];
+  window.__secretCaveChests = [];
+  window.__secretCaveMovingPlatforms = [];
+  window.__secretCaveSpikeTraps = [];
+
+  // =========================================================================
+  // A) BORDER MOUNTAIN VALLEY - FRAMING PEAKS (Leaving Wide Center Path Open!)
+  // =========================================================================
   const mountainCenters = [
-    // Front Layer - Majestic peaks directly past the barrier
-    { x: -55, y: 15, z: -72, r: 24, h: 32 },
-    { x: -22, y: 17, z: -82, r: 25, h: 36 },
-    { x: 12, y: 16, z: -76, r: 26, h: 36 }, // Mountain with Moris's Secret Mountain Cave & Lair!
-    { x: 48, y: 16, z: -72, r: 24, h: 34 },
-    { x: 80, y: 18, z: -68, r: 26, h: 36 },
-    // Back Layer - Towering alpine summits with eternal snow
-    { x: -40, y: 25, z: -115, r: 36, h: 50 },
-    { x: 0, y: 28, z: -130, r: 42, h: 58 },
-    { x: 42, y: 26, z: -120, r: 38, h: 52 }
+    // West Ridge Peaks
+    { x: -38, y: 15, z: -68, r: 22, h: 32 },
+    { x: -62, y: 18, z: -88, r: 26, h: 36 },
+    { x: -82, y: 22, z: -118, r: 30, h: 42 },
+    // East Ridge Peaks
+    { x: 38, y: 15, z: -68, r: 22, h: 32 },
+    { x: 62, y: 18, z: -88, r: 26, h: 36 },
+    { x: 82, y: 22, z: -118, r: 30, h: 42 },
+    // Far Northern Alpine Massif (Deep behind the cave)
+    { x: 0, y: 32, z: -190, r: 48, h: 62 }
   ];
 
-  mountainCenters.forEach((m, mIdx) => {
-    // Rocky mountain base
-    const mtGeo = new THREE.ConeGeometry(m.r, m.h, 12);
+  window.__mountainCenterData = mountainCenters;
+
+  mountainCenters.forEach((m) => {
+    const mtGeo = new THREE.ConeGeometry(m.r, m.h, 16);
     const mt = new THREE.Mesh(mtGeo, rockMat);
     mt.position.set(m.x, m.y, m.z);
     villageGroup.add(mt);
 
-    // Snow-capped peak (Karlı dağ zirvesi)
-    const snowGeo = new THREE.ConeGeometry(m.r * 0.46, m.h * 0.35, 12);
+    const ridgeGeo = new THREE.ConeGeometry(m.r * 1.08, m.h * 0.4, 8);
+    const ridge = new THREE.Mesh(ridgeGeo, darkRockMat);
+    ridge.position.set(m.x, m.y - m.h * 0.3, m.z);
+    ridge.rotation.y = 0.4;
+    villageGroup.add(ridge);
+
+    const snowGeo = new THREE.ConeGeometry(m.r * 0.46, m.h * 0.35, 16);
     const snow = new THREE.Mesh(snowGeo, snowMat);
     snow.position.set(m.x, m.y + m.h * 0.33, m.z);
     villageGroup.add(snow);
 
-    // ADD REAL PHYSICAL COLLIDER FOR MOUNTAIN PEAK & BASE
-    addDenCollider(m.x - m.r * 0.72, 0, m.z - m.r * 0.72, m.x + m.r * 0.72, m.y + m.h * 0.55, m.z + m.r * 0.72);
-
-    // Pine trees on slopes
-    for (let t = 0; t < 4; t++) {
+    // Pine trees on mountain slopes
+    for (let t = 0; t < 3; t++) {
       const tree = new THREE.Group();
       const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 2, 6), woodMat);
       trunk.position.y = 1;
@@ -2007,26 +2036,47 @@ function buildMorisSecretDenAndMountains(THREE, villageGroup) {
       const foliage = new THREE.Mesh(new THREE.ConeGeometry(1.5, 3.8, 7), pineLeafMat);
       foliage.position.y = 3;
       tree.add(foliage);
-      const angle = t * 1.57;
-      const tx = m.x + Math.sin(angle) * (m.r * 0.65);
-      const tz = m.z + Math.cos(angle) * (m.r * 0.65);
-      tree.position.set(tx, 1.0, tz);
+      const angle = t * 2.1;
+      const tx = m.x + Math.sin(angle) * (m.r * 0.62);
+      const tz = m.z + Math.cos(angle) * (m.r * 0.62);
+      tree.position.set(tx, 3.0, tz);
       villageGroup.add(tree);
-
-      // ADD REAL PHYSICAL COLLIDERS FOR PINE TREE TRUNK & CANOPY
-      addDenCollider(tx - 0.5, 0, tz - 0.5, tx + 0.5, 2.5, tz + 0.5);
-      addDenCollider(tx - 1.6, 2.0, tz - 1.6, tx + 1.6, 5.5, tz + 1.6);
     }
   });
 
-  // Mountain trail signpost right beyond the barrier gateway (x: 2.0, z: -51.5)
+  // Mountain Bedrock Base Collider (z: -50 to -70)
+  addDenCollider(-40, 0, -70, 40, 3.2, -50, true);
+
+  // =========================================================================
+  // B) BROAD PAVED MOUNTAIN ROAD (North Gate to Cave Mouth at z: -68)
+  // =========================================================================
+  const roadLength = 18;
+  const roadMesh = new THREE.Mesh(new THREE.BoxGeometry(10.0, 0.4, roadLength), roadCobbleMat);
+  roadMesh.position.set(0, 3.0, -59);
+  villageGroup.add(roadMesh);
+  addDenCollider(-5.0, 0.0, -68.0, 5.0, 3.2, -50.0, true);
+
+  // Roadside Flaming Torches and Glowing Crystal Lamps
+  [-4.8, 4.8].forEach(rx => {
+    for (let rz = -52; rz >= -66; rz -= 4.5) {
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 2.2, 8), darkRockMat);
+      pole.position.set(rx, 4.1, rz);
+      villageGroup.add(pole);
+
+      const lampHead = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), new THREE.MeshBasicMaterial({ color: 0xf59e0b }));
+      lampHead.position.set(rx, 5.2, rz);
+      villageGroup.add(lampHead);
+    }
+  });
+
+  // Entrance Directional Signpost at z: -52
   const signGroup = new THREE.Group();
-  signGroup.position.set(3.5, 0.0, -51.5);
+  signGroup.position.set(4.5, 3.0, -52.0);
   const signPole = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 3.2, 8), woodMat);
   signPole.position.y = 1.6;
   signGroup.add(signPole);
-  const signBoard = new THREE.Mesh(new THREE.BoxGeometry(3.6, 1.2, 0.3), woodMat);
-  signBoard.position.set(0, 2.6, 0);
+  const signBoard = new THREE.Mesh(new THREE.BoxGeometry(4.6, 1.6, 0.3), woodMat);
+  signBoard.position.set(0, 2.7, 0);
   signGroup.add(signBoard);
 
   const signCanvas = document.createElement('canvas');
@@ -2034,432 +2084,115 @@ function buildMorisSecretDenAndMountains(THREE, villageGroup) {
   signCanvas.height = 180;
   const sCtx = signCanvas.getContext('2d');
   if (sCtx) {
-    sCtx.fillStyle = '#78350f';
+    sCtx.fillStyle = '#0f172a';
     sCtx.fillRect(0, 0, 512, 180);
-    sCtx.strokeStyle = '#fef08a';
+    sCtx.strokeStyle = '#f59e0b';
     sCtx.lineWidth = 8;
     sCtx.strokeRect(6, 6, 500, 168);
-    sCtx.fillStyle = '#ffffff';
+    sCtx.fillStyle = '#fef08a';
     sCtx.font = 'bold 28px sans-serif';
     sCtx.textAlign = 'center';
-    sCtx.fillText('🏔️ MORİS\'İN DAĞ İNİ ➔', 256, 60);
-    sCtx.fillStyle = '#fef08a';
-    sCtx.font = '22px sans-serif';
-    sCtx.fillText('Mor Ayı\'nın Gizli Notları & Sığınağı', 256, 105);
+    sCtx.fillText('⛏️ GİZLİ DAĞ MAĞARASI VE HAZİNELER ➔', 256, 55);
     sCtx.fillStyle = '#38bdf8';
-    sCtx.font = '18px sans-serif';
-    sCtx.fillText('Taş Basamakları Tırman!', 256, 145);
+    sCtx.font = '22px sans-serif';
+    sCtx.fillText('Düz İlerle! Büyük Mağara Kapısı Karşıda!', 256, 100);
+    sCtx.fillStyle = '#4ade80';
+    sCtx.font = '20px sans-serif';
+    sCtx.fillText('🎁 Yiyecekler, Altınlar, Zıplama Parkuru & Sandıklar!', 256, 145);
   }
   const signTex = new THREE.CanvasTexture(signCanvas);
-  const signFace = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 1.0), new THREE.MeshBasicMaterial({ map: signTex }));
-  signFace.position.set(0, 2.6, 0.17);
+  const signFace = new THREE.Mesh(new THREE.PlaneGeometry(4.4, 1.4), new THREE.MeshBasicMaterial({ map: signTex }));
+  signFace.position.set(0, 2.7, 0.17);
   signGroup.add(signFace);
   villageGroup.add(signGroup);
 
-  // Natural Stone Climbing Steps leading from barrier to Mountain 3 Cave
-  const steps = [
-    { x: 0.0, y: 0.6, z: -52.5, w: 7.0, d: 4.5 },
-    { x: 2.5, y: 1.8, z: -56.5, w: 6.5, d: 4.5 },
-    { x: 5.0, y: 3.2, z: -60.5, w: 6.5, d: 4.5 },
-    { x: 7.5, y: 4.6, z: -64.5, w: 6.0, d: 4.5 },
-    { x: 9.8, y: 6.0, z: -68.5, w: 6.0, d: 4.5 },
-    { x: 11.5, y: 7.2, z: -72.5, w: 6.5, d: 4.5 },
-    // Cave entrance terrace / plateau at (12, 7.6, -76)
-    { x: 12.0, y: 7.6, z: -76.0, w: 20.0, d: 18.0 },
-    // Higher Mountain Pass Path & Scenic Summit Plateau
-    { x: 12.0, y: 9.8, z: -83.0, w: 9.0, d: 5.5 },
-    { x: 11.0, y: 12.2, z: -89.0, w: 9.0, d: 5.5 },
-    { x: 10.0, y: 14.6, z: -95.0, w: 9.5, d: 6.0 },
-    // Alpine Summit Overlook Terrace (Karlı Zirve Manzara Noktası)
-    { x: 9.0, y: 16.8, z: -103.0, w: 20.0, d: 16.0 }
-  ];
-
-  steps.forEach((st, idx) => {
-    const stepMesh = new THREE.Mesh(new THREE.BoxGeometry(st.w, 1.0, st.d), rockMat);
-    stepMesh.position.set(st.x, st.y - 0.5, st.z);
-    villageGroup.add(stepMesh);
-
-    // Register real 3D solid & climbable collider for climbing steps
-    addDenCollider(st.x - st.w / 2, 0.0, st.z - st.d / 2, st.x + st.w / 2, st.y + 0.3, st.z + st.d / 2, true);
-
-    if (idx < 6) {
-      // Step boundary torch
-      const torch = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.2, 6), woodMat);
-      torch.position.set(st.x + st.w * 0.45, st.y + 0.6, st.z);
-      villageGroup.add(torch);
-      const flame = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), new THREE.MeshBasicMaterial({ color: 0xf97316 }));
-      flame.position.set(st.x + st.w * 0.45, st.y + 1.3, st.z);
-      villageGroup.add(flame);
-    }
-  });
-
-  // B) MORİS'İN GİZLİ SIĞINAĞI / MAĞARASI (CAVE CAVERN AT (12.0, 7.2, -76.0))
-  // Cave Walls and Curved Natural Cavern Roof
-  const caveFloor = new THREE.Mesh(new THREE.BoxGeometry(14, 0.5, 12), rockMat);
-  caveFloor.position.set(12.0, 7.2, -76.0);
-  villageGroup.add(caveFloor);
-
-  // Cave Arch & Sign above entrance
-  const archL = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 5, 8), woodMat);
-  archL.position.set(6.5, 9.6, -70.0);
-  villageGroup.add(archL);
-  const archR = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.5, 5, 8), woodMat);
-  archR.position.set(17.5, 9.6, -70.0);
-  villageGroup.add(archR);
-  const archTop = new THREE.Mesh(new THREE.BoxGeometry(12, 0.8, 0.8), woodMat);
-  archTop.position.set(12.0, 12.2, -70.0);
-  villageGroup.add(archTop);
-
-  // Cave Nameplate Banner
-  const caveBannerCanvas = document.createElement('canvas');
-  caveBannerCanvas.width = 512;
-  caveBannerCanvas.height = 140;
-  const cbCtx = caveBannerCanvas.getContext('2d');
-  if (cbCtx) {
-    cbCtx.fillStyle = '#451a03';
-    cbCtx.fillRect(0, 0, 512, 140);
-    cbCtx.strokeStyle = '#f59e0b';
-    cbCtx.lineWidth = 6;
-    cbCtx.strokeRect(4, 4, 504, 132);
-    cbCtx.fillStyle = '#fef08a';
-    cbCtx.font = 'bold 30px sans-serif';
-    cbCtx.textAlign = 'center';
-    cbCtx.fillText('🐻‍❄️ MORİS\'İN GİZLİ DAĞ İNİ', 256, 55);
-    cbCtx.fillStyle = '#ffffff';
-    cbCtx.font = '20px sans-serif';
-    cbCtx.fillText('Kırık Boynuzlu Ayı\'nın Dağ Sığınağı', 256, 100);
-  }
-  const caveBannerTex = new THREE.CanvasTexture(caveBannerCanvas);
-  const caveBanner = new THREE.Mesh(new THREE.PlaneGeometry(6.0, 1.6), new THREE.MeshBasicMaterial({ map: caveBannerTex }));
-  caveBanner.position.set(12.0, 12.8, -69.5);
-  villageGroup.add(caveBanner);
-
-  // Cave Roof Dome & Back Wall
-  const caveRoof = new THREE.Mesh(new THREE.SphereGeometry(8.5, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), rockMat);
-  caveRoof.position.set(12.0, 7.2, -76.0);
-  villageGroup.add(caveRoof);
-
-  // Cave Warm Lantern / Firelight & Purple Ambient Glow
-  const caveLight = new THREE.PointLight(0xf59e0b, 2.5, 18);
-  caveLight.position.set(12.0, 11.0, -76.0);
-  villageGroup.add(caveLight);
-
-  const purpleCrystalLight = new THREE.PointLight(0xa855f7, 1.8, 12);
-  purpleCrystalLight.position.set(7.5, 9.0, -78.0);
-  villageGroup.add(purpleCrystalLight);
-
-  // Glowing Purple Crystals on the Cave Wall (Moris'in mistik mor kristali)
-  const crystalMat = new THREE.MeshStandardMaterial({ color: 0xc084fc, emissive: 0x9333ea, emissiveIntensity: 0.6, roughness: 0.2 });
-  for (let cr = 0; cr < 3; cr++) {
-    const cMesh = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.9, 6), crystalMat);
-    cMesh.position.set(6.2 + cr * 0.3, 8.2 + cr * 0.2, -78.5);
-    cMesh.rotation.z = -0.4 + cr * 0.2;
-    villageGroup.add(cMesh);
-  }
-
-  // C) YATTIĞI YER: KÜTÜK KARYOLA & YUMUŞAK OT YATAĞI ("Yattığı yer orada kalsın")
-  const bedGroup = new THREE.Group();
-  bedGroup.position.set(8.0, 7.6, -79.0);
-
-  // 4 Thick Corner Logs (Kütük Ayaklar)
-  const logGeo = new THREE.CylinderGeometry(0.28, 0.32, 1.8, 8);
-  [[-1.8, -1.2], [1.8, -1.2], [-1.8, 1.2], [1.8, 1.2]].forEach(pos => {
-    const post = new THREE.Mesh(logGeo, woodMat);
-    post.position.set(pos[0], 0.9, pos[1]);
-    bedGroup.add(post);
-  });
-
-  // Bed Log Frame Rails (Kütük Kenarlıklar)
-  const longLogGeo = new THREE.CylinderGeometry(0.24, 0.24, 4.0, 8);
-  const railF = new THREE.Mesh(longLogGeo, woodMat);
-  railF.rotation.z = Math.PI / 2;
-  railF.position.set(0, 0.7, 1.2);
-  bedGroup.add(railF);
-
-  const railB = railF.clone();
-  railB.position.set(0, 0.7, -1.2);
-  bedGroup.add(railB);
-
-  // Headboard logs (Kütük Başlık)
-  for (let hb = 0; hb < 3; hb++) {
-    const headLog = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 2.6, 8), woodMat);
-    headLog.rotation.x = Math.PI / 2;
-    headLog.position.set(-1.8, 0.8 + hb * 0.4, 0);
-    bedGroup.add(headLog);
-  }
-
-  // Soft Straw Mattress (Yumuşak Ot Yatağı & Saman Şiltesi)
-  const mattress = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.65, 2.3), strawMat);
-  mattress.position.set(0, 0.9, 0);
-  bedGroup.add(mattress);
-
-  // Straw Pillow (Yumuşak Ot Yastık)
-  const pillow = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.35, 1.8), waxMat);
-  pillow.position.set(-1.3, 1.35, 0);
-  bedGroup.add(pillow);
-
-  // Warm Wool Blanket / Purple Bear Pelt (Moris'in Mor Yatak Örtüsü)
-  const blanket = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.1, 2.2), new THREE.MeshStandardMaterial({ color: 0x7e22ce, roughness: 0.9 }));
-  blanket.position.set(0.5, 1.28, 0);
-  bedGroup.add(blanket);
-
-  villageGroup.add(bedGroup);
-
-  // Solid bed collider
-  addDenCollider(5.8, 7.5, -80.5, 10.2, 9.8, -77.5);
-
-  // D) İÇTİĞİ BALLAR ORADA KALSIN (BOŞ & DOLU BAL ÇÖMLEKLERİ, PETEK RAFI, FIÇILAR)
-  // Wooden Honeycomb Stand (Petek Bal Rafı)
-  const shelfGroup = new THREE.Group();
-  shelfGroup.position.set(16.5, 7.6, -79.0);
-
-  const shelfPostL = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.2, 1.2), woodMat);
-  shelfPostL.position.set(-1.2, 1.6, 0);
-  shelfGroup.add(shelfPostL);
-  const shelfPostR = new THREE.Mesh(new THREE.BoxGeometry(0.2, 3.2, 1.2), woodMat);
-  shelfPostR.position.set(1.2, 1.6, 0);
-  shelfGroup.add(shelfPostR);
-
-  // 3 Shelves
-  [0.8, 1.8, 2.8].forEach((sy, sIdx) => {
-    const plank = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.15, 1.2), woodMat);
-    plank.position.set(0, sy, 0);
-    shelfGroup.add(plank);
-
-    // Glowing Honeycomb Frames (Altın Petek Çerçeveleri)
-    for (let h = -0.8; h <= 0.8; h += 0.55) {
-      const comb = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.65, 0.12), honeyGoldMat);
-      comb.position.set(h, sy + 0.38, (sIdx % 2 === 0 ? 0.15 : -0.15));
-      comb.rotation.y = 0.1;
-      shelfGroup.add(comb);
-
-      // Honey jar beside combs
-      const jar = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 0.35, 10), honeyGoldMat);
-      jar.position.set(h + 0.2, sy + 0.22, 0);
-      shelfGroup.add(jar);
-    }
-  });
-
-  villageGroup.add(shelfGroup);
-
-  // Stacked Wooden Honey Barrels with Overflowing Golden Honey ("İçtiği ballar orada kalsın")
-  const barrelPositions = [
-    { x: 17.0, y: 7.6, z: -75.0, rot: 0 },
-    { x: 18.2, y: 7.6, z: -76.2, rot: 0 },
-    { x: 17.6, y: 9.0, z: -75.6, rot: Math.PI / 2 } // Top stacked barrel
-  ];
-
-  barrelPositions.forEach(bp => {
-    const bGroup = new THREE.Group();
-    bGroup.position.set(bp.x, bp.y, bp.z);
-    bGroup.rotation.x = bp.rot;
-
-    const bMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.72, 1.4, 14), woodMat);
-    bMesh.position.y = 0.7;
-    bGroup.add(bMesh);
-
-    // Barrel Metal Hoops
-    const hoopMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8 });
-    [-0.3, 0.3].forEach(hy => {
-      const hoop = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.04, 8, 16), hoopMat);
-      hoop.rotation.x = Math.PI / 2;
-      hoop.position.y = 0.7 + hy;
-      bGroup.add(hoop);
-    });
-
-    // Overflowing Golden Honey from Top
-    const honeyTop = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.1, 14), honeyGoldMat);
-    honeyTop.position.y = 1.42;
-    bGroup.add(honeyTop);
-
-    villageGroup.add(bGroup);
-  });
-
-  // Moris'in Yatağının Yanında İçtiği Boş/Dolu Bal Çömlekleri & Bal Damlaları
-  const clayPotMat = new THREE.MeshStandardMaterial({ color: 0xc2410c, roughness: 0.7 });
-  const honeyPots = [
-    { x: 6.2, y: 7.6, z: -77.5, scale: 0.38, hasDrip: true },
-    { x: 6.8, y: 7.6, z: -76.8, scale: 0.32, hasDrip: true },
-    { x: 10.4, y: 7.6, z: -80.0, scale: 0.42, hasDrip: false }
-  ];
-  honeyPots.forEach(hp => {
-    const pot = new THREE.Mesh(new THREE.SphereGeometry(hp.scale, 10, 10), clayPotMat);
-    pot.position.set(hp.x, hp.y + hp.scale * 0.8, hp.z);
-    villageGroup.add(pot);
-
-    const rim = new THREE.Mesh(new THREE.CylinderGeometry(hp.scale * 0.5, hp.scale * 0.6, 0.15, 10), clayPotMat);
-    rim.position.set(hp.x, hp.y + hp.scale * 1.5, hp.z);
-    villageGroup.add(rim);
-
-    // Golden honey puddle/drip
-    const puddle = new THREE.Mesh(new THREE.CylinderGeometry(hp.scale * 0.8, hp.scale * 0.8, 0.04, 8), honeyGoldMat);
-    puddle.position.set(hp.x + 0.15, hp.y + 0.02, hp.z + 0.15);
-    villageGroup.add(puddle);
-  });
-
-  // Solid honey storage collider
-  addDenCollider(15.0, 7.5, -80.0, 19.5, 10.5, -74.0);
-
-  // E) CARVED STONE DESK & 3 READABLE DIARY NOTES (Moris'in Gizli Notları Masada)
-  const deskGroup = new THREE.Group();
-  deskGroup.position.set(12.0, 7.6, -75.0);
-
-  // Stone table base & tabletop
-  const tableBase = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.9, 1.4, 10), rockMat);
-  tableBase.position.y = 0.7;
-  deskGroup.add(tableBase);
-
-  const tabletop = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 1.9, 0.25, 14), rockMat);
-  tabletop.position.y = 1.5;
-  deskGroup.add(tabletop);
-
-  // 3 Glowing Open Diary Pages (3 Günlük Notu)
-  const parchmentMat = new THREE.MeshStandardMaterial({
-    color: 0xfef3c7,
-    roughness: 0.5,
-    emissive: 0xfef08a,
-    emissiveIntensity: 0.35
-  });
-
-  const pageNotes = [
-    { rot: -0.4, x: -0.7, z: 0.1, label: 'Not 1' },
-    { rot: 0.0, x: 0.0, z: -0.5, label: 'Not 2' },
-    { rot: 0.4, x: 0.7, z: 0.1, label: 'Not 3' }
-  ];
-
-  pageNotes.forEach(pn => {
-    const page = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.04, 0.9), parchmentMat);
-    page.position.set(pn.x, 1.66, pn.z);
-    page.rotation.y = pn.rot;
-    deskGroup.add(page);
-
-    // Quill pen & ink pot
-    const ink = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.18, 8), new THREE.MeshBasicMaterial({ color: 0x0f172a }));
-    ink.position.set(pn.x + 0.35, 1.7, pn.z);
-    deskGroup.add(ink);
-  });
-
-  // Floating Diary Icon Marker (Interactive indicator)
-  const diaryMarker = new THREE.Mesh(
-    new THREE.SphereGeometry(0.28, 12, 12),
-    new THREE.MeshBasicMaterial({ color: 0xfacc15, wireframe: true })
-  );
-  diaryMarker.position.set(0, 2.6, 0);
-  diaryMarker.name = 'moris_diary_floating_marker';
-  deskGroup.add(diaryMarker);
-
-  villageGroup.add(deskGroup);
-
-  // Solid desk collider
-  addDenCollider(10.2, 7.5, -76.8, 13.8, 9.8, -73.2);
-
   // =========================================================================
-  // --- GİZLİ DAĞ TÜNELLERİ VE MAĞARA MACERASI (SECRET MOUNTAIN TUNNELS & CAVE ADVENTURE) ---
+  // C) GRAND OPEN CAVE ENTRANCE PORTAL & ROCK FAÇADE (x: 0, y: 3.2, z: -68)
   // =========================================================================
-  
-  // Prominent Visible Stone Cave Entrance Archway at Mountain Base (x: 12, y: 1.0, z: -72)
   const caveArchGroup = new THREE.Group();
-  caveArchGroup.position.set(12.0, 1.0, -72.0);
+  caveArchGroup.position.set(0.0, 3.2, -68.0);
 
-  const leftPillar = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.9, 4.5, 12), rockMat);
-  leftPillar.position.set(-2.2, 2.25, 0);
-  caveArchGroup.add(leftPillar);
+  // Massive Stone Pillars flanking the entrance
+  const archPillarL = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 2.0, 8.0, 14), rockMat);
+  archPillarL.position.set(-6.5, 4.0, 0);
+  caveArchGroup.add(archPillarL);
 
-  const rightPillar = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.9, 4.5, 12), rockMat);
-  rightPillar.position.set(2.2, 2.25, 0);
-  caveArchGroup.add(rightPillar);
+  const archPillarR = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 2.0, 8.0, 14), rockMat);
+  archPillarR.position.set(6.5, 4.0, 0);
+  caveArchGroup.add(archPillarR);
 
-  const archTopCave = new THREE.Mesh(new THREE.BoxGeometry(5.6, 1.2, 1.8), rockMat);
-  archTopCave.position.set(0, 4.8, 0);
-  caveArchGroup.add(archTopCave);
+  // Giant Overhanging Mountain Arch Top
+  const archTop = new THREE.Mesh(new THREE.BoxGeometry(15.0, 2.8, 3.5), rockMat);
+  archTop.position.set(0, 8.2, 0);
+  caveArchGroup.add(archTop);
 
-  // Glowing Cave Entrance Signboard
-  const caveSignCanvas = document.createElement('canvas');
-  caveSignCanvas.width = 512;
-  caveSignCanvas.height = 180;
-  const csCtx = caveSignCanvas.getContext('2d');
-  if (csCtx) {
-    csCtx.fillStyle = '#0f172a';
-    csCtx.fillRect(0, 0, 512, 180);
-    csCtx.strokeStyle = '#f59e0b';
-    csCtx.lineWidth = 8;
-    csCtx.strokeRect(6, 6, 500, 168);
-    csCtx.fillStyle = '#fef08a';
-    csCtx.font = 'bold 26px sans-serif';
-    csCtx.textAlign = 'center';
-    csCtx.fillText('⚠️ GİZLİ DAĞ MAĞARASI GİRİŞİ ➔', 256, 55);
-    csCtx.fillStyle = '#38bdf8';
-    csCtx.font = '20px sans-serif';
-    csCtx.fillText('Tüneller, Altınlar ve Hazine Sandıkları!', 256, 100);
-    csCtx.fillStyle = '#f97316';
-    csCtx.font = '18px sans-serif';
-    csCtx.fillText('⛏️ İçeri Gir ve Maceraya Atıl!', 256, 145);
+  // Hanging Stalactites from Cave Mouth
+  [-4.0, -2.0, 0.0, 2.0, 4.0].forEach(stX => {
+    const stalactite = new THREE.Mesh(new THREE.ConeGeometry(0.4, 2.2, 8), darkRockMat);
+    stalactite.rotation.x = Math.PI;
+    stalactite.position.set(stX, 6.8, 0.5);
+    caveArchGroup.add(stalactite);
+  });
+
+  // Glowing Illuminated Cave Portal Banner
+  const portalCanvas = document.createElement('canvas');
+  portalCanvas.width = 512;
+  portalCanvas.height = 160;
+  const pCtx = portalCanvas.getContext('2d');
+  if (pCtx) {
+    pCtx.fillStyle = '#09090b';
+    pCtx.fillRect(0, 0, 512, 160);
+    pCtx.strokeStyle = '#eab308';
+    pCtx.lineWidth = 6;
+    pCtx.strokeRect(6, 6, 500, 148);
+    pCtx.fillStyle = '#fde047';
+    pCtx.font = 'bold 30px sans-serif';
+    pCtx.textAlign = 'center';
+    pCtx.fillText('⛏️ KUZEY DAĞLARI GİZLİ MAĞARASI ⬇️', 256, 52);
+    pCtx.fillStyle = '#38bdf8';
+    pCtx.font = '22px sans-serif';
+    pCtx.fillText('Moris\'in İni • Zıplama Uçurumu • Hazine Odası', 256, 96);
+    pCtx.fillStyle = '#f97316';
+    pCtx.font = 'bold 20px sans-serif';
+    pCtx.fillText('İçeri Gir, Engelleri Aş ve Hazineleri Topla!', 256, 136);
   }
-  const caveSignTex = new THREE.CanvasTexture(caveSignCanvas);
-  const caveSignMesh = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 1.4), new THREE.MeshBasicMaterial({ map: caveSignTex }));
-  caveSignMesh.position.set(0, 5.8, 0.5);
-  caveArchGroup.add(caveSignMesh);
+  const portalTex = new THREE.CanvasTexture(portalCanvas);
+  const portalSign = new THREE.Mesh(new THREE.PlaneGeometry(8.5, 2.4), new THREE.MeshBasicMaterial({ map: portalTex }));
+  portalSign.position.set(0, 9.4, 1.2);
+  caveArchGroup.add(portalSign);
 
-  // Blazing Torches at Cave Entrance
-  [-2.2, 2.2].forEach(tx => {
-    const torchH = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 1.5, 8), woodMat);
-    torchH.position.set(tx, 2.5, 0.9);
-    torchH.rotation.x = 0.3;
-    caveArchGroup.add(torchH);
-    const torchF = new THREE.Mesh(new THREE.SphereGeometry(0.28, 10, 10), new THREE.MeshBasicMaterial({ color: 0xf97316 }));
-    torchF.position.set(tx, 3.3, 1.1);
-    caveArchGroup.add(torchF);
+  // Flaming Entrance Cauldrons & Giant Crystals
+  [-6.5, 6.5].forEach(cx => {
+    const cauldron = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.6, 1.2, 12), ironMetalMat);
+    cauldron.position.set(cx, 0.6, 1.5);
+    caveArchGroup.add(cauldron);
+
+    const flameMesh = new THREE.Mesh(new THREE.SphereGeometry(0.5, 10, 10), new THREE.MeshBasicMaterial({ color: 0xf97316 }));
+    flameMesh.position.set(cx, 1.4, 1.5);
+    caveArchGroup.add(flameMesh);
+
+    const crystalFlank = new THREE.Mesh(new THREE.ConeGeometry(0.45, 1.8, 6), new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.8 }));
+    crystalFlank.position.set(cx > 0 ? cx + 1.2 : cx - 1.2, 1.0, 1.2);
+    caveArchGroup.add(crystalFlank);
   });
 
   villageGroup.add(caveArchGroup);
 
-  // Tunnel interior group extending inside mountain
-  const tunnelGroup = new THREE.Group();
-  tunnelGroup.position.set(12.0, 7.6, -78.0);
-
-  const tunnelFloor = new THREE.Mesh(new THREE.BoxGeometry(8, 0.4, 35), rockMat);
-  tunnelFloor.position.set(0, 0, -17);
-  tunnelGroup.add(tunnelFloor);
-
-  const tunnelRoof = new THREE.Mesh(new THREE.BoxGeometry(8, 4.5, 35), rockMat);
-  tunnelRoof.position.set(0, 2.4, -17);
-  tunnelGroup.add(tunnelRoof);
-
-  const tunnelTorchMat = new THREE.MeshBasicMaterial({ color: 0xf97316 });
-  [-3.8, 3.8].forEach(tx => {
-    for (let tz = -2; tz > -32; tz -= 8) {
-      const tHolder = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.8, 6), woodMat);
-      tHolder.position.set(tx, 1.5, tz);
-      tunnelGroup.add(tHolder);
-      const tFlame = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), tunnelTorchMat);
-      tFlame.position.set(tx > 0 ? tx - 0.2 : tx + 0.2, 1.8, tz);
-      tunnelGroup.add(tFlame);
-    }
-  });
-
-  villageGroup.add(tunnelGroup);
-
-  window.__secretCaveCollectibles = [
-    { id: 'cave_coin_1', pos: new THREE.Vector3(12, 8.4, -84), collected: false, type: 'coin', val: 25 },
-    { id: 'cave_coin_2', pos: new THREE.Vector3(10, 8.4, -92), collected: false, type: 'coin', val: 25 },
-    { id: 'cave_food_1', pos: new THREE.Vector3(14, 8.4, -96), collected: false, type: 'food', val: 50 },
-    { id: 'cave_coin_3', pos: new THREE.Vector3(12, 8.8, -102), collected: false, type: 'coin', val: 35 },
-    { id: 'cave_food_2', pos: new THREE.Vector3(9, 8.8, -106), collected: false, type: 'food', val: 50 },
-  ];
-
-  window.__secretCaveChests = [
-    { id: 'cave_chest_1', pos: new THREE.Vector3(8, 8.4, -98), opened: false, reward: { coins: 150, xp: 200, gems: 3 } },
-    { id: 'cave_chest_2', pos: new THREE.Vector3(16, 9.8, -112), opened: false, reward: { coins: 250, xp: 350, gems: 5 } }
-  ];
-
+  // Entrance Guide NPC: Köstebek Kılavuz (⛏️🐹)
   const caveNpcGroup = new THREE.Group();
-  caveNpcGroup.position.set(12.0, 1.2, -70.5);
-  const npcBody = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.6, 1.4, 10), new THREE.MeshStandardMaterial({ color: 0x3b82f6 }));
+  caveNpcGroup.position.set(5.5, 3.2, -66.5);
+  const npcBody = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.65, 1.4, 10), new THREE.MeshStandardMaterial({ color: 0xb45309 }));
   npcBody.position.y = 0.7;
   caveNpcGroup.add(npcBody);
-  const npcHeadMesh = new THREE.Mesh(new THREE.SphereGeometry(0.42, 12, 12), new THREE.MeshStandardMaterial({ color: 0xfde047 }));
-  npcHeadMesh.position.y = 1.55;
-  caveNpcGroup.add(npcHeadMesh);
+  const npcHead = new THREE.Mesh(new THREE.SphereGeometry(0.45, 12, 12), new THREE.MeshStandardMaterial({ color: 0xd97706 }));
+  npcHead.position.y = 1.6;
+  caveNpcGroup.add(npcHead);
+  const npcHelmet = new THREE.Mesh(new THREE.SphereGeometry(0.48, 12, 12, 0, Math.PI * 2, 0, Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0xfacc15 }));
+  npcHelmet.position.y = 1.7;
+  caveNpcGroup.add(npcHelmet);
+  const npcLight = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+  npcLight.position.set(0, 1.9, 0.4);
+  caveNpcGroup.add(npcLight);
   villageGroup.add(caveNpcGroup);
 
   if (!window.__superBearGame.currentLevel.npcs) {
@@ -2467,36 +2200,598 @@ function buildMorisSecretDenAndMountains(THREE, villageGroup) {
   }
   window.__superBearGame.currentLevel.npcs.push({
     id: 'npc_cave_guide',
-    name: 'Kıdemli Mağara Kılavuzu & Bilge Kaşif (Köstebek Kılavuz ⛏️🐹)',
+    name: 'Kıdemli Mağara Rehberi (Köstebek Kılavuz ⛏️🐹)',
     role: 'Dağ Tünelleri & Mağara Macerası Rehberi',
-    pos: new THREE.Vector3(12.0, 1.2, -70.5),
+    pos: new THREE.Vector3(5.5, 3.2, -66.5),
     mesh: caveNpcGroup,
     avatarIcon: '⛏️',
     dialogue: [
-      "⚠️ TEHLİKELİ VE ZORLU DAĞ MAĞARASI MACERASINA HOŞ GELDİN SÜPER AYI!",
-      "İçerideki derin dağ tünellerinde lav tuzakları, karanlık dehlizler ve zorlu parkurlar var.",
-      "Ancak bu gizli yerlerde efsanevi Hazine Sandıkları, parlayan altınlar ve lezzetli bal yiyecekleri saklı!",
-      "Hepsini toplayarak rekor puanlar, altınlar ve özel ödüller kazanabilirsin. Dikkatli ol ve maceraya atıl!"
+      "⚠️ MAĞARANIN İÇİ AÇILDI SÜPER AYI! DOĞRUDAN İÇERİ GİREBİLİRSİN!",
+      "Mağara 4 derin odadan oluşuyor: 1. Moris'in Kampı & Yiyecekleri, 2. Tehlikeli Zıplama Uçurumu, 3. Kristal Kileri ve 4. Moris'in Dev Hazine Odası!",
+      "İçerideki bal küplerini, kızarmış etleri, meyveleri ve altınları toplayarak canını ve altınlarını fulle!",
+      "Zıplama parkurundaki hareketli taşlara dikkat et. En dipteki 3 Hazine Sandığını açtığında arkadaki Mavi Işınlanma Kapısından anında buraya dönebilirsin!"
     ]
   });
+
+  // =========================================================================
+  // D) CAVE INTERIOR - 4 GRAND, VIBRANT, CHALLENGING CHAMBERS (z: -68 to -185)
+  // =========================================================================
+  const caveInteriorGroup = new THREE.Group();
+  caveInteriorGroup.position.set(0, 3.2, 0);
+
+  // -------------------------------------------------------------------------
+  // CHAMBER 1: MORİS'İN KAMPI & YİYECEK ZULASI (z: -68 to -94)
+  // -------------------------------------------------------------------------
+  const ch1Floor = new THREE.Mesh(new THREE.BoxGeometry(20.0, 0.6, 26.0), darkRockMat);
+  ch1Floor.position.set(0, 0.0, -81.0);
+  caveInteriorGroup.add(ch1Floor);
+  addDenCollider(-10.0, 3.0, -94.0, 10.0, 3.5, -68.0, true);
+
+  const ch1WallL = new THREE.Mesh(new THREE.BoxGeometry(1.5, 14.0, 26.0), caveWallMat);
+  ch1WallL.position.set(-10.0, 6.0, -81.0);
+  caveInteriorGroup.add(ch1WallL);
+  addDenCollider(-11.0, 3.2, -94.0, -9.0, 18.0, -68.0);
+
+  const ch1WallR = new THREE.Mesh(new THREE.BoxGeometry(1.5, 14.0, 26.0), caveWallMat);
+  ch1WallR.position.set(10.0, 6.0, -81.0);
+  caveInteriorGroup.add(ch1WallR);
+  addDenCollider(9.0, 3.2, -94.0, 11.0, 18.0, -68.0);
+
+  const ch1Roof = new THREE.Mesh(new THREE.BoxGeometry(20.0, 1.2, 26.0), darkRockMat);
+  ch1Roof.position.set(0, 13.0, -81.0);
+  caveInteriorGroup.add(ch1Roof);
+
+  // Bright Lanterns & Crystal Chandeliers in Chamber 1
+  const ch1Light1 = new THREE.PointLight(0xf59e0b, 3.5, 25);
+  ch1Light1.position.set(0, 7.0, -75);
+  caveInteriorGroup.add(ch1Light1);
+
+  const ch1Light2 = new THREE.PointLight(0x38bdf8, 3.0, 25);
+  ch1Light2.position.set(-4, 7.0, -86);
+  caveInteriorGroup.add(ch1Light2);
+
+  // Moris's Bed Camp at Left Wall (x: -5.5, z: -82.0)
+  const bedGroup = new THREE.Group();
+  bedGroup.position.set(-5.5, 0.3, -82.0);
+
+  [[-1.6, -1.0], [1.6, -1.0], [-1.6, 1.0], [1.6, 1.0]].forEach(pos => {
+    const post = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.28, 1.6, 8), woodMat);
+    post.position.set(pos[0], 0.8, pos[1]);
+    bedGroup.add(post);
+  });
+  const mattress = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.6, 2.2), strawMat);
+  mattress.position.set(0, 0.8, 0);
+  bedGroup.add(mattress);
+  const blanket = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.1, 2.1), new THREE.MeshStandardMaterial({ color: 0x7e22ce, roughness: 0.9 }));
+  blanket.position.set(0.4, 1.15, 0);
+  bedGroup.add(blanket);
+  caveInteriorGroup.add(bedGroup);
+  addDenCollider(-7.5, 3.2, -83.5, -3.5, 5.5, -80.5);
+
+  // Moris's Stone Study Desk & 3 Diary Notes at Right Wall (x: 5.5, z: -82.0)
+  const deskGroup = new THREE.Group();
+  deskGroup.position.set(5.5, 0.3, -82.0);
+  morisDiaryDeskPos.set(5.5, 3.5, -82.0);
+
+  const tBase = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.8, 1.2, 10), rockMat);
+  tBase.position.y = 0.6;
+  deskGroup.add(tBase);
+  const tTop = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.7, 0.25, 12), rockMat);
+  tTop.position.y = 1.3;
+  deskGroup.add(tTop);
+
+  const parchmentMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, emissive: 0xfef08a, emissiveIntensity: 0.35 });
+  [-0.6, 0.0, 0.6].forEach((nx, i) => {
+    const page = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.04, 0.7), parchmentMat);
+    page.position.set(nx, 1.45, (i === 1 ? -0.3 : 0.1));
+    page.rotation.y = (i - 1) * 0.3;
+    deskGroup.add(page);
+  });
+
+  const diaryMarker = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 12), new THREE.MeshBasicMaterial({ color: 0xfacc15, wireframe: true }));
+  diaryMarker.position.set(0, 2.4, 0);
+  deskGroup.add(diaryMarker);
+  caveInteriorGroup.add(deskGroup);
+  addDenCollider(4.0, 3.2, -83.5, 7.0, 5.5, -80.5);
+
+  // -------------------------------------------------------------------------
+  // CHAMBER 2: ZORLAYICI BÖLÜM - PARILDAYAN KRİSTAL KÖPRÜ & ZIPLAMA PARKURU (z: -94 to -126)
+  // -------------------------------------------------------------------------
+  const ch2FloorBase = new THREE.Mesh(new THREE.BoxGeometry(22.0, 0.5, 32.0), darkRockMat);
+  ch2FloorBase.position.set(0, -1.0, -110.0);
+  caveInteriorGroup.add(ch2FloorBase);
+
+  // Central Grand Stone Walkway Bridge
+  const bridgeFloor = new THREE.Mesh(new THREE.BoxGeometry(6.0, 0.6, 32.0), roadCobbleMat);
+  bridgeFloor.position.set(0, 0.0, -110.0);
+  caveInteriorGroup.add(bridgeFloor);
+  addDenCollider(-3.0, 3.0, -126.0, 3.0, 3.5, -94.0, true);
+
+  // Bridge Guard Rails & Glowing Crystal Lampposts
+  for (let bz = -96; bz >= -124; bz -= 6.0) {
+    [-3.2, 3.2].forEach(bx => {
+      const railPost = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 1.8, 8), darkRockMat);
+      railPost.position.set(bx, 0.9, bz);
+      caveInteriorGroup.add(railPost);
+
+      const railLamp = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), new THREE.MeshBasicMaterial({ color: bx < 0 ? 0x06b6d4 : 0xa855f7 }));
+      railLamp.position.set(bx, 1.9, bz);
+      caveInteriorGroup.add(railLamp);
+    });
+  }
+
+  // Chasm Cave Walls & High Ceiling in Chamber 2
+  const ch2WallL = new THREE.Mesh(new THREE.BoxGeometry(1.5, 16.0, 32.0), caveWallMat);
+  ch2WallL.position.set(-11.0, 7.0, -110.0);
+  caveInteriorGroup.add(ch2WallL);
+  addDenCollider(-12.0, 0.0, -126.0, -10.0, 20.0, -94.0);
+
+  const ch2WallR = new THREE.Mesh(new THREE.BoxGeometry(1.5, 16.0, 32.0), caveWallMat);
+  ch2WallR.position.set(11.0, 7.0, -110.0);
+  caveInteriorGroup.add(ch2WallR);
+  addDenCollider(10.0, 0.0, -126.0, 12.0, 20.0, -94.0);
+
+  const ch2Roof = new THREE.Mesh(new THREE.BoxGeometry(22.0, 1.2, 32.0), darkRockMat);
+  ch2Roof.position.set(0, 14.0, -110.0);
+  caveInteriorGroup.add(ch2Roof);
+
+  // Glowing Crystal Archways across Chamber 2
+  const ch2Light1 = new THREE.PointLight(0x06b6d4, 3.5, 28);
+  ch2Light1.position.set(0, 7.0, -102.0);
+  caveInteriorGroup.add(ch2Light1);
+
+  const ch2Light2 = new THREE.PointLight(0xa855f7, 3.5, 28);
+  ch2Light2.position.set(0, 7.0, -118.0);
+  caveInteriorGroup.add(ch2Light2);
+
+  // Bonus Floating Parkour Platforms on Left and Right (for Extra Gems & Coins)
+  const jumpPillars = [
+    { x: -7.0, y: 1.5, z: -102.0, w: 3.5, d: 3.5, h: 3.0 },
+    { x: -7.0, y: 2.5, z: -114.0, w: 3.5, d: 3.5, h: 4.0 },
+    { x: 7.0, y: 1.5, z: -102.0, w: 3.5, d: 3.5, h: 3.0 },
+    { x: 7.0, y: 2.5, z: -114.0, w: 3.5, d: 3.5, h: 4.0 }
+  ];
+
+  jumpPillars.forEach(p => {
+    const pMesh = new THREE.Mesh(new THREE.BoxGeometry(p.w, p.h, p.d), rockMat);
+    pMesh.position.set(p.x, p.y - p.h * 0.5 + 0.3, p.z);
+    caveInteriorGroup.add(pMesh);
+
+    const topCap = new THREE.Mesh(new THREE.BoxGeometry(p.w * 0.95, 0.2, p.d * 0.95), roadCobbleMat);
+    topCap.position.set(p.x, p.y + 0.2, p.z);
+    caveInteriorGroup.add(topCap);
+
+    addDenCollider(p.x - p.w * 0.5, 0.0, p.z - p.d * 0.5, p.x + p.w * 0.5, 3.2 + p.y + 0.3, p.z + p.d * 0.5, true);
+  });
+
+  // Moving Floating Stone Platform in Center (z: -110.0)
+  const movingPlatGroup = new THREE.Group();
+  movingPlatGroup.position.set(0.0, 2.0, -110.0);
+  const platMesh = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.6, 3.5), new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6, metalness: 0.3 }));
+  platMesh.position.y = 0.3;
+  movingPlatGroup.add(platMesh);
+
+  const platCrystal = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.0, 6), new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 1.0 }));
+  platCrystal.position.set(0, 1.2, 0);
+  movingPlatGroup.add(platCrystal);
+
+  caveInteriorGroup.add(movingPlatGroup);
+  window.__secretCaveMovingPlatforms.push({
+    group: movingPlatGroup,
+    baseX: 0.0,
+    range: 4.0,
+    speed: 1.6,
+    y: 2.0,
+    z: -110.0,
+    w: 4.0,
+    d: 3.5
+  });
+
+  // -------------------------------------------------------------------------
+  // CHAMBER 3: DEV KRİSTAL MAĞARASI VE ZENGİN ERZAK KİLERİ (z: -126 to -152)
+  // -------------------------------------------------------------------------
+  const ch3Floor = new THREE.Mesh(new THREE.BoxGeometry(22.0, 0.6, 26.0), darkRockMat);
+  ch3Floor.position.set(0, 0.0, -139.0);
+  caveInteriorGroup.add(ch3Floor);
+  addDenCollider(-11.0, 3.0, -152.0, 11.0, 3.5, -126.0, true);
+
+  const ch3WallL = new THREE.Mesh(new THREE.BoxGeometry(1.5, 16.0, 26.0), caveWallMat);
+  ch3WallL.position.set(-11.0, 7.0, -139.0);
+  caveInteriorGroup.add(ch3WallL);
+  addDenCollider(-12.0, 3.2, -152.0, -10.0, 20.0, -126.0);
+
+  const ch3WallR = new THREE.Mesh(new THREE.BoxGeometry(1.5, 16.0, 26.0), caveWallMat);
+  ch3WallR.position.set(11.0, 7.0, -139.0);
+  caveInteriorGroup.add(ch3WallR);
+  addDenCollider(10.0, 3.2, -152.0, 12.0, 20.0, -126.0);
+
+  const ch3Roof = new THREE.Mesh(new THREE.BoxGeometry(22.0, 1.2, 26.0), darkRockMat);
+  ch3Roof.position.set(0, 14.0, -139.0);
+  caveInteriorGroup.add(ch3Roof);
+
+  // Bright Crystal Lights in Chamber 3
+  const ch3Light1 = new THREE.PointLight(0x10b981, 3.5, 28);
+  ch3Light1.position.set(-5, 7.0, -134.0);
+  caveInteriorGroup.add(ch3Light1);
+
+  const ch3Light2 = new THREE.PointLight(0xf59e0b, 3.5, 28);
+  ch3Light2.position.set(5, 7.0, -144.0);
+  caveInteriorGroup.add(ch3Light2);
+
+  // Giant Glowing Emerald, Ruby & Amethyst Crystals in Chamber 3
+  const crystalColors = [0x10b981, 0xa855f7, 0xef4444, 0xf59e0b];
+  [[-8.5, -132.0], [8.5, -132.0], [-8.5, -145.0], [8.5, -145.0]].forEach((cPos, ci) => {
+    const cMat = new THREE.MeshStandardMaterial({ color: crystalColors[ci], emissive: crystalColors[ci], emissiveIntensity: 0.9, roughness: 0.2 });
+    for (let k = 0; k < 4; k++) {
+      const cMesh = new THREE.Mesh(new THREE.ConeGeometry(0.5 + k * 0.15, 3.0 + k * 0.8, 6), cMat);
+      cMesh.position.set(cPos[0] + (k - 1.5) * 0.5, 1.5 + k * 0.4, cPos[1] + (k % 2) * 0.5);
+      cMesh.rotation.z = (k - 1.5) * 0.22;
+      caveInteriorGroup.add(cMesh);
+    }
+  });
+
+  // Food Storage Feast Tables in Chamber 3 (Positioned cleanly with clear floor clearance)
+  const foodTableL = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.8, 2.5), woodMat);
+  foodTableL.position.set(-5.5, 0.4, -139.0);
+  caveInteriorGroup.add(foodTableL);
+  addDenCollider(-7.8, 3.2, -140.5, -3.2, 4.8, -137.5);
+
+  const foodTableR = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.8, 2.5), woodMat);
+  foodTableR.position.set(5.5, 0.4, -139.0);
+  caveInteriorGroup.add(foodTableR);
+  addDenCollider(3.2, 3.2, -140.5, 7.8, 4.8, -137.5);
+
+  // -------------------------------------------------------------------------
+  // CHAMBER 4: MORİS'İN EFSANEVİ HAZİNE MAHZENİ & IŞINLANMA KAPISI (z: -152 to -185)
+  // -------------------------------------------------------------------------
+  const ch4Floor = new THREE.Mesh(new THREE.BoxGeometry(24.0, 0.6, 33.0), darkRockMat);
+  ch4Floor.position.set(0, 0.0, -168.0);
+  caveInteriorGroup.add(ch4Floor);
+  addDenCollider(-12.0, 3.0, -185.0, 12.0, 3.5, -152.0, true);
+
+  const ch4WallL = new THREE.Mesh(new THREE.BoxGeometry(1.5, 18.0, 33.0), caveWallMat);
+  ch4WallL.position.set(-12.0, 8.0, -168.0);
+  caveInteriorGroup.add(ch4WallL);
+  addDenCollider(-13.0, 3.2, -185.0, -11.0, 22.0, -152.0);
+
+  const ch4WallR = new THREE.Mesh(new THREE.BoxGeometry(1.5, 18.0, 33.0), caveWallMat);
+  ch4WallR.position.set(12.0, 8.0, -168.0);
+  caveInteriorGroup.add(ch4WallR);
+  addDenCollider(11.0, 3.2, -185.0, 13.0, 22.0, -152.0);
+
+  const ch4WallBack = new THREE.Mesh(new THREE.BoxGeometry(24.0, 18.0, 1.5), caveWallMat);
+  ch4WallBack.position.set(0, 8.0, -185.0);
+  caveInteriorGroup.add(ch4WallBack);
+  addDenCollider(-12.0, 3.2, -186.0, 12.0, 22.0, -184.0);
+
+  const ch4Roof = new THREE.Mesh(new THREE.BoxGeometry(24.0, 1.2, 33.0), darkRockMat);
+  ch4Roof.position.set(0, 16.0, -168.0);
+  caveInteriorGroup.add(ch4Roof);
+
+  // Grand Gold & Cyan Vault Lights in Chamber 4
+  const ch4Light1 = new THREE.PointLight(0xfacc15, 4.0, 32);
+  ch4Light1.position.set(0, 8.0, -165.0);
+  caveInteriorGroup.add(ch4Light1);
+
+  const ch4Light2 = new THREE.PointLight(0x38bdf8, 3.5, 30);
+  ch4Light2.position.set(0, 8.0, -178.0);
+  caveInteriorGroup.add(ch4Light2);
+
+  // Elevated Royal Dais for the Main Treasure (x: 0, z: -168.0)
+  const daisMesh = new THREE.Mesh(new THREE.BoxGeometry(14.0, 0.8, 10.0), rockMat);
+  daisMesh.position.set(0, 0.4, -168.0);
+  caveInteriorGroup.add(daisMesh);
+  addDenCollider(-7.0, 3.2, -173.0, 7.0, 4.4, -163.0, true);
+
+  // Golden Bear King Statue on Dais
+  const trophyBase = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.3, 1.5, 12), darkRockMat);
+  trophyBase.position.set(0, 1.5, -170.0);
+  caveInteriorGroup.add(trophyBase);
+
+  const trophyBear = new THREE.Mesh(new THREE.SphereGeometry(1.0, 14, 14), goldMetalMat);
+  trophyBear.position.set(0, 2.9, -170.0);
+  caveInteriorGroup.add(trophyBear);
+
+  const trophyEarL = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), goldMetalMat);
+  trophyEarL.position.set(-0.65, 3.6, -170.0);
+  caveInteriorGroup.add(trophyEarL);
+
+  const trophyEarR = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), goldMetalMat);
+  trophyEarR.position.set(0.65, 3.6, -170.0);
+  caveInteriorGroup.add(trophyEarR);
+
+  // Swirling Cosmic Fast-Return Teleport Portal at back of Vault (x: 0, y: 5.5, z: -181.0)
+  const portalRing = new THREE.Mesh(new THREE.TorusGeometry(2.0, 0.3, 14, 28), new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 1.2 }));
+  portalRing.position.set(0, 2.8, -181.0);
+  caveInteriorGroup.add(portalRing);
+
+  const portalDisc = new THREE.Mesh(new THREE.CircleGeometry(1.8, 28), new THREE.MeshBasicMaterial({ color: 0x0ea5e9, transparent: true, opacity: 0.85, side: THREE.DoubleSide }));
+  portalDisc.position.set(0, 2.8, -181.0);
+  caveInteriorGroup.add(portalDisc);
+
+  // Portal Sign
+  const portalLabel = new THREE.Mesh(new THREE.BoxGeometry(4.2, 0.9, 0.1), woodMat);
+  portalLabel.position.set(0, 5.2, -181.0);
+  caveInteriorGroup.add(portalLabel);
+
+  villageGroup.add(caveInteriorGroup);
+
+  // =========================================================================
+  // E) REAL 3D ITEM SPAWNERS (FOODS, COINS, GEMS & 3 ANIMATED CHESTS)
+  // =========================================================================
+
+  // Helper: 3D Honey Pot Mesh
+  function create3DHoneyPot(x, y, z, val = 40) {
+    const potGroup = new THREE.Group();
+    potGroup.position.set(x, y, z);
+    const pot = new THREE.Mesh(new THREE.SphereGeometry(0.38, 12, 12), new THREE.MeshStandardMaterial({ color: 0xc2410c, roughness: 0.6 }));
+    potGroup.add(pot);
+    const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.26, 0.18, 12), new THREE.MeshStandardMaterial({ color: 0x9a3412, roughness: 0.7 }));
+    rim.position.y = 0.35;
+    potGroup.add(rim);
+    const honeyDrop = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), honeyGoldMat);
+    honeyDrop.position.set(0.12, 0.38, 0.12);
+    potGroup.add(honeyDrop);
+    villageGroup.add(potGroup);
+
+    window.__secretCaveCollectibles.push({
+      id: `honey_pot_${x}_${z}`,
+      type: 'honey',
+      name: '🍯 Dağ Balı Çömleği',
+      val: val,
+      pos: new THREE.Vector3(x, y, z),
+      mesh: potGroup,
+      collected: false,
+      heal: 35
+    });
+  }
+
+  // Helper: 3D Roast Mountain Meat Mesh
+  function create3DRoastMeat(x, y, z, val = 60) {
+    const meatGroup = new THREE.Group();
+    meatGroup.position.set(x, y, z);
+    const bone = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.8, 8), boneWhiteMat);
+    bone.rotation.z = Math.PI / 4;
+    meatGroup.add(bone);
+    const meat = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 10), cookedMeatMat);
+    meat.scale.set(1.4, 0.9, 0.9);
+    meat.position.set(-0.1, 0.1, 0);
+    meatGroup.add(meat);
+    villageGroup.add(meatGroup);
+
+    window.__secretCaveCollectibles.push({
+      id: `roast_meat_${x}_${z}`,
+      type: 'meat',
+      name: '🍗 Kızarmış Dağ Eti',
+      val: val,
+      pos: new THREE.Vector3(x, y, z),
+      mesh: meatGroup,
+      collected: false,
+      heal: 60
+    });
+  }
+
+  // Helper: 3D Fruit Basket Mesh
+  function create3DFruitBasket(x, y, z, val = 30) {
+    const fGroup = new THREE.Group();
+    fGroup.position.set(x, y, z);
+    const basket = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.28, 0.3, 10), woodMat);
+    fGroup.add(basket);
+    for (let f = 0; f < 4; f++) {
+      const apple = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), redFruitMat);
+      apple.position.set(Math.sin(f * 1.57) * 0.16, 0.22, Math.cos(f * 1.57) * 0.16);
+      fGroup.add(apple);
+    }
+    villageGroup.add(fGroup);
+
+    window.__secretCaveCollectibles.push({
+      id: `fruit_basket_${x}_${z}`,
+      type: 'fruit',
+      name: '🍎 Dağ Meyve Sepeti',
+      val: val,
+      pos: new THREE.Vector3(x, y, z),
+      mesh: fGroup,
+      collected: false,
+      heal: 25
+    });
+  }
+
+  // Helper: 3D Smoked Fish Mesh
+  function create3DSmokedFish(x, y, z, val = 35) {
+    const fishGroup = new THREE.Group();
+    fishGroup.position.set(x, y, z);
+    const spit = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.9, 6), woodMat);
+    spit.rotation.z = Math.PI / 3;
+    fishGroup.add(spit);
+    const fBody = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.55, 8), fishSkinMat);
+    fBody.rotation.z = -Math.PI / 6;
+    fishGroup.add(fBody);
+    villageGroup.add(fishGroup);
+
+    window.__secretCaveCollectibles.push({
+      id: `smoked_fish_${x}_${z}`,
+      type: 'fish',
+      name: '🐟 Tütsülenmiş Nehir Balığı',
+      val: val,
+      pos: new THREE.Vector3(x, y, z),
+      mesh: fishGroup,
+      collected: false,
+      heal: 30
+    });
+  }
+
+  // Helper: 3D Spinning Golden Coin Mesh
+  function create3DGoldCoin(x, y, z, val = 20) {
+    const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.08, 14), goldMetalMat);
+    coin.position.set(x, y, z);
+    coin.rotation.x = Math.PI / 2;
+    villageGroup.add(coin);
+
+    window.__secretCaveCollectibles.push({
+      id: `gold_coin_${x}_${z}`,
+      type: 'coin',
+      name: '💰 Parlayan Mağara Altını',
+      val: val,
+      pos: new THREE.Vector3(x, y, z),
+      mesh: coin,
+      collected: false
+    });
+  }
+
+  // Helper: 3D Floating Gem Mesh
+  function create3DFloatingGem(x, y, z, colorHex = 0xa855f7, val = 75) {
+    const gemMat = new THREE.MeshStandardMaterial({ color: colorHex, emissive: colorHex, emissiveIntensity: 0.85, roughness: 0.2 });
+    const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.35), gemMat);
+    gem.position.set(x, y, z);
+    villageGroup.add(gem);
+
+    window.__secretCaveCollectibles.push({
+      id: `gem_${x}_${z}`,
+      type: 'gem',
+      name: '💎 Parlayan Kristal Mücevher',
+      val: val,
+      pos: new THREE.Vector3(x, y, z),
+      mesh: gem,
+      collected: false,
+      gems: 1
+    });
+  }
+
+  // Helper: 3D Interactive Animated Treasure Chest
+  function create3DAnimatedChest(x, y, z, chestType = 'bronze') {
+    const chestGroup = new THREE.Group();
+    chestGroup.position.set(x, y, z);
+
+    let baseColor = 0x78350f;
+    let trimMat = bronzeMat;
+    let rewardCoins = 300;
+    let rewardXp = 400;
+    let rewardGems = 3;
+    let chestName = "🥉 Bronz Mağara Sandığı";
+
+    if (chestType === 'silver') {
+      baseColor = 0x334155;
+      trimMat = ironMetalMat;
+      rewardCoins = 600;
+      rewardXp = 800;
+      rewardGems = 5;
+      chestName = "🥈 Gümüş Kristal Sandığı";
+    } else if (chestType === 'gold') {
+      baseColor = 0x451a03;
+      trimMat = goldMetalMat;
+      rewardCoins = 1500;
+      rewardXp = 2000;
+      rewardGems = 10;
+      chestName = "👑 Moris'in Efsanevi Altın Sandığı";
+    }
+
+    // Chest Box Base
+    const boxBase = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.9, 1.1), new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.7 }));
+    boxBase.position.y = 0.45;
+    chestGroup.add(boxBase);
+
+    // Metal Straps/Bands
+    [-0.5, 0.5].forEach(sx => {
+      const strap = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.92, 1.12), trimMat);
+      strap.position.set(sx, 0.45, 0);
+      chestGroup.add(strap);
+    });
+
+    // Hinged Lid Group for 3D Opening Animation!
+    const lidHinge = new THREE.Group();
+    lidHinge.position.set(0, 0.9, -0.55); // Back edge hinge
+
+    const lidMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 1.6, 12, 1, false, 0, Math.PI), new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.7 }));
+    lidMesh.rotation.z = Math.PI / 2;
+    lidMesh.position.set(0, 0, 0.55);
+    lidHinge.add(lidMesh);
+
+    // Golden Lock Keyhole on front of lid
+    const lockMesh = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.3, 0.12), goldMetalMat);
+    lockMesh.position.set(0, -0.1, 1.1);
+    lidHinge.add(lockMesh);
+
+    chestGroup.add(lidHinge);
+    villageGroup.add(chestGroup);
+
+    window.__secretCaveChests.push({
+      id: `chest_${chestType}_${x}_${z}`,
+      name: chestName,
+      type: chestType,
+      pos: new THREE.Vector3(x, y, z),
+      group: chestGroup,
+      lidHinge: lidHinge,
+      opened: false,
+      openProgress: 0,
+      reward: { coins: rewardCoins, xp: rewardXp, gems: rewardGems }
+    });
+  }
+
+  // --- POPULATE ALL 4 CHAMBERS WITH ITEMS ---
+
+  // Chamber 1 Items (Moris's Camp)
+  create3DHoneyPot(-4.0, 3.8, -76.0, 45);
+  create3DHoneyPot(-6.0, 3.8, -85.0, 45);
+  create3DFruitBasket(3.0, 3.8, -76.0, 30);
+  create3DSmokedFish(-3.0, 3.8, -87.0, 35);
+  create3DGoldCoin(-1.5, 4.0, -73.0, 25);
+  create3DGoldCoin(1.5, 4.0, -73.0, 25);
+  create3DGoldCoin(0.0, 4.0, -77.0, 25);
+  create3DGoldCoin(0.0, 4.0, -82.0, 25);
+  create3DGoldCoin(2.5, 4.0, -86.0, 25);
+  create3DGoldCoin(-2.5, 4.0, -86.0, 25);
+
+  // Chamber 2 Items (Abyss Jumping Challenge & Glowing Crystal Walkway)
+  create3DFloatingGem(-7.0, 5.8, -102.0, 0xa855f7, 80);
+  create3DFloatingGem(7.0, 5.8, -102.0, 0xec4899, 80);
+  create3DFloatingGem(-7.0, 6.8, -114.0, 0x10b981, 100);
+  create3DFloatingGem(7.0, 6.8, -114.0, 0xf59e0b, 100);
+  create3DFloatingGem(0.0, 6.0, -110.0, 0x06b6d4, 120);
+  create3DGoldCoin(0.0, 4.2, -98.0, 30);
+  create3DGoldCoin(0.0, 4.2, -104.0, 30);
+  create3DGoldCoin(0.0, 4.2, -116.0, 35);
+  create3DGoldCoin(0.0, 4.2, -122.0, 40);
+
+  // Chamber 3 Items (Crystal Grotto & Food Pantry)
+  create3DRoastMeat(-5.5, 4.6, -139.0, 70);
+  create3DRoastMeat(5.5, 4.6, -139.0, 70);
+  create3DHoneyPot(0.0, 4.2, -134.0, 50);
+  create3DFruitBasket(-4.0, 4.2, -145.0, 35);
+  create3DSmokedFish(4.0, 4.2, -145.0, 40);
+  create3DFloatingGem(-8.5, 5.2, -132.0, 0x10b981, 100);
+  create3DFloatingGem(8.5, 5.2, -132.0, 0xf59e0b, 100);
+  for (let ci = -3; ci <= 3; ci += 1.5) {
+    create3DGoldCoin(ci, 4.2, -139.0, 30);
+  }
+
+  // Chamber 4 Items (Treasure Vault & 3 Animated Chests positioned cleanly in front of dais)
+  create3DAnimatedChest(-5.0, 3.6, -164.0, 'bronze');
+  create3DAnimatedChest(5.0, 3.6, -164.0, 'silver');
+  create3DAnimatedChest(0.0, 4.4, -166.0, 'gold');
+
+  create3DFloatingGem(-2.5, 5.2, -164.0, 0xfacc15, 150);
+  create3DFloatingGem(2.5, 5.2, -164.0, 0xfacc15, 150);
+  create3DRoastMeat(0.0, 4.6, -162.0, 80);
+
+  console.log(`✅ Cave Built successfully with ${window.__secretCaveCollectibles.length} 3D Items and ${window.__secretCaveChests.length} Animated Chests!`);
 }
 
-// Interactive proximity handler for Moris's Diary Notes in Kedi Köyü
+// Interactive proximity, animation & pickup handler for the entire Cave System
 function updateMorisSecretDenInteraction(game) {
   if (!game || !game.playerPos) return;
 
-  const distToDesk = game.playerPos.distanceTo(morisDiaryDeskPos);
+  const pPos = game.playerPos;
+  const timeSec = Date.now() * 0.001;
 
-  if (distToDesk < 4.2) {
-    // Show on-screen notice if not already reading
-    if (Date.now() % 3500 < 60) {
+  // 1. Moris's Diary Interaction at Study Desk (x: 5.5, y: 3.5, z: -82.0)
+  const distToDesk = pPos.distanceTo(morisDiaryDeskPos);
+  if (distToDesk < 4.0) {
+    if (Date.now() % 3500 < 50) {
       if (game.callbacks && game.callbacks.onShowNotice) {
         game.callbacks.onShowNotice("📜 Moris'in Gizli Günlüğü Masada! [E / Tıkla: 3 Notu Oku]", "info");
       }
     }
-
-    // Trigger dialogue if player presses attack/jump or on direct approach once
-    if (!isMorisDiaryOpen && (game.isAttacking || game.inputs.attack || distToDesk < 2.4)) {
+    if (!isMorisDiaryOpen && (game.isAttacking || game.inputs.attack || distToDesk < 2.2)) {
       isMorisDiaryOpen = true;
       openMorisSecretDiary(game);
     }
@@ -2504,42 +2799,129 @@ function updateMorisSecretDenInteraction(game) {
     isMorisDiaryOpen = false;
   }
 
-  // Check secret cave collectibles proximity
+  // 2. Moving Platform Animation in Chamber 2 (z: -110.0)
+  if (window.__secretCaveMovingPlatforms) {
+    window.__secretCaveMovingPlatforms.forEach(plat => {
+      const offsetX = Math.sin(timeSec * plat.speed) * plat.range;
+      plat.group.position.x = plat.baseX + offsetX;
+
+      // Platform carry physics for player
+      const dx = Math.abs(pPos.x - plat.group.position.x);
+      const dz = Math.abs(pPos.z - plat.z);
+      if (dx < plat.w * 0.5 && dz < plat.d * 0.5 && pPos.y >= plat.y + 2.8 && pPos.y <= plat.y + 4.8) {
+        pPos.x += Math.cos(timeSec * plat.speed) * plat.range * 0.025;
+      }
+    });
+  }
+
+  // 3. Chamber 2 Abyss Fall Safety Net (If player falls into pit between z: -94 and -126)
+  if (pPos.z < -94 && pPos.z > -126 && pPos.y < 1.0) {
+    pPos.set(0.0, 3.8, -94.0);
+    if (game.playerVel) game.playerVel.set(0, 0, 0);
+    if (game.spawnSparkleParticles) {
+      game.spawnSparkleParticles(pPos, 16, 0x38bdf8);
+    }
+    if (game.callbacks && game.callbacks.onShowNotice) {
+      game.callbacks.onShowNotice("⚠️ Köprüden Düştün! Başlangıç Noktasına Güvenle Alındın.", "warn");
+    }
+  }
+
+  // 4. Fast Return Teleport Portal at back of Vault (x: 0, z: -181.0)
+  const dPortal = Math.sqrt(pPos.x * pPos.x + (pPos.z - (-181.0)) ** 2);
+  if (dPortal < 2.5) {
+    pPos.set(0.0, 3.4, -54.0); // Teleport back to North Gate road
+    if (game.playerVel) game.playerVel.set(0, 0, 0);
+    if (game.spawnSparkleParticles) {
+      game.spawnSparkleParticles(pPos, 24, 0x06b6d4);
+    }
+    if (game.callbacks && game.callbacks.onShowNotice) {
+      game.callbacks.onShowNotice("🌀 MAĞARA GEÇİDİ: Kedi Köyü Kuzey Kapısına Işınlandın!", "success");
+    }
+  }
+
+  // 6. 3D Collectibles Animation & Proximity Pickup Loop (Food, Coins, Gems)
   if (window.__secretCaveCollectibles) {
-    window.__secretCaveCollectibles.forEach(item => {
-      if (!item.collected && game.playerPos.distanceTo(item.pos) < 2.2) {
+    window.__secretCaveCollectibles.forEach((item, idx) => {
+      if (item.collected || !item.mesh) return;
+
+      // Bobbing & Rotation Animation
+      item.mesh.rotation.y += 0.03;
+      item.mesh.position.y = item.pos.y + Math.sin(timeSec * 3.0 + idx) * 0.12;
+
+      // Pickup Detection
+      if (pPos.distanceTo(item.pos) < 2.2) {
         item.collected = true;
+        item.mesh.visible = false;
+
+        // Rewards
         game.stats.coins = (game.stats.coins || 0) + item.val;
         game.stats.xp = (game.stats.xp || 0) + (item.val * 2);
+        if (item.gems) {
+          game.stats.honeyGems = (game.stats.honeyGems || 0) + item.gems;
+        }
+
+        // Health boost for food
+        if (item.heal && game.stats.currentHp) {
+          game.stats.currentHp = Math.min(game.stats.maxHp || 100, game.stats.currentHp + item.heal);
+        }
+
+        if (game.spawnSparkleParticles) {
+          game.spawnSparkleParticles(item.pos, 14, item.type === 'coin' ? 0xfacc15 : (item.type === 'gem' ? 0xa855f7 : 0x4ade80));
+        }
+        if (typeof St !== "undefined" && St.playCoin) St.playCoin();
+
         if (game.callbacks && game.callbacks.onShowNotice) {
-          game.callbacks.onShowNotice(item.type === 'food' ? `🍯 Lezzetli Bal Yiyeceği Toplandı! (+${item.val} Altın, +${item.val*2} XP)` : `💰 Mağara Altını Toplandı! (+${item.val} Altın)`, "success");
+          let msg = `💰 ${item.name} Toplandı! (+${item.val} Altın, +${item.val * 2} XP)`;
+          if (item.heal) msg += ` • Can +${item.heal}!`;
+          if (item.gems) msg += ` • +${item.gems} Mücevher!`;
+          game.callbacks.onShowNotice(msg, "success");
         }
         if (game.callbacks && game.callbacks.onStatsUpdate) {
           game.callbacks.onStatsUpdate(game.stats);
         }
         if (window.__superBearSaveManager) {
-          window.__superBearSaveManager.saveGame({ goldBalance: game.stats.coins }, { immediate: false });
+          window.__superBearSaveManager.saveGame({ goldBalance: game.stats.coins, honeyGems: game.stats.honeyGems }, { immediate: false });
         }
       }
     });
   }
 
-  // Check secret cave chests proximity
+  // 7. Animated 3D Treasure Chests Opening & Rewards
   if (window.__secretCaveChests) {
     window.__secretCaveChests.forEach(chest => {
-      if (!chest.opened && game.playerPos.distanceTo(chest.pos) < 2.5) {
+      // Proximity Trigger
+      if (!chest.opened && pPos.distanceTo(chest.pos) < 3.0) {
         chest.opened = true;
+
+        // Reward player
         game.stats.coins = (game.stats.coins || 0) + chest.reward.coins;
         game.stats.xp = (game.stats.xp || 0) + chest.reward.xp;
         game.stats.honeyGems = (game.stats.honeyGems || 0) + chest.reward.gems;
+
+        if (game.spawnSparkleParticles) {
+          game.spawnSparkleParticles(chest.pos, 30, chest.type === 'gold' ? 0xfacc15 : (chest.type === 'silver' ? 0x38bdf8 : 0xd97706));
+        }
+        if (typeof St !== "undefined" && St.playLevelWin) St.playLevelWin();
+
         if (game.callbacks && game.callbacks.onShowNotice) {
-          game.callbacks.onShowNotice(`🎁 GİZLİ MAĞARA HAZİNE SANDIĞI AÇILDI! (+${chest.reward.coins} Altın, +${chest.reward.xp} XP, +${chest.reward.gems} Mücevher)`, "success");
+          game.callbacks.onShowNotice(`🎁 ${chest.name.toUpperCase()} AÇILDI! (+${chest.reward.coins} Altın, +${chest.reward.xp} XP, +${chest.reward.gems} Mücevher)`, "success");
         }
         if (game.callbacks && game.callbacks.onStatsUpdate) {
           game.callbacks.onStatsUpdate(game.stats);
         }
         if (window.__superBearSaveManager) {
-          window.__superBearSaveManager.saveGame({ goldBalance: game.stats.coins, honeyGems: game.stats.honeyGems }, { immediate: true, showToast: true, message: `🎁 Mağara Sandığı Açıldı! (+${chest.reward.coins} Altın)` });
+          window.__superBearSaveManager.saveGame(
+            { goldBalance: game.stats.coins, honeyGems: game.stats.honeyGems },
+            { immediate: true, showToast: true, message: `🎁 ${chest.name} Açıldı! (+${chest.reward.coins} Altın)` }
+          );
+        }
+      }
+
+      // Smooth 3D Lid Opening Animation
+      if (chest.opened && chest.openProgress < 1.0) {
+        chest.openProgress = Math.min(1.0, chest.openProgress + 0.06);
+        if (chest.lidHinge) {
+          chest.lidHinge.rotation.x = -chest.openProgress * (Math.PI * 0.65); // Swing lid wide open!
         }
       }
     });
@@ -2555,9 +2937,9 @@ function openMorisSecretDiary(game) {
     npcRole: "Kırık Boynuzlu Ayı'nın Gizli Notları",
     avatarIcon: "🐻‍❄️",
     dialogue: [
-      "📜 GÜNLÜK NOTU 1 (Sığınağım ve Huzur): Kedi Köyü halkı beni anlamadı... Tek başıma sınır dağlarının bu yüksek tepesine gizli inimi oydum. Kendi ellerimle kestiğim kütük karyolamı, ormandan topladığım yumuşak ot yatağımı seviyorum. Raflardaki petek ballarım ve fıçılardaki taze ballar bana sonsuz güç veriyor!",
+      "📜 GÜNLÜK NOTU 1 (Sığınağım ve Huzur): Kedi Köyü halkı beni anlamadı... Tek başıma dağın derinliklerine bu büyük sığınağı ve hazine mahzenini oydum. Kendi ellerimle kestiğim kütük karyolamı, yumuşak ot yatağımı seviyorum. Raflardaki petek ballarım ve fıçılardaki taze ballar bana sonsuz güç veriyor!",
       "📜 GÜNLÜK NOTU 2 (Kırık Boynuzun Acı Sırrı): Sağ boynuzum neden mi kırık? Dark Lord ile o karanlık kalede kozmik güç için savaştım! Devasa çekicimi taşa vururken boynuzum bir kayaya çarpıp paramparça oldu... Sol boynuzum ise hala altın gibi parlıyor ve uzayın kozmik enerjisini emiyor!",
-      "📜 GÜNLÜK NOTU 3 (Tutsak Sarı Kuş Badem): O sevimli sarı kanatlı kuşu (Badem) uzaydaki 7. Bölüm Kozmik Kolezyumu'ndaki altın kafese kilitledim. Eğer Grizzy onu kurtarmak istiyorsa, önce uzayın tüm engellerini geçmeli ve benim yerleri sarsan dev kozmik çekicimle yüzleşmeli!"
+      "📜 GÜNLÜK NOTU 3 (Tutsak Sarı Kuş Badem & Hazineler): O sevimli sarı kanatlı kuşu (Badem) uzaydaki 7. Bölüm Kozmik Kolezyumu'ndaki altın kafese kilitledim. Bu mağaranın en dibine ise en değerli 3 Hazine Sandığımı bıraktım. Eğer oraya ulaştıysan, gerçek bir süper ayı kaşifisin!"
     ]
   };
 
@@ -2569,6 +2951,8 @@ function openMorisSecretDiary(game) {
 // =========================================================================
 function buildBeginnerTrainingGround(THREE, villageGroup) {
   console.log("🥋 Building Beginner Training Ground next to Tonton Fırıncı's Bakery House...");
+
+  const BASE_Y = 2.0; // West Hill elevation height
 
   const sandMat = new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.9 });
   const woodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 });
@@ -2591,26 +2975,26 @@ function buildBeginnerTrainingGround(THREE, villageGroup) {
     });
   }
 
-  // 1. Training Ground Sandy Courtyard (Located at x: -28, z: -4 right beside Tonton Fırıncı's Bakery at x: -38, z: -7)
+  // 1. Training Ground Sandy Courtyard (Located at x: -28, z: -4 right beside Tonton Fırıncı's Bakery)
   const courtMesh = new THREE.Mesh(new THREE.BoxGeometry(16, 0.15, 16), sandMat);
-  courtMesh.position.set(-28, 0.075, -4);
+  courtMesh.position.set(-28, BASE_Y + 0.075, -4);
   courtMesh.receiveShadow = true;
   villageGroup.add(courtMesh);
 
   // Border fence logs around training ring
   const borderFenceL = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 16, 8), woodMat);
   borderFenceL.rotation.x = Math.PI / 2;
-  borderFenceL.position.set(-36, 0.3, -4);
+  borderFenceL.position.set(-36, BASE_Y + 0.3, -4);
   villageGroup.add(borderFenceL);
 
   const borderFenceB = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 16, 8), woodMat);
   borderFenceB.rotation.z = Math.PI / 2;
-  borderFenceB.position.set(-28, 0.3, 4);
+  borderFenceB.position.set(-28, BASE_Y + 0.3, 4);
   villageGroup.add(borderFenceB);
 
   // 2. Entrance Archway & Sign
   const archGroup = new THREE.Group();
-  archGroup.position.set(-20, 0, -4);
+  archGroup.position.set(-20, BASE_Y, -4);
 
   const post1 = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.25, 3.6, 8), darkWoodMat);
   post1.position.set(0, 1.8, -2.5);
@@ -2652,7 +3036,7 @@ function buildBeginnerTrainingGround(THREE, villageGroup) {
 
   // 3. Straw Training Dummy (Saman Vurma Kuklası) at x: -26, z: -8
   const dummyGroup = new THREE.Group();
-  dummyGroup.position.set(-26, 0, -8);
+  dummyGroup.position.set(-26, BASE_Y, -8);
 
   // Base pole & spring
   const dPole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 1.2, 8), darkWoodMat);
@@ -2697,40 +3081,40 @@ function buildBeginnerTrainingGround(THREE, villageGroup) {
   trainingDummy = dummyGroup;
 
   // Solid collider for dummy base
-  addTrainingCollider(-26.6, 0, -8.6, -25.4, 3.2, -7.4);
+  addTrainingCollider(-26.6, BASE_Y, -8.6, -25.4, BASE_Y + 3.2, -7.4);
 
   // 4. Multi-tier Jumping Logs (Zıplama & Çift Zıplama Kütükleri)
   const jumpLogs = [
-    { x: -24, y: 1.2, z: -2, r: 0.9, h: 1.2 },
-    { x: -23, y: 2.3, z: 1, r: 0.9, h: 2.3 },
-    { x: -26, y: 3.5, z: 2, r: 0.9, h: 3.5 },
-    { x: -29, y: 4.8, z: 2, r: 0.9, h: 4.8 }
+    { x: -24, h: 1.2, z: -2, r: 0.9 },
+    { x: -23, h: 2.3, z: 1, r: 0.9 },
+    { x: -26, h: 3.5, z: 2, r: 0.9 },
+    { x: -29, h: 4.8, z: 2, r: 0.9 }
   ];
 
   jumpLogs.forEach((log) => {
     const logMesh = new THREE.Mesh(new THREE.CylinderGeometry(log.r, log.r * 1.05, log.h, 12), woodMat);
-    logMesh.position.set(log.x, log.h / 2, log.z);
+    logMesh.position.set(log.x, BASE_Y + log.h / 2, log.z);
     villageGroup.add(logMesh);
 
     // Tree rings top texture
     const topCap = new THREE.Mesh(new THREE.CircleGeometry(log.r * 0.92, 12), new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.8 }));
     topCap.rotation.x = -Math.PI / 2;
-    topCap.position.set(log.x, log.h + 0.01, log.z);
+    topCap.position.set(log.x, BASE_Y + log.h + 0.01, log.z);
     villageGroup.add(topCap);
 
     // Register solid box collider for each jump log
-    addTrainingCollider(log.x - log.r, 0, log.z - log.r, log.x + log.r, log.h, log.z + log.r);
+    addTrainingCollider(log.x - log.r, BASE_Y, log.z - log.r, log.x + log.r, BASE_Y + log.h, log.z + log.r);
 
     // Golden reward coin floating above each log
     const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.08, 14), goldMat);
     coin.rotation.x = Math.PI / 2;
-    coin.position.set(log.x, log.h + 0.85, log.z);
+    coin.position.set(log.x, BASE_Y + log.h + 0.85, log.z);
     villageGroup.add(coin);
   });
 
   // 5. Spring Jump Pad (Zıplama Yay Tahtası) at x: -31, z: 1
   const padGroup = new THREE.Group();
-  padGroup.position.set(-31, 0, 1);
+  padGroup.position.set(-31, BASE_Y, 1);
 
   const padBase = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.8, 0.3, 16), darkWoodMat);
   padBase.position.y = 0.15;
@@ -2750,7 +3134,7 @@ function buildBeginnerTrainingGround(THREE, villageGroup) {
 
   // 6. Ground Pound Target Bullseye at x: -30, z: -4
   const targetGroup = new THREE.Group();
-  targetGroup.position.set(-30, 0.1, -4);
+  targetGroup.position.set(-30, BASE_Y + 0.08, -4);
 
   const ring1 = new THREE.Mesh(new THREE.CircleGeometry(1.8, 24), clothRedMat);
   ring1.rotation.x = -Math.PI / 2;
@@ -2902,17 +3286,17 @@ function updateBeginnerTrainingInteraction(game) {
   if (!game || !game.playerPos) return;
   const pPos = game.playerPos;
 
-  // 1. Training Dummy Hit & Wobble Physics at (-26, 0, -8)
+  // 1. Training Dummy Hit & Wobble Physics at (-26, 2.0, -8)
   if (trainingDummy) {
     if (trainingDummyCooldown > 0) trainingDummyCooldown -= 0.016;
-    const dDummy = pPos.distanceTo(new window.THREE.Vector3(-26, 0, -8));
+    const dDummy = pPos.distanceTo(new window.THREE.Vector3(-26, 2.0, -8));
 
     // Player attacks dummy
     if (game.isAttacking && dDummy < 3.2 && trainingDummyCooldown <= 0) {
       trainingDummyCooldown = 0.35;
       trainingDummyWobble = 0.55;
       if (game.spawnSparkleParticles) {
-        game.spawnSparkleParticles(new window.THREE.Vector3(-26, 2.0, -8), 12, 0xfacc15);
+        game.spawnSparkleParticles(new window.THREE.Vector3(-26, 3.8, -8), 12, 0xfacc15);
       }
       if (typeof St !== "undefined" && St.playPunch) St.playPunch();
       if (game.callbacks && game.callbacks.onShowNotice) {
@@ -2929,13 +3313,13 @@ function updateBeginnerTrainingInteraction(game) {
     }
   }
 
-  // 2. Training Spring Jump Pad at (-31, 0, 1)
+  // 2. Training Spring Jump Pad at (-31, 2.0, 1)
   if (trainingJumpPad) {
     const dPad = Math.sqrt((pPos.x - (-31)) ** 2 + (pPos.z - 1) ** 2);
-    if (dPad < 1.6 && pPos.y >= 0 && pPos.y <= 1.8) {
+    if (dPad < 1.8 && pPos.y >= 1.8 && pPos.y <= 3.8) {
       game.playerVel.y = 1.35;
       if (game.spawnSparkleParticles) {
-        game.spawnSparkleParticles(new window.THREE.Vector3(-31, 0.8, 1), 16, 0x38bdf8);
+        game.spawnSparkleParticles(new window.THREE.Vector3(-31, 2.8, 1), 16, 0x38bdf8);
       }
       if (game.callbacks && game.callbacks.onShowNotice && Date.now() % 2200 < 50) {
         game.callbacks.onShowNotice("🦘 YÜKSEK SIÇRAMA! Havadayken Boşluk ile Çift Zıpla!", "success");
@@ -2943,12 +3327,12 @@ function updateBeginnerTrainingInteraction(game) {
     }
   }
 
-  // 3. Training Ground Pound Bullseye Target at (-30, 0.1, -4)
+  // 3. Training Ground Pound Bullseye Target at (-30, 2.08, -4)
   if (trainingBullseye) {
     const dTarget = Math.sqrt((pPos.x - (-30)) ** 2 + (pPos.z - (-4)) ** 2);
-    if (dTarget < 2.0 && pPos.y <= 0.8 && (game.isGroundPounding || (game.playerVel && game.playerVel.y < -0.4))) {
+    if (dTarget < 2.2 && pPos.y >= 1.8 && pPos.y <= 2.8 && (game.isGroundPounding || (game.playerVel && game.playerVel.y < -0.3))) {
       if (game.spawnSparkleParticles) {
-        game.spawnSparkleParticles(new window.THREE.Vector3(-30, 0.3, -4), 20, 0xef4444);
+        game.spawnSparkleParticles(new window.THREE.Vector3(-30, 2.3, -4), 20, 0xef4444);
       }
       if (game.callbacks && game.callbacks.onShowNotice && Date.now() % 2200 < 50) {
         game.callbacks.onShowNotice("💥 MÜKEMMEL YERE ÇARPMA! Hedefi Tam Ortadan Vurdun!", "success");
@@ -2965,19 +3349,33 @@ function createFoxMesh(THREE) {
   const blackMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.2 });
   const eyeMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.1 });
 
-  const bodyGeo = new THREE.CylinderGeometry(0.5, 0.6, 1.2, 14);
+  // 4 Paws / Legs resting on ground
+  const pawGeo = new THREE.SphereGeometry(0.16, 10, 10);
+  const legGeo = new THREE.CylinderGeometry(0.12, 0.14, 0.7, 10);
+  [[-0.3, 0.35], [0.3, 0.35], [-0.3, -0.35], [0.3, -0.35]].forEach(([lx, lz]) => {
+    const leg = new THREE.Mesh(legGeo, orangeMat);
+    leg.position.set(lx, 0.35, lz);
+    group.add(leg);
+
+    const paw = new THREE.Mesh(pawGeo, blackMat);
+    paw.scale.set(1.0, 0.6, 1.3);
+    paw.position.set(lx, 0.1, lz + 0.05);
+    group.add(paw);
+  });
+
+  const bodyGeo = new THREE.CylinderGeometry(0.5, 0.6, 1.1, 14);
   const body = new THREE.Mesh(bodyGeo, orangeMat);
-  body.position.y = 1.0;
+  body.position.y = 1.05;
   group.add(body);
 
   const chestGeo = new THREE.SphereGeometry(0.42, 12, 12);
   const chest = new THREE.Mesh(chestGeo, whiteMat);
   chest.scale.set(0.8, 1.1, 0.4);
-  chest.position.set(0, 1.0, 0.35);
+  chest.position.set(0, 1.05, 0.35);
   group.add(chest);
 
   const headGroup = new THREE.Group();
-  headGroup.position.set(0, 1.8, 0.1);
+  headGroup.position.set(0, 1.85, 0.1);
   group.add(headGroup);
 
   const headGeo = new THREE.SphereGeometry(0.5, 16, 16);
@@ -3016,7 +3414,7 @@ function createFoxMesh(THREE) {
   }
 
   const tailGroup = new THREE.Group();
-  tailGroup.position.set(0, 0.6, -0.4);
+  tailGroup.position.set(0, 0.7, -0.4);
   const tailGeo = new THREE.ConeGeometry(0.35, 1.2, 14);
   const tail = new THREE.Mesh(tailGeo, orangeMat);
   tail.rotation.x = -1.2;
@@ -3040,14 +3438,23 @@ function createBunnyMesh(THREE) {
   const innerEarMat = new THREE.MeshStandardMaterial({ color: 0xf472b6, roughness: 0.4 });
   const eyeMat = new THREE.MeshStandardMaterial({ color: 0x831843, roughness: 0.2 });
 
+  // Big cute bunny feet resting on ground
+  const footGeo = new THREE.SphereGeometry(0.22, 12, 12);
+  [[-0.32, 0.2], [0.32, 0.2]].forEach(([fx, fz]) => {
+    const foot = new THREE.Mesh(footGeo, pinkWhiteMat);
+    foot.scale.set(1.0, 0.5, 1.6);
+    foot.position.set(fx, 0.12, fz);
+    group.add(foot);
+  });
+
   const bodyGeo = new THREE.SphereGeometry(0.65, 16, 16);
   bodyGeo.scale(0.9, 1.1, 0.9);
   const body = new THREE.Mesh(bodyGeo, pinkWhiteMat);
-  body.position.y = 0.7;
+  body.position.y = 0.75;
   group.add(body);
 
   const headGroup = new THREE.Group();
-  headGroup.position.set(0, 1.4, 0.05);
+  headGroup.position.set(0, 1.45, 0.05);
   group.add(headGroup);
 
   const head = new THREE.Mesh(new THREE.SphereGeometry(0.45, 16, 16), pinkWhiteMat);
@@ -3079,7 +3486,7 @@ function createBunnyMesh(THREE) {
   headGroup.add(nose);
 
   const tail = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), pinkWhiteMat);
-  tail.position.set(0, 0.4, -0.55);
+  tail.position.set(0, 0.45, -0.55);
   group.add(tail);
 
   return group;
@@ -9700,7 +10107,7 @@ function updateSpaceLoop() {
 
     // --- EXPANDED KEDİ KÖYÜ INTERACTIVES (Volleyball, Animals, Swimming Fish) ---
     if (isHub && game.playerPos) {
-      // 1. Interactive Volleyball Physics & Player Hit
+      // 1. Interactive Volleyball Physics & Player Hit (Volleyball court on East hill at COURT_Y = 2.08)
       if (villageVolleyball) {
         villageVolleyball.position.x += villageVolleyballVel.x;
         villageVolleyball.position.y += villageVolleyballVel.y;
@@ -9710,14 +10117,14 @@ function updateSpaceLoop() {
         villageVolleyballVel.z *= 0.92;
         villageVolleyballVel.y -= 0.015; // Gravity
 
-        if (villageVolleyball.position.y < 1.0) {
-          villageVolleyball.position.y = 1.0;
+        if (villageVolleyball.position.y < 2.98) {
+          villageVolleyball.position.y = 2.98;
           villageVolleyballVel.y *= -0.65; // Bounce
         }
 
-        // Bounds limit
-        if (villageVolleyball.position.x < 15) villageVolleyball.position.x = 15;
-        if (villageVolleyball.position.x > 40) villageVolleyball.position.x = 40;
+        // Bounds limit around volleyball court on East hill
+        if (villageVolleyball.position.x < 18) villageVolleyball.position.x = 18;
+        if (villageVolleyball.position.x > 38) villageVolleyball.position.x = 38;
         if (villageVolleyball.position.z < -28) villageVolleyball.position.z = -28;
         if (villageVolleyball.position.z > -2) villageVolleyball.position.z = -2;
 
@@ -9768,6 +10175,35 @@ function updateSpaceLoop() {
 
       // 5. Acemi Ayı Alıştırma Parkuru (Kukla Vurma, Yay Tahtası & Hedefe Çarpma)
       updateBeginnerTrainingInteraction(game);
+
+      // 6. Mountain Slopes Collision & Anti-Fall Resolver (Dağların içine girmeyi engelleme ve yüzeyde durma)
+      if (window.__mountainCenterData && Array.isArray(window.__mountainCenterData)) {
+        // Only apply mountain cone slopes if player is outside the open valley path and cave interior
+        const isInCaveCorridor = Math.abs(game.playerPos.x) <= 18.0 && game.playerPos.z <= -48.0 && game.playerPos.z >= -195.0;
+        if (!isInCaveCorridor) {
+          window.__mountainCenterData.forEach(m => {
+            const mdx = game.playerPos.x - m.x;
+            const mdz = game.playerPos.z - m.z;
+            const mDist = Math.sqrt(mdx * mdx + mdz * mdz);
+            if (mDist < m.r) {
+              const baseY = Math.max(0, m.y - m.h * 0.5);
+              const coneSlopeY = baseY + m.h * (1.0 - mDist / m.r);
+              if (game.playerPos.y < coneSlopeY) {
+                game.playerPos.y = coneSlopeY;
+                if (game.playerVel && game.playerVel.y < 0) {
+                  game.playerVel.y = 0;
+                }
+              }
+            }
+          });
+        }
+      }
+
+      // 7. Mountain Falls Safety Net (Dağ yolundan aşağı düşerse patikaya geri alma)
+      if (game.playerPos.z < -48 && game.playerPos.z >= -66 && game.playerPos.y < 1.0) {
+        game.playerPos.set(0, 3.8, -52);
+        if (game.playerVel) game.playerVel.set(0, 0, 0);
+      }
     }
 
     // =========================================================================
@@ -9776,8 +10212,47 @@ function updateSpaceLoop() {
     if (game && game.playerPos && game.currentLevel) {
       const pPos = game.playerPos;
       const pVel = game.playerVel;
-      const playerRadius = 0.65;
+      const playerRadius = 0.60;
       const now = Date.now();
+
+      // 1. Universal House, Wall & Static Collider Boundary Enforcement (Anti-Clipping)
+      const allColliders = [
+        ...(game.currentLevel.colliders || []),
+        ...(game.currentLevel.collisionBounds || [])
+      ];
+      for (let ci = 0; ci < allColliders.length; ci++) {
+        const c = allColliders[ci];
+        if (!c || !c.min || !c.max || c.isToxic || c.isClimbable) continue;
+
+        const minX = c.min.x, maxX = c.max.x;
+        const minZ = c.min.z, maxZ = c.max.z;
+        const minY = c.min.y, maxY = c.max.y;
+
+        // Check if player's vertical bounding volume intersects this obstacle
+        if (pPos.y + 1.5 > minY + 0.1 && pPos.y < maxY - 0.15) {
+          const overlapLeft = (pPos.x + playerRadius) - minX;
+          const overlapRight = maxX - (pPos.x - playerRadius);
+          const overlapFront = (pPos.z + playerRadius) - minZ;
+          const overlapBack = maxZ - (pPos.z - playerRadius);
+
+          if (overlapLeft > 0 && overlapRight > 0 && overlapFront > 0 && overlapBack > 0) {
+            const minOverlap = Math.min(overlapLeft, overlapRight, overlapFront, overlapBack);
+            if (minOverlap === overlapLeft) {
+              pPos.x = minX - playerRadius;
+              if (pVel && pVel.x > 0) pVel.x = 0;
+            } else if (minOverlap === overlapRight) {
+              pPos.x = maxX + playerRadius;
+              if (pVel && pVel.x < 0) pVel.x = 0;
+            } else if (minOverlap === overlapFront) {
+              pPos.z = minZ - playerRadius;
+              if (pVel && pVel.z > 0) pVel.z = 0;
+            } else {
+              pPos.z = maxZ + playerRadius;
+              if (pVel && pVel.z < 0) pVel.z = 0;
+            }
+          }
+        }
+      }
 
       // 1. Kaktüs Hasar Mekaniği (-4 Can) & Katı Çarpışma
       if (game.currentLevel.cacti && game.currentLevel.cacti.length > 0) {
