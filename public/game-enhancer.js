@@ -11065,6 +11065,11 @@ function populateRuinVillage(game) {
   const acidFloor = new THREE.Mesh(new THREE.BoxGeometry(300, 1, 600), acidMat);
   acidFloor.position.set(0, -6, -100);
   ruinGroup.add(acidFloor);
+  game.currentLevel.colliders.push({
+    min: new THREE.Vector3(-200, -10, -500),
+    max: new THREE.Vector3(200, -5.5, 300),
+    isToxic: true
+  });
 
   addPlat(0, 1.5, 60, 6, 1.5, 6, burntWoodMat);
   addPlat(-5, 2.0, 52, 5, 1.5, 5, stoneRuinMat);
@@ -12413,6 +12418,11 @@ function populateWaterCave(game) {
   lakeMesh.position.set(0, -10.0, -400);
   lakeMesh.receiveShadow = true;
   caveGroup.add(lakeMesh);
+  game.currentLevel.colliders.push({
+    min: new THREE.Vector3(-450, -16.0, -1000),
+    max: new THREE.Vector3(450, -9.5, 200),
+    isToxic: true
+  });
 
   // Stylized Architectural Platform Helper (Beveled organic rock platform with glowing crystal rim)
   function addArchitecturalPlatform(x, y, z, w, h, d, mat = darkBasaltMat, hasCrystalRim = true) {
