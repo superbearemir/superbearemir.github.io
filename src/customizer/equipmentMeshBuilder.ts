@@ -28,19 +28,13 @@ export function buildHatMesh(itemId: string, itemColorHex = 0x3b82f6): THREE.Gro
     const glassMat = new THREE.MeshStandardMaterial({
       color: 0xbae6fd,
       transparent: true,
-      opacity: 0.24,
+      opacity: 0.18,
       depthWrite: false,
-      roughness: 0.04,
-      metalness: 0.15,
+      roughness: 0.05,
+      metalness: 0.1,
       emissive: 0x38bdf8,
-      emissiveIntensity: 0.15,
-      side: THREE.FrontSide
-    });
-
-    const whiteShellMat = new THREE.MeshStandardMaterial({
-      color: 0xf8fafc,
-      roughness: 0.35,
-      metalness: 0.2
+      emissiveIntensity: 0.1,
+      side: THREE.DoubleSide
     });
 
     const techGoldMat = new THREE.MeshStandardMaterial({
@@ -49,18 +43,14 @@ export function buildHatMesh(itemId: string, itemColorHex = 0x3b82f6): THREE.Gro
       roughness: 0.15
     });
 
-    // Rear / top helmet hood shell (Leaves the front face open and visible!)
-    const rearShell = new THREE.Mesh(new THREE.SphereGeometry(0.52, 24, 16, Math.PI * 0.5, Math.PI, 0, Math.PI * 0.75), whiteShellMat);
-    rearShell.position.set(0, 0.04, -0.02);
-    group.add(rearShell);
-
     // Front golden visor frame / face portal ring
     const facePortalRing = new THREE.Mesh(new THREE.TorusGeometry(0.46, 0.035, 8, 24), techGoldMat);
     facePortalRing.position.set(0, 0.03, 0.22);
     group.add(facePortalRing);
 
-    // Crystal clear glass bubble visor (Grizzy's face, muzzle and eyes are 100% visible inside!)
+    // Crystal clear glass bubble visor (Grizzy's face, head, muzzle, ears and eyes are 100% visible inside!)
     const frontVisor = new THREE.Mesh(new THREE.SphereGeometry(0.53, 24, 24), glassMat);
+    frontVisor.renderOrder = 10;
     frontVisor.scale.set(1.05, 1.07, 1.16);
     frontVisor.position.set(0, 0.03, 0.03);
     group.add(frontVisor);

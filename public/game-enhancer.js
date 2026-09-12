@@ -858,14 +858,14 @@ function registerSignboard(canvas, tex, drawFn) {
   const signItem = { canvas, tex, drawFn };
   window.__superBearSignRegistry.push(signItem);
   const currentLang = (typeof window !== 'undefined' && window.__superBearCurrentLang) || 'tr';
-  const langSigns = IN_GAME_SIGN_TRANSLATIONS[currentLang] || IN_GAME_SIGN_TRANSLATIONS.en;
+  const langSigns = IN_GAME_SIGN_TRANSLATIONS[currentLang] || IN_GAME_SIGN_TRANSLATIONS.tr;
   drawFn(canvas, tex, langSigns);
   return signItem;
 }
 
 function redrawAllInGameSigns(lang) {
   const currentLang = lang || (typeof window !== 'undefined' && window.__superBearCurrentLang) || 'tr';
-  const langSigns = IN_GAME_SIGN_TRANSLATIONS[currentLang] || IN_GAME_SIGN_TRANSLATIONS.en;
+  const langSigns = IN_GAME_SIGN_TRANSLATIONS[currentLang] || IN_GAME_SIGN_TRANSLATIONS.tr;
   if (window.__superBearSignRegistry) {
     window.__superBearSignRegistry.forEach(item => {
       try {
@@ -1426,7 +1426,7 @@ function buildSpaceGalaxyWorld(scene) {
   registerSignboard(gateSignCanvas, gateSignTex, (canvas, tex, signs) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const gData = (signs && signs.gate) || IN_GAME_SIGN_TRANSLATIONS.en.gate;
+    const gData = (signs && signs.gate) || IN_GAME_SIGN_TRANSLATIONS.tr.gate;
     ctx.fillStyle = '#451a03';
     ctx.fillRect(0, 0, 512, 120);
     ctx.strokeStyle = '#f59e0b';
@@ -1738,7 +1738,7 @@ function buildSpaceGalaxyWorld(scene) {
   registerSignboard(signCanvas, signTex, (canvas, tex, signs) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const cData = (signs && signs.capi) || IN_GAME_SIGN_TRANSLATIONS.en.capi;
+    const cData = (signs && signs.capi) || IN_GAME_SIGN_TRANSLATIONS.tr.capi;
     ctx.fillStyle = '#451a03';
     ctx.fillRect(0, 0, 512, 128);
     ctx.strokeStyle = '#f59e0b';
@@ -1837,7 +1837,7 @@ function buildSpaceGalaxyWorld(scene) {
   registerSignboard(arcadeCanvas, arcadeTex, (canvas, tex, signs) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const aData = (signs && signs.arcade) || IN_GAME_SIGN_TRANSLATIONS.en.arcade;
+    const aData = (signs && signs.arcade) || IN_GAME_SIGN_TRANSLATIONS.tr.arcade;
     ctx.fillStyle = '#2e1065';
     ctx.fillRect(0, 0, 512, 140);
     ctx.strokeStyle = '#c084fc';
@@ -2287,7 +2287,7 @@ function buildMorisSecretDenAndMountains(THREE, villageGroup) {
   registerSignboard(signCanvas, signTex, (canvas, tex, signs) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const mData = (signs && signs.mountainRoad) || IN_GAME_SIGN_TRANSLATIONS.en.mountainRoad;
+    const mData = (signs && signs.mountainRoad) || IN_GAME_SIGN_TRANSLATIONS.tr.mountainRoad;
     ctx.fillStyle = '#0f172a';
     ctx.fillRect(0, 0, 512, 180);
     ctx.strokeStyle = '#f59e0b';
@@ -2348,7 +2348,7 @@ function buildMorisSecretDenAndMountains(THREE, villageGroup) {
   registerSignboard(portalCanvas, portalTex, (canvas, tex, signs) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const pData = (signs && signs.cavePortal) || IN_GAME_SIGN_TRANSLATIONS.en.cavePortal;
+    const pData = (signs && signs.cavePortal) || IN_GAME_SIGN_TRANSLATIONS.tr.cavePortal;
     ctx.fillStyle = '#09090b';
     ctx.fillRect(0, 0, 512, 160);
     ctx.strokeStyle = '#eab308';
@@ -3208,7 +3208,7 @@ function openMorisSecretDiary(game) {
       notes: [
         "📜 GÜNLÜK NOTU 1 (Sığınağım ve Huzur): Kedi Köyü halkı beni anlamadı... Tek başıma dağın derinliklerine bu büyük sığınağı ve hazine mahzenini oydum. Kendi ellerimle kestiğim kütük karyolamı, yumuşak ot yatağımı seviyorum. Raflardaki petek ballarım ve fıçılardaki taze ballar bana sonsuz güç veriyor!",
         "📜 GÜNLÜK NOTU 2 (Kırık Boynuzun Acı Sırrı): Sağ boynuzum neden mi kırık? Dark Lord ile o karanlık kalede kozmik güç için savaştım! Devasa çekicimi taşa vururken boynuzum bir kayaya çarpıp paramparça oldu... Sol boynuzum ise hala altın gibi parlıyor ve uzayın kozmik enerjisini emiyor!",
-        "📜 GÜNLÜK NOTU 3 (Uzay ve Kozmik Geçit): O sarı kanatlı kuşu uzaya kaçırdım... Yıldızların ötesinde, derin uzaydaki o devasa mor parlayan kapıya yaklaştığım anda gemi şiddetle sarsıldı ve uzayın derinliklerinden gelen bir ses: 'Geri dön, çünkü uzayın sırrı yalnızca...' [SÖZÜ ANİDEN YARIDA KESİLMİŞ, SAYFA BURADAN YIRTILMIŞ! ⚡📜]"
+        "📜 GÜNLÜK NOTU 3 (Uzay ve Kozmik Geçit): O sarı kanatlı kuşu alıp derin uzaya doğru yola çıktım... Uzaydan bahsetmek gerekirse, uzay öyle bir yer ki, uzay aslında..."
       ]
     },
     en: {
@@ -3217,7 +3217,7 @@ function openMorisSecretDiary(game) {
       notes: [
         "📜 DIARY NOTE 1 (My Sanctuary & Solitude): The villagers of Cat Village never understood me... Alone, I carved this vast sanctuary and treasure vault into the heart of the mountain. My wooden cot and soft hay bed bring me peace, while fresh honey pots grant me limitless vigor!",
         "📜 DIARY NOTE 2 (The Secret of the Broken Horn): Why is my right horn shattered? I clashed with the Dark Lord inside that cursed citadel! As I slammed my great war hammer down, my horn smashed against obsidian rock... Yet my left horn still radiates golden cosmic starlight!",
-        "📜 DIARY NOTE 3 (Outer Space & The Cosmic Gate): I carried the yellow-winged bird into deep space... Far beyond the stars, as I approached that gigantic glowing purple gate, the spacecraft violently shook and a booming voice echoed from the abyss: 'Turn back, for the cosmic secret of space may only...' [THE SENTENCE CUTS OFF ABRUPTLY, THE PAGE IS TORN AWAY! ⚡📜]"
+        "📜 DIARY NOTE 3 (Outer Space & The Cosmic Gate): I took that yellow-winged bird and journeyed into deep space... Speaking of outer space, space is such a place that space is actually..."
       ]
     },
     es: {
@@ -3332,7 +3332,7 @@ function buildBeginnerTrainingGround(THREE, villageGroup) {
   registerSignboard(signCanvas, signTex, (canvas, tex, signs) => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
-    const tData = (signs && signs.training) || IN_GAME_SIGN_TRANSLATIONS.en.training;
+    const tData = (signs && signs.training) || IN_GAME_SIGN_TRANSLATIONS.tr.training;
     ctx.fillStyle = '#b45309';
     ctx.fillRect(0, 0, 512, 140);
     ctx.strokeStyle = '#fde047';
@@ -7362,7 +7362,7 @@ function updateSpaceLoop() {
         game.camera.position.set(0, 2.5, 11);
         game.camera.lookAt(0, 1.0, -10);
       }
-      // Remove any artificial spawn colliders that could cause bear to float in mid air in the hub
+      // Remove any artificial spawn colliders that could cause bear to float in mid air
       if (game.currentLevel && game.currentLevel.colliders) {
         game.currentLevel.colliders = game.currentLevel.colliders.filter(c => !c.isSpawnBase && !(c.min && c.min.x === -14 && c.max && Math.abs(c.max.y - 1.4) < 0.2));
       }
@@ -7374,17 +7374,9 @@ function updateSpaceLoop() {
         game.camera.position.set(info.x, info.y + 2.6, info.z + 6.2);
         game.camera.lookAt(info.x, info.y + 1.2, info.z - 5.0);
       }
-      // Solid base collider under spawn platform for non-hub levels only
-      if (game.currentLevel) {
-        if (!game.currentLevel.colliders) game.currentLevel.colliders = [];
-        const hasBase = game.currentLevel.colliders.some(c => c && c.isSpawnBase);
-        if (!hasBase) {
-          game.currentLevel.colliders.push({
-            min: new THREE.Vector3(info.x - 16, info.y - 3.5, info.z - 16),
-            max: new THREE.Vector3(info.x + 16, info.y - 0.05, info.z + 16),
-            isSpawnBase: true
-          });
-        }
+      // Remove any leftover invisible base colliders in non-hub levels
+      if (game.currentLevel && game.currentLevel.colliders) {
+        game.currentLevel.colliders = game.currentLevel.colliders.filter(c => !c.isSpawnBase);
       }
     }
 
@@ -10634,28 +10626,77 @@ function updateSpaceLoop() {
         });
       }
 
-      // 2. Tüm Hayvanlar ve NPC'lerin İçine Girmeyi Engelleme (Anti-Clipping)
+      // 2. Tüm Hayvanlar ve NPC'lerin Fiziksel Şekline Göre Doğal Çarpışma (Shape-accurate physical collision)
       const allNpcs = [
         ...((game.currentLevel && game.currentLevel.npcs) || []),
         ...(typeof villageNpcsList !== 'undefined' && Array.isArray(villageNpcsList) ? villageNpcsList : [])
       ];
 
+      function getNpcShapeBounds(npc) {
+        const id = ((npc.id || '') + ' ' + (npc.name || '') + ' ' + (npc.role || '')).toLowerCase();
+        // Tavşan (Bunny): Çok ufak, zıplayan sevimli gövde
+        if (id.includes('bunny') || id.includes('tavsan') || id.includes('tavşan')) {
+          return { radius: 0.35, height: 0.65 };
+        }
+        // Kediler (Boncuk, Pamuk, Gölge, Robo-Pati, Coach Cat): Doğal kedi boyutu
+        if (id.includes('kedi') || id.includes('cat') || id.includes('boncuk') || id.includes('pamuk') || id.includes('golge') || id.includes('gölge') || id.includes('robo')) {
+          return { radius: 0.42, height: 0.85 };
+        }
+        // Kuşlar, Arılar ve Martılar
+        if (id.includes('marti') || id.includes('martı') || id.includes('scout') || id.includes('bird') || id.includes('ari') || id.includes('arı') || id.includes('buzzy')) {
+          return { radius: 0.35, height: 0.75 };
+        }
+        // Tilki
+        if (id.includes('fox') || id.includes('tilki') || id.includes('rustem') || id.includes('rüstem')) {
+          return { radius: 0.48, height: 0.95 };
+        }
+        // Kurtlar
+        if (id.includes('wolf') || id.includes('kurt')) {
+          return { radius: 0.55, height: 1.1 };
+        }
+        // Pelikanlar
+        if (id.includes('pelican') || id.includes('pelikan')) {
+          return { radius: 0.52, height: 1.25 };
+        }
+        // Zürafa
+        if (id.includes('giraffe') || id.includes('zurafa') || id.includes('zürafa') || id.includes('zeki')) {
+          return { radius: 0.65, height: 2.8 };
+        }
+        // Büyük Ayılar (Dede Ayı, Tonton Fırıncı)
+        if (id.includes('dede') || id.includes('firinci') || id.includes('fırıncı') || id.includes('bear') || id.includes('ayi') || id.includes('ayı')) {
+          return { radius: 0.7, height: 1.55 };
+        }
+        return { radius: npc.radius || 0.45, height: npc.height || 0.95 };
+      }
+
       allNpcs.forEach(npc => {
         if (!npc || !npc.pos) return;
+        const shape = getNpcShapeBounds(npc);
+        const npcBaseY = npc.pos.y;
+        const npcTopY = npcBaseY + shape.height;
+
+        // Dikey Kontrol: Oyuncunun ayakları hayvanın boyunun üstündeyse (üstünden atlarken) yatay engel kalkar!
+        if (pPos.y >= npcTopY - 0.05) return;
+        // Oyuncu hayvanın çok altındaysa (örneğin uçan kuş) yatay engel olmaz
+        if (pPos.y + 1.6 <= npcBaseY) return;
+
         const dx = pPos.x - npc.pos.x;
         const dz = pPos.z - npc.pos.z;
         const dist = Math.sqrt(dx * dx + dz * dz);
-        const solidDist = (npc.radius || 1.3) + playerRadius;
-        const yDiff = Math.abs(pPos.y - npc.pos.y);
+        // Hayvanın kendi gövde yarıçapı + oyuncunun temas sınırı
+        const solidDist = shape.radius + playerRadius * 0.55;
 
-        if (dist < solidDist && yDiff < 3.2 && dist > 0.001) {
-          pPos.x = npc.pos.x + (dx / dist) * solidDist;
-          pPos.z = npc.pos.z + (dz / dist) * solidDist;
+        if (dist < solidDist && dist > 0.0001) {
+          const nx = dx / dist;
+          const nz = dz / dist;
+          pPos.x = npc.pos.x + nx * solidDist;
+          pPos.z = npc.pos.z + nz * solidDist;
           if (pVel) {
-            const dot = pVel.x * dx + pVel.z * dz;
-            if (dot < 0) {
-              pVel.x *= 0.5;
-              pVel.z *= 0.5;
+            const normalVel = pVel.x * nx + pVel.z * nz;
+            if (normalVel < 0) {
+              // Hayvanın içine giden hızı sıfırla, etrafından akıcı kaymaya izin ver
+              pVel.x -= normalVel * nx;
+              pVel.z -= normalVel * nz;
             }
           }
         }

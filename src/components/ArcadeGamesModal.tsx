@@ -553,9 +553,9 @@ export const BASE_ARCADE_GAMES_LIST: { id: ArcadeGameId; icon: string; themeColo
 ];
 
 export function getLocalizedArcadeGames(lang: string): ArcadeGameMeta[] {
-  const trans = ARCADE_TRANSLATIONS[lang] || ARCADE_TRANSLATIONS.en;
+  const trans = ARCADE_TRANSLATIONS[lang] || ARCADE_TRANSLATIONS.tr;
   return BASE_ARCADE_GAMES_LIST.map(base => {
-    const gTrans = trans.games[base.id] || ARCADE_TRANSLATIONS.en.games[base.id];
+    const gTrans = trans.games[base.id] || ARCADE_TRANSLATIONS.tr.games[base.id];
     return {
       id: base.id,
       icon: base.icon,
@@ -582,7 +582,7 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
   const [activeTab, setActiveTab] = useState<'daily' | 'all' | 'rewards'>('daily');
   const [dailyClaimed, setDailyClaimed] = useState(false);
 
-  const t = ARCADE_TRANSLATIONS[language] || ARCADE_TRANSLATIONS.en;
+  const t = ARCADE_TRANSLATIONS[language] || ARCADE_TRANSLATIONS.tr;
   const allLocalizedGames = getLocalizedArcadeGames(language);
 
   // Daily seed calculations
@@ -595,7 +595,7 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
     de: 'de-DE',
     it: 'it-IT'
   };
-  const todayDateStr = new Intl.DateTimeFormat(dateLocaleMap[language] || 'en-US', { 
+  const todayDateStr = new Intl.DateTimeFormat(dateLocaleMap[language] || 'tr-TR', { 
     weekday: 'long', 
     day: 'numeric', 
     month: 'long', 

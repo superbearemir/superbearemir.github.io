@@ -213,17 +213,19 @@
 
     const glassMat = new THREE.MeshPhysicalMaterial({
       color: 0x93c5fd,
-      transmission: 0.85,
-      opacity: 0.75,
+      transmission: 0.95,
+      opacity: 0.2,
       transparent: true,
-      roughness: 0.1,
-      metalness: 0.1,
+      depthWrite: false,
+      roughness: 0.05,
+      metalness: 0.05,
       reflectivity: 0.9,
       clearcoat: 1.0,
       clearcoatRoughness: 0.1,
       side: THREE.DoubleSide
     });
     const glassSphere = new THREE.Mesh(new THREE.SphereGeometry(radius, 24, 24), glassMat);
+    glassSphere.renderOrder = 10;
     glassSphere.position.y = headYOffset;
     helmetGroup.add(glassSphere);
 
