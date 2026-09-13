@@ -43,6 +43,7 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
       } else if (game.loadRegion) {
         game.loadRegion(regionId);
       }
+      window.dispatchEvent(new CustomEvent('superbear:level-selected', { detail: { regionId, levelNo } }));
     }
     onClose();
   };

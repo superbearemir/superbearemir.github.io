@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { CustomCharacterDesign, EarType } from './types';
 import { hexToInt } from './ImageAnalyzer';
+import { normalizeDesign, createDefaultDesign } from './GameBridge';
 
 export interface BuiltBearModel {
   root: THREE.Group;
@@ -362,10 +363,12 @@ export function createCustomBear3D(initialDesign?: CustomCharacterDesign): Built
 
   // --- Update Design Method ---
   const updateDesign = (
-    design: CustomCharacterDesign,
+    rawDesign: CustomCharacterDesign,
     furCanvasTexture?: HTMLCanvasElement,
     capeCanvasTexture?: HTMLCanvasElement
   ) => {
+    const design = normalizeDesign(rawDesign);
+
     // 1. Update colors
     const p = design.palette;
     furMat.color.setHex(hexToInt(p.furColor));
@@ -420,7 +423,7 @@ export function createCustomBear3D(initialDesign?: CustomCharacterDesign): Built
       currentFurTex.wrapT = THREE.RepeatWrapping;
       furMat.map = currentFurTex;
       furMat.needsUpdate = true;
-    } else if (design.textureSettings.mode === 'none' && design.textureSettings.patternType === 'none') {
+    } else if (!design.textureSettings || (design.textureSettings.mode === 'none' && design.textureSettings.patternType === 'none')) {
       furMat.map = null;
       furMat.needsUpdate = true;
     }
@@ -436,19 +439,19 @@ export function createCustomBear3D(initialDesign?: CustomCharacterDesign): Built
     }
 
     // 4. Update Morphology Scales
-    const m = design.morphology;
-    headGroup.scale.set(m.headScale, m.headScale, m.headScale);
-    muzzleMesh.scale.set(1.1 * m.snoutScale, 0.8 * m.snoutScale, 1 * m.snoutScale);
-    leftEarGroup.scale.set(m.earScale, m.earScale, m.earScale);
-    rightEarGroup.scale.set(m.earScale, m.earScale, m.earScale);
-    rebuildEars(m.earType);
+    const m = design.morphology || createDefaultDesign().morphology;
+    headGroup.scale.set(m.headScale ?? 1, m.headScale ?? 1, m.headScale ?? 1);
+    muzzleMesh.scale.set(1.1 * (m.snoutScale ?? 1), 0.8 * (m.snoutScale ?? 1), 1 * (m.snoutScale ?? 1));
+    leftEarGroup.scale.set(m.earScale ?? 1, m.earScale ?? 1, m.earScale ?? 1);
+    rightEarGroup.scale.set(m.earScale ?? 1, m.earScale ?? 1, m.earScale ?? 1);
+    rebuildEars(m.earType ?? 'round');
 
-    bodyMesh.scale.set(m.bodyScale * m.chubbyScale, m.bodyScale, m.bodyScale * m.chubbyScale);
-    leftArmGroup.scale.set(m.armScale, m.armScale, m.armScale);
-    rightArmGroup.scale.set(m.armScale, m.armScale, m.armScale);
-    leftLegGroup.scale.set(m.legScale, m.legScale, m.legScale);
-    rightLegGroup.scale.set(m.legScale, m.legScale, m.legScale);
-    root.scale.set(m.overallScale, m.overallScale, m.overallScale);
+    bodyMesh.scale.set((m.bodyScale ?? 1) * (m.chubbyScale ?? 1), m.bodyScale ?? 1, (m.bodyScale ?? 1) * (m.chubbyScale ?? 1));
+    leftArmGroup.scale.set(m.armScale ?? 1, m.armScale ?? 1, m.armScale ?? 1);
+    rightArmGroup.scale.set(m.armScale ?? 1, m.armScale ?? 1, m.armScale ?? 1);
+    leftLegGroup.scale.set(m.legScale ?? 1, m.legScale ?? 1, m.legScale ?? 1);
+    rightLegGroup.scale.set(m.legScale ?? 1, m.legScale ?? 1, m.legScale ?? 1);
+    root.scale.set(m.overallScale ?? 1, m.overallScale ?? 1, m.overallScale ?? 1);
 
     // 5. Cape visibility
     capeGroup.visible = design.capeEnabled;

@@ -17,7 +17,7 @@ import {
 import { createCustomBear3D, BuiltBearModel } from './3dBearBuilder';
 import {
   getCurrentSavedDesign, syncDesignToGameInstance, savePreset,
-  loadPresets, deletePreset, createDefaultDesign
+  loadPresets, deletePreset, createDefaultDesign, normalizeDesign
 } from './GameBridge';
 
 interface CharacterStudioModalProps {
@@ -46,7 +46,7 @@ export const CharacterStudioModal: React.FC<CharacterStudioModalProps> = ({
   onApplyDesign,
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('image_colors');
-  const [design, setDesign] = useState<CustomCharacterDesign>(getCurrentSavedDesign);
+  const [design, setDesign] = useState<CustomCharacterDesign>(() => normalizeDesign(getCurrentSavedDesign()));
   const [presets, setPresets] = useState<CustomCharacterDesign[]>(loadPresets);
   const [selectedColorTarget, setSelectedColorTarget] = useState<ColorTargetPart>('furColor');
   const [imageInfo, setImageInfo] = useState<ExtractedImageInfo | null>(null);
@@ -269,13 +269,14 @@ export const CharacterStudioModal: React.FC<CharacterStudioModalProps> = ({
   }, [environment]);
 
   // Update 3D Bear Model whenever design changes
-  const update3DModel = useCallback(async (newDesign: CustomCharacterDesign) => {
+  const update3DModel = useCallback(async (rawDesign: CustomCharacterDesign) => {
     if (!bearModelRef.current) return;
+    const newDesign = normalizeDesign(rawDesign);
     
     let furCanvas: HTMLCanvasElement | undefined;
     let capeCanvas: HTMLCanvasElement | undefined;
 
-    if (newDesign.textureSettings.mode !== 'none' || newDesign.textureSettings.patternType !== 'none' || newDesign.imageSrc) {
+    if (newDesign.textureSettings && (newDesign.textureSettings.mode !== 'none' || newDesign.textureSettings.patternType !== 'none' || newDesign.imageSrc)) {
       furCanvas = await createCompositeTexture(newDesign.imageSrc, newDesign.palette, newDesign.textureSettings);
     }
 
@@ -1358,7 +1359,7 @@ export const CharacterStudioModal: React.FC<CharacterStudioModalProps> = ({
                             <div className="flex items-center gap-1.5 shrink-0">
                               <button
                                 onClick={() => {
-                                  setDesign({ ...p });
+                                  setDesign(normalizeDesign(p));
                                   showToast(`📂 "${p.name}" yüklendi!`);
                                 }}
                                 className="px-3 py-1 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-xs cursor-pointer"

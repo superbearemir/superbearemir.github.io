@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Rocket, 
   Zap, 
@@ -56,6 +56,8 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
   const [isNearInteractable, setIsNearInteractable] = useState(false);
   const [activeTab, setActiveTab] = useState<'powers' | 'emotes' | 'shop' | 'settings'>('powers');
   const [selectedPowerId, setSelectedPowerId] = useState<'teleport' | 'laser' | 'rocket' | 'ground_pound' | 'roll' | 'fish' | 'spray' | 'companion' | 'dance' | 'triple_jump' | 'interact'>('laser');
+  const [rocketUsesLeft, setRocketUsesLeft] = useState<number>(5);
+  const prevRegionRef = useRef<string>('');
   const { t, language } = useLanguage();
 
   // Game Persistence & Auto-Save Manager hook
@@ -102,13 +104,42 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
     window.addEventListener('superbear:arcade-proximity', handleArcadeProximity);
     window.addEventListener('superbear:open-powers-rack', handleOpenPowersRack);
 
+    const handleResetRocket = () => {
+      setRocketUsesLeft(5);
+      (window as any).__superBearRocketUses = 5;
+    };
+
+    const checkRegionChange = () => {
+      const game = (window as any).__superBearGame;
+      if (game && game.currentRegion) {
+        if (prevRegionRef.current && prevRegionRef.current !== game.currentRegion) {
+          handleResetRocket();
+        }
+        prevRegionRef.current = game.currentRegion;
+      }
+    };
+
+    const interval = setInterval(checkRegionChange, 800);
+    window.addEventListener('superbear:reset-rocket', handleResetRocket);
+    window.addEventListener('superbear:region-changed', handleResetRocket);
+    window.addEventListener('superbear:level-selected', handleResetRocket);
+
     return () => {
+      clearInterval(interval);
       window.removeEventListener('superbear:interact-proximity', handleInteractProximity);
       window.removeEventListener('superbear:cat-merchant-proximity', handleCatMerchantProximity);
       window.removeEventListener('superbear:arcade-proximity', handleArcadeProximity);
       window.removeEventListener('superbear:open-powers-rack', handleOpenPowersRack);
+      window.removeEventListener('superbear:reset-rocket', handleResetRocket);
+      window.removeEventListener('superbear:region-changed', handleResetRocket);
+      window.removeEventListener('superbear:level-selected', handleResetRocket);
     };
   }, []);
+
+  // Sync rocket uses left globally
+  useEffect(() => {
+    (window as any).__superBearRocketUses = rocketUsesLeft;
+  }, [rocketUsesLeft]);
 
   // Synchronize master modal state with global flag to avoid dead zones
   useEffect(() => {
@@ -234,6 +265,10 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
   };
 
   const handleTriggerEmote = (type: string) => {
+    if (type === 'rocket') {
+      handleRocketEscape();
+      return;
+    }
     const enhancer = (window as any).__superBearSpaceEnhancer;
     if (enhancer && enhancer.triggerEmote) {
       enhancer.triggerEmote(type);
@@ -243,6 +278,18 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
   const handleRocketEscape = () => {
     const game = (window as any).__superBearGame;
     const enhancer = (window as any).__superBearSpaceEnhancer;
+
+    if (rocketUsesLeft <= 0) {
+      if (game && game.callbacks && game.callbacks.onShowNotice) {
+        game.callbacks.onShowNotice("❌ Bu bölümde roket kullanım hakkın bitti! (Maksimum 5 kez kullanılabilir)", "warning");
+      }
+      return;
+    }
+
+    const nextUses = rocketUsesLeft - 1;
+    setRocketUsesLeft(nextUses);
+    (window as any).__superBearRocketUses = nextUses;
+
     if (game) {
       game.speedrunInvalidated = true;
       if (game.playerVel) {
@@ -260,7 +307,11 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
         }
       }
       if (game.callbacks && game.callbacks.onShowNotice) {
-        game.callbacks.onShowNotice("🚀 UZAY ROKETİ FIRLATILDI! (Art arda tıklayarak yükselebilirsin!)", "warning");
+        if (nextUses > 0) {
+          game.callbacks.onShowNotice(`🚀 UZAY ROKETİ FIRLATILDI! (Kalan hak: ${nextUses}/5)`, "warning");
+        } else {
+          game.callbacks.onShowNotice("🚀 Son uzay roketi kullanıldı! (0/5 hak - Bu bölümde roket hakkın bitti)", "warning");
+        }
       }
     }
     if (enhancer && enhancer.triggerEmote) {
@@ -393,14 +444,14 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
     },
     rocket: {
       id: 'rocket',
-      name: 'Uzay Roketi',
-      shortLabel: 'ROKET',
+      name: `Uzay Roketi (${rocketUsesLeft}/5)`,
+      shortLabel: `ROKET (${rocketUsesLeft})`,
       emoji: '🚀',
-      bgClass: 'from-amber-600 to-orange-700 text-white',
-      borderClass: 'border-amber-400',
+      bgClass: rocketUsesLeft > 0 ? 'from-amber-600 to-orange-700 text-white' : 'from-slate-700 to-slate-800 text-slate-400',
+      borderClass: rocketUsesLeft > 0 ? 'border-amber-400' : 'border-slate-600',
       handler: handleRocketEscape,
-      description: 'Kurtul & Yüksel',
-      keyHint: 'Roket'
+      description: rocketUsesLeft > 0 ? `Kurtul & Yüksel (Kalan: ${rocketUsesLeft}/5)` : 'Hak tükendi (0/5)',
+      keyHint: `${rocketUsesLeft}/5`
     },
     ground_pound: {
       id: 'ground_pound',
@@ -756,16 +807,27 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
                   {/* Space Rocket Escape Booster */}
                   <button
                     onClick={handleRocketEscape}
-                    className="w-full p-2.5 rounded-2xl font-black text-xs flex items-center justify-between border bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 hover:from-amber-500 hover:to-red-500 text-white border-amber-400/80 shadow-lg transition active:scale-95 cursor-pointer"
+                    disabled={rocketUsesLeft <= 0}
+                    className={`w-full p-2.5 rounded-2xl font-black text-xs flex items-center justify-between border transition active:scale-95 cursor-pointer ${
+                      rocketUsesLeft <= 0
+                        ? 'bg-slate-900 border-slate-800 text-slate-500 opacity-60 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-amber-600 via-orange-600 to-red-600 hover:from-amber-500 hover:to-red-500 text-white border-amber-400/80 shadow-lg'
+                    }`}
                   >
                     <div className="flex items-center gap-2">
-                      <Rocket className="w-4 h-4 text-yellow-300 animate-bounce" />
+                      <Rocket className={`w-4 h-4 ${rocketUsesLeft > 0 ? 'text-yellow-300 animate-bounce' : 'text-slate-500'}`} />
                       <div className="text-left">
                         <div>🚀 Uzay Roketi (Kurtulma Gücü)</div>
-                        <div className="text-[10px] text-amber-100/80">Engellerden ve çukurlardan kurtul</div>
+                        <div className="text-[10px] text-amber-100/80">
+                          {rocketUsesLeft > 0 ? `Bölüm başı kullanım hakkı: ${rocketUsesLeft}/5` : 'Hak tükendi (0/5)'}
+                        </div>
                       </div>
                     </div>
-                    <span className="text-[10px] bg-slate-950 text-amber-300 px-2 py-1 rounded-lg font-mono font-bold">Kurtul!</span>
+                    <span className={`text-[10px] px-2 py-1 rounded-lg font-mono font-bold ${
+                      rocketUsesLeft > 0 ? 'bg-slate-950 text-amber-300' : 'bg-slate-950 text-slate-500'
+                    }`}>
+                      {rocketUsesLeft > 0 ? `${rocketUsesLeft}/5 Hak` : 'Tükendi'}
+                    </span>
                   </button>
 
                   {/* Shoot Laser Button */}

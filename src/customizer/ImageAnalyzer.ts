@@ -402,39 +402,65 @@ export async function createCompositeTexture(
   canvas.height = size;
   const ctx = canvas.getContext('2d')!;
 
+  const safePalette = palette || {
+    furColor: '#8B4513',
+    bellyColor: '#D2B48C',
+    muzzleColor: '#E6D7C3',
+    earInnerColor: '#D29B78',
+    pawColor: '#6B3B1B',
+    eyeColor: '#111827',
+    capeColor: '#F59E0B',
+    accentColor: '#3B82F6',
+  };
+
+  const safeSettings: CharacterTextureSettings = {
+    mode: settings?.mode || 'none',
+    patternType: settings?.patternType || 'none',
+    repeat: typeof settings?.repeat === 'number' ? settings.repeat : 2,
+    rotation: typeof settings?.rotation === 'number' ? settings.rotation : 0,
+    opacity: typeof settings?.opacity === 'number' ? settings.opacity : 0.85,
+    blendMode: settings?.blendMode || 'normal',
+    decalShape: settings?.decalShape || 'circle',
+    decalScale: typeof settings?.decalScale === 'number' ? settings.decalScale : 1.0,
+    applyToCape: typeof settings?.applyToCape === 'boolean' ? settings.applyToCape : true,
+    applyToBody: typeof settings?.applyToBody === 'boolean' ? settings.applyToBody : true,
+    applyToHead: typeof settings?.applyToHead === 'boolean' ? settings.applyToHead : true,
+    applyToLimbs: typeof settings?.applyToLimbs === 'boolean' ? settings.applyToLimbs : true,
+  };
+
   // 1. Base color
-  ctx.fillStyle = palette.furColor;
+  ctx.fillStyle = safePalette.furColor || '#8B4513';
   ctx.fillRect(0, 0, size, size);
 
   // If procedural pattern is selected
-  if (settings.patternType !== 'none') {
-    const patternCanvas = generateProceduralPattern(settings.patternType, palette, size);
+  if (safeSettings.patternType !== 'none') {
+    const patternCanvas = generateProceduralPattern(safeSettings.patternType, safePalette, size);
     ctx.save();
-    ctx.globalAlpha = settings.opacity;
+    ctx.globalAlpha = safeSettings.opacity;
     ctx.drawImage(patternCanvas, 0, 0);
     ctx.restore();
   }
 
   // If user uploaded an image and mode is wrap/decal
-  if (imageSource && (settings.mode === 'wrap' || settings.mode === 'decal')) {
+  if (imageSource && (safeSettings.mode === 'wrap' || safeSettings.mode === 'decal')) {
     try {
       const img = await loadImageElement(imageSource);
       ctx.save();
-      ctx.globalAlpha = settings.opacity;
+      ctx.globalAlpha = safeSettings.opacity;
       
       // Set blend mode
-      if (settings.blendMode !== 'normal') {
-        ctx.globalCompositeOperation = settings.blendMode;
+      if (safeSettings.blendMode !== 'normal') {
+        ctx.globalCompositeOperation = safeSettings.blendMode;
       }
 
-      if (settings.mode === 'wrap') {
+      if (safeSettings.mode === 'wrap') {
         // Tiled wrap with repeat and rotation
-        const repeat = Math.max(1, settings.repeat);
+        const repeat = Math.max(1, safeSettings.repeat);
         const cellW = size / repeat;
         const cellH = size / repeat;
         
         ctx.translate(size / 2, size / 2);
-        ctx.rotate((settings.rotation * Math.PI) / 180);
+        ctx.rotate((safeSettings.rotation * Math.PI) / 180);
         ctx.translate(-size / 2, -size / 2);
 
         for (let ix = -1; ix <= repeat + 1; ix++) {
@@ -442,9 +468,9 @@ export async function createCompositeTexture(
             ctx.drawImage(img, ix * cellW, iy * cellH, cellW, cellH);
           }
         }
-      } else if (settings.mode === 'decal') {
+      } else if (safeSettings.mode === 'decal') {
         // Centered badge / emblem
-        const scale = settings.decalScale;
+        const scale = safeSettings.decalScale;
         const dw = size * 0.6 * scale;
         const dh = size * 0.6 * scale;
         const dx = (size - dw) / 2;
@@ -452,12 +478,12 @@ export async function createCompositeTexture(
 
         ctx.save();
         ctx.translate(size / 2, size / 2);
-        ctx.rotate((settings.rotation * Math.PI) / 180);
+        ctx.rotate((safeSettings.rotation * Math.PI) / 180);
         ctx.translate(-size / 2, -size / 2);
 
         // Apply clip shape
         ctx.beginPath();
-        if (settings.decalShape === 'circle') {
+        if (safeSettings.decalShape === 'circle') {
           ctx.arc(size / 2, size / 2, dw / 2, 0, Math.PI * 2);
         } else if (settings.decalShape === 'heart') {
           const hx = size / 2;

@@ -551,12 +551,6 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
     showNotification('🧹 Tüm kostüm ve aksesuarlar çıkarıldı.');
   };
 
-  const handleFreeCoins = () => {
-    const nextCoins = coins + 2000;
-    setCoins(nextCoins);
-    showNotification('🎁 +2,000 Altın hesabına eklendi!');
-  };
-
   // Category counts map
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { all: SHOP_ITEMS.length };
@@ -730,13 +724,10 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
         {/* Quick Toolbar Bar */}
         <div className="px-3 py-1.5 bg-slate-950/95 border-b border-amber-500/30 flex flex-wrap items-center justify-between gap-2 text-xs shrink-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <button
-              onClick={handleFreeCoins}
-              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-[11px] sm:text-xs rounded-xl border border-emerald-300 flex items-center gap-1 transition active:scale-95 cursor-pointer shadow"
-            >
-              <Gift className="w-3.5 h-3.5" />
-              <span>+2,000 Altın Al</span>
-            </button>
+            <span className="text-[11px] text-amber-300/90 font-bold bg-amber-500/10 px-2.5 py-1 rounded-xl border border-amber-500/30 flex items-center gap-1.5 shadow-sm">
+              <span>🪙</span>
+              <span>Bölümlerde altın toplayarak dükkandan alışveriş yapabilirsin!</span>
+            </span>
 
             <button
               onClick={() => setIsLootBoxModalOpen(true)}

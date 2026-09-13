@@ -59,10 +59,73 @@ export function createDefaultDesign(): CustomCharacterDesign {
   };
 }
 
+export function normalizeDesign(input?: Partial<CustomCharacterDesign> | null): CustomCharacterDesign {
+  const def = createDefaultDesign();
+  if (!input || typeof input !== 'object') return def;
+
+  const raw = input as any;
+
+  return {
+    ...def,
+    ...raw,
+    id: typeof raw.id === 'string' && raw.id ? raw.id : def.id,
+    name: typeof raw.name === 'string' && raw.name ? raw.name : def.name,
+    createdAt: typeof raw.createdAt === 'number' ? raw.createdAt : def.createdAt,
+    imageSrc: raw.imageSrc ?? def.imageSrc,
+    palette: {
+      furColor: raw.palette?.furColor || def.palette.furColor,
+      bellyColor: raw.palette?.bellyColor || def.palette.bellyColor,
+      muzzleColor: raw.palette?.muzzleColor || def.palette.muzzleColor,
+      earInnerColor: raw.palette?.earInnerColor || def.palette.earInnerColor,
+      pawColor: raw.palette?.pawColor || def.palette.pawColor,
+      eyeColor: raw.palette?.eyeColor || def.palette.eyeColor,
+      capeColor: raw.palette?.capeColor || def.palette.capeColor,
+      accentColor: raw.palette?.accentColor || def.palette.accentColor,
+    },
+    extractedSwatches: Array.isArray(raw.extractedSwatches) && raw.extractedSwatches.length > 0
+      ? raw.extractedSwatches
+      : def.extractedSwatches,
+    morphology: {
+      headScale: typeof raw.morphology?.headScale === 'number' ? raw.morphology.headScale : def.morphology.headScale,
+      bodyScale: typeof raw.morphology?.bodyScale === 'number' ? raw.morphology.bodyScale : def.morphology.bodyScale,
+      chubbyScale: typeof raw.morphology?.chubbyScale === 'number' ? raw.morphology.chubbyScale : def.morphology.chubbyScale,
+      snoutScale: typeof raw.morphology?.snoutScale === 'number' ? raw.morphology.snoutScale : def.morphology.snoutScale,
+      earScale: typeof raw.morphology?.earScale === 'number' ? raw.morphology.earScale : def.morphology.earScale,
+      earType: raw.morphology?.earType || def.morphology.earType,
+      armScale: typeof raw.morphology?.armScale === 'number' ? raw.morphology.armScale : def.morphology.armScale,
+      legScale: typeof raw.morphology?.legScale === 'number' ? raw.morphology.legScale : def.morphology.legScale,
+      overallScale: typeof raw.morphology?.overallScale === 'number' ? raw.morphology.overallScale : def.morphology.overallScale,
+    },
+    textureSettings: {
+      mode: raw.textureSettings?.mode || def.textureSettings.mode,
+      patternType: raw.textureSettings?.patternType || def.textureSettings.patternType,
+      repeat: typeof raw.textureSettings?.repeat === 'number' ? raw.textureSettings.repeat : def.textureSettings.repeat,
+      rotation: typeof raw.textureSettings?.rotation === 'number' ? raw.textureSettings.rotation : def.textureSettings.rotation,
+      opacity: typeof raw.textureSettings?.opacity === 'number' ? raw.textureSettings.opacity : def.textureSettings.opacity,
+      blendMode: raw.textureSettings?.blendMode || def.textureSettings.blendMode,
+      decalShape: raw.textureSettings?.decalShape || def.textureSettings.decalShape,
+      decalScale: typeof raw.textureSettings?.decalScale === 'number' ? raw.textureSettings.decalScale : def.textureSettings.decalScale,
+      applyToCape: typeof raw.textureSettings?.applyToCape === 'boolean' ? raw.textureSettings.applyToCape : def.textureSettings.applyToCape,
+      applyToBody: typeof raw.textureSettings?.applyToBody === 'boolean' ? raw.textureSettings.applyToBody : def.textureSettings.applyToBody,
+      applyToHead: typeof raw.textureSettings?.applyToHead === 'boolean' ? raw.textureSettings.applyToHead : def.textureSettings.applyToHead,
+      applyToLimbs: typeof raw.textureSettings?.applyToLimbs === 'boolean' ? raw.textureSettings.applyToLimbs : def.textureSettings.applyToLimbs,
+    },
+    materialType: raw.materialType || def.materialType,
+    glowIntensity: typeof raw.glowIntensity === 'number' ? raw.glowIntensity : def.glowIntensity,
+    auraType: raw.auraType || def.auraType,
+    auraColor: raw.auraColor || def.auraColor,
+    capeEnabled: typeof raw.capeEnabled === 'boolean' ? raw.capeEnabled : def.capeEnabled,
+    notes: raw.notes,
+  };
+}
+
 export function getCurrentSavedDesign(): CustomCharacterDesign {
   try {
     const data = localStorage.getItem(STORAGE_KEY_CURRENT);
-    if (data) return JSON.parse(data);
+    if (data) {
+      const parsed = JSON.parse(data);
+      return normalizeDesign(parsed);
+    }
   } catch (e) {
     console.error('Error loading current design:', e);
   }
@@ -71,7 +134,7 @@ export function getCurrentSavedDesign(): CustomCharacterDesign {
 
 export function saveCurrentDesign(design: CustomCharacterDesign) {
   try {
-    localStorage.setItem(STORAGE_KEY_CURRENT, JSON.stringify(design));
+    localStorage.setItem(STORAGE_KEY_CURRENT, JSON.stringify(normalizeDesign(design)));
   } catch (e) {
     console.error('Error saving current design:', e);
   }
@@ -80,7 +143,12 @@ export function saveCurrentDesign(design: CustomCharacterDesign) {
 export function loadPresets(): CustomCharacterDesign[] {
   try {
     const data = localStorage.getItem(STORAGE_KEY_PRESETS);
-    if (data) return JSON.parse(data);
+    if (data) {
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) {
+        return parsed.map(p => normalizeDesign(p));
+      }
+    }
   } catch (e) {
     console.error('Error loading presets:', e);
   }
@@ -88,12 +156,13 @@ export function loadPresets(): CustomCharacterDesign[] {
 }
 
 export function savePreset(design: CustomCharacterDesign): CustomCharacterDesign[] {
+  const normalized = normalizeDesign(design);
   const presets = loadPresets();
-  const index = presets.findIndex(p => p.id === design.id);
+  const index = presets.findIndex(p => p.id === normalized.id);
   if (index >= 0) {
-    presets[index] = { ...design };
+    presets[index] = { ...normalized };
   } else {
-    presets.unshift({ ...design });
+    presets.unshift({ ...normalized });
   }
   try {
     localStorage.setItem(STORAGE_KEY_PRESETS, JSON.stringify(presets));
@@ -119,14 +188,15 @@ let activeGameFurTexture: THREE.CanvasTexture | null = null;
 /**
  * Directly synchronizes custom design with in-game 3D PlayerBear instance
  */
-export async function syncDesignToGameInstance(design: CustomCharacterDesign) {
+export async function syncDesignToGameInstance(rawDesign: CustomCharacterDesign) {
+  const design = normalizeDesign(rawDesign);
   saveCurrentDesign(design);
 
   // Generate textures for fur and cape if needed
   let furCanvas: HTMLCanvasElement | undefined;
   let capeCanvas: HTMLCanvasElement | undefined;
 
-  if (design.textureSettings.mode !== 'none' || design.textureSettings.patternType !== 'none' || design.imageSrc) {
+  if (design.textureSettings && (design.textureSettings.mode !== 'none' || design.textureSettings.patternType !== 'none' || design.imageSrc)) {
     furCanvas = await createCompositeTexture(design.imageSrc, design.palette, design.textureSettings);
   }
 
@@ -193,7 +263,7 @@ export async function syncDesignToGameInstance(design: CustomCharacterDesign) {
         activeGameFurTexture.wrapT = THREE.RepeatWrapping;
         pb.furMat.map = activeGameFurTexture;
         pb.furMat.needsUpdate = true;
-      } else if (design.textureSettings.mode === 'none' && design.textureSettings.patternType === 'none') {
+      } else if (!design.textureSettings || (design.textureSettings.mode === 'none' && design.textureSettings.patternType === 'none')) {
         if (activeGameFurTexture) activeGameFurTexture.dispose();
         activeGameFurTexture = null;
         pb.furMat.map = null;
@@ -204,13 +274,13 @@ export async function syncDesignToGameInstance(design: CustomCharacterDesign) {
     // 4. Update Morphology Scale
     const m = design.morphology;
     if (m) {
-      if (pb.head) pb.head.scale.set(m.headScale, m.headScale, m.headScale);
-      if (pb.body) pb.body.scale.set(m.bodyScale * m.chubbyScale, m.bodyScale, m.bodyScale * m.chubbyScale);
-      if (pb.root) pb.root.scale.set(m.overallScale, m.overallScale, m.overallScale);
-      if (pb.leftArm) pb.leftArm.scale.set(m.armScale, m.armScale, m.armScale);
-      if (pb.rightArm) pb.rightArm.scale.set(m.armScale, m.armScale, m.armScale);
-      if (pb.leftLeg) pb.leftLeg.scale.set(m.legScale, m.legScale, m.legScale);
-      if (pb.rightLeg) pb.rightLeg.scale.set(m.legScale, m.legScale, m.legScale);
+      if (pb.head) pb.head.scale.set(m.headScale ?? 1, m.headScale ?? 1, m.headScale ?? 1);
+      if (pb.body) pb.body.scale.set((m.bodyScale ?? 1) * (m.chubbyScale ?? 1), m.bodyScale ?? 1, (m.bodyScale ?? 1) * (m.chubbyScale ?? 1));
+      if (pb.root) pb.root.scale.set(m.overallScale ?? 1, m.overallScale ?? 1, m.overallScale ?? 1);
+      if (pb.leftArm) pb.leftArm.scale.set(m.armScale ?? 1, m.armScale ?? 1, m.armScale ?? 1);
+      if (pb.rightArm) pb.rightArm.scale.set(m.armScale ?? 1, m.armScale ?? 1, m.armScale ?? 1);
+      if (pb.leftLeg) pb.leftLeg.scale.set(m.legScale ?? 1, m.legScale ?? 1, m.legScale ?? 1);
+      if (pb.rightLeg) pb.rightLeg.scale.set(m.legScale ?? 1, m.legScale ?? 1, m.legScale ?? 1);
     }
 
     // 5. Cape visibility - Ensure only ONE cape exists! If backContainer has an equipped item, hide pb.capeGroup
@@ -306,7 +376,7 @@ export function syncShopEquipmentsToGameInstance(equippedIds: string[]) {
   }
   outfitParent.add(outfitContainer);
 
-  const currentDesign = getCurrentSavedDesign();
+  const currentDesign = normalizeDesign(getCurrentSavedDesign());
   let hasAuraItem = false;
   let hasSkinItem = false;
   let hasScaleItem = false;
@@ -373,9 +443,15 @@ export function syncShopEquipmentsToGameInstance(equippedIds: string[]) {
   if (!hasAuraItem) {
     currentDesign.auraType = 'none';
   }
+  if (!currentDesign.morphology) {
+    currentDesign.morphology = { ...createDefaultDesign().morphology };
+  }
   if (!hasScaleItem) {
     currentDesign.morphology.overallScale = 1.0;
     currentDesign.morphology.chubbyScale = 1.0;
+  }
+  if (!currentDesign.palette) {
+    currentDesign.palette = { ...createDefaultDesign().palette };
   }
   if (!hasSkinItem && !equippedIds.includes('hat_crown')) {
     currentDesign.materialType = 'standard';

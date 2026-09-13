@@ -7404,6 +7404,11 @@ function updateSpaceLoop() {
       waterCavePopulated = false;
       beeDesertPopulated = false;
 
+      if (typeof window !== 'undefined') {
+        window.__superBearRocketUses = 5;
+        window.dispatchEvent(new CustomEvent('superbear:region-changed', { detail: regionId }));
+      }
+
       const res = origLoadRegion.call(this, regionId);
 
       // Synchronously populate custom region objects
@@ -14195,6 +14200,12 @@ function triggerEmote(type) {
     }
     if (game.callbacks && game.callbacks.onShowNotice) game.callbacks.onShowNotice("💤 Grizzly yere uzandı ve tatlı bir uykuya daldı (Zzz)...", "info");
   } else if (type === 'rocket') {
+    if (typeof window.__superBearRocketUses === 'number' && window.__superBearRocketUses <= 0) {
+      if (game.callbacks && game.callbacks.onShowNotice) {
+        game.callbacks.onShowNotice("❌ Bu bölümde roket kullanım hakkın bitti! (Maksimum 5 kez kullanılabilir)", "warning");
+      }
+      return;
+    }
     game.playerVel.y = 28;
     if (game.spawnSparkleParticles) {
       for (let i = 0; i < 50; i++) {
