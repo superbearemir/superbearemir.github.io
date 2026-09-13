@@ -3207,9 +3207,20 @@
     if (game.currentLevel && game.currentLevel.nextPortal) {
       const portal = game.currentLevel.nextPortal;
       if (pPos.distanceTo(portal.pos) < portal.radius) {
-        console.log("🪐 Portala girildi: " + portal.targetRegion);
-        if (game.loadRegion) {
-          game.loadRegion(portal.targetRegion);
+        const isBossAlive = (fusionBossInstance && !fusionBossInstance.isDead && fusionBossInstance.hp > 0) || ((game.currentLevel.enemies || []).some(e => e && e.hp > 0 && e.state !== "dead" && (e.isBoss || (e.name && (e.name.toLowerCase().includes("boss") || e.name.toLowerCase().includes("lord") || e.name.toLowerCase().includes("kral"))) || (e.type && e.type.toLowerCase().includes("boss")))));
+        if (isBossAlive) {
+          const now = Date.now();
+          if (!portal.__lastBossNoticeTimer || now - portal.__lastBossNoticeTimer > 2500) {
+            portal.__lastBossNoticeTimer = now;
+            if (game.callbacks && game.callbacks.onShowNotice) {
+              game.callbacks.onShowNotice("⚠️ Portaldan geçmek için önce Bölüm Boss'unu mağlup etmelisin! ⚔️", "warning");
+            }
+          }
+        } else {
+          console.log("🪐 Portala girildi: " + portal.targetRegion);
+          if (game.loadRegion) {
+            game.loadRegion(portal.targetRegion);
+          }
         }
       }
     }
@@ -3260,6 +3271,7 @@
           poneixCameraShake = 1.2;
 
           showPoneixBossHp(b.title, b.hp, b.maxHp, "⚡ Başarılı Vuruş! 14 Bossun Birleşik Gücü Zayıflıyor!");
+          if (b.mesh && b.mesh.userData && b.mesh.userData.__overheadHpData) window.__update3DOverheadHpBar(b.mesh.userData.__overheadHpData, b.hp, b.maxHp);
 
           if (game.callbacks && game.callbacks.onShowNotice) {
             game.callbacks.onShowNotice("💥 14 BOSS FÜZYONUNA HASAR VERİLDİ! (-10 HP)", "success");

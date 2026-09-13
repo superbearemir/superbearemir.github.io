@@ -45,7 +45,7 @@ interface CatMerchantShopModalProps {
 
 type CategoryType = 'all' | 'hats' | 'face' | 'back' | 'skins' | 'hand' | 'auras' | 'potions';
 type RarityType = 'all' | 'common' | 'rare' | 'epic' | 'legendary' | 'mythic';
-type FilterStatusType = 'all' | 'equipped' | 'owned' | 'paid' | 'free';
+type FilterStatusType = 'all' | 'available' | 'locked' | 'equipped' | 'owned' | 'paid' | 'free';
 
 export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOpen, onClose }) => {
   const [activeTab, setActiveTab] = useState<CategoryType>('all');
@@ -502,6 +502,12 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
 
   // Buy or Equip Item
   const handleBuyOrEquip = (item: ShopItem) => {
+    // 1. Prevent selecting or buying coming soon locked items
+    if (item.isComingSoon) {
+      showNotification(`🔒 "${item.name}" çok yakında eklenecektir! Şu anda kilitlidir.`);
+      return;
+    }
+
     const isOwned = purchasedIds.includes(item.id);
     const isEquipped = equippedIds.includes(item.id);
 
@@ -551,9 +557,15 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
     showNotification('🧹 Tüm kostüm ve aksesuarlar çıkarıldı.');
   };
 
-  // Category counts map
-  const categoryCounts = useMemo(() => {
-    const counts: Record<string, number> = { all: SHOP_ITEMS.length };
+  // Category and Lock counts map
+  const statsCounts = useMemo(() => {
+    const counts: Record<string, number> = { 
+      all: SHOP_ITEMS.length,
+      available: SHOP_ITEMS.filter(i => !i.isComingSoon).length,
+      locked: SHOP_ITEMS.filter(i => i.isComingSoon).length,
+      free: SHOP_ITEMS.filter(i => i.price === 0).length,
+      paid: SHOP_ITEMS.filter(i => i.price > 0 && !i.isComingSoon).length,
+    };
     SHOP_ITEMS.forEach(item => {
       const cat = (item.category as string) === 'aliens' ? 'potions' : item.category;
       counts[cat] = (counts[cat] || 0) + 1;
@@ -572,8 +584,12 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
         matchesStatus = equippedIds.includes(item.id);
       } else if (filterStatus === 'owned') {
         matchesStatus = purchasedIds.includes(item.id);
+      } else if (filterStatus === 'available') {
+        matchesStatus = !item.isComingSoon;
+      } else if (filterStatus === 'locked') {
+        matchesStatus = !!item.isComingSoon;
       } else if (filterStatus === 'paid') {
-        matchesStatus = item.price > 0;
+        matchesStatus = item.price > 0 && !item.isComingSoon;
       } else if (filterStatus === 'free') {
         matchesStatus = item.price === 0;
       }
@@ -653,6 +669,17 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
     return pages;
   };
 
+  const getItemEmblem = (item: ShopItem) => {
+    if (item.category === 'hats') return '🧙‍♂️';
+    if (item.category === 'face') return '🕶️';
+    if (item.category === 'back') return '🎒';
+    if (item.category === 'skins') return '👑';
+    if (item.category === 'hand') return '⚔️';
+    if (item.category === 'auras') return '✨';
+    if (item.category === 'potions') return '🧪';
+    return '🎁';
+  };
+
   const getRarityBadge = (rarity?: string) => {
     switch (rarity) {
       case 'mythic':
@@ -672,7 +699,7 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
 
   return (
     <div 
-      className="fixed inset-0 z-[100] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-1 sm:p-3 animate-in fade-in duration-200 select-none"
+      className="fixed inset-0 z-[140] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-1 sm:p-3 animate-in fade-in duration-200 select-none"
       onClick={(e) => {
         if (e.target === e.currentTarget && !isLootBoxModalOpen) {
           onClose();
@@ -694,7 +721,7 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
                   KEDİ CAPİ & AYI KOSTÜM MAĞAZASI
                 </h2>
                 <span className="px-2 py-0.5 rounded-full bg-slate-950 text-amber-300 font-black text-[10px] sm:text-xs border border-amber-400/50 hidden xs:inline-block">
-                  180+ İtem 🏪
+                  300 İtem (100 Açık / 200 Yakında) 🏪
                 </span>
               </div>
               <p className="text-[11px] font-bold text-slate-950 opacity-90 hidden sm:block">
@@ -947,18 +974,20 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
                 {/* Status Chips */}
                 <div className="flex items-center gap-1 overflow-x-auto pb-0.5">
                   {[
-                    { id: 'all', label: 'Tümü' },
-                    { id: 'paid', label: '🪙 Paralı' },
-                    { id: 'free', label: '🎁 Ücretsiz' },
+                    { id: 'all', label: `Tümü (${statsCounts.all || 0})` },
+                    { id: 'available', label: `🔓 Açık (${statsCounts.available || 0})` },
+                    { id: 'locked', label: `🔒 Çok Yakında (${statsCounts.locked || 0})` },
+                    { id: 'paid', label: `🪙 Paralı (${statsCounts.paid || 0})` },
+                    { id: 'free', label: `🎁 Ücretsiz (${statsCounts.free || 0})` },
                     { id: 'equipped', label: `✨ Takılı (${equippedIds.length})` },
                     { id: 'owned', label: `✅ Envanterim (${purchasedIds.length})` },
                   ].map(st => (
                     <button
                       key={st.id}
                       onClick={() => setFilterStatus(st.id as any)}
-                      className={`px-2 py-1 rounded-lg text-[11px] font-bold transition cursor-pointer whitespace-nowrap ${
+                      className={`px-2.5 py-1 rounded-xl text-[11px] font-bold transition cursor-pointer whitespace-nowrap ${
                         filterStatus === st.id
-                          ? 'bg-amber-500 text-slate-950 font-black shadow'
+                          ? 'bg-amber-500 text-slate-950 font-black shadow-md'
                           : 'bg-slate-900 text-slate-300 hover:bg-slate-800 border border-slate-800'
                       }`}
                     >
@@ -972,7 +1001,7 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as any)}
-                    className="bg-slate-900 border border-slate-700 text-amber-300 font-bold rounded-lg px-2 py-1 text-[11px] focus:outline-none focus:border-amber-500"
+                    className="bg-slate-900 border border-slate-700 text-amber-300 font-bold rounded-lg px-2 py-1 text-[11px] focus:outline-none focus:border-amber-500 cursor-pointer"
                   >
                     <option value="featured">✨ Öne Çıkan</option>
                     <option value="price_low">🪙 Fiyat (Artan)</option>
@@ -986,14 +1015,14 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
               {/* Row 2: Category Tabs Scrollbar */}
               <div className="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-thin">
                 {[
-                  { id: 'all', label: `Tümü (${categoryCounts.all || 0})`, icon: SlidersHorizontal },
-                  { id: 'skins', label: `👑 Zırh & Deri (${categoryCounts.skins || 0})`, icon: Crown },
-                  { id: 'hand', label: `⚔️ Silah (${categoryCounts.hand || 0})`, icon: Swords },
-                  { id: 'hats', label: `🧙‍♂️ Şapkalar (${categoryCounts.hats || 0})`, icon: Wand2 },
-                  { id: 'face', label: `🕶️ Yüz (${categoryCounts.face || 0})`, icon: Glasses },
-                  { id: 'back', label: `🎒 Sırt & Pelerin (${categoryCounts.back || 0})`, icon: Shirt },
-                  { id: 'auras', label: `✨ Auralar (${categoryCounts.auras || 0})`, icon: Flame },
-                  { id: 'potions', label: `🧪 İksirler (${categoryCounts.potions || 0})`, icon: Zap },
+                  { id: 'all', label: `Tümü (${statsCounts.all || 0})`, icon: SlidersHorizontal },
+                  { id: 'skins', label: `👑 Zırh & Deri (${statsCounts.skins || 0})`, icon: Crown },
+                  { id: 'hand', label: `⚔️ Silah (${statsCounts.hand || 0})`, icon: Swords },
+                  { id: 'hats', label: `🧙‍♂️ Şapkalar (${statsCounts.hats || 0})`, icon: Wand2 },
+                  { id: 'face', label: `🕶️ Yüz (${statsCounts.face || 0})`, icon: Glasses },
+                  { id: 'back', label: `🎒 Sırt & Pelerin (${statsCounts.back || 0})`, icon: Shirt },
+                  { id: 'auras', label: `✨ Auralar (${statsCounts.auras || 0})`, icon: Flame },
+                  { id: 'potions', label: `🧪 İksirler (${statsCounts.potions || 0})`, icon: Zap },
                 ].map(cat => (
                   <button
                     key={cat.id}
@@ -1040,7 +1069,7 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
             </div>
 
             {/* Item Catalog Grid (Dedicated Scroll Container) */}
-            <div className="p-2 sm:p-3 overflow-y-auto flex-1 min-h-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-2.5 text-slate-100 scrollbar-thin">
+            <div className="p-2 sm:p-3 overflow-y-auto flex-1 min-h-0 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-slate-100 scrollbar-thin">
               {paginatedItems.length === 0 ? (
                 <div className="col-span-full py-12 flex flex-col items-center justify-center text-slate-400 gap-2.5">
                   <div className="w-12 h-12 rounded-full bg-slate-900 border border-slate-800 flex items-center justify-center text-2xl">
@@ -1061,80 +1090,129 @@ export const CatMerchantShopModal: React.FC<CatMerchantShopModalProps> = ({ isOp
                 paginatedItems.map(item => {
                   const isOwned = purchasedIds.includes(item.id);
                   const isEquipped = equippedIds.includes(item.id);
+                  const isLocked = item.isComingSoon;
 
                   return (
                     <div
                       key={item.id}
                       onClick={() => handleBuyOrEquip(item)}
-                      className={`p-2.5 sm:p-3 rounded-2xl border flex flex-col justify-between transition-all duration-150 relative overflow-hidden cursor-pointer select-none active:scale-[0.98] ${
-                        isEquipped
-                          ? 'bg-amber-950/60 border-amber-400 shadow-lg shadow-amber-500/20 ring-2 ring-amber-400/80'
+                      className={`min-h-[170px] p-3.5 sm:p-4 rounded-2xl border flex flex-col justify-between items-center text-center transition-all duration-150 relative overflow-hidden cursor-pointer select-none active:scale-[0.98] ${
+                        isLocked
+                          ? 'bg-slate-950/90 border-amber-500/30 opacity-95 shadow-inner'
+                          : isEquipped
+                          ? 'bg-amber-950/90 border-amber-400 shadow-lg shadow-amber-500/20 ring-2 ring-amber-400/80'
                           : isOwned
-                          ? 'bg-slate-900/90 border-emerald-500/60 hover:border-emerald-400'
-                          : 'bg-slate-900/60 border-slate-800 hover:border-amber-500/40'
+                          ? 'bg-slate-900/95 border-emerald-500/60 hover:border-emerald-400 shadow-md'
+                          : 'bg-slate-900/90 border-slate-800 hover:border-amber-500/50 shadow-md'
                       }`}
                     >
-                      <div>
-                        {/* Header: Title, Rarity & Price */}
-                        <div className="flex items-start justify-between gap-1.5 mb-1.5">
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-black text-xs sm:text-sm text-amber-200 leading-tight truncate">
-                              {item.name}
-                            </h3>
-                            <div className="mt-1 flex items-center gap-1 flex-wrap">
-                              {getRarityBadge(item.rarity)}
-                              <span className="text-[9px] text-slate-400 font-mono capitalize bg-slate-950/60 px-1 py-0.5 rounded border border-slate-800">
-                                {item.slot}
-                              </span>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center gap-1 bg-amber-500/15 border border-amber-400/30 px-2 py-0.5 rounded-lg text-amber-300 font-black text-xs shrink-0">
-                            <span>{item.price === 0 ? 'Ücretsiz' : `${item.price} 🪙`}</span>
-                          </div>
+                      {/* Top Emblem / Status Badge */}
+                      <div className="w-full flex items-center justify-between gap-1 mb-1.5">
+                        <div className="w-8 h-8 rounded-xl bg-slate-950/90 border border-slate-800 flex items-center justify-center text-base shadow-inner shrink-0">
+                          {getItemEmblem(item)}
                         </div>
 
-                        <p className="text-[10px] sm:text-[11px] text-slate-300 font-medium mb-2 leading-tight line-clamp-2">
-                          {item.description}
-                        </p>
+                        {isLocked ? (
+                          <span className="px-2 py-0.5 rounded-full bg-slate-950/90 text-amber-300 border border-amber-400/40 font-bold text-[10px] flex items-center gap-1">
+                            🔒 Kilitli
+                          </span>
+                        ) : isEquipped ? (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-400/50 font-black text-[10px] flex items-center gap-1">
+                            ✨ Takılı
+                          </span>
+                        ) : isOwned ? (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/50 font-bold text-[10px] flex items-center gap-1">
+                            ✅ Sahipsin
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-medium text-[10px]">
+                            🛒 Dükkanda
+                          </span>
+                        )}
                       </div>
 
-                      {/* Action Row */}
-                      <div className="flex items-center justify-between pt-1.5 border-t border-slate-800/80">
-                        <span className="text-[9px] sm:text-[10px] font-bold text-slate-400">
-                          {isEquipped ? '✨ Karakterde Giydirildi' : isOwned ? '✅ Envanterinde' : '🛒 Satın Alınabilir'}
-                        </span>
+                      {/* Unique Product Name - Main Focus */}
+                      <div className="w-full my-1 min-h-[42px] flex items-center justify-center px-1">
+                        <h3 className="font-black text-xs sm:text-sm text-amber-200 text-center w-full leading-snug break-words">
+                          {item.name}
+                        </h3>
+                      </div>
 
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleBuyOrEquip(item);
-                          }}
-                          className={`px-2.5 py-1 rounded-xl font-black text-[11px] sm:text-xs flex items-center gap-1 transition active:scale-95 cursor-pointer shadow ${
-                            isEquipped
-                              ? 'bg-amber-500 text-slate-950 hover:bg-amber-400 ring-1 ring-amber-300'
-                              : isOwned
-                              ? 'bg-emerald-600 text-white hover:bg-emerald-500'
-                              : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950'
-                          }`}
-                        >
-                          {isEquipped ? (
-                            <>
-                              <Check className="w-3 h-3 stroke-[3]" />
-                              <span>Çıkar</span>
-                            </>
-                          ) : isOwned ? (
-                            <>
-                              <Sparkles className="w-3 h-3 animate-spin" />
-                              <span>Dene & Giydir</span>
-                            </>
+                      {/* Stat Boosts Tag if present */}
+                      {item.stats && (item.stats.attack || item.stats.defense || item.stats.maxHp || item.stats.speed) && (
+                        <div className="flex items-center justify-center gap-1.5 text-[10px] text-amber-300 font-bold bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-400/20 my-1">
+                          {item.stats.attack ? <span>⚔️ +{item.stats.attack}</span> : null}
+                          {item.stats.defense ? <span>🛡️ +{item.stats.defense}</span> : null}
+                          {item.stats.maxHp ? <span>❤️ +{item.stats.maxHp} HP</span> : null}
+                          {item.stats.speed ? <span>⚡ +{item.stats.speed} Hız</span> : null}
+                        </div>
+                      )}
+
+                      {/* Description */}
+                      <p className="text-[11px] sm:text-xs text-slate-300 font-medium leading-normal text-center break-words px-1 my-1 w-full opacity-90">
+                        {item.description}
+                      </p>
+
+                      {/* Bottom Section: Centered Price & Action Button */}
+                      <div className="w-full flex flex-col items-center pt-2 border-t border-slate-800/80 gap-1.5 mt-2">
+                        {/* Price Badge */}
+                        <div className="flex items-center justify-center gap-1 text-xs">
+                          {isLocked ? (
+                            <span className="text-amber-400/80 font-black text-[11px] bg-slate-950/80 px-2.5 py-0.5 rounded-lg border border-amber-500/30">
+                              🔒 Çok Yakında
+                            </span>
                           ) : (
-                            <>
-                              <ShoppingBag className="w-3 h-3" />
-                              <span>{item.price === 0 ? 'Bedava Al' : `${item.price} 🪙 Al`}</span>
-                            </>
+                            <span className="text-amber-300 font-black bg-amber-500/15 border border-amber-400/30 px-2.5 py-0.5 rounded-lg">
+                              {item.price === 0 ? '🎁 Ücretsiz' : `🪙 ${item.price} Altın`}
+                            </span>
                           )}
-                        </button>
+                        </div>
+
+                        {/* Action Button */}
+                        {isLocked ? (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              showNotification(`🔒 "${item.name}" çok yakında eklenecektir! Şu anda kilitlidir.`);
+                            }}
+                            className="w-full py-2 px-3 rounded-xl bg-slate-800/90 border border-amber-500/30 text-amber-400/80 font-black text-xs flex items-center justify-center gap-1.5 cursor-not-allowed opacity-90 shadow"
+                          >
+                            <span>🔒 Yakında (Kilitli)</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleBuyOrEquip(item);
+                            }}
+                            className={`w-full py-2.5 px-3 rounded-xl font-black text-xs flex items-center justify-center gap-1.5 transition active:scale-95 cursor-pointer shadow-md ${
+                              isEquipped
+                                ? 'bg-amber-500 text-slate-950 hover:bg-amber-400 ring-2 ring-amber-300'
+                                : isOwned
+                                ? 'bg-emerald-600 text-white hover:bg-emerald-500'
+                                : 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950'
+                            }`}
+                          >
+                            {isEquipped ? (
+                              <>
+                                <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                <span>Karakterden Çıkar</span>
+                              </>
+                            ) : isOwned ? (
+                              <>
+                                <Sparkles className="w-3.5 h-3.5 animate-spin" />
+                                <span>Dene & Giydir</span>
+                              </>
+                            ) : (
+                              <>
+                                <ShoppingBag className="w-3.5 h-3.5" />
+                                <span>{item.price === 0 ? 'Bedava Al & Giy' : `Satın Al (${item.price} 🪙)`}</span>
+                              </>
+                            )}
+                          </button>
+                        )}
                       </div>
                     </div>
                   );

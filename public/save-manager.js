@@ -105,6 +105,17 @@
         };
       }
 
+      // Sanitize region to ensure player never starts in an invalid void/sky region
+      const VALID_REGIONS = [
+        'hub', 'forest_temple', 'beehive', 'pelican_plains', 'snow_desert',
+        'volcano_cave', 'underwater_palace', 'golden_sanctuary', 'dinosaur_world',
+        'sugar_world', 'jokerooms', 'ruin_village', 'water_cave', 'bee_desert',
+        'space_realm'
+      ];
+      if (!data.currentRegion || (!VALID_REGIONS.includes(data.currentRegion) && !data.currentRegion.startsWith('space_') && !data.currentRegion.startsWith('poneix_') && !data.currentRegion.startsWith('phelix_'))) {
+        data.currentRegion = 'hub';
+      }
+
       // Check legacy standalone keys and reconcile seamlessly
       const legacyCoins = localStorage.getItem(LEGACY_COINS_KEY);
       if (legacyCoins !== null) {

@@ -16,6 +16,7 @@ import { LandscapeOrientationHandler } from '../components/LandscapeOrientationH
 import { SaveManagerModal } from '../components/SaveManagerModal';
 import { LootBoxModal } from '../components/LootBoxModal';
 import { CountryLanguageModal } from '../components/CountryLanguageModal';
+import { OpeningCinematicModal } from '../components/OpeningCinematicModal';
 import { useLanguage } from '../i18n/LanguageContext';
 import { ShoppingBag, Gamepad2, Globe } from 'lucide-react';
 
@@ -32,6 +33,11 @@ export const CustomizerAppOverlay: React.FC = () => {
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isLootBoxModalOpen, setIsLootBoxModalOpen] = useState(false);
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
+  const [isCinematicOpen, setIsCinematicOpen] = useState(() => {
+    try {
+      return localStorage.getItem('superbear_intro_seen') !== 'true';
+    } catch(e) { return true; }
+  });
 
   const [purchasedIds, setPurchasedIds] = useState<string[]>(() => {
     const saved = localStorage.getItem('super_bear_purchased_items');
@@ -73,17 +79,34 @@ export const CustomizerAppOverlay: React.FC = () => {
   });
   const [, setActiveDesign] = useState<CustomCharacterDesign>(getCurrentSavedDesign);
 
+  const [isExternalModalOpen, setIsExternalModalOpen] = useState(false);
+
+  useEffect(() => {
+    const checkExternalModal = () => {
+      const isBodyOpen = document.body.classList.contains('modal-open');
+      const isWindowOpen = !!(window as any).__superBearModalOpen;
+      setIsExternalModalOpen(isBodyOpen || isWindowOpen);
+    };
+
+    const interval = setInterval(checkExternalModal, 100);
+    return () => clearInterval(interval);
+  }, []);
+
   // Synchronize modal open status to prevent touch/joystick conflicts
   const isAnyModalOpen =
     isOpen ||
     isDrawingModalOpen ||
     isCatShopOpen ||
+    isHealthShopOpen ||
+    isTreasureInventoryOpen ||
     isMapModalOpen ||
     isTrailerOpen ||
     isArcadeGamesOpen ||
     isSaveModalOpen ||
     isLootBoxModalOpen ||
-    isLanguageModalOpen;
+    isLanguageModalOpen ||
+    isCinematicOpen ||
+    isExternalModalOpen;
 
   useEffect(() => {
     (window as any).__superBearModalOpen = isAnyModalOpen;
@@ -151,6 +174,10 @@ export const CustomizerAppOverlay: React.FC = () => {
     const handleOpenLanguageModal = () => setIsLanguageModalOpen(true);
     window.addEventListener('superbear:open-language-modal', handleOpenLanguageModal);
     (window as any).__openLanguageModal = handleOpenLanguageModal;
+
+    const handleOpenIntroCinematic = () => setIsCinematicOpen(true);
+    window.addEventListener('superbear:open-intro-cinematic', handleOpenIntroCinematic);
+    (window as any).__openIntroCinematic = handleOpenIntroCinematic;
 
     const handleShopPurchase = (e: Event) => {
       const detail = (e as CustomEvent).detail;
@@ -325,8 +352,8 @@ export const CustomizerAppOverlay: React.FC = () => {
 
   return (
     <>
-      {/* Space HUD Bar - Automatically hidden when 3D Character Studio or modals are active */}
-      {!isOpen && (
+      {/* Space HUD Bar - Automatically hidden when any modal or menu is active */}
+      {!isAnyModalOpen && (
         <SpaceActionHUD
           onOpenDrawingModal={() => setIsDrawingModalOpen(true)}
           onOpenCatShop={() => setIsCatShopOpen(true)}
@@ -339,7 +366,7 @@ export const CustomizerAppOverlay: React.FC = () => {
       )}
 
       {/* Cat Merchant Proximity Interactive Floating Banner */}
-      {!isOpen && isNearCatMerchant && !isCatShopOpen && (
+      {!isAnyModalOpen && isNearCatMerchant && !isCatShopOpen && (
         <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[85] pointer-events-auto animate-in slide-in-from-bottom-4 duration-200">
           <button
             onClick={() => setIsCatShopOpen(true)}
@@ -363,7 +390,7 @@ export const CustomizerAppOverlay: React.FC = () => {
       )}
 
       {/* Retro Arcade Proximity Floating Banner - Positioned top-center so it never blocks mobile controls */}
-      {!isOpen && isNearArcade && !isArcadeGamesOpen && (
+      {!isAnyModalOpen && isNearArcade && !isArcadeGamesOpen && (
         <div className="fixed top-20 sm:top-24 left-1/2 -translate-x-1/2 z-[90] pointer-events-auto animate-in slide-in-from-top-4 duration-200">
           <button
             onClick={() => setIsArcadeGamesOpen(true)}
@@ -458,8 +485,8 @@ export const CustomizerAppOverlay: React.FC = () => {
         }}
       />
 
-      {/* Global Mobile / Tablet Touch Controls (Hidden during Studio) */}
-      {!isOpen && (
+      {/* Global Mobile / Tablet Touch Controls (Hidden during Studio and any active modal) */}
+      {!isAnyModalOpen && (
         <TouchDragController
           mode="touch"
         />
@@ -483,6 +510,12 @@ export const CustomizerAppOverlay: React.FC = () => {
       <CountryLanguageModal
         isOpen={isLanguageModalOpen}
         onClose={() => setIsLanguageModalOpen(false)}
+      />
+
+      {/* Opening Animated Cutscene Movie Modal */}
+      <OpeningCinematicModal
+        isOpen={isCinematicOpen}
+        onClose={() => setIsCinematicOpen(false)}
       />
 
       {/* Automatic Mobile Landscape Helper */}

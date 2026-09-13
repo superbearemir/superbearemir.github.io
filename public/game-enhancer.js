@@ -1,3 +1,304 @@
+var grandWaterfallGroup = null;
+var grandWaterfallBuilt = false;
+
+// ============================================================
+// GLOBAL GRAND CAVE EXIT PORTAL HELPER WITH BOSS-GATED ACCESS
+// ============================================================
+window.createCaveExitPortal = function(game, px, py, pz, targetRegion, targetName, targetIcon) {
+  if (!game || !game.scene || !window.THREE) return null;
+  const THREE = window.THREE;
+  const portalGroup = new THREE.Group();
+  portalGroup.name = 'cave_exit_portal_' + targetRegion;
+  portalGroup.position.set(px, py, pz);
+
+  // Grand Arch Pillars
+  const archMat = new THREE.MeshStandardMaterial({
+    color: 0xf59e0b,
+    emissive: 0xd97706,
+    emissiveIntensity: 0.6,
+    metalness: 0.8,
+    roughness: 0.2
+  });
+  const pillarGeo = new THREE.BoxGeometry(0.8, 5.5, 0.8);
+  const leftPillar = new THREE.Mesh(pillarGeo, archMat);
+  leftPillar.position.set(-2.2, 2.75, 0);
+  portalGroup.add(leftPillar);
+
+  const rightPillar = new THREE.Mesh(pillarGeo, archMat);
+  rightPillar.position.set(2.2, 2.75, 0);
+  portalGroup.add(rightPillar);
+
+  const topBeam = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.8, 0.8), archMat);
+  topBeam.position.set(0, 5.5, 0);
+  portalGroup.add(topBeam);
+
+  // Glowing Celestial Portal Vortex
+  const vortexGeo = new THREE.CircleGeometry(2.2, 32);
+  const vortexMat = new THREE.MeshStandardMaterial({
+    color: 0x38bdf8,
+    emissive: 0x0284c7,
+    emissiveIntensity: 1.8,
+    transparent: true,
+    opacity: 0.85,
+    side: THREE.DoubleSide
+  });
+  const vortex = new THREE.Mesh(vortexGeo, vortexMat);
+  vortex.position.y = 2.75;
+  portalGroup.add(vortex);
+
+  // Base pedestal
+  const pedMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+  const ped = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.6, 0.5, 16), pedMat);
+  ped.position.y = 0.25;
+  portalGroup.add(ped);
+
+  // Light
+  const pLight = new THREE.PointLight(0x38bdf8, 3.5, 20);
+  pLight.position.set(0, 3.0, 0);
+  portalGroup.add(pLight);
+
+  if (game.currentLevel && game.currentLevel.mesh) {
+    game.currentLevel.mesh.add(portalGroup);
+  } else {
+    game.scene.add(portalGroup);
+  }
+
+  portalGroup.userData = {
+    update: () => {
+      vortex.rotation.z += 0.03;
+      if (game.playerPos) {
+        const d = game.playerPos.distanceTo(portalGroup.position);
+        if (d < 3.8) {
+          // Check if boss is alive
+          if (typeof window.isBossAliveInCurrentRegion === 'function' && window.isBossAliveInCurrentRegion(game)) {
+            const now = Date.now();
+            if (!portalGroup._lastWarnTime || now - portalGroup._lastWarnTime > 2500) {
+              portalGroup._lastWarnTime = now;
+              if (game.callbacks && game.callbacks.onShowNotice) {
+                game.callbacks.onShowNotice("⚠️ KİLİTLİ PORTAL! Sonraki bölüme geçebilmek için önce bu bölümün Baş Düşmanını (Boss) yenmelisin! ⚔️", "warn");
+              }
+              if (game.spawnSparkleParticles) {
+                game.spawnSparkleParticles(game.playerPos, 20, 0xef4444);
+              }
+            }
+            return;
+          }
+
+          if (!portalGroup._used) {
+            portalGroup._used = true;
+            const actualTarget = (targetRegion === 'space_realm' || targetRegion === 'earth_summit' || game.currentRegion === 'bee_desert') ? 'hub' : targetRegion;
+            const actualName = actualTarget === 'hub' ? 'Ayı Köyü' : targetName;
+            const actualIcon = actualTarget === 'hub' ? '🏡' : targetIcon;
+
+            if (game.callbacks && game.callbacks.onShowNotice) {
+              if (actualTarget === 'hub' && game.currentRegion === 'bee_desert') {
+                game.callbacks.onShowNotice("🎉 TEBRİKLER! 14 Dünya Bölümünü ve Baş Düşmanları Tamamladın! Ayı Köyü'ne Şampiyon Olarak Dönülüyor! 👑", "success");
+              } else {
+                game.callbacks.onShowNotice("🌀 " + actualIcon + " " + actualName + " Diyarına Geçiliyor...", "success");
+              }
+            }
+            if (game.spawnSparkleParticles) {
+              game.spawnSparkleParticles(game.playerPos, 50, 0x38bdf8);
+            }
+            setTimeout(() => {
+              if (game.loadRegion) game.loadRegion(actualTarget);
+              else if (game.callbacks && game.callbacks.onSelectRegion) game.callbacks.onSelectRegion(actualTarget);
+            }, 450);
+          }
+        }
+      }
+    }
+  };
+
+  if (!game._caveExitPortals) game._caveExitPortals = [];
+  game._caveExitPortals.push(portalGroup);
+  return portalGroup;
+};
+window.__createCaveExitPortal = window.createCaveExitPortal;
+
+
+// ============================================================
+// UNIVERSAL 3D OVERHEAD BOSS HEALTH BAR (BILLBOARD SPRITE)
+// ============================================================
+window.__create3DOverheadHpBar = function(THREE, bossMesh, bossTitle, maxHp, yOffset = 3.2) {
+  if (!bossMesh || !THREE) return null;
+  
+  // Create Mini Compact Canvas
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.minFilter = THREE.LinearFilter;
+  
+  const spriteMat = new THREE.SpriteMaterial({
+    map: texture,
+    transparent: true,
+    depthTest: false,
+    depthWrite: false
+  });
+  
+  const sprite = new THREE.Sprite(spriteMat);
+  // Very small, compact 3D Billboard Tag (1.5 x 0.375)
+  sprite.scale.set(1.5, 0.375, 1.0);
+  sprite.position.set(0, yOffset || 3.2, 0);
+  sprite.name = "boss_3d_overhead_hp_bar";
+  
+  bossMesh.add(sprite);
+  
+  const hpData = {
+    canvas,
+    ctx,
+    texture,
+    sprite,
+    bossTitle: bossTitle || "PATRON BOSS",
+    maxHp: maxHp || 100,
+    currentHp: maxHp || 100,
+    yOffset
+  };
+  
+  bossMesh.userData.__overheadHpData = hpData;
+  window.__update3DOverheadHpBar(hpData, maxHp, maxHp);
+  return hpData;
+};
+
+window.__update3DOverheadHpBar = function(hpData, currentHp, maxHp) {
+  if (!hpData || !hpData.ctx) return;
+  const { canvas, ctx, texture, bossTitle } = hpData;
+  hpData.currentHp = currentHp;
+  if (maxHp) hpData.maxHp = maxHp;
+  const max = hpData.maxHp || 100;
+  
+  const cur = Math.max(0, currentHp);
+  const pct = Math.max(0, Math.min(1, cur / max));
+  
+  // Clear canvas
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  // Draw sleek mini pill container
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
+  ctx.strokeStyle = pct > 0.5 ? '#38bdf8' : pct > 0.25 ? '#facc15' : '#ef4444';
+  ctx.lineWidth = 3;
+  
+  const x = 4, y = 4, w = canvas.width - 8, h = canvas.height - 8, r = 10;
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(x, y, w, h, r);
+  else ctx.rect(x, y, w, h);
+  ctx.fill();
+  ctx.stroke();
+  
+  // Mini Boss Title
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 12px system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('👑 ' + (bossTitle || 'BOSS').slice(0, 16), 12, 20);
+  
+  // Mini HP Numbers Right
+  ctx.fillStyle = pct > 0.5 ? '#4ade80' : pct > 0.25 ? '#fde047' : '#f87171';
+  ctx.font = 'bold 11px monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText(Math.ceil(cur) + ' / ' + max, canvas.width - 12, 20);
+  
+  // Mini HP Track
+  const trackX = 12, trackY = 34, trackW = canvas.width - 24, trackH = 14;
+  ctx.fillStyle = 'rgba(30, 41, 59, 0.9)';
+  ctx.beginPath();
+  if (ctx.roundRect) ctx.roundRect(trackX, trackY, trackW, trackH, 6);
+  else ctx.rect(trackX, trackY, trackW, trackH);
+  ctx.fill();
+  
+  // Mini HP Fill
+  if (pct > 0) {
+    const fillW = Math.max(8, trackW * pct);
+    const grad = ctx.createLinearGradient(trackX, 0, trackX + fillW, 0);
+    if (pct > 0.5) {
+      grad.addColorStop(0, '#10b981');
+      grad.addColorStop(1, '#34d399');
+    } else if (pct > 0.25) {
+      grad.addColorStop(0, '#f59e0b');
+      grad.addColorStop(1, '#facc15');
+    } else {
+      grad.addColorStop(0, '#dc2626');
+      grad.addColorStop(1, '#ef4444');
+    }
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(trackX, trackY, fillW, trackH, 6);
+    else ctx.rect(trackX, trackY, fillW, trackH);
+    ctx.fill();
+  }
+  
+  texture.needsUpdate = true;
+};
+window.__addBossArenaCoverSpots = function(THREE, sceneGroup, cx, cy, cz) {
+  if (!sceneGroup || !THREE) return;
+  
+  const coverPositions = [
+    { x: cx - 14, z: cz - 12, type: 'pillar', h: 6.5 },
+    { x: cx + 14, z: cz - 12, type: 'pillar', h: 6.5 },
+    { x: cx - 18, z: cz + 8,  type: 'wall',   h: 4.0, rotY: 0.4 },
+    { x: cx + 18, z: cz + 8,  type: 'wall',   h: 4.0, rotY: -0.4 },
+    { x: cx - 9,  z: cz + 20, type: 'shield', h: 4.5 },
+    { x: cx + 9,  z: cz + 20, type: 'shield', h: 4.5 },
+    { x: cx,      z: cz - 24, type: 'ruins',  h: 5.5 },
+  ];
+
+  coverPositions.forEach((cp) => {
+    const group = new THREE.Group();
+    group.position.set(cp.x, cy, cp.z);
+    if (cp.rotY) group.rotation.y = cp.rotY;
+    
+    if (cp.type === 'pillar') {
+      // Concrete & Metal Cover Pillar
+      const geo = new THREE.CylinderGeometry(1.4, 1.8, cp.h, 12);
+      const mat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.5, metalness: 0.4 });
+      const pillar = new THREE.Mesh(geo, mat);
+      pillar.position.y = cp.h / 2;
+      group.add(pillar);
+      
+      // Top Glowing Beacon Ring
+      const ringGeo = new THREE.CylinderGeometry(1.9, 1.5, 0.6, 12);
+      const ringMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.6 });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.position.y = cp.h + 0.3;
+      group.add(ring);
+
+      // Cover Signboard
+      const signGeo = new THREE.BoxGeometry(2.4, 0.8, 0.2);
+      const signMat = new THREE.MeshBasicMaterial({ color: 0x0284c7 });
+      const sign = new THREE.Mesh(signGeo, signMat);
+      sign.position.set(0, cp.h - 1.2, 1.5);
+      group.add(sign);
+    } else if (cp.type === 'wall' || cp.type === 'shield') {
+      // Reinforced Shield Barricade Wall
+      const wallGeo = new THREE.BoxGeometry(7.0, cp.h, 1.4);
+      const wallMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8, roughness: 0.2 });
+      const wall = new THREE.Mesh(wallGeo, wallMat);
+      wall.position.y = cp.h / 2;
+      group.add(wall);
+      
+      // Energy Hazard Line
+      const hazardGeo = new THREE.BoxGeometry(7.2, 0.7, 1.5);
+      const hazardMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706, emissiveIntensity: 0.5 });
+      const hazard = new THREE.Mesh(hazardGeo, hazardMat);
+      hazard.position.y = cp.h * 0.65;
+      group.add(hazard);
+    } else {
+      // Ancient Ruin Fortress
+      const rGeo = new THREE.BoxGeometry(9.0, cp.h, 3.0);
+      const rMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.8 });
+      const rMesh = new THREE.Mesh(rGeo, rMat);
+      rMesh.position.y = cp.h / 2;
+      group.add(rMesh);
+    }
+    
+    group.name = "boss_arena_cover_spot";
+    sceneGroup.add(group);
+  });
+};
+
 
 function ensureLevelArrays(level) {
     if (!level) return;
@@ -32,6 +333,10 @@ window.__superBearPurgeScene = function(game) {
         game._returnPortals.forEach(p => { if (p && p.parent) p.parent.remove(p); });
         game._returnPortals = [];
     }
+    if (game._caveExitPortals) {
+        game._caveExitPortals.forEach(p => { if (p && p.parent) p.parent.remove(p); });
+        game._caveExitPortals = [];
+    }
 
 
     // 1. Clean up Space Realm if active
@@ -45,6 +350,13 @@ window.__superBearPurgeScene = function(game) {
     // 1c. Clean up Phelix Realm if active
     if (window.__superBearPhelixLevels && typeof window.__superBearPhelixLevels.cleanUpPhelixRealm === 'function') {
         window.__superBearPhelixLevels.cleanUpPhelixRealm(game);
+    }
+    // 1d. Clean up Grand Waterfall from scene (Only belongs in Ayı Köyü Hub)
+    if (typeof removeGrandWaterfall === 'function') {
+        removeGrandWaterfall(game.scene);
+    } else if (game.scene) {
+        const wf = game.scene.getObjectByName("grand_waterfall_hub_group");
+        if (wf) game.scene.remove(wf);
     }
 
     // 2. Hide all boss health bars
@@ -1489,8 +1801,8 @@ function buildSpaceGalaxyWorld(scene) {
   
   // Bakkal Kedi (Standing Cat Merchant Capitoolos) - Fully Visible 3D Shop & Model
   const bakkal = new window.THREE.Group();
-  bakkal.position.set(7, 3.0, -32); // Elevated on hill plateau right in front of the Northern Mountain path
-  bakkal.rotation.y = Math.PI; // Facing south towards village center & approaching player
+  bakkal.position.set(9.0, 0.2, -18); // Positioned comfortably at ground level in village square, directly facing player
+  bakkal.rotation.y = Math.PI - 0.25; // Angled south-west towards village spawn and walking path
   
   // Materials
   const furMat = new window.THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.45 }); // Warm Orange / Ginger Fur
@@ -3894,45 +4206,305 @@ function createFishMesh(THREE, colorHex = 0xf97316) {
   return group;
 }
 
-// --- FISHING MECHANIC ---
+// --- FISHING MECHANIC (3D FISHING ROD & ANIMATION) ---
+let isFishingActive = false;
+let activeFishingRodMesh = null;
+
+// Helper to verify if the player is physically standing near a water body
+function isPlayerNearWater(game) {
+  if (!game || !game.playerPos) return false;
+  const pPos = game.playerPos;
+  const region = game.currentRegion || 'hub';
+
+  // 1. Water-based regions where the whole area is an aquatic habitat
+  if (region === 'underwater_palace' || region === 'water_cave') {
+    return true;
+  }
+
+  // 2. Ayı Köyü (Hub) Water Sources:
+  if (region === 'hub') {
+    // A. Main Village River (runs horizontally along z: 20 across the village, x: -85..85, z: 8..32)
+    if (Math.abs(pPos.z - 20) <= 13 && Math.abs(pPos.x) <= 85) {
+      return true;
+    }
+    // B. Fishing Pond & Lake (near x: -28, z: -8)
+    const distPond1 = Math.hypot(pPos.x - (-28), pPos.z - (-8));
+    if (distPond1 <= 18) {
+      return true;
+    }
+    // C. Grand Animated Waterfall Lagoon & Fishing Pier (near x: -30, z: 38)
+    const distWaterfall = Math.hypot(pPos.x - (-30), pPos.z - 38);
+    if (distWaterfall <= 26) {
+      return true;
+    }
+    // D. Village Pier / River Bridge (near x: 0, z: 20)
+    const distPier = Math.hypot(pPos.x, pPos.z - 20);
+    if (distPier <= 16) {
+      return true;
+    }
+    // E. Southern Beach / Lake Edge (z >= 38, y <= 1.2)
+    if (pPos.z >= 38 && pPos.y <= 1.4 && Math.abs(pPos.x) <= 45) {
+      return true;
+    }
+  }
+
+  // 3. Arı Çölü (Bee Desert) Oasis Pond
+  if (region === 'bee_desert') {
+    const distOasis = Math.hypot(pPos.x - 35, pPos.z - (-40));
+    if (distOasis <= 20) return true;
+  }
+
+  // 4. Dinozor Dünyası Prehistoric Lagoon
+  if (region === 'dinosaur_world') {
+    const distDinoWater = Math.hypot(pPos.x - (-30), pPos.z - 20);
+    if (distDinoWater <= 22) return true;
+  }
+
+  // 5. Yıkılmış Köy (Ruin Village) River / Acid stream
+  if (region === 'ruin_village') {
+    if (Math.abs(pPos.z - 20) <= 15) return true;
+  }
+
+  // 6. Dynamic Scene Scan for any water meshes within 14 units
+  if (game.scene) {
+    let foundWaterMesh = false;
+    game.scene.traverse((obj) => {
+      if (foundWaterMesh) return;
+      if (obj.isMesh && (
+        (obj.name && (obj.name.toLowerCase().includes('water') || obj.name.toLowerCase().includes('lake') || obj.name.toLowerCase().includes('pond') || obj.name.toLowerCase().includes('river') || obj.name.toLowerCase().includes('oasis'))) ||
+        (obj.material && obj.material.name && (obj.material.name.toLowerCase().includes('water') || obj.material.name.toLowerCase().includes('lake') || obj.material.name.toLowerCase().includes('pond')))
+      )) {
+        const objPos = new window.THREE.Vector3();
+        obj.getWorldPosition(objPos);
+        const d = pPos.distanceTo(objPos);
+        if (d <= 14) {
+          foundWaterMesh = true;
+        }
+      }
+    });
+    if (foundWaterMesh) return true;
+  }
+
+  return false;
+}
+
 function triggerFishing() {
   const game = window.__superBearGame;
-  if (!game) return;
+  if (!game || isFishingActive) return;
 
-  const pPos = game.playerPos || { x: 0, y: 0, z: 0 };
-  const distRiver = Math.abs(pPos.z - 22);
-  const distPond1 = Math.hypot(pPos.x - (-26), pPos.z - (-8));
-  const distPond2 = Math.hypot(pPos.x - (-10), pPos.z - 38);
+  const THREE = window.THREE;
+  if (!THREE || !game.scene) return;
 
-  if (distRiver > 18 && distPond1 > 16 && distPond2 > 16) {
+  // Strict check: Fishing is ONLY allowed near water bodies!
+  if (!isPlayerNearWater(game)) {
     if (game.callbacks && game.callbacks.onShowNotice) {
-      game.callbacks.onShowNotice("🌊 Balık tutmak için Kedi Köyü Nehrine veya Gölete yaklaşmalısın!", "warn");
+      game.callbacks.onShowNotice("🌊 Balık tutmak için nehir, gölet veya su kenarına yaklaşmalısın!", "info");
+    }
+    if (typeof St !== "undefined" && St.playDamage) {
+      St.playDamage();
     }
     return;
   }
 
-  if (game.callbacks && game.callbacks.onShowNotice) {
-    game.callbacks.onShowNotice("🎣 Olta suya atıldı... Balık bekleniyor... 🌊", "info");
-  }
+  isFishingActive = true;
+  const pPos = game.playerPos || { x: 0, y: 0, z: 0 };
+  const rotY = game.playerRotY || 0;
 
+  // Sound effects
   if (typeof St !== "undefined" && St.playJump) St.playJump();
 
+  // Create 3D Fishing Rod attached to player bear
+  const rodGroup = new THREE.Group();
+  rodGroup.name = "player_fishing_rod";
+
+  // Bamboo / Carbon Fiber Rod Body
+  const poleMat = new THREE.MeshStandardMaterial({ color: 0x854d0e, roughness: 0.4, metalness: 0.1 });
+  const goldRingMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.8, roughness: 0.2 });
+
+  // Main pole segments
+  const pole1 = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.065, 1.4, 8), poleMat);
+  pole1.position.set(0, 0.6, 0);
+  pole1.rotation.x = 0.35;
+  rodGroup.add(pole1);
+
+  const pole2 = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.045, 1.3, 8), poleMat);
+  pole2.position.set(0, 1.6, 0.4);
+  pole2.rotation.x = 0.55;
+  rodGroup.add(pole2);
+
+  // Golden rings
+  for (let i = 0; i < 3; i++) {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.05 - i * 0.01, 0.012, 8, 16), goldRingMat);
+    ring.position.set(0, 0.5 + i * 0.55, 0.15 + i * 0.2);
+    ring.rotation.y = Math.PI / 2;
+    rodGroup.add(ring);
+  }
+
+  // Reel
+  const reelMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.9, roughness: 0.2 });
+  const reel = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.08, 12), reelMat);
+  reel.position.set(0.06, 0.22, 0.02);
+  reel.rotation.z = Math.PI / 2;
+  rodGroup.add(reel);
+
+  // Position rod in Bear paw / right side
+  rodGroup.position.set(
+    pPos.x + Math.cos(rotY) * 0.45 + Math.sin(rotY) * 0.2,
+    pPos.y + 0.9,
+    pPos.z - Math.sin(rotY) * 0.45 + Math.cos(rotY) * 0.2
+  );
+  rodGroup.rotation.y = rotY;
+  game.scene.add(rodGroup);
+  activeFishingRodMesh = rodGroup;
+
+  // Target float/bobber position in front
+  const floatDist = 5.0;
+  const floatTarget = new THREE.Vector3(
+    pPos.x + Math.sin(rotY) * floatDist,
+    pPos.y + 0.05,
+    pPos.z + Math.cos(rotY) * floatDist
+  );
+
+  // Bobber & Water Ripple
+  const floatGroup = new THREE.Group();
+  const floatTop = new THREE.Mesh(
+    new THREE.SphereGeometry(0.12, 12, 12),
+    new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0x991b1b, emissiveIntensity: 0.3 })
+  );
+  floatTop.position.y = 0.08;
+  floatGroup.add(floatTop);
+
+  const floatBottom = new THREE.Mesh(
+    new THREE.SphereGeometry(0.11, 12, 12),
+    new THREE.MeshStandardMaterial({ color: 0xffffff })
+  );
+  floatBottom.position.y = -0.04;
+  floatGroup.add(floatBottom);
+
+  // Water Ripple Disc
+  const rippleMesh = new THREE.Mesh(
+    new THREE.RingGeometry(0.15, 0.45, 24),
+    new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.8, side: THREE.DoubleSide })
+  );
+  rippleMesh.rotation.x = -Math.PI / 2;
+  rippleMesh.position.y = 0.02;
+  floatGroup.add(rippleMesh);
+
+  floatGroup.position.copy(floatTarget);
+  game.scene.add(floatGroup);
+
+  // Fishing line (from tip of pole to float)
+  const tipPos = new THREE.Vector3();
+  pole2.getWorldPosition(tipPos);
+  tipPos.y += 0.5;
+
+  const lineGeo = new THREE.BufferGeometry().setFromPoints([tipPos, floatTarget]);
+  const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 });
+  const fishingLine = new THREE.Line(lineGeo, lineMat);
+  game.scene.add(fishingLine);
+
+  if (game.callbacks && game.callbacks.onShowNotice) {
+    game.callbacks.onShowNotice("🎣 3D Olta Suya Atıldı! Balık bekleniyor... 🌊", "info");
+  }
+
+  // Bobbing animation loop
+  let animStart = performance.now();
+  let biteTime = animStart + 1200;
+  let bobInterval = setInterval(() => {
+    const elapsed = (performance.now() - animStart) / 1000;
+    floatGroup.position.y = floatTarget.y + Math.sin(elapsed * 8) * 0.08;
+    rippleMesh.scale.setScalar(1.0 + Math.sin(elapsed * 6) * 0.3);
+
+    // Keep line connected
+    if (activeFishingRodMesh && game.playerPos) {
+      activeFishingRodMesh.position.set(
+        game.playerPos.x + Math.cos(game.playerRotY || 0) * 0.45 + Math.sin(game.playerRotY || 0) * 0.2,
+        game.playerPos.y + 0.9,
+        game.playerPos.z - Math.sin(game.playerRotY || 0) * 0.45 + Math.cos(game.playerRotY || 0) * 0.2
+      );
+      activeFishingRodMesh.rotation.y = game.playerRotY || 0;
+      pole2.getWorldPosition(tipPos);
+      tipPos.y += 0.5;
+      fishingLine.geometry.setFromPoints([tipPos, floatGroup.position]);
+    }
+  }, 30);
+
+  // Catch phase
   setTimeout(() => {
-    const isBigKoi = Math.random() < 0.35;
-    const fishName = isBigKoi ? "🐟 Dev Parlak Koi Balığı" : "🎣 Altın Nehir Balığı";
-    const rewardXp = isBigKoi ? 80 : 40;
-    const rewardCoins = isBigKoi ? 50 : 25;
+    clearInterval(bobInterval);
+
+    // Splash particle effect
+    if (game.spawnSparkleParticles) {
+      game.spawnSparkleParticles(floatGroup.position, 28, 0x38bdf8);
+    }
+
+    const pDistToWaterfall = Math.hypot(pPos.x - (-30), pPos.z - 38);
+    const isAtWaterfall = (game.currentRegion === 'hub' || !game.currentRegion) && pDistToWaterfall <= 26;
+
+    let fishTypes = [
+      { name: "🐟 Altın Pullu Nehir Alabalığı", color: 0xf59e0b, scale: 1.0, xp: 50, coins: 35 },
+      { name: "🐠 Efsanevi Parıldayan Koi Balığı", color: 0xef4444, scale: 1.3, xp: 85, coins: 60 },
+      { name: "✨ Kozmik Parlak Yıldız Balığı", color: 0xa855f7, scale: 1.2, xp: 100, coins: 75 },
+      { name: "🍯 Saf Bal Özü Tatlı Balığı", color: 0xfbbf24, scale: 1.1, xp: 60, coins: 45 }
+    ];
+
+    if (isAtWaterfall) {
+      fishTypes = [
+        { name: "🌊 Kristal Şelale Alabalığı", color: 0x38bdf8, scale: 1.35, xp: 120, coins: 85 },
+        { name: "💎 Zümrüt Dağ Şelalesi Sazanı", color: 0x10b981, scale: 1.4, xp: 140, coins: 95 },
+        { name: "⚡ Yıldırım Şelalesi Yayın Balığı", color: 0xfacc15, scale: 1.5, xp: 180, coins: 120 },
+        { name: "🌸 Nilüfer Göleti Ayışığı Balığı", color: 0xf472b6, scale: 1.25, xp: 110, coins: 75 },
+        { name: "🐠 Efsanevi Parıldayan Koi Balığı", color: 0xef4444, scale: 1.3, xp: 95, coins: 70 }
+      ];
+    }
+    const caught = fishTypes[Math.floor(Math.random() * fishTypes.length)];
+
+    // Create 3D jumping fish mesh
+    const fishMesh = new THREE.Group();
+    const fishBody = new THREE.Mesh(
+      new THREE.SphereGeometry(0.28 * caught.scale, 12, 12),
+      new THREE.MeshStandardMaterial({ color: caught.color, metalness: 0.6, roughness: 0.2, emissive: caught.color, emissiveIntensity: 0.35 })
+    );
+    fishBody.scale.set(1.6, 0.9, 0.45);
+    fishMesh.add(fishBody);
+
+    const tailMesh = new THREE.Mesh(
+      new THREE.ConeGeometry(0.18 * caught.scale, 0.45 * caught.scale, 8),
+      new THREE.MeshStandardMaterial({ color: caught.color, roughness: 0.3 })
+    );
+    tailMesh.rotation.z = -Math.PI / 2;
+    tailMesh.position.x = -0.45 * caught.scale;
+    fishMesh.add(tailMesh);
+
+    fishMesh.position.copy(floatGroup.position);
+    game.scene.add(fishMesh);
 
     if (typeof St !== "undefined" && St.playGoalFanfare) St.playGoalFanfare();
 
+    // Animate fish jumping out of water towards player
+    let jumpStart = performance.now();
+    let jumpInterval = setInterval(() => {
+      const p = (performance.now() - jumpStart) / 600;
+      if (p >= 1.0) {
+        clearInterval(jumpInterval);
+        if (fishMesh.parent) fishMesh.parent.remove(fishMesh);
+      } else {
+        fishMesh.position.lerpVectors(floatTarget, new THREE.Vector3(game.playerPos.x, game.playerPos.y + 1.8, game.playerPos.z), p);
+        fishMesh.position.y += Math.sin(p * Math.PI) * 2.2;
+        fishMesh.rotation.z += 0.2;
+        fishMesh.rotation.y += 0.15;
+      }
+    }, 25);
+
+    // Reward player
     if (game.stats) {
-      game.stats.coins = (game.stats.coins || 0) + rewardCoins;
-      game.stats.xp = (game.stats.xp || 0) + rewardXp;
+      game.stats.coins = (game.stats.coins || 0) + caught.coins;
+      game.stats.xp = (game.stats.xp || 0) + caught.xp;
       if (game.callbacks && game.callbacks.onStatsUpdate) game.callbacks.onStatsUpdate(game.stats);
     }
 
     if (game.callbacks && game.callbacks.onShowNotice) {
-      game.callbacks.onShowNotice(`🎉 HARİKA! ${fishName} YAKALANDI! (+${rewardXp} XP, +${rewardCoins} Altın)`, "success");
+      game.callbacks.onShowNotice(`🎉 ${caught.name} YAKALANDI! (+${caught.xp} XP, +${caught.coins} Altın)`, "success");
     }
 
     if (game.callbacks && game.callbacks.onQuestProgress) {
@@ -3940,7 +4512,16 @@ function triggerFishing() {
       game.callbacks.onQuestProgress("obj-fish-3", 1);
       game.callbacks.onQuestProgress("catch_fish", 1);
     }
-  }, 1400);
+
+    // Cleanup fishing rod & line
+    setTimeout(() => {
+      if (activeFishingRodMesh && activeFishingRodMesh.parent) activeFishingRodMesh.parent.remove(activeFishingRodMesh);
+      if (floatGroup.parent) floatGroup.parent.remove(floatGroup);
+      if (fishingLine.parent) fishingLine.parent.remove(fishingLine);
+      activeFishingRodMesh = null;
+      isFishingActive = false;
+    }, 700);
+  }, 1300);
 }
 
 // Teleport Dash Mechanic
@@ -4714,6 +5295,11 @@ function createDragonMesh(THREE, isBoss = true) {
 }
 
 function populateVolcanoCave(game) {
+  // Level Exit Portal to Next Region
+  if (window.createCaveExitPortal) {
+    window.createCaveExitPortal(game, 0, 41, -188, 'underwater_palace', '7. BÖLÜM: ANTİK SU ALTI KRİSTAL SARAYI', '🌊');
+  }
+
     if (game && game.currentLevel) ensureLevelArrays(game.currentLevel);
 
     const THREE = window.THREE;
@@ -5245,12 +5831,21 @@ function populateVolcanoCave(game) {
         state: 'chase',
         animTimer: 0
     });
+
+    // Grand Illuminated Exit Portal at the back of Volcano Cave (Transitions to 7. Underwater Palace)
+    if (window.createCaveExitPortal) { window.window.createCaveExitPortal(game, 0, 41.0, -188, 'underwater_palace', '7. BÖLÜM: ANTİK SU ALTI KRİSTAL SARAYI', '🌊');
+    }
 }
 
 
 underwaterPalacePopulated = false;
 
 function populateUnderwaterPalace(game) {
+  // Level Exit Portal to Next Region
+  if (window.createCaveExitPortal) {
+    window.createCaveExitPortal(game, 0, 32, -520, 'golden_sanctuary', '8. BÖLÜM: EFSANEVİ ALTIN CENNETİ', '🌟');
+  }
+
     if (game && game.currentLevel) ensureLevelArrays(game.currentLevel);
 
     if (!game || !game.scene || !window.THREE) return;
@@ -5570,6 +6165,11 @@ function populateUnderwaterPalace(game) {
     game.currentLevel.kraken = krakenGroup;
 }
 function populateDinosaurWorld(game) {
+  // Level Exit Portal to Next Region
+  if (window.createCaveExitPortal) {
+    window.createCaveExitPortal(game, 0, 5, -650, 'sugar_world', '10. BÖLÜM: ŞEKER DÜNYASI', '🍬');
+  }
+
     if (game && game.currentLevel) ensureLevelArrays(game.currentLevel);
 
     const THREE = window.THREE;
@@ -5755,6 +6355,11 @@ sugarWorldPopulated = false;
 let playerSlowTimer = 0;
 
 function populateSugarWorld(game) {
+  // Level Exit Portal to Next Region
+  if (window.createCaveExitPortal) {
+    window.createCaveExitPortal(game, 0, 32, -520, 'jokerooms', '11. BÖLÜM: JOKEROOMS', '🚪');
+  }
+
     if (!game || !game.scene || !window.THREE) return;
     const THREE = window.THREE;
 
@@ -6535,6 +7140,11 @@ const JOKEROOMS_JOKES = [
 ];
 
 function populateJokerooms(game) {
+  // Level Exit Portal to Next Region
+  if (window.createCaveExitPortal) {
+    window.createCaveExitPortal(game, 0, 4, -480, 'ruin_village', '12. BÖLÜM: YIKILMIŞ KÖY', '🏚️');
+  }
+
     if (game && game.currentLevel) ensureLevelArrays(game.currentLevel);
 
     const THREE = window.THREE;
@@ -7242,6 +7852,23 @@ function updateSpaceLoop() {
     requestAnimationFrame(updateSpaceLoop);
     return;
   }
+  // 🌊 Grand Waterfall maintainer in Ayı Köyü (Hub)
+  if (game.scene) {
+    if (game.currentRegion === "hub" || !game.currentRegion) {
+      let wf = game.scene.getObjectByName("grand_waterfall_hub_group");
+      if (!wf && typeof buildGrandWaterfall === "function") {
+        buildGrandWaterfall(game.scene);
+        wf = game.scene.getObjectByName("grand_waterfall_hub_group");
+      }
+      if (wf && wf.userData && typeof wf.userData.update === "function") {
+        wf.userData.update();
+      }
+    } else {
+      if (typeof removeGrandWaterfall === "function") {
+        removeGrandWaterfall(game.scene);
+      }
+    }
+  }
 
   // Super Bear Adventure Chapter Banner UI (Disabled per user request)
   function showSbaChapterBanner(icon, title, subtitle) {
@@ -7251,7 +7878,337 @@ function updateSpaceLoop() {
     } catch(e) {}
   }
 
-  // Authentic Return Portal Mesh to Ayı Köyü
+  // Helper to check if the current region's boss is alive
+  function isBossAliveInCurrentRegion(game) {
+    if (!game || !game.currentLevel) return false;
+    const reg = game.currentRegion;
+    if (!reg || reg === 'hub') return false;
+
+    const cl = game.currentLevel;
+    if (cl.dragonBoss && cl.dragonBoss.hp > 0 && !cl.dragonBoss.deadMessageShown) return true;
+    if (cl.goldCoinBoss && cl.goldCoinBoss.hp > 0 && !cl.goldCoinBoss.deadMessageShown) return true;
+    if (cl.crocodileBoss && cl.crocodileBoss.hp > 0 && !cl.crocodileBoss.isDead) return true;
+    if (cl.waterDragonBoss && cl.waterDragonBoss.hp > 0 && !cl.waterDragonBoss.deadMessageShown) return true;
+    if (cl.lollipopBoss && cl.lollipopBoss.hp > 0) return true;
+    if (cl.jokerBoss && cl.jokerBoss.hp > 0 && !cl.jokerBoss.deadMessageShown) return true;
+    if (cl.clownBoss && cl.clownBoss.hp > 0 && !cl.clownBoss.deadMessageShown) return true;
+    if (cl.dinoBoss && cl.dinoBoss.hp > 0 && !cl.dinoBoss.deadMessageShown) return true;
+    if (cl.kraken && cl.krakenHp !== undefined && cl.krakenHp > 0) return true;
+
+    if (cl.enemies && Array.isArray(cl.enemies)) {
+      const aliveBoss = cl.enemies.find(e => e && e.isBoss && e.hp > 0 && e.state !== 'dead');
+      if (aliveBoss) return true;
+    }
+
+    return false;
+  }
+  window.__isBossAliveInCurrentRegion = isBossAliveInCurrentRegion;
+
+  // Authentic Grand Cave Exit Portal Helper with Boss-Gated Access
+  window.createCaveExitPortal = function(game, px, py, pz, targetRegion, targetName, targetIcon) {
+    if (!game || !game.scene || !window.THREE) return;
+    const THREE = window.THREE;
+    const portalGroup = new THREE.Group();
+    portalGroup.name = 'cave_exit_portal_' + targetRegion;
+    portalGroup.position.set(px, py, pz);
+
+    // Grand Arch Pillars
+    const archMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      emissive: 0xd97706,
+      emissiveIntensity: 0.6,
+      metalness: 0.8,
+      roughness: 0.2
+    });
+    const pillarGeo = new THREE.BoxGeometry(0.8, 5.5, 0.8);
+    const leftPillar = new THREE.Mesh(pillarGeo, archMat);
+    leftPillar.position.set(-2.2, 2.75, 0);
+    portalGroup.add(leftPillar);
+
+    const rightPillar = new THREE.Mesh(pillarGeo, archMat);
+    rightPillar.position.set(2.2, 2.75, 0);
+    portalGroup.add(rightPillar);
+
+    const topBeam = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.8, 0.8), archMat);
+    topBeam.position.set(0, 5.5, 0);
+    portalGroup.add(topBeam);
+
+    // Glowing Celestial Portal Vortex
+    const vortexGeo = new THREE.CircleGeometry(2.2, 32);
+    const vortexMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0284c7,
+      emissiveIntensity: 1.8,
+      transparent: true,
+      opacity: 0.85,
+      side: THREE.DoubleSide
+    });
+    const vortex = new THREE.Mesh(vortexGeo, vortexMat);
+    vortex.position.y = 2.75;
+    portalGroup.add(vortex);
+
+    // Base pedestal
+    const pedMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 });
+    const ped = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.6, 0.5, 16), pedMat);
+    ped.position.y = 0.25;
+    portalGroup.add(ped);
+
+    // Light
+    const pLight = new THREE.PointLight(0x38bdf8, 3.5, 20);
+    pLight.position.set(0, 3.0, 0);
+    portalGroup.add(pLight);
+
+    if (game.currentLevel && game.currentLevel.mesh) {
+      game.currentLevel.mesh.add(portalGroup);
+    } else {
+      game.scene.add(portalGroup);
+    }
+
+    portalGroup.userData = {
+      update: () => {
+        vortex.rotation.z += 0.03;
+        if (game.playerPos) {
+          const d = game.playerPos.distanceTo(portalGroup.position);
+          if (d < 3.5) {
+            if (!portalGroup._used) {
+              portalGroup._used = true;
+              const actualTarget = targetRegion;
+              const actualName = targetName;
+              const actualIcon = targetIcon;
+
+              if (game.callbacks && game.callbacks.onShowNotice) {
+                if (actualTarget === 'hub' && game.currentRegion === 'bee_desert') {
+                  game.callbacks.onShowNotice("🎉 TEBRİKLER! 14 Dünya Bölümünü ve Baş Düşmanları Tamamladın! Ayı Köyü'ne Şampiyon Olarak Dönülüyor! 👑", "success");
+                } else {
+                  game.callbacks.onShowNotice(`🌀 ${actualIcon} ${actualName} Diyarına Geçiliyor...`, "success");
+                }
+              }
+              if (game.spawnSparkleParticles) {
+                game.spawnSparkleParticles(game.playerPos, 50, 0x38bdf8);
+              }
+              setTimeout(() => {
+                if (game.loadRegion) game.loadRegion(actualTarget);
+                else if (game.callbacks && game.callbacks.onSelectRegion) game.callbacks.onSelectRegion(actualTarget);
+              }, 450);
+            }
+          }
+        }
+      }
+    };
+
+    if (!game._caveExitPortals) game._caveExitPortals = [];
+    game._caveExitPortals.push(portalGroup);
+  }
+  window.__createCaveExitPortal = createCaveExitPortal;
+
+  // Grand 3D Animated Waterfall in Ayı Köyü (Hub) with Fishing Pier & Lagoon
+  var grandWaterfallBuilt = false;
+  var grandWaterfallGroup = null;
+
+  function removeGrandWaterfall(scene) {
+    if (!scene) {
+      if (window.__superBearGame && window.__superBearGame.scene) {
+        scene = window.__superBearGame.scene;
+      } else {
+        return;
+      }
+    }
+    const existing = scene.getObjectByName("grand_waterfall_hub_group");
+    if (existing) {
+      scene.remove(existing);
+    }
+    if (grandWaterfallGroup && grandWaterfallGroup.parent) {
+      grandWaterfallGroup.parent.remove(grandWaterfallGroup);
+    }
+    grandWaterfallGroup = null;
+    grandWaterfallBuilt = false;
+  }
+  window.__removeGrandWaterfall = removeGrandWaterfall;
+
+  function buildGrandWaterfall(scene) {
+    if (!scene || !window.THREE) return;
+    // Strictly only allow the waterfall to exist in Ayı Köyü (hub)
+    const game = window.__superBearGame;
+    if (game && game.currentRegion && game.currentRegion !== 'hub') {
+      removeGrandWaterfall(scene);
+      return;
+    }
+    const THREE = window.THREE;
+
+    const existing = scene.getObjectByName("grand_waterfall_hub_group");
+    if (existing) {
+      scene.remove(existing);
+    }
+
+    const group = new THREE.Group();
+    group.name = "grand_waterfall_hub_group";
+    group.position.set(-30, 0, 40);
+
+    // Materials
+    const darkRockMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9, metalness: 0.1 });
+    const mossRockMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.85, metalness: 0.05 });
+    const waterCurtainMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0284c7,
+      emissiveIntensity: 0.85,
+      transparent: true,
+      opacity: 0.85,
+      roughness: 0.1,
+      metalness: 0.3
+    });
+    const foamMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0xe0f2fe,
+      emissiveIntensity: 0.7,
+      transparent: true,
+      opacity: 0.88
+    });
+    const pondWaterMat = new THREE.MeshStandardMaterial({
+      color: 0x0284c7,
+      emissive: 0x0369a1,
+      emissiveIntensity: 0.45,
+      transparent: true,
+      opacity: 0.82,
+      roughness: 0.08,
+      metalness: 0.6
+    });
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.85 });
+    const lanternMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xf59e0b, emissiveIntensity: 1.6 });
+
+    // 1. Mountain Cliffs & Rocky Backdrop
+    const baseCliff = new THREE.Mesh(new THREE.BoxGeometry(22, 18, 12), darkRockMat);
+    baseCliff.position.set(0, 9, 8);
+    baseCliff.castShadow = true;
+    baseCliff.receiveShadow = true;
+    group.add(baseCliff);
+
+    const upperPeak = new THREE.Mesh(new THREE.BoxGeometry(16, 12, 10), darkRockMat);
+    upperPeak.position.set(-1, 20, 10);
+    upperPeak.castShadow = true;
+    group.add(upperPeak);
+
+    const mossOverhang = new THREE.Mesh(new THREE.BoxGeometry(18, 2, 4), mossRockMat);
+    mossOverhang.position.set(0, 18.2, 5);
+    group.add(mossOverhang);
+
+    const leftBoulder = new THREE.Mesh(new THREE.DodecahedronGeometry(5.5), darkRockMat);
+    leftBoulder.position.set(-9, 4.5, 3);
+    group.add(leftBoulder);
+
+    const rightBoulder = new THREE.Mesh(new THREE.DodecahedronGeometry(5.2), darkRockMat);
+    rightBoulder.position.set(9, 4.2, 3);
+    group.add(rightBoulder);
+
+    // 2. Cascading Waterfall Curtains
+    const upperWater = new THREE.Mesh(new THREE.BoxGeometry(9, 10, 0.9), waterCurtainMat);
+    upperWater.position.set(0, 13.5, 5.5);
+    upperWater.rotation.x = 0.08;
+    group.add(upperWater);
+
+    const midBasin = new THREE.Mesh(new THREE.BoxGeometry(12, 1.5, 5), mossRockMat);
+    midBasin.position.set(0, 8.5, 4);
+    group.add(midBasin);
+
+    const lowerWater = new THREE.Mesh(new THREE.BoxGeometry(11.5, 9.5, 0.9), waterCurtainMat);
+    lowerWater.position.set(0, 4.2, 2.5);
+    lowerWater.rotation.x = 0.06;
+    group.add(lowerWater);
+
+    const topFoam = new THREE.Mesh(new THREE.CylinderGeometry(4.8, 5.2, 0.6, 16), foamMat);
+    topFoam.position.set(0, 18.2, 5.2);
+    group.add(topFoam);
+
+    const splashFoam = new THREE.Mesh(new THREE.CylinderGeometry(6.2, 7.0, 0.5, 24), foamMat);
+    splashFoam.position.set(0, 0.35, 2.5);
+    group.add(splashFoam);
+
+    // 3. Serene Fishing Lagoon / Pond Surface at the Waterfall Base
+    const pondMesh = new THREE.Mesh(new THREE.CylinderGeometry(15, 15, 0.4, 32), pondWaterMat);
+    pondMesh.position.set(2, 0.08, -6);
+    pondMesh.name = "waterfall_fishing_pond_mesh";
+    group.add(pondMesh);
+
+    // Water lilies & lotus flowers
+    const lilyMat = new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.4 });
+    const flowerMat = new THREE.MeshStandardMaterial({ color: 0xf472b6, emissive: 0xdb2777, emissiveIntensity: 0.6 });
+    for (let i = 0; i < 6; i++) {
+      const angle = i * 1.05 + 0.5;
+      const rad = 7 + (i % 3) * 2.5;
+      const lx = 2 + Math.cos(angle) * rad;
+      const lz = -6 + Math.sin(angle) * rad;
+
+      const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.06, 12), lilyMat);
+      pad.position.set(lx, 0.2, lz);
+      group.add(pad);
+
+      const flw = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.35, 6), flowerMat);
+      flw.position.set(lx, 0.35, lz);
+      group.add(flw);
+    }
+
+    // 4. Wooden Fishing Pier / Dock at the Pond Edge
+    const pierGroup = new THREE.Group();
+    pierGroup.position.set(8, 0.3, -6);
+
+    const deckMesh = new THREE.Mesh(new THREE.BoxGeometry(6.5, 0.35, 3.8), woodMat);
+    deckMesh.position.set(0, 0, 0);
+    deckMesh.castShadow = true;
+    deckMesh.receiveShadow = true;
+    pierGroup.add(deckMesh);
+
+    const pileGeo = new THREE.CylinderGeometry(0.22, 0.22, 2.2, 8);
+    [-2.8, 2.8].forEach(px => {
+      [-1.6, 1.6].forEach(pz => {
+        const pile = new THREE.Mesh(pileGeo, woodMat);
+        pile.position.set(px, -0.8, pz);
+        pierGroup.add(pile);
+      });
+    });
+
+    const postMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 3.2, 8), woodMat);
+    postMesh.position.set(2.8, 1.4, 1.5);
+    pierGroup.add(postMesh);
+
+    const lanternMesh = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.6, 0.5), lanternMat);
+    lanternMesh.position.set(2.8, 2.7, 1.5);
+    pierGroup.add(lanternMesh);
+
+    const lanternLight = new THREE.PointLight(0xfbbf24, 2.2, 16);
+    lanternLight.position.set(2.8, 2.7, 1.5);
+    pierGroup.add(lanternLight);
+
+    const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.6, 1.0, 12), woodMat);
+    barrel.position.set(2.4, 0.6, -1.2);
+    pierGroup.add(barrel);
+
+    const tackleBox = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.6), new THREE.MeshStandardMaterial({ color: 0xd97706 }));
+    tackleBox.position.set(1.4, 0.4, -1.3);
+    pierGroup.add(tackleBox);
+
+    group.add(pierGroup);
+
+    // 5. Light & Animation Controller
+    const waterfallLight = new THREE.PointLight(0x38bdf8, 3.2, 30);
+    waterfallLight.position.set(0, 6, 4);
+    group.add(waterfallLight);
+
+    let animClock = 0;
+    group.userData = {
+      update: () => {
+        animClock += 0.04;
+        waterCurtainMat.emissiveIntensity = 0.75 + Math.sin(animClock * 2.5) * 0.25;
+        splashFoam.scale.set(1 + Math.sin(animClock * 3) * 0.08, 1, 1 + Math.cos(animClock * 3) * 0.08);
+        pondMesh.rotation.y += 0.002;
+      }
+    };
+
+    scene.add(group);
+    grandWaterfallGroup = group;
+    grandWaterfallBuilt = true;
+  }
+  window.__buildGrandWaterfall = buildGrandWaterfall;
+
+  // Authentic Return Portal Mesh to Next Sequential Region / Hub
   function addLevelReturnPortal(game, px, py, pz) {
     if (!game || !game.scene || !window.THREE) return;
     const THREE = window.THREE;
@@ -7296,11 +8253,34 @@ function updateSpaceLoop() {
         vortex.rotation.z -= 0.02;
         if (game.playerPos && game.currentRegion !== 'hub') {
           const dist = game.playerPos.distanceTo(portalGroup.position);
-          if (dist < 2.5) {
-            game.loadRegion('hub');
+          if (dist < 2.5 && !portalGroup._used) {
+            portalGroup._used = true;
+            const PREVIOUS_SEQUENTIAL_REGIONS = {
+              forest_temple: { prev: 'hub', name: '1. BÖLÜM: AYI VE KEDİ KÖYÜ', icon: '🏡' },
+              beehive: { prev: 'forest_temple', name: '2. BÖLÜM: ANTİK ORMAN TAPINAĞI', icon: '🏛️' },
+              pelican_plains: { prev: 'beehive', name: '3. BÖLÜM: VIZILDIYAN BAL KOVANI', icon: '🐝' },
+              snow_desert: { prev: 'pelican_plains', name: '4. BÖLÜM: PELİKAN OVALARI', icon: '🪶' },
+              volcano_cave: { prev: 'snow_desert', name: '5. BÖLÜM: KAR VADİSİ', icon: '❄️' },
+              underwater_palace: { prev: 'volcano_cave', name: '6. BÖLÜM: VOLKANİK EJDERHA MAĞARASI', icon: '🌋' },
+              golden_sanctuary: { prev: 'underwater_palace', name: '7. BÖLÜM: ANTİK SU ALTI KRİSTAL SARAYI', icon: '🌊' },
+              dinosaur_world: { prev: 'golden_sanctuary', name: '8. BÖLÜM: EFSANEVİ ALTIN CENNETİ', icon: '🌟' },
+              sugar_world: { prev: 'dinosaur_world', name: '9. BÖLÜM: DİNOZOR DÜNYASI', icon: '🦖' },
+              jokerooms: { prev: 'sugar_world', name: '10. BÖLÜM: ŞEKER DÜNYASI', icon: '🍬' },
+              ruin_village: { prev: 'jokerooms', name: '11. BÖLÜM: JOKEROOMS', icon: '🚪' },
+              water_cave: { prev: 'ruin_village', name: '12. BÖLÜM: YIKILMIŞ KÖY', icon: '🏚️' },
+              bee_desert: { prev: 'water_cave', name: '13. BÖLÜM: KARANLIK SU MAĞARASI', icon: '💧' }
+            };
+
+            const target = PREVIOUS_SEQUENTIAL_REGIONS[game.currentRegion] || { prev: 'hub', name: "Ayı Köyü", icon: '🏡' };
             if (game.callbacks && game.callbacks.onShowNotice) {
-              game.callbacks.onShowNotice("🏡 Ayı Köyü'ne güvenle geri döndün!", "info");
+              game.callbacks.onShowNotice(`🔙 Geri Dönüş Portalı: ${target.icon} ${target.name} diyarına dönülüyor...`, "info");
             }
+            if (game.spawnSparkleParticles) game.spawnSparkleParticles(game.playerPos, 40, 0x38bdf8);
+
+            setTimeout(() => {
+              if (game.loadRegion) game.loadRegion(target.prev);
+              else if (game.callbacks && game.callbacks.onSelectRegion) game.callbacks.onSelectRegion(target.prev);
+            }, 550);
           }
         }
       }
@@ -7439,6 +8419,10 @@ function updateSpaceLoop() {
       } else if (regionId === 'bee_desert') {
         beeDesertPopulated = true;
         populateBeeDesert(this);
+      } else if (regionId === 'hub') {
+        if (typeof buildGrandWaterfall === 'function') {
+          buildGrandWaterfall(this.scene);
+        }
       }
 
       // Ensure player and camera spawn safely inside the map
@@ -7470,6 +8454,24 @@ function updateSpaceLoop() {
         game._returnPortals.splice(i, 1);
       }
     }
+  }
+
+  // Cave Progress Portals Animation
+  if (window.__ensureLevelExitPortalExists) window.__ensureLevelExitPortalExists(game);
+  if (game._caveExitPortals && game._caveExitPortals.length > 0) {
+    for (let i = game._caveExitPortals.length - 1; i >= 0; i--) {
+      const p = game._caveExitPortals[i];
+      if (p && p.parent && p.userData && typeof p.userData.update === 'function') {
+        p.userData.update();
+      } else if (!p || !p.parent) {
+        game._caveExitPortals.splice(i, 1);
+      }
+    }
+  }
+
+  // Grand Waterfall Animation Update in Hub
+  if (grandWaterfallGroup && grandWaterfallGroup.parent && grandWaterfallGroup.userData && typeof grandWaterfallGroup.userData.update === 'function') {
+    grandWaterfallGroup.userData.update();
   }
 
   // Universal Fall Protection: If player drops below floor, safely respawn at start
@@ -8138,20 +9140,20 @@ function updateSpaceLoop() {
               }
           }
 
-          // Stepping into Victory Portal back to Bear Village (Ayı Köyü)
+          // Stepping into Water Cave Victory Portal to continue to Bee Desert
           if (boss.deadMessageShown && pPos) {
               const dPortal = pPos.distanceTo(new THREE.Vector3(0, 31.0, -750));
               if (dPortal < 4.5 && !boss._portalUsed) {
                   boss._portalUsed = true;
                   hideAllBossHealthBars();
                   if (game.callbacks && game.callbacks.onShowNotice) {
-                      game.callbacks.onShowNotice("🌀 Zafer Portalı: Ayı Köyü'ne dönülüyor...", "success");
+                      game.callbacks.onShowNotice("🌀 Zafer Portalı: 14. Bölüm Arı Çölü & Antik Piramit diyarına geçiliyor... 🏜️", "success");
                   }
                   if (game.spawnSparkleParticles) game.spawnSparkleParticles(pPos, 45, 0x38bdf8);
                   setTimeout(() => {
                       hideAllBossHealthBars();
-                      if (game.loadRegion) game.loadRegion('hub');
-                      else if (game.callbacks && game.callbacks.onSelectRegion) game.callbacks.onSelectRegion('hub');
+                      if (game.loadRegion) game.loadRegion('bee_desert');
+                      else if (game.callbacks && game.callbacks.onSelectRegion) game.callbacks.onSelectRegion('bee_desert');
                   }, 600);
               }
           }
@@ -10163,40 +11165,114 @@ function updateSpaceLoop() {
     }
     for (let i = lasers.length - 1; i >= 0; i--) {
       const l = lasers[i];
+      if (!l || !l.mesh) continue;
       l.life += 1;
       l.mesh.position.x += l.dirX * 1.8;
       l.mesh.position.z += l.dirZ * 1.8;
 
       let laserHit = false;
+      const lPos = l.mesh.position;
 
-      // Laser collision with Gold Coin Boss
-      if (game.currentLevel && game.currentLevel.goldCoinBoss && game.currentLevel.goldCoinBoss.hp > 0) {
-        const boss = game.currentLevel.goldCoinBoss;
-        const bCenter = boss.pos.clone().add(new THREE.Vector3(0, 5.0, 0));
-        if (l.mesh.position.distanceTo(bCenter) < 6.5) {
+      // Helper for laser hit processing
+      const processLaserBossHit = (boss, title, hitDist, damageVal, colorHex = 0xef4444) => {
+        if (!boss || boss.hp <= 0 || !boss.pos) return false;
+        const bPos = boss.pos.clone ? boss.pos.clone() : new THREE.Vector3(boss.pos.x, boss.pos.y, boss.pos.z);
+        bPos.y += 3.5;
+        if (lPos.distanceTo(bPos) < hitDist) {
           if (!boss.hitInvulnTimer || boss.hitInvulnTimer <= 0) {
-            boss.hitInvulnTimer = 0.45;
-            boss.hp = Math.max(0, boss.hp - 45);
-            if (typeof updateGoldCoinBossHealthBar === 'function') updateGoldCoinBossHealthBar(boss.hp, boss.maxHp);
-            if (game.spawnSparkleParticles) game.spawnSparkleParticles(bCenter, 30, 0xfacc15);
+            boss.hitInvulnTimer = 0.35;
+            boss.hp = Math.max(0, boss.hp - damageVal);
+            if (boss.mesh && boss.mesh.userData && boss.mesh.userData.__overheadHpData) {
+              window.__update3DOverheadHpBar(boss.mesh.userData.__overheadHpData, boss.hp, boss.maxHp || 100);
+            }
+            if (game.spawnSparkleParticles) game.spawnSparkleParticles(bPos, 25, colorHex);
             if (game.callbacks && game.callbacks.onShowNotice) {
-              game.callbacks.onShowNotice("⚡ PLAZMA LAZERİ İSABET ETTİ! Dev Altın Para Hasar Aldı! (-45 HP) [Kalan: " + Math.ceil(boss.hp) + " / " + boss.maxHp + "]", "success");
+              game.callbacks.onShowNotice("⚡ KOZMİK LAZER İSABET ETTİ! " + title + " Hasar Aldı! (-" + damageVal + " HP) [Kalan: " + Math.ceil(boss.hp) + " HP]", "success");
             }
           }
-          laserHit = true;
+          return true;
+        }
+        return false;
+      };
+
+      // 1. Gold Coin Boss
+      if (game.currentLevel && game.currentLevel.goldCoinBoss) {
+        laserHit = processLaserBossHit(game.currentLevel.goldCoinBoss, "İmparator Altın Para", 7.0, 45, 0xfacc15);
+        if (laserHit && typeof updateGoldCoinBossHealthBar === 'function') {
+          updateGoldCoinBossHealthBar(game.currentLevel.goldCoinBoss.hp, game.currentLevel.goldCoinBoss.maxHp);
         }
       }
-      // Laser collision with Clown Boss
-      if (!laserHit && game.currentLevel && game.currentLevel.clownBoss && game.currentLevel.clownBoss.hp > 0) {
-        const cBoss = game.currentLevel.clownBoss;
-        const cCenter = cBoss.pos.clone().add(new THREE.Vector3(0, 4.5, 0));
-        if (l.mesh.position.distanceTo(cCenter) < 6.0) {
-          cBoss.hp = Math.max(0, cBoss.hp - 80);
-          if (game.spawnSparkleParticles) game.spawnSparkleParticles(cCenter, 25, 0xef4444);
-          if (game.callbacks && game.callbacks.onShowNotice) {
-            game.callbacks.onShowNotice("⚡ PLAZMA LAZERİ İSABET ETTİ! Palyaço Boss Hasar Aldı! (-80 HP) [Kalan: " + Math.ceil(cBoss.hp) + "]", "success");
+      // 2. Clown Boss
+      if (!laserHit && game.currentLevel && game.currentLevel.clownBoss) {
+        laserHit = processLaserBossHit(game.currentLevel.clownBoss, "Dev Palyaço Boss", 6.5, 60, 0xef4444);
+      }
+      // 3. Lollipop Boss
+      if (!laserHit && game.currentLevel && game.currentLevel.lollipopBoss) {
+        laserHit = processLaserBossHit(game.currentLevel.lollipopBoss, "Lolipop Patronu", 6.0, 35, 0xec4899);
+      }
+      // 4. Ignis Dragon Boss
+      if (!laserHit && game.currentLevel && game.currentLevel.enemies) {
+        const dragon = game.currentLevel.enemies.find(e => e.id === 'boss_volcano_dragon');
+        if (dragon) laserHit = processLaserBossHit(dragon, "Kızıl Alev Ejderhası Ignis", 7.5, 40, 0xf97316);
+      }
+      // 5. T-Rex Boss
+      if (!laserHit && game.currentLevel && game.currentLevel.enemies) {
+        const trex = game.currentLevel.enemies.find(e => e.id === 'boss_dino_trex');
+        if (trex) laserHit = processLaserBossHit(trex, "Dev T-Rex Dinozor Boss", 7.0, 35, 0x10b981);
+      }
+      // 6. Subterranean Drake Boss
+      if (!laserHit && typeof drakeBoss !== 'undefined' && drakeBoss) {
+        laserHit = processLaserBossHit(drakeBoss, "Derin Yer Suyu Drake", 6.5, 30, 0x06b6d4);
+      }
+      // 7. Space Bosses (Mor Ayı / Dark Lord)
+      if (!laserHit && typeof window.__spaceBossState !== 'undefined' && window.__spaceBossState) {
+        const sBoss = window.__spaceBossState;
+        if (sBoss && sBoss.hp > 0 && sBoss.pos) {
+          laserHit = processLaserBossHit(sBoss, sBoss.title || "Kozmik Uzay Bossu", 6.5, 25, 0xa855f7);
+        }
+      }
+      // 8. Poneix 14-Boss Fusion Titan
+      if (!laserHit && typeof fusionBossInstance !== 'undefined' && fusionBossInstance) {
+        const fMesh = fusionBossInstance.mesh;
+        if (fMesh && fusionBossInstance.hp > 0) {
+          const fPos = fMesh.position.clone();
+          fPos.y += 5.0;
+          if (lPos.distanceTo(fPos) < 10.0) {
+            fusionBossInstance.hp = Math.max(0, fusionBossInstance.hp - 20);
+            if (fMesh.userData && fMesh.userData.__overheadHpData) {
+              window.__update3DOverheadHpBar(fMesh.userData.__overheadHpData, fusionBossInstance.hp, fusionBossInstance.maxHp || 120);
+            }
+            if (typeof showPoneixBossHp === 'function') {
+              showPoneixBossHp(fusionBossInstance.title, fusionBossInstance.hp, fusionBossInstance.maxHp, "⚡ Lazer İsabet Etti! Fusion Titan Zayıflıyor!");
+            }
+            if (game.spawnSparkleParticles) game.spawnSparkleParticles(lPos.clone(), 30, 0x34d399);
+            if (game.callbacks && game.callbacks.onShowNotice) {
+              game.callbacks.onShowNotice("⚡ LAZER İSABET ETTİ! 14 Boss Füzyon Titanı Hasar Aldı! (-20 HP)", "success");
+            }
+            laserHit = true;
           }
-          laserHit = true;
+        }
+      }
+      // 9. Phelix Tilki Boss Mecha
+      if (!laserHit && typeof foxBossInstance !== 'undefined' && foxBossInstance) {
+        const xMesh = foxBossInstance.mesh;
+        if (xMesh && foxBossInstance.hp > 0) {
+          const xPos = xMesh.position.clone();
+          xPos.y += 4.5;
+          if (lPos.distanceTo(xPos) < 8.5) {
+            foxBossInstance.hp = Math.max(0, foxBossInstance.hp - 25);
+            if (xMesh.userData && xMesh.userData.__overheadHpData) {
+              window.__update3DOverheadHpBar(xMesh.userData.__overheadHpData, foxBossInstance.hp, foxBossInstance.maxHp || 100);
+            }
+            if (typeof showFoxBossHp === 'function') {
+              showFoxBossHp(foxBossInstance.title, foxBossInstance.hp, foxBossInstance.maxHp, "⚡ Tilki Boss Mecha Lazerle Vuruldu!");
+            }
+            if (game.spawnSparkleParticles) game.spawnSparkleParticles(lPos.clone(), 25, 0x38bdf8);
+            if (game.callbacks && game.callbacks.onShowNotice) {
+              game.callbacks.onShowNotice("⚡ LAZER İSABET ETTİ! Tilki Boss Mecha Hasar Aldı! (-25 HP)", "success");
+            }
+            laserHit = true;
+          }
         }
       }
 
@@ -10569,6 +11645,148 @@ function updateSpaceLoop() {
             } else {
               pPos.z = maxZ + playerRadius;
               if (pVel && pVel.z < 0) pVel.z = 0;
+            }
+          }
+        }
+      }
+
+      // -------------------------------------------------------------------------
+      // --- UNIVERSAL DYNAMIC SCENE MESH COLLISION SCANNER (Trees, Houses, Rocks, Walls) ---
+      // -------------------------------------------------------------------------
+      if (!game._lastCollisionScanTime || now - game._lastCollisionScanTime > 1200) {
+        game._lastCollisionScanTime = now;
+        game._scannedRadialObstacles = [];
+        game._scannedBoxObstacles = [];
+
+        if (game.scene && window.THREE) {
+          const THREE = window.THREE;
+          game.scene.traverse((obj) => {
+            if (!obj) return;
+            if (obj === game.playerBear?.root || obj.isPlayer) return;
+
+            const name = (obj.name || '').toLowerCase();
+            const parentName = (obj.parent && obj.parent.name || '').toLowerCase();
+            const combinedName = name + ' ' + parentName;
+
+            // Trees / Trunks / Foliage / Pines / Palms
+            if (combinedName.includes('tree') || combinedName.includes('trunk') || combinedName.includes('foliage') || combinedName.includes('pine') || combinedName.includes('ağaç') || combinedName.includes('agac')) {
+              const worldPos = new THREE.Vector3();
+              obj.getWorldPosition(worldPos);
+              if (Math.abs(worldPos.x) < 450 && Math.abs(worldPos.z) < 450) {
+                game._scannedRadialObstacles.push({
+                  cx: worldPos.x,
+                  cz: worldPos.z,
+                  minY: worldPos.y - 0.5,
+                  maxY: worldPos.y + 12.0,
+                  radius: 1.15,
+                  type: 'tree'
+                });
+              }
+            }
+            // Houses / Buildings / Walls / Fences / Huts / Cabins / Gates / Arches / Pillars / Shops
+            else if (combinedName.includes('house') || combinedName.includes('building') || combinedName.includes('wall') || combinedName.includes('hut') || combinedName.includes('cabin') || combinedName.includes('fence') || combinedName.includes('duvar') || combinedName.includes('ev') || combinedName.includes('fırın') || combinedName.includes('dukkan') || combinedName.includes('dükkan') || combinedName.includes('gate') || combinedName.includes('arch') || combinedName.includes('pillar') || combinedName.includes('ruin') || combinedName.includes('shop')) {
+              if (obj.isMesh && obj.geometry) {
+                try {
+                  obj.geometry.computeBoundingBox();
+                  const bbox = obj.geometry.boundingBox;
+                  if (bbox) {
+                    const minWorld = bbox.min.clone().applyMatrix4(obj.matrixWorld);
+                    const maxWorld = bbox.max.clone().applyMatrix4(obj.matrixWorld);
+
+                    const minX = Math.min(minWorld.x, maxWorld.x) - 0.15;
+                    const maxX = Math.max(minWorld.x, maxWorld.x) + 0.15;
+                    const minZ = Math.min(minWorld.z, maxWorld.z) - 0.15;
+                    const maxZ = Math.max(minWorld.z, maxWorld.z) + 0.15;
+                    const minY = Math.min(minWorld.y, maxWorld.y) - 0.5;
+                    const maxY = Math.max(minWorld.y, maxWorld.y) + 0.5;
+
+                    const width = maxX - minX;
+                    const depth = maxZ - minZ;
+                    const height = maxY - minY;
+
+                    if (width > 0.4 && width < 45 && depth > 0.4 && depth < 45 && height > 0.8) {
+                      game._scannedBoxObstacles.push({
+                        minX, maxX, minZ, maxZ, minY, maxY,
+                        type: 'structure'
+                      });
+                    }
+                  }
+                } catch(e) {}
+              }
+            }
+            // Rocks / Boulders / Stones / Monuments / Statues / Crates / Barrels
+            else if (combinedName.includes('rock') || combinedName.includes('boulder') || combinedName.includes('stone') || combinedName.includes('kaya') || combinedName.includes('statue') || combinedName.includes('monument') || combinedName.includes('barrel') || combinedName.includes('crate')) {
+              const worldPos = new THREE.Vector3();
+              obj.getWorldPosition(worldPos);
+              if (Math.abs(worldPos.x) < 450 && Math.abs(worldPos.z) < 450) {
+                game._scannedRadialObstacles.push({
+                  cx: worldPos.x,
+                  cz: worldPos.z,
+                  minY: worldPos.y - 0.5,
+                  maxY: worldPos.y + 6.0,
+                  radius: 1.25,
+                  type: 'rock'
+                });
+              }
+            }
+          });
+        }
+      }
+
+      // Enforce Scanned Box Obstacles (Houses, Walls, Buildings, Fences, Huts, Cabins)
+      if (game._scannedBoxObstacles && game._scannedBoxObstacles.length > 0) {
+        for (let bi = 0; bi < game._scannedBoxObstacles.length; bi++) {
+          const b = game._scannedBoxObstacles[bi];
+          if (pPos.y + 1.6 > b.minY && pPos.y < b.maxY - 0.1) {
+            if (pPos.x + playerRadius > b.minX && pPos.x - playerRadius < b.maxX &&
+                pPos.z + playerRadius > b.minZ && pPos.z - playerRadius < b.maxZ) {
+              
+              const overlapL = (pPos.x + playerRadius) - b.minX;
+              const overlapR = b.maxX - (pPos.x - playerRadius);
+              const overlapF = (pPos.z + playerRadius) - b.minZ;
+              const overlapB = b.maxZ - (pPos.z - playerRadius);
+
+              const minOverlap = Math.min(overlapL, overlapR, overlapF, overlapB);
+              if (minOverlap === overlapL) {
+                pPos.x = b.minX - playerRadius;
+                if (pVel && pVel.x > 0) pVel.x = 0;
+              } else if (minOverlap === overlapR) {
+                pPos.x = b.maxX + playerRadius;
+                if (pVel && pVel.x < 0) pVel.x = 0;
+              } else if (minOverlap === overlapF) {
+                pPos.z = b.minZ - playerRadius;
+                if (pVel && pVel.z > 0) pVel.z = 0;
+              } else {
+                pPos.z = b.maxZ + playerRadius;
+                if (pVel && pVel.z < 0) pVel.z = 0;
+              }
+            }
+          }
+        }
+      }
+
+      // Enforce Scanned Radial Obstacles (Trees, Trunks, Rocks, Boulders, Pillars)
+      if (game._scannedRadialObstacles && game._scannedRadialObstacles.length > 0) {
+        for (let ri = 0; ri < game._scannedRadialObstacles.length; ri++) {
+          const r = game._scannedRadialObstacles[ri];
+          if (pPos.y + 1.6 > r.minY && pPos.y < r.maxY - 0.1) {
+            const dx = pPos.x - r.cx;
+            const dz = pPos.z - r.cz;
+            const dist = Math.sqrt(dx * dx + dz * dz);
+            const minSolidDist = r.radius + playerRadius;
+
+            if (dist < minSolidDist && dist > 0.0001) {
+              const nx = dx / dist;
+              const nz = dz / dist;
+              pPos.x = r.cx + nx * minSolidDist;
+              pPos.z = r.cz + nz * minSolidDist;
+              if (pVel) {
+                const normalVel = pVel.x * nx + pVel.z * nz;
+                if (normalVel < 0) {
+                  pVel.x -= normalVel * nx;
+                  pVel.z -= normalVel * nz;
+                }
+              }
             }
           }
         }
@@ -10956,6 +12174,11 @@ function createClownBossMesh(THREE) {
 ruinVillagePopulated = false;
 
 function populateRuinVillage(game) {
+  // Level Exit Portal to Next Region
+  if (window.createCaveExitPortal) {
+    window.createCaveExitPortal(game, 0, 4, -520, 'water_cave', '13. BÖLÜM: KARANLIK SU MAĞARASI', '💧');
+  }
+
   if (game && game.currentLevel) ensureLevelArrays(game.currentLevel);
   const THREE = window.THREE;
   if (!game || !game.scene) return;
@@ -11491,6 +12714,11 @@ function createGoldCoinBoss(game, pos) {
 }
 
 function populateGoldenSanctuary(game) {
+  // Level Exit Portal to Next Region
+  if (window.createCaveExitPortal) {
+    window.createCaveExitPortal(game, 0, 5, -220, 'dinosaur_world', '9. BÖLÜM: DİNOZOR DÜNYASI', '🦖');
+  }
+
   if (game && game.currentLevel) ensureLevelArrays(game.currentLevel);
   const THREE = window.THREE;
   if (!game || !game.scene) return;
@@ -12317,6 +13545,11 @@ function create3DWaterDragon(game, pos) {
 }
 
 function populateWaterCave(game) {
+  // Level Exit Portal to Next Region
+  if (window.createCaveExitPortal) {
+    window.createCaveExitPortal(game, 0, 31.5, -815, 'bee_desert', '14. BÖLÜM: ARI ÇÖLÜ & ANTİK PİRAMİT', '🏜️');
+  }
+
   if (game && game.currentLevel) ensureLevelArrays(game.currentLevel);
   const THREE = window.THREE;
   if (!game || !game.scene) return;
@@ -13023,6 +14256,10 @@ function populateWaterCave(game) {
   caveGroup.add(dragonBoss.mesh);
   game.currentLevel.waterDragonBoss = dragonBoss;
 
+  // Grand Illuminated Exit Portal at the end of Water Cave (Transitions to 14. Bee Desert)
+  if (window.createCaveExitPortal) { window.window.createCaveExitPortal(game, 0, 31.5, -815, 'bee_desert', '14. BÖLÜM: ARI ÇÖLÜ & ANTİK PİRAMİT', '🏜️');
+  }
+
   // Başlangıçta Boss Can Barını Gizle (Yalnızca bölüm sonundaki arenaya yaklaşıldığında açılacak)
   updateWaterDragonHealthBar(0, dragonBoss.maxHp);
 
@@ -13333,6 +14570,11 @@ function create3DCrocodileBoss(game, pos) {
 }
 
 function populateBeeDesert(game) {
+  // Level Exit Portal to Next Region
+  if (window.createCaveExitPortal) {
+    window.createCaveExitPortal(game, 0, 5, -750, 'hub', '1. BÖLÜM: AYI VE KEDİ KÖYÜ (ŞAMPİYON DÖNÜŞÜ)', '🏡');
+  }
+
   if (game && game.currentLevel) ensureLevelArrays(game.currentLevel);
   const THREE = window.THREE;
   if (!game || !game.scene) return;
@@ -13950,6 +15192,33 @@ function enhanceGame() {
     return;
   }
 
+  // Authoritative Forward Boss Victory Portal mapping
+  game.spawnBossPortalForCurrentRegion = function(pos) {
+    const reg = game.currentRegion;
+    const BOSS_FORWARD_MAP = {
+      forest_temple: { next: 'beehive', name: '3. BÖLÜM: VIZILDIYAN BAL KOVANI', icon: '🐝' },
+      beehive: { next: 'pelican_plains', name: '4. BÖLÜM: PELİKAN OVALARI', icon: '🪶' },
+      pelican_plains: { next: 'snow_desert', name: '5. BÖLÜM: KAR VADİSİ', icon: '❄️' },
+      snow_desert: { next: 'volcano_cave', name: '6. BÖLÜM: VOLKANİK EJDERHA MAĞARASI', icon: '🌋' },
+      volcano_cave: { next: 'underwater_palace', name: '7. BÖLÜM: ANTİK SU ALTI KRİSTAL SARAYI', icon: '🌊' },
+      underwater_palace: { next: 'golden_sanctuary', name: '8. BÖLÜM: EFSANEVİ ALTIN CENNETİ', icon: '🌟' },
+      golden_sanctuary: { next: 'dinosaur_world', name: '9. BÖLÜM: DİNOZOR DÜNYASI', icon: '🦖' },
+      dinosaur_world: { next: 'sugar_world', name: '10. BÖLÜM: ŞEKER DÜNYASI', icon: '🍬' },
+      sugar_world: { next: 'jokerooms', name: '11. BÖLÜM: JOKEROOMS', icon: '🚪' },
+      jokerooms: { next: 'ruin_village', name: '12. BÖLÜM: YIKILMIŞ KÖY', icon: '🏚️' },
+      ruin_village: { next: 'water_cave', name: '13. BÖLÜM: KARANLIK SU MAĞARASI', icon: '💧' },
+      water_cave: { next: 'bee_desert', name: '14. BÖLÜM: ARI ÇÖLÜ & ANTİK PİRAMİT', icon: '🏜️' },
+      bee_desert: { next: 'hub', name: '1. BÖLÜM: AYI VE KEDİ KÖYÜ (ŞAMPİYON DÖNÜŞÜ)', icon: '🏡' }
+    };
+
+    const target = BOSS_FORWARD_MAP[reg] || { next: 'hub', name: 'Ayı Köyü', icon: '🏡' };
+    const portalY = pos && pos.y !== undefined ? pos.y + 0.5 : 2.5;
+    const portalX = pos && pos.x !== undefined ? pos.x : 0;
+    const portalZ = pos && pos.z !== undefined ? pos.z : 0;
+
+    window.createCaveExitPortal(game, portalX, portalY, portalZ, target.next, target.name, target.icon);
+  };
+
   // Hook damageEnemy to enforce exact 15 damage for minion dinos and restrict portal spawn to boss defeat only
   if (game.damageEnemy && !game._damageEnemyHooked) {
       game._damageEnemyHooked = true;
@@ -14013,7 +15282,20 @@ function enhanceGame() {
   gameRef = game;
   console.log("🎮 Game Instance Found! Applying 3D Drawings Features...");
 
+  // Guarantee safe ground spawn at game start so the player is never floating in empty space
+  if (typeof ensureSafeLevelSpawn === 'function') {
+    ensureSafeLevelSpawn(game, game.currentRegion || 'hub', false);
+    setTimeout(() => {
+      if (game && game.currentRegion) {
+        ensureSafeLevelSpawn(game, game.currentRegion, true);
+      }
+    }, 120);
+  }
+
   buildSpaceGalaxyWorld(game.scene);
+  if (typeof buildGrandWaterfall === 'function' && (game.currentRegion === 'hub' || !game.currentRegion)) {
+    buildGrandWaterfall(game.scene);
+  }
   updateSpaceLoop();
 
   // Jump helper function
@@ -15249,6 +16531,7 @@ function triggerEmote(type) {
     triggerJump,
     triggerEmote,
     teleportDash,
+    triggerFishing,
     shootLaser,
     sprayPaint,
     toggleAlienCompanion,
@@ -15280,6 +16563,53 @@ function triggerEmote(type) {
     },
     getSpaceState: () => ({ ...spaceState })
   };
+
+  // Expose direct trigger functions on window
+  window.triggerFishing = triggerFishing;
+  window.addEventListener('superbear:trigger-fishing', triggerFishing);
+  window.addEventListener('superbear:action-trigger', (e) => {
+    if (e && e.detail === 'fish') {
+      triggerFishing();
+    }
+  });
 }
 
 enhanceGame();
+
+
+// ============================================================
+// AUTOMATIC EXIT PORTAL MANAGER FOR ALL LEVELS
+// Ensures every level has a visible, working exit portal at the end
+// ============================================================
+window.__ensureLevelExitPortalExists = function(game) {
+  if (!game || !game.currentRegion || !window.__createCaveExitPortal) return;
+  const reg = game.currentRegion;
+  
+  // Check if exit portal already exists in scene
+  if (game._caveExitPortals && game._caveExitPortals.length > 0) {
+    const existing = game._caveExitPortals.find(p => p && p.parent && p.name && p.name.startsWith('cave_exit_portal_'));
+    if (existing) return;
+  }
+  
+  const LEVEL_EXIT_MAP = {
+    hub:               { next: 'forest_temple',     name: '2. BÖLÜM: ORMAN TAPINAĞI', icon: '🌲', pos: { x: 0, y: 1.0, z: -160 } },
+    forest_temple:     { next: 'beehive',           name: '3. BÖLÜM: VIZILDIYAN BAL KOVANI', icon: '🐝', pos: { x: 0, y: 18.0, z: -162 } },
+    beehive:           { next: 'pelican_plains',     name: '4. BÖLÜM: PELİKAN OVALARI', icon: '🪶', pos: { x: 0, y: 18.0, z: -162 } },
+    pelican_plains:    { next: 'snow_desert',        name: '5. BÖLÜM: KAR VADİSİ', icon: '❄️', pos: { x: 0, y: 2.0, z: -190 } },
+    snow_desert:       { next: 'volcano_cave',       name: '6. BÖLÜM: VOLKANİK EJDERHA MAĞARASI', icon: '🌋', pos: { x: 0, y: 2.0, z: -200 } },
+    volcano_cave:      { next: 'underwater_palace',  name: '7. BÖLÜM: ANTİK SU ALTI KRİSTAL SARAYI', icon: '🌊', pos: { x: 0, y: 41.0, z: -188 } },
+    underwater_palace: { next: 'golden_sanctuary',   name: '8. BÖLÜM: EFSANEVİ ALTIN CENNETİ', icon: '🌟', pos: { x: 0, y: 30.0, z: -550 } },
+    golden_sanctuary:  { next: 'dinosaur_world',     name: '9. BÖLÜM: DİNOZOR DÜNYASI', icon: '🦖', pos: { x: 0, y: 2.0, z: -400 } },
+    dinosaur_world:    { next: 'sugar_world',        name: '10. BÖLÜM: ŞEKER DÜNYASI', icon: '🍬', pos: { x: 0, y: 2.0, z: -180 } },
+    sugar_world:       { next: 'jokerooms',           name: '11. BÖLÜM: JOKEROOMS', icon: '🚪', pos: { x: 0, y: 11.5, z: -300 } },
+    jokerooms:         { next: 'ruin_village',       name: '12. BÖLÜM: YIKILMIŞ KÖY', icon: '🏚️', pos: { x: 0, y: 1.2, z: -450 } },
+    ruin_village:      { next: 'water_cave',         name: '13. BÖLÜM: KARANLIK SU MAĞARASI', icon: '💧', pos: { x: 0, y: 2.8, z: -1100 } },
+    water_cave:        { next: 'bee_desert',         name: '14. BÖLÜM: ARI ÇÖLÜ & ANTİK PİRAMİT', icon: '🏜️', pos: { x: 0, y: 31.5, z: -815 } },
+    bee_desert:        { next: 'space_realm',        name: '15. BÖLÜM: KOZMİK UZAY BOYUTU', icon: '🚀', pos: { x: 0, y: 4.0, z: -850 } }
+  };
+
+  const portalInfo = LEVEL_EXIT_MAP[reg];
+  if (portalInfo) {
+    window.__createCaveExitPortal(game, portalInfo.pos.x, portalInfo.pos.y, portalInfo.pos.z, portalInfo.next, portalInfo.name, portalInfo.icon);
+  }
+};

@@ -3819,8 +3819,9 @@ function createDarkLordBoss(game, scene, spawnPos) {
         morAyiBoss.hitCooldown = (morAyiBoss.hitCooldown || 0) - 0.016;
         if (game.isAttacking && distToMorAyi < 6.0 && morAyiBoss.hitCooldown <= 0) {
           morAyiBoss.hitCooldown = 0.32;
-          morAyiBoss.hp -= 5;
+          morAyiBoss.hp -= 15;
           showSpaceBossHp(morAyiBoss.title, morAyiBoss.hp, morAyiBoss.maxHp);
+          if (morAyiBoss.mesh && morAyiBoss.mesh.userData && morAyiBoss.mesh.userData.__overheadHpData) window.__update3DOverheadHpBar(morAyiBoss.mesh.userData.__overheadHpData, morAyiBoss.hp, morAyiBoss.maxHp);
           if (game.spawnSparkleParticles) game.spawnSparkleParticles(bMesh.position, 18, 0xec4899);
 
           if (morAyiBoss.hp <= 0) {

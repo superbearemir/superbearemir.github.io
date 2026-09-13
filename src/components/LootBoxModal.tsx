@@ -224,10 +224,40 @@ export const LootBoxModal: React.FC<LootBoxModalProps> = ({
     setStage('opening');
     playChestRumbleSound();
 
-    // Roll items
+    // Gather all genuinely owned items across save data and props
+    const ownedSet = new Set<string>();
+    if (Array.isArray(purchasedIds)) {
+      purchasedIds.forEach(id => {
+        if (id && typeof id === 'string') ownedSet.add(id);
+      });
+    }
+    try {
+      const stored = localStorage.getItem('super_bear_purchased_items');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          parsed.forEach((id: string) => {
+            if (id && typeof id === 'string') ownedSet.add(id);
+          });
+        }
+      }
+      if (sm && typeof sm.getSaveData === 'function') {
+        const sd = sm.getSaveData();
+        if (Array.isArray(sd.shopPurchasedIds)) {
+          sd.shopPurchasedIds.forEach((id: string) => {
+            if (id && typeof id === 'string') ownedSet.add(id);
+          });
+        }
+      }
+    } catch (e) {}
+
+    const updatedOwned = Array.from(ownedSet);
     const rolledResults: OpenedItemResult[] = [];
-    const currentOwned = new Set(purchasedIds);
-    const updatedOwned = [...purchasedIds];
+
+    // Track items that were genuinely already owned before this roll started
+    const alreadyOwnedBeforeThisRoll = new Set(ownedSet);
+    // Track items rolled within this specific package batch
+    const batchRolledSet = new Set<string>();
 
     for (let i = 0; i < pkg.count; i++) {
       // Check for bundle guarantee on the last or designated item
@@ -239,7 +269,8 @@ export const LootBoxModal: React.FC<LootBoxModalProps> = ({
       }
 
       const item = rollSingleItem(pkg, forceTier);
-      const isDuplicate = currentOwned.has(item.id);
+      // Strictly check if the item was already in inventory or already rolled in this batch
+      const isDuplicate = alreadyOwnedBeforeThisRoll.has(item.id) || batchRolledSet.has(item.id);
 
       let refundGold = 0;
       if (isDuplicate) {
@@ -247,8 +278,11 @@ export const LootBoxModal: React.FC<LootBoxModalProps> = ({
         const rank = RARITY_INFO[item.rarity]?.rank || 1;
         refundGold = 35 + rank * 25; // 60 to 160 refund
       } else {
-        currentOwned.add(item.id);
-        updatedOwned.push(item.id);
+        batchRolledSet.add(item.id);
+        alreadyOwnedBeforeThisRoll.add(item.id);
+        if (!updatedOwned.includes(item.id)) {
+          updatedOwned.push(item.id);
+        }
       }
 
       rolledResults.push({

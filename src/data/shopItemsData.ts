@@ -163,6 +163,7 @@ export interface ShopItem {
   meshType?: string;
   effectType?: string;
   effectValue?: any;
+  isComingSoon?: boolean;
 }
 
 export const SHOP_ITEMS: ShopItem[] = [
@@ -1942,43 +1943,55 @@ const THEME_PREFIXES = [
 
 const ITEM_BASES = [
   // Hats
-  { cat: 'hats', slot: 'hat', name: 'Miğferi', type: 'helmet', basePrice: 260 },
-  { cat: 'hats', slot: 'hat', name: 'Tacı', type: 'crown', basePrice: 380 },
-  { cat: 'hats', slot: 'hat', name: 'Şapkası', type: 'wizard', basePrice: 220 },
+  { cat: 'hats', slot: 'hat', name: 'Miğfer', type: 'helmet', basePrice: 260 },
+  { cat: 'hats', slot: 'hat', name: 'Taç', type: 'crown', basePrice: 380 },
+  { cat: 'hats', slot: 'hat', name: 'Şapka', type: 'wizard', basePrice: 220 },
   { cat: 'hats', slot: 'hat', name: 'Maskot Başlığı', type: 'hood', basePrice: 200 },
-  { cat: 'hats', slot: 'hat', name: 'Boynuzları', type: 'horns', basePrice: 340 },
+  { cat: 'hats', slot: 'hat', name: 'Boynuzlar', type: 'horns', basePrice: 340 },
   // Face
-  { cat: 'face', slot: 'face', name: 'Vizörü', type: 'visor', basePrice: 240 },
-  { cat: 'face', slot: 'face', name: 'Gözlüğü', type: 'glasses', basePrice: 180 },
-  { cat: 'face', slot: 'face', name: 'Maskesi', type: 'mask', basePrice: 260 },
-  { cat: 'face', slot: 'face', name: 'Dürbünü', type: 'monocle', basePrice: 290 },
+  { cat: 'face', slot: 'face', name: 'Vizör', type: 'visor', basePrice: 240 },
+  { cat: 'face', slot: 'face', name: 'Gözlük', type: 'glasses', basePrice: 180 },
+  { cat: 'face', slot: 'face', name: 'Maske', type: 'mask', basePrice: 260 },
+  { cat: 'face', slot: 'face', name: 'Monokl', type: 'monocle', basePrice: 290 },
   // Back
-  { cat: 'back', slot: 'back', name: 'Kanatları', type: 'wings', basePrice: 480 },
-  { cat: 'back', slot: 'back', name: 'Pelerini', type: 'cape', basePrice: 360 },
-  { cat: 'back', slot: 'back', name: 'İticisi', type: 'jetpack', basePrice: 490 },
-  { cat: 'back', slot: 'back', name: 'Kalkanı', type: 'shield', basePrice: 330 },
+  { cat: 'back', slot: 'back', name: 'Kanatlar', type: 'wings', basePrice: 480 },
+  { cat: 'back', slot: 'back', name: 'Pelerin', type: 'cape', basePrice: 360 },
+  { cat: 'back', slot: 'back', name: 'Jetpack', type: 'jetpack', basePrice: 490 },
+  { cat: 'back', slot: 'back', name: 'Kalkan', type: 'shield', basePrice: 330 },
   // Skins
-  { cat: 'skins', slot: 'skin', name: 'Zırh Dokusu', type: 'skin', basePrice: 550 },
-  { cat: 'skins', slot: 'skin', name: 'Kürk Deseni', type: 'skin', basePrice: 420 },
-  { cat: 'skins', slot: 'skin', name: 'Savaş Kıyafeti', type: 'skin', basePrice: 500 },
+  { cat: 'skins', slot: 'skin', name: 'Savaş Zırhı', type: 'skin', basePrice: 550 },
+  { cat: 'skins', slot: 'skin', name: 'Kürk Kıyafeti', type: 'skin', basePrice: 420 },
+  { cat: 'skins', slot: 'skin', name: 'Kraliyet Kostümü', type: 'skin', basePrice: 500 },
   // Hand
-  { cat: 'hand', slot: 'hand', name: 'Kılıcı', type: 'sword', basePrice: 420 },
-  { cat: 'hand', slot: 'hand', name: 'Balyozu', type: 'hammer', basePrice: 450 },
-  { cat: 'hand', slot: 'hand', name: 'Asası', type: 'staff', basePrice: 390 },
-  { cat: 'hand', slot: 'hand', name: 'Baltası', type: 'axe', basePrice: 360 },
-  { cat: 'hand', slot: 'hand', name: 'Hançeri', type: 'dagger', basePrice: 310 },
+  { cat: 'hand', slot: 'hand', name: 'Kılıç', type: 'sword', basePrice: 420 },
+  { cat: 'hand', slot: 'hand', name: 'Balyoz', type: 'hammer', basePrice: 450 },
+  { cat: 'hand', slot: 'hand', name: 'Asa', type: 'staff', basePrice: 390 },
+  { cat: 'hand', slot: 'hand', name: 'Balta', type: 'axe', basePrice: 360 },
+  { cat: 'hand', slot: 'hand', name: 'Hançer', type: 'dagger', basePrice: 310 },
   // Auras
-  { cat: 'auras', slot: 'aura', name: 'Aurası', type: 'aura', basePrice: 400 },
-  { cat: 'auras', slot: 'aura', name: 'Halkası', type: 'aura', basePrice: 430 },
+  { cat: 'auras', slot: 'aura', name: 'Aura', type: 'aura', basePrice: 400 },
+  { cat: 'auras', slot: 'aura', name: 'Işık Halkası', type: 'aura', basePrice: 430 },
   // Potions
-  { cat: 'potions', slot: 'potion', name: 'Eliksiri', type: 'potion', basePrice: 190 }
+  { cat: 'potions', slot: 'potion', name: 'Eliksir', type: 'potion', basePrice: 190 }
 ];
+
+const SECONDARY_TITLES = ['(Kutsal)', '(Usta)', '(Kıdemli)', '(Asil)', '(Süper)', '(Büyülü)', '(Kadim)', '(Efsanevi)', '(Kraliyet)', '(Büyük)'];
+
+const usedNamesSet = new Set<string>();
+SHOP_ITEMS.forEach(i => usedNamesSet.add(i.name));
 
 let counter = 1;
 while (SHOP_ITEMS.length < 300) {
   const theme = THEME_PREFIXES[counter % THEME_PREFIXES.length];
   const itemBase = ITEM_BASES[(counter * 7) % ITEM_BASES.length];
   const itemId = `${itemBase.cat}_${theme.p.toLowerCase()}_${counter}`;
+
+  let rawName = `${theme.p} ${itemBase.name}`;
+  if (usedNamesSet.has(rawName)) {
+    const secTitle = SECONDARY_TITLES[(counter * 3) % SECONDARY_TITLES.length];
+    rawName = `${theme.p} ${itemBase.name} ${secTitle}`;
+  }
+  usedNamesSet.add(rawName);
 
   const statsObj: Record<string, number> = {};
   if (theme.stat === 'attack') statsObj.attack = 10 + (counter % 20);
@@ -1988,7 +2001,7 @@ while (SHOP_ITEMS.length < 300) {
 
   SHOP_ITEMS.push({
     id: itemId,
-    name: `${theme.p} ${itemBase.name} #${counter}`,
+    name: rawName,
     category: itemBase.cat as any,
     slot: itemBase.slot as any,
     price: itemBase.basePrice + (counter * 5) % 200,
@@ -2004,6 +2017,7 @@ while (SHOP_ITEMS.length < 300) {
 
 // ============================================================================
 // STRICT 50 FREE & 250 PAID ITEMS ENFORCEMENT (300 EŞYANIN 250'Sİ PARALI, 50'Sİ ÜCRETSİZ)
+// 200 ADET EŞYA KARIŞIK OLARAK "🔒 ÇOK YAKINDA" ŞEKLİNDE KİLİTLENİR
 // ============================================================================
 const FREE_CATEGORY_TARGETS: Record<string, number> = {
   hats: 14,
@@ -2026,13 +2040,13 @@ const freeCountTracker: Record<string, number> = {
 };
 
 export const FREE_SHOP_ITEM_IDS: string[] = [];
+export const COMING_SOON_ITEM_IDS: string[] = [];
 
 SHOP_ITEMS.forEach((item) => {
   const cat = item.category;
   if ((freeCountTracker[cat] || 0) < (FREE_CATEGORY_TARGETS[cat] || 0)) {
     item.price = 0;
-    item.rarity = 'common';
-    item.description = `[BAŞLANGIÇ EŞYASI - ÜCRETSİZ] ${item.description}`;
+    item.isComingSoon = false;
     freeCountTracker[cat] = (freeCountTracker[cat] || 0) + 1;
     FREE_SHOP_ITEM_IDS.push(item.id);
   } else {
@@ -2048,4 +2062,31 @@ SHOP_ITEMS.forEach((item) => {
     if (item.rarity === 'mythic' && item.price < 1400) item.price = 1800;
   }
 });
+
+// Lock exactly 200 items in a deterministic mixed distribution across categories
+// Out of the 250 paid items, lock 200 items as "isComingSoon: true" (leaving 50 paid + 50 free = 100 unlocked items)
+const paidItems = SHOP_ITEMS.filter(item => !FREE_SHOP_ITEM_IDS.includes(item.id));
+// We want exactly 200 items locked. In every 5 paid items, lock 4 of them (4/5 * 250 = 200 locked).
+let lockedAssignedCount = 0;
+paidItems.forEach((item, index) => {
+  // If (index % 5 !== 0) -> 4 out of every 5 items locked = 200 items total
+  if (index % 5 !== 0 && lockedAssignedCount < 200) {
+    item.isComingSoon = true;
+    COMING_SOON_ITEM_IDS.push(item.id);
+    lockedAssignedCount++;
+  } else {
+    item.isComingSoon = false;
+  }
+});
+
+// Final safety check to ensure exactly 200 items are locked
+if (lockedAssignedCount < 200) {
+  for (const item of paidItems) {
+    if (!item.isComingSoon && lockedAssignedCount < 200) {
+      item.isComingSoon = true;
+      COMING_SOON_ITEM_IDS.push(item.id);
+      lockedAssignedCount++;
+    }
+  }
+}
 

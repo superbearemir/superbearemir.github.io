@@ -143,8 +143,9 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
 
   // Synchronize master modal state with global flag to avoid dead zones
   useEffect(() => {
-    (window as any).__superBearModalOpen = isMenuOpen;
-    if (isMenuOpen) {
+    const active = isMenuOpen;
+    (window as any).__superBearModalOpen = active;
+    if (active) {
       document.body.classList.add('modal-open');
     } else {
       document.body.classList.remove('modal-open');
@@ -323,8 +324,11 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
     const enhancer = (window as any).__superBearSpaceEnhancer;
     if (enhancer && enhancer.triggerFishing) {
       enhancer.triggerFishing();
+    } else if (typeof (window as any).triggerFishing === 'function') {
+      (window as any).triggerFishing();
     } else {
       window.dispatchEvent(new CustomEvent('superbear:action-trigger', { detail: 'fish' }));
+      window.dispatchEvent(new CustomEvent('superbear:trigger-fishing'));
     }
   };
 
@@ -557,105 +561,117 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
   return (
     <>
       {/* Top Left Performance, Map & Device Quick Controls (Positioned at top-12/16 to NEVER overlap game stats bar in portrait mode) */}
-      <div className="fixed top-12 sm:top-16 left-3 sm:left-4 z-[40] flex items-center gap-1.5 sm:gap-2 pointer-events-none select-none">
-        
-        {/* Quick Map Selector Button */}
-        <button
-          onClick={() => {
-            if (onOpenMapModal) onOpenMapModal();
-            else window.dispatchEvent(new CustomEvent('superbear:open-map-selector'));
-          }}
-          title={t('map')}
-          className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-sky-600 to-teal-600 text-white border border-sky-300 shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-sky-500 hover:to-teal-500"
-        >
-          <span className="text-xs">🗺️</span>
-          <span>{t('map')}</span>
-        </button>
-
-        {/* Quick Retro Arcade Games Button (Prominently visible on Mobile and PC) */}
-        <button
-          onClick={() => {
-            if (onOpenArcade) onOpenArcade();
-            else window.dispatchEvent(new CustomEvent('superbear:open-arcade-games'));
-          }}
-          title={t('arcade')}
-          className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 text-white border border-purple-300 shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-purple-500 hover:to-pink-500"
-        >
-          <span className="text-xs">🕹️</span>
-          <span>{t('arcade')}</span>
-        </button>
-
-        {/* Quick Country & Language Selector Button */}
-        <button
-          onClick={() => window.dispatchEvent(new CustomEvent('superbear:open-language-modal'))}
-          title={t('languageSelect')}
-          className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-emerald-600 to-teal-700 text-white border border-emerald-300 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-emerald-500 hover:to-teal-600"
-        >
-          <span className="text-xs">🌍</span>
-          <span>{language.toUpperCase()}</span>
-        </button>
-
-        {/* Loot Boxes Quick Button */}
-        <button
-          onClick={() => window.dispatchEvent(new CustomEvent('superbear:open-lootboxes'))}
-          title={t('boxes')}
-          className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-500 text-slate-950 border border-amber-300 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:brightness-110 animate-pulse"
-        >
-          <span className="text-xs">🎁</span>
-          <span>{t('boxes')}</span>
-        </button>
-
-        {/* Anti-Lag / 60 FPS Toggle Button */}
-        <button
-          onClick={togglePerformanceProfile}
-          title="Performans ve FPS Modunu Değiştir"
-          className="pointer-events-auto px-2.5 py-1 rounded-full bg-slate-900/90 text-white border border-slate-700 hover:border-amber-400 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:bg-slate-800"
-        >
-          <Zap className={`w-3.5 h-3.5 ${perfProfile === 'smooth60' ? 'text-amber-400 animate-pulse' : perfProfile === 'ultra' ? 'text-cyan-400' : 'text-emerald-400'}`} />
-          <span className="hidden md:inline">
-            {perfProfile === 'smooth60' ? '⚡ 60 FPS' : perfProfile === 'ultra' ? '💎 Ultra' : '⚖️ Dengeli'}
-          </span>
-        </button>
-
-        {/* Device Mode Quick Switcher */}
-        {onOpenDeviceSelector && (
+      {!isMenuOpen && (
+        <div className="fixed top-12 sm:top-16 left-3 sm:left-4 z-[40] flex items-center gap-1.5 sm:gap-2 pointer-events-none select-none">
+          
+          {/* Quick Map Selector Button */}
           <button
-            onClick={onOpenDeviceSelector}
-            className="pointer-events-auto px-2.5 py-1 rounded-full bg-slate-900/90 text-slate-100 border border-slate-700 hover:border-amber-400 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:bg-slate-800"
-            title="Cihaz ve Kontrol Modunu Değiştir (Mobil / PC)"
+            onClick={() => {
+              if (onOpenMapModal) onOpenMapModal();
+              else window.dispatchEvent(new CustomEvent('superbear:open-map-selector'));
+            }}
+            title={t('map')}
+            className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-sky-600 to-teal-600 text-white border border-sky-300 shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-sky-500 hover:to-teal-500"
           >
-            {controlMode === 'touch' ? (
-              <>
-                <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
-                <span className="hidden sm:inline">Mobil</span>
-              </>
-            ) : (
-              <>
-                <Monitor className="w-3.5 h-3.5 text-indigo-400" />
-                <span className="hidden sm:inline">PC</span>
-              </>
-            )}
+            <span className="text-xs">🗺️</span>
+            <span>{t('map')}</span>
           </button>
-        )}
 
-        {/* Quick Save & Progress Manager Button */}
-        <button
-          onClick={handleQuickSave}
-          title="Oyun İlerlemesini ve Altınları Kaydet (Yerel Hafıza)"
-          className={`pointer-events-auto px-2.5 py-1 rounded-full text-white border shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition-all transform active:scale-95 cursor-pointer ${
-            saveFlash
-              ? 'bg-emerald-500 border-emerald-200 text-slate-950 scale-105 shadow-emerald-500/50'
-              : 'bg-gradient-to-r from-emerald-600 to-teal-700 border-emerald-400/80 hover:from-emerald-500 hover:to-teal-600'
-          }`}
-        >
-          <Save className={`w-3.5 h-3.5 ${saveFlash ? 'animate-spin text-slate-950' : 'text-emerald-200'}`} />
-          <span>{saveFlash ? 'Kaydedildi!' : 'Kaydet'}</span>
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse"></span>
-        </button>
-      </div>
+          {/* Quick Opening Story Cinematic Button */}
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('superbear:open-intro-cinematic'))}
+            title="Giriş Hikayesi Filmini İzle"
+            className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 to-red-500 text-slate-950 border border-amber-200 shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-amber-400 hover:to-red-400"
+          >
+            <span className="text-xs">🎬</span>
+            <span>Film</span>
+          </button>
+
+          {/* Quick Retro Arcade Games Button (Prominently visible on Mobile and PC) */}
+          <button
+            onClick={() => {
+              if (onOpenArcade) onOpenArcade();
+              else window.dispatchEvent(new CustomEvent('superbear:open-arcade-games'));
+            }}
+            title={t('arcade')}
+            className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 text-white border border-purple-300 shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-purple-500 hover:to-pink-500"
+          >
+            <span className="text-xs">🕹️</span>
+            <span>{t('arcade')}</span>
+          </button>
+
+          {/* Quick Country & Language Selector Button */}
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('superbear:open-language-modal'))}
+            title={t('languageSelect')}
+            className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-emerald-600 to-teal-700 text-white border border-emerald-300 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-emerald-500 hover:to-teal-600"
+          >
+            <span className="text-xs">🌍</span>
+            <span>{language.toUpperCase()}</span>
+          </button>
+
+          {/* Loot Boxes Quick Button */}
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('superbear:open-lootboxes'))}
+            title={t('boxes')}
+            className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-500 text-slate-950 border border-amber-300 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:brightness-110 animate-pulse"
+          >
+            <span className="text-xs">🎁</span>
+            <span>{t('boxes')}</span>
+          </button>
+
+          {/* Anti-Lag / 60 FPS Toggle Button */}
+          <button
+            onClick={togglePerformanceProfile}
+            title="Performans ve FPS Modunu Değiştir"
+            className="pointer-events-auto px-2.5 py-1 rounded-full bg-slate-900/90 text-white border border-slate-700 hover:border-amber-400 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:bg-slate-800"
+          >
+            <Zap className={`w-3.5 h-3.5 ${perfProfile === 'smooth60' ? 'text-amber-400 animate-pulse' : perfProfile === 'ultra' ? 'text-cyan-400' : 'text-emerald-400'}`} />
+            <span className="hidden md:inline">
+              {perfProfile === 'smooth60' ? '⚡ 60 FPS' : perfProfile === 'ultra' ? '💎 Ultra' : '⚖️ Dengeli'}
+            </span>
+          </button>
+
+          {/* Device Mode Quick Switcher */}
+          {onOpenDeviceSelector && (
+            <button
+              onClick={onOpenDeviceSelector}
+              className="pointer-events-auto px-2.5 py-1 rounded-full bg-slate-900/90 text-slate-100 border border-slate-700 hover:border-amber-400 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:bg-slate-800"
+              title="Cihaz ve Kontrol Modunu Değiştir (Mobil / PC)"
+            >
+              {controlMode === 'touch' ? (
+                <>
+                  <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+                  <span className="hidden sm:inline">Mobil</span>
+                </>
+              ) : (
+                <>
+                  <Monitor className="w-3.5 h-3.5 text-indigo-400" />
+                  <span className="hidden sm:inline">PC</span>
+                </>
+              )}
+            </button>
+          )}
+
+          {/* Quick Save & Progress Manager Button */}
+          <button
+            onClick={handleQuickSave}
+            title="Oyun İlerlemesini ve Altınları Kaydet (Yerel Hafıza)"
+            className={`pointer-events-auto px-2.5 py-1 rounded-full text-white border shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition-all transform active:scale-95 cursor-pointer ${
+              saveFlash
+                ? 'bg-emerald-500 border-emerald-200 text-slate-950 scale-105 shadow-emerald-500/50'
+                : 'bg-gradient-to-r from-emerald-600 to-teal-700 border-emerald-400/80 hover:from-emerald-500 hover:to-teal-600'
+            }`}
+          >
+            <Save className={`w-3.5 h-3.5 ${saveFlash ? 'animate-spin text-slate-950' : 'text-emerald-200'}`} />
+            <span>{saveFlash ? 'Kaydedildi!' : 'Kaydet'}</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse"></span>
+          </button>
+        </div>
+      )}
 
       {/* Floating Auto-Save Success Notification Banner */}
-      {lastSaveToast && (
+      {!isMenuOpen && lastSaveToast && (
         <div className="fixed top-2 sm:top-3.5 left-1/2 -translate-x-1/2 z-[100] pointer-events-none select-none px-3.5 py-1.5 rounded-full bg-slate-950/90 border border-emerald-400/90 shadow-2xl backdrop-blur-md flex items-center gap-2 text-xs font-black text-emerald-300 animate-in fade-in slide-in-from-top-3 duration-200">
           <CheckCircle2 className="w-4 h-4 text-emerald-400 animate-pulse shrink-0" />
           <span>{lastSaveToast.message}</span>
@@ -665,7 +681,7 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
       {/* Responsive Centered Modal Dialog (Guaranteed strictly within screen bounds on any device) */}
       {isMenuOpen && (
         <div 
-          className="fixed inset-0 z-[120] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200 pointer-events-auto select-none"
+          className="fixed inset-0 z-[99999] bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200 pointer-events-auto select-none"
           onClick={(e) => {
             if (e.target === e.currentTarget) setIsMenuOpen(false);
           }}
@@ -1230,7 +1246,7 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
       )}
 
       {/* Horizontal Expandable Superpower Action Dock (Opens horizontally to the left of the button cluster) */}
-      {isPowersRackOpen && (
+      {!isMenuOpen && isPowersRackOpen && (
         <div className="fixed bottom-5 right-20 sm:right-24 z-[85] pointer-events-auto max-w-[calc(100vw-95px)] sm:max-w-2xl bg-slate-950/95 border-2 border-purple-400/80 rounded-2xl p-2 sm:p-2.5 shadow-2xl backdrop-blur-xl animate-in slide-in-from-right-4 duration-200 text-slate-100 flex flex-col gap-1.5 select-none">
           {/* Header */}
           <div className="flex items-center justify-between px-1 pb-1 border-b border-purple-500/30">
@@ -1279,110 +1295,112 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
       )}
 
       {/* Vertical Round Button Cluster (Anchored bottom right) */}
-      <div className="fixed bottom-5 right-4 sm:right-6 z-[80] flex flex-col items-end gap-3 pointer-events-none select-none">
+      {!isMenuOpen && (
+        <div className="fixed bottom-5 right-4 sm:right-6 z-[80] flex flex-col items-end gap-3 pointer-events-none select-none">
 
-        {/* Vertical Stack of Circular Action Buttons (Ordered bottom-up) */}
-        <div className="flex flex-col-reverse items-center gap-3">
-          
-          {/* 1. Primary Jump Button (Bottom) */}
-          <button
-            onTouchStart={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleJump();
-              if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
-            }}
-            onClick={() => {
-              handleJump();
-              if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
-            }}
-            className="pointer-events-auto w-16 h-16 rounded-full bg-gradient-to-tr from-cyan-500 via-sky-500 to-blue-600 text-slate-950 border-2 border-cyan-100 shadow-2xl flex flex-col items-center justify-center font-black active:scale-90 transition transform cursor-pointer hover:scale-105 ring-4 ring-sky-400/30"
-            title="Zıpla [Space / A]"
-          >
-            <span className="text-xl leading-none">🦘</span>
-            <span className="text-[9px] font-black mt-0.5">ZIPLA</span>
-          </button>
-
-          {/* 2. Attack / Vur Button */}
-          <button
-            onTouchStart={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              handleAttack();
-              if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
-            }}
-            onClick={() => {
-              handleAttack();
-              if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
-            }}
-            className="pointer-events-auto w-14 h-14 rounded-full bg-gradient-to-tr from-rose-600 via-red-500 to-amber-500 text-white border-2 border-rose-200 shadow-xl flex flex-col items-center justify-center font-black active:scale-90 transition transform cursor-pointer hover:scale-105"
-            title="Saldırı / Vur [B]"
-          >
-            <span className="text-lg leading-none">⚔️</span>
-            <span className="text-[8px] font-black mt-0.5">VUR</span>
-          </button>
-
-          {/* 3. Interaction Button [E] (ONLY visible when near an interactable target!) */}
-          {isNearInteractable && (
+          {/* Vertical Stack of Circular Action Buttons (Ordered bottom-up) */}
+          <div className="flex flex-col-reverse items-center gap-3">
+            
+            {/* 1. Primary Jump Button (Bottom) */}
             <button
               onTouchStart={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                handleInteract();
+                handleJump();
                 if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
               }}
               onClick={() => {
-                handleInteract();
+                handleJump();
                 if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
               }}
-              className="pointer-events-auto w-14 h-14 rounded-full bg-gradient-to-tr from-amber-400 via-yellow-400 to-orange-500 text-slate-950 border-2 border-yellow-100 shadow-2xl flex flex-col items-center justify-center font-black active:scale-90 transition transform cursor-pointer hover:scale-105 animate-bounce"
-              title="Etkileşim / Konuş / Dükkan Aç [E]"
+              className="pointer-events-auto w-16 h-16 rounded-full bg-gradient-to-tr from-cyan-500 via-sky-500 to-blue-600 text-slate-950 border-2 border-cyan-100 shadow-2xl flex flex-col items-center justify-center font-black active:scale-90 transition transform cursor-pointer hover:scale-105 ring-4 ring-sky-400/30"
+              title="Zıpla [Space / A]"
             >
-              <span className="text-lg leading-none">💬</span>
-              <span className="text-[9px] font-black mt-0.5">[E]</span>
+              <span className="text-xl leading-none">🦘</span>
+              <span className="text-[9px] font-black mt-0.5">ZIPLA</span>
             </button>
-          )}
 
-          {/* 4. Dynamic Selected Power Button (Shows current selected power) */}
-          {selectedPowerId && powerDefinitions[selectedPowerId] && (
+            {/* 2. Attack / Vur Button */}
             <button
               onTouchStart={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                const def = powerDefinitions[selectedPowerId];
-                if (def) def.handler();
+                handleAttack();
                 if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
               }}
               onClick={() => {
-                const def = powerDefinitions[selectedPowerId];
-                if (def) def.handler();
+                handleAttack();
                 if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
               }}
-              className={`pointer-events-auto w-14 h-14 rounded-full bg-gradient-to-tr ${powerDefinitions[selectedPowerId].bgClass} border-2 ${powerDefinitions[selectedPowerId].borderClass} shadow-xl flex flex-col items-center justify-center font-black active:scale-90 transition transform cursor-pointer animate-in zoom-in-95 duration-150 hover:brightness-110`}
-              title={`Seçili Güç: ${powerDefinitions[selectedPowerId].name}`}
+              className="pointer-events-auto w-14 h-14 rounded-full bg-gradient-to-tr from-rose-600 via-red-500 to-amber-500 text-white border-2 border-rose-200 shadow-xl flex flex-col items-center justify-center font-black active:scale-90 transition transform cursor-pointer hover:scale-105"
+              title="Saldırı / Vur [B]"
             >
-              <span className="text-base leading-none">{powerDefinitions[selectedPowerId].emoji}</span>
-              <span className="text-[8px] font-extrabold max-w-[46px] truncate leading-none mt-0.5">{powerDefinitions[selectedPowerId].shortLabel}</span>
+              <span className="text-lg leading-none">⚔️</span>
+              <span className="text-[8px] font-black mt-0.5">VUR</span>
             </button>
-          )}
 
-          {/* 5. Powers Rack Menu Trigger Button (Top of Stack) */}
-          <button
-            onTouchStart={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setIsPowersRackOpen((prev) => !prev);
-            }}
-            onClick={() => setIsPowersRackOpen((prev) => !prev)}
-            className="pointer-events-auto w-13 h-13 rounded-full bg-gradient-to-tr from-purple-700 via-indigo-600 to-amber-500 text-white border-2 border-yellow-300 shadow-xl flex flex-col items-center justify-center font-black active:scale-90 transition transform cursor-pointer hover:scale-105"
-            title="Güç Seçim Menüsünü Aç / Kapat"
-          >
-            <Zap className="w-4 h-4 text-yellow-300 fill-yellow-300 animate-pulse" />
-            <span className="text-[8px] font-black leading-none mt-0.5">GÜÇLER</span>
-          </button>
+            {/* 3. Interaction Button [E] (ONLY visible when near an interactable target!) */}
+            {isNearInteractable && (
+              <button
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  handleInteract();
+                  if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
+                }}
+                onClick={() => {
+                  handleInteract();
+                  if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
+                }}
+                className="pointer-events-auto w-14 h-14 rounded-full bg-gradient-to-tr from-amber-400 via-yellow-400 to-orange-500 text-slate-950 border-2 border-yellow-100 shadow-2xl flex flex-col items-center justify-center font-black active:scale-90 transition transform cursor-pointer hover:scale-105 animate-bounce"
+                title="Etkileşim / Konuş / Dükkan Aç [E]"
+              >
+                <span className="text-lg leading-none">💬</span>
+                <span className="text-[9px] font-black mt-0.5">[E]</span>
+              </button>
+            )}
 
+            {/* 4. Dynamic Selected Power Button (Shows current selected power) */}
+            {selectedPowerId && powerDefinitions[selectedPowerId] && (
+              <button
+                onTouchStart={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const def = powerDefinitions[selectedPowerId];
+                  if (def) def.handler();
+                  if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
+                }}
+                onClick={() => {
+                  const def = powerDefinitions[selectedPowerId];
+                  if (def) def.handler();
+                  if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
+                }}
+                className={`pointer-events-auto w-14 h-14 rounded-full bg-gradient-to-tr ${powerDefinitions[selectedPowerId].bgClass} border-2 ${powerDefinitions[selectedPowerId].borderClass} shadow-xl flex flex-col items-center justify-center font-black active:scale-90 transition transform cursor-pointer animate-in zoom-in-95 duration-150 hover:brightness-110`}
+                title={`Seçili Güç: ${powerDefinitions[selectedPowerId].name}`}
+              >
+                <span className="text-base leading-none">{powerDefinitions[selectedPowerId].emoji}</span>
+                <span className="text-[8px] font-extrabold max-w-[46px] truncate leading-none mt-0.5">{powerDefinitions[selectedPowerId].shortLabel}</span>
+              </button>
+            )}
+
+            {/* 5. Powers Rack Menu Trigger Button (Top of Stack) */}
+            <button
+              onTouchStart={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsPowersRackOpen((prev) => !prev);
+              }}
+              onClick={() => setIsPowersRackOpen((prev) => !prev)}
+              className="pointer-events-auto w-13 h-13 rounded-full bg-gradient-to-tr from-purple-700 via-indigo-600 to-amber-500 text-white border-2 border-yellow-300 shadow-xl flex flex-col items-center justify-center font-black active:scale-90 transition transform cursor-pointer hover:scale-105"
+              title="Güç Seçim Menüsünü Aç / Kapat"
+            >
+              <Zap className="w-4 h-4 text-yellow-300 fill-yellow-300 animate-pulse" />
+              <span className="text-[8px] font-black leading-none mt-0.5">GÜÇLER</span>
+            </button>
+
+          </div>
         </div>
-      </div>
+      )}
     </>
   );
 };

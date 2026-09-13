@@ -11,7 +11,7 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
 
   const [unlockedMax] = useState<number>(() => {
     const saved = localStorage.getItem('super_bear_unlocked_levels_max');
-    return saved ? parseInt(saved, 10) : 14;
+    return saved ? Math.min(14, parseInt(saved, 10)) : 14;
   });
 
   useEffect(() => {
@@ -337,11 +337,10 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
                           <span className="text-xl">{lvl.icon}</span>
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-black font-mono ${
                             isLocked
-                              ? 'bg-slate-800 text-slate-400 flex items-center gap-1'
+                              ? 'bg-amber-500/20 text-amber-300 flex items-center gap-1 border border-amber-500/30'
                               : 'bg-emerald-500/20 text-emerald-300'
                           }`}>
-                            {isLocked && <Lock className="w-2.5 h-2.5" />}
-                            Dünya #{lvl.no} {isLocked ? '(Kilitli)' : ''}
+                            {isLocked ? '⏳ Çok Yakında' : `Dünya #${lvl.no}`}
                           </span>
                         </div>
                         <h4 className={`font-bold text-sm transition-colors ${
@@ -350,15 +349,15 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
                           {lvl.name}
                         </h4>
                         <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
-                          {isLocked ? '🔒 Bu bölüme girmek için ilk 14 seviyeyi tamamlamalısın.' : lvl.desc}
+                          {isLocked ? '⏳ Çok Yakında! Bu bölüm yeni güncellemeyle aktif olacaktır.' : lvl.desc}
                         </p>
                       </div>
                       <div className={`mt-3 flex items-center justify-between text-[11px] font-bold pt-2 border-t ${
                         isLocked
-                          ? 'text-slate-500 border-slate-800'
+                          ? 'text-amber-400/80 border-slate-800'
                           : 'text-emerald-400 border-slate-700/60'
                       }`}>
-                        <span>{isLocked ? '🔒 Kilitli Bölüm' : 'Bölüme Işınlan'}</span>
+                        <span>{isLocked ? '⏳ Çok Yakında' : 'Bölüme Işınlan'}</span>
                         {!isLocked && <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />}
                       </div>
                     </button>
@@ -407,20 +406,20 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
                           <span className="text-xl">{lvl.icon}</span>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black font-mono bg-slate-800 text-slate-400 flex items-center gap-1">
-                            <Lock className="w-2.5 h-2.5" />
-                            {lvl.boss ? '👑 BOSS (Kilitli)' : `Uzay #${lvl.no} (Kilitli)`}
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                            <span>⏳</span>
+                            {lvl.boss ? '👑 BOSS (Çok Yakında)' : `Uzay #${lvl.no} (Çok Yakında)`}
                           </span>
                         </div>
-                        <h4 className="font-bold text-sm text-slate-400">
+                        <h4 className="font-bold text-sm text-slate-300">
                           {lvl.name}
                         </h4>
-                        <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
-                          🔒 Bu uzay bölümü kilitlidir. İlk 14 Dünya bölümünü tamamlayarak açın.
+                        <p className="text-[11px] text-amber-400/80 mt-1 line-clamp-2">
+                          ⏳ Çok Yakında! Bu uzay bölümü yeni güncellemeyle eklenecektir.
                         </p>
                       </div>
-                      <div className="mt-3 flex items-center justify-between text-[11px] font-bold pt-2 border-t text-slate-500 border-slate-800">
-                        <span>🔒 Kilitli Bölüm</span>
+                      <div className="mt-3 flex items-center justify-between text-[11px] font-bold pt-2 border-t text-amber-400/80 border-slate-800">
+                        <span>⏳ Çok Yakında</span>
                       </div>
                     </button>
                   );
@@ -474,20 +473,20 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
                           <span className="text-xl">{lvl.icon}</span>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black font-mono bg-slate-800 text-slate-400 flex items-center gap-1">
-                            <Lock className="w-2.5 h-2.5" />
-                            {lvl.boss ? '👑 FİNAL (Kilitli)' : `Poneix #${lvl.no} (Kilitli)`}
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                            <span>⏳</span>
+                            {lvl.boss ? '👑 FİNAL (Çok Yakında)' : `Poneix #${lvl.no} (Çok Yakında)`}
                           </span>
                         </div>
-                        <h4 className="font-bold text-sm text-slate-400">
+                        <h4 className="font-bold text-sm text-slate-300">
                           {lvl.name}
                         </h4>
-                        <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
-                          🔒 Bu Poneix gezegeni bölümü kilitlidir. İlk 14 Dünya bölümünü tamamlayarak açın.
+                        <p className="text-[11px] text-emerald-400/80 mt-1 line-clamp-2">
+                          ⏳ Çok Yakında! Bu Poneix gezegeni bölümü yeni güncellemeyle eklenecektir.
                         </p>
                       </div>
-                      <div className="mt-3 flex items-center justify-between text-[11px] font-bold pt-2 border-t text-slate-500 border-slate-800">
-                        <span>🔒 Kilitli Bölüm</span>
+                      <div className="mt-3 flex items-center justify-between text-[11px] font-bold pt-2 border-t text-emerald-400/80 border-slate-800">
+                        <span>⏳ Çok Yakında</span>
                       </div>
                     </button>
                   );
@@ -536,25 +535,25 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
                       key={lvl.id}
                       disabled={true}
                       onClick={() => handleSelectLevel(lvl.id, lvl.no + 29, false)}
-                      className="p-3.5 rounded-2xl border border-dashed border-slate-700/50 bg-slate-900/30 opacity-40 backdrop-blur-sm cursor-not-allowed select-none text-left flex flex-col justify-between shadow-inner"
+                      className="p-3.5 rounded-2xl border border-dashed border-slate-700/50 bg-slate-900/30 opacity-60 backdrop-blur-sm cursor-not-allowed select-none text-left flex flex-col justify-between shadow-inner"
                     >
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
                           <span className="text-xl">{lvl.icon}</span>
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black font-mono bg-slate-800 text-slate-400 flex items-center gap-1">
-                            <Lock className="w-2.5 h-2.5" />
-                            {lvl.boss ? '👑 FİNAL (Kilitli)' : `Phelix #${lvl.no} (Kilitli)`}
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black font-mono bg-sky-500/20 text-sky-300 border border-sky-500/30 flex items-center gap-1">
+                            <span>⏳</span>
+                            {lvl.boss ? '👑 FİNAL (Çok Yakında)' : `Phelix #${lvl.no} (Çok Yakında)`}
                           </span>
                         </div>
-                        <h4 className="font-bold text-sm text-slate-400">
+                        <h4 className="font-bold text-sm text-slate-300">
                           {lvl.name}
                         </h4>
-                        <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
-                          🔒 Bu Phelix gezegeni bölümü kilitlidir. İlk 14 Dünya bölümünü tamamlayarak açın.
+                        <p className="text-[11px] text-sky-400/80 mt-1 line-clamp-2">
+                          ⏳ Çok Yakında! Bu Phelix gezegeni bölümü yeni güncellemeyle eklenecektir.
                         </p>
                       </div>
-                      <div className="mt-3 flex items-center justify-between text-[11px] font-bold pt-2 border-t text-slate-500 border-slate-800">
-                        <span>🔒 Kilitli Bölüm</span>
+                      <div className="mt-3 flex items-center justify-between text-[11px] font-bold pt-2 border-t text-sky-400/80 border-slate-800">
+                        <span>⏳ Çok Yakında</span>
                       </div>
                     </button>
                   );
