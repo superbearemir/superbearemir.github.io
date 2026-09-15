@@ -8022,6 +8022,12 @@ function updateSpaceLoop() {
     }
     grandWaterfallGroup = null;
     grandWaterfallBuilt = false;
+
+    // Clean up waterfall colliders from current level
+    const game = window.__superBearGame;
+    if (game && game.currentLevel && game.currentLevel.colliders) {
+      game.currentLevel.colliders = game.currentLevel.colliders.filter(c => !c.isWaterfallCollider);
+    }
   }
   window.__removeGrandWaterfall = removeGrandWaterfall;
 
@@ -8033,8 +8039,8 @@ function updateSpaceLoop() {
       removeGrandWaterfall(scene);
       return;
     }
-    const THREE = window.THREE;
 
+    const THREE = window.THREE;
     const existing = scene.getObjectByName("grand_waterfall_hub_group");
     if (existing) {
       scene.remove(existing);
@@ -8073,6 +8079,8 @@ function updateSpaceLoop() {
       metalness: 0.6
     });
     const woodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.85 });
+    const benchWoodMat = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.75 });
+    const ironMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.45, metalness: 0.7 });
     const lanternMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xf59e0b, emissiveIntensity: 1.6 });
 
     // 1. Mountain Cliffs & Rocky Backdrop
@@ -8136,11 +8144,9 @@ function updateSpaceLoop() {
       const rad = 7 + (i % 3) * 2.5;
       const lx = 2 + Math.cos(angle) * rad;
       const lz = -6 + Math.sin(angle) * rad;
-
       const pad = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.06, 12), lilyMat);
       pad.position.set(lx, 0.2, lz);
       group.add(pad);
-
       const flw = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.35, 6), flowerMat);
       flw.position.set(lx, 0.35, lz);
       group.add(flw);
@@ -8148,6 +8154,7 @@ function updateSpaceLoop() {
 
     // 4. Wooden Fishing Pier / Dock at the Pond Edge
     const pierGroup = new THREE.Group();
+    pierGroup.name = "waterfall_pier_group";
     pierGroup.position.set(8, 0.3, -6);
 
     const deckMesh = new THREE.Mesh(new THREE.BoxGeometry(6.5, 0.35, 3.8), woodMat);
@@ -8166,10 +8173,12 @@ function updateSpaceLoop() {
     });
 
     const postMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 3.2, 8), woodMat);
+    postMesh.name = "waterfall_pier_lamp_pole";
     postMesh.position.set(2.8, 1.4, 1.5);
     pierGroup.add(postMesh);
 
     const lanternMesh = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.6, 0.5), lanternMat);
+    lanternMesh.name = "waterfall_pier_lamp_head";
     lanternMesh.position.set(2.8, 2.7, 1.5);
     pierGroup.add(lanternMesh);
 
@@ -8178,16 +8187,208 @@ function updateSpaceLoop() {
     pierGroup.add(lanternLight);
 
     const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.6, 1.0, 12), woodMat);
+    barrel.name = "waterfall_pier_barrel";
     barrel.position.set(2.4, 0.6, -1.2);
     pierGroup.add(barrel);
 
     const tackleBox = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.5, 0.6), new THREE.MeshStandardMaterial({ color: 0xd97706 }));
+    tackleBox.name = "waterfall_pier_tacklebox";
     tackleBox.position.set(1.4, 0.4, -1.3);
     pierGroup.add(tackleBox);
 
     group.add(pierGroup);
 
-    // 5. Light & Animation Controller
+    // 5. Rustic Wooden Benches (Oturaklar) Around the Waterfall & Pond
+    function createParkBench(bx, by, bz, rotY, benchName) {
+      const benchGroup = new THREE.Group();
+      benchGroup.name = benchName || "waterfall_park_bench";
+      benchGroup.position.set(bx, by, bz);
+      benchGroup.rotation.y = rotY;
+
+      // Cast iron legs
+      const legGeo = new THREE.BoxGeometry(0.12, 0.65, 0.72);
+      const leftLeg = new THREE.Mesh(legGeo, ironMat);
+      leftLeg.position.set(-1.0, 0.32, 0);
+      leftLeg.castShadow = true;
+      benchGroup.add(leftLeg);
+
+      const rightLeg = new THREE.Mesh(legGeo, ironMat);
+      rightLeg.position.set(1.0, 0.32, 0);
+      rightLeg.castShadow = true;
+      benchGroup.add(rightLeg);
+
+      // Wooden seat planks
+      for (let s = -0.26; s <= 0.26; s += 0.17) {
+        const slat = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.08, 0.13), benchWoodMat);
+        slat.position.set(0, 0.65, s);
+        slat.castShadow = true;
+        benchGroup.add(slat);
+      }
+
+      // Wooden backrest planks
+      const backAngle = -0.15;
+      for (let b = 0.95; b <= 1.45; b += 0.17) {
+        const bSlat = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.12, 0.07), benchWoodMat);
+        bSlat.position.set(0, b, -0.32 + (b - 0.95) * Math.sin(backAngle));
+        bSlat.rotation.x = backAngle;
+        bSlat.castShadow = true;
+        benchGroup.add(bSlat);
+      }
+
+      // Curved iron armrests
+      const armGeo = new THREE.BoxGeometry(0.08, 0.35, 0.65);
+      [-1.0, 1.0].forEach(ax => {
+        const arm = new THREE.Mesh(armGeo, ironMat);
+        arm.position.set(ax, 0.82, -0.05);
+        benchGroup.add(arm);
+      });
+
+      group.add(benchGroup);
+      return benchGroup;
+    }
+
+    // Place Benches around the Waterfall & Pond
+    createParkBench(-8.5, 0, -10.0, 0.75, "waterfall_bench_west");
+    createParkBench(13.5, 0, -9.0, -0.85, "waterfall_bench_east");
+    createParkBench(2.0, 0, -21.5, 0, "waterfall_bench_south");
+
+    // 6. Ornamental Street Lampposts (Sokak Lambaları) with Glowing Lanterns
+    function createLamppost(lx, ly, lz, lampName) {
+      const lampGroup = new THREE.Group();
+      lampGroup.name = lampName || "waterfall_lamppost";
+      lampGroup.position.set(lx, ly, lz);
+
+      // Stone Pedestal
+      const stoneBase = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.45, 0.7), new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.9 }));
+      stoneBase.position.set(0, 0.22, 0);
+      stoneBase.castShadow = true;
+      lampGroup.add(stoneBase);
+
+      // Tall Timber / Wrought Iron Lamp Pole
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 3.4, 8), woodMat);
+      pole.position.set(0, 1.9, 0);
+      pole.castShadow = true;
+      lampGroup.add(pole);
+
+      // Ornamental Metal Crossbar / Arm
+      const crossbar = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.1, 0.14), ironMat);
+      crossbar.position.set(0, 3.3, 0);
+      lampGroup.add(crossbar);
+
+      // Hanging Lantern Housing
+      const housing = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.62, 0.48), lanternMat);
+      housing.position.set(0.32, 2.95, 0);
+      lampGroup.add(housing);
+
+      const roofCap = new THREE.Mesh(new THREE.ConeGeometry(0.42, 0.3, 4), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+      roofCap.position.set(0.32, 3.35, 0);
+      roofCap.rotation.y = Math.PI / 4;
+      lampGroup.add(roofCap);
+
+      // Warm Radiant Light
+      const pLight = new THREE.PointLight(0xfbbf24, 2.2, 14);
+      pLight.position.set(0.32, 2.95, 0);
+      lampGroup.add(pLight);
+
+      group.add(lampGroup);
+      return lampGroup;
+    }
+
+    // Place Lampposts along path & benches
+    createLamppost(-9.5, 0, -12.5, "waterfall_lamp_west");
+    createLamppost(14.5, 0, -7.0, "waterfall_lamp_east");
+    createLamppost(5.0, 0, -22.5, "waterfall_lamp_south");
+
+    // 7. Register Solid Physical Colliders in game.currentLevel.colliders (Anti-Phasing / Solid Floor & Walls)
+    if (game && game.currentLevel) {
+      if (!game.currentLevel.colliders) game.currentLevel.colliders = [];
+      game.currentLevel.colliders = game.currentLevel.colliders.filter(c => !c.isWaterfallCollider);
+
+      // A. Şelalenin İçi ve Dağ Kayaları (Water Curtain & Mountain Cliff Backdrop - Solid Barrier)
+      // Şelalenin içine ve arkasındaki kayalara geçişi kesinlikle engeller
+      game.currentLevel.colliders.push({
+        isWaterfallCollider: true,
+        min: new THREE.Vector3(-42, 0, 41.4),
+        max: new THREE.Vector3(-18, 25, 56)
+      });
+      // Sol ve Sağ Dağ Çıkıntıları
+      game.currentLevel.colliders.push({
+        isWaterfallCollider: true,
+        min: new THREE.Vector3(-45, 0, 38),
+        max: new THREE.Vector3(-35, 15, 48)
+      });
+      game.currentLevel.colliders.push({
+        isWaterfallCollider: true,
+        min: new THREE.Vector3(-25, 0, 38),
+        max: new THREE.Vector3(-15, 15, 48)
+      });
+
+      // B. Ahşap Balıkçılık İskelesi Tabanı (Solid Walkable Pier Deck)
+      game.currentLevel.colliders.push({
+        isWaterfallCollider: true,
+        min: new THREE.Vector3(-25.3, 0, 32.1),
+        max: new THREE.Vector3(-18.7, 0.48, 35.9)
+      });
+
+      // C. İskele Eşyaları (Varil, Fener Direği, Balık Kutusu)
+      game.currentLevel.colliders.push({
+        isWaterfallCollider: true,
+        min: new THREE.Vector3(-20.2, 0.3, 32.2),
+        max: new THREE.Vector3(-19.0, 1.6, 33.4)
+      });
+      game.currentLevel.colliders.push({
+        isWaterfallCollider: true,
+        min: new THREE.Vector3(-19.5, 0.3, 35.2),
+        max: new THREE.Vector3(-18.9, 3.5, 35.8)
+      });
+      game.currentLevel.colliders.push({
+        isWaterfallCollider: true,
+        min: new THREE.Vector3(-21.0, 0.3, 32.3),
+        max: new THREE.Vector3(-20.2, 1.0, 33.1)
+      });
+
+      // D. Ahşap Oturaklar (Park Bankları) - Katı Çarpışma ve Üstüne Zıplama / Oturma Yüzeyi
+      // Bench 1 (Sol Bank)
+      game.currentLevel.colliders.push({
+        isWaterfallCollider: true,
+        min: new THREE.Vector3(-39.9, 0, 28.7),
+        max: new THREE.Vector3(-37.1, 1.55, 31.3)
+      });
+      // Bench 2 (İskele Girişi Bankı)
+      game.currentLevel.colliders.push({
+        isWaterfallCollider: true,
+        min: new THREE.Vector3(-17.9, 0, 29.7),
+        max: new THREE.Vector3(-15.1, 1.55, 32.3)
+      });
+      // Bench 3 (Ön Patika Bankı)
+      game.currentLevel.colliders.push({
+        isWaterfallCollider: true,
+        min: new THREE.Vector3(-29.4, 0, 17.8),
+        max: new THREE.Vector3(-26.6, 1.55, 19.3)
+      });
+
+      // E. Sokak Lambaları (Fener Direkleri) - İçinden Geçilemez Katı Direkler
+      // Lamp 1 (Sol Fener Direği)
+      game.currentLevel.colliders.push({
+        isWaterfallCollider: true,
+        min: new THREE.Vector3(-39.9, 0, 27.1),
+        max: new THREE.Vector3(-39.1, 3.6, 27.9)
+      });
+      // Lamp 2 (Sağ Fener Direği)
+      game.currentLevel.colliders.push({
+        isWaterfallCollider: true,
+        min: new THREE.Vector3(-15.9, 0, 32.6),
+        max: new THREE.Vector3(-15.1, 3.6, 33.4)
+      });
+      // Lamp 3 (Ön Fener Direği)
+      game.currentLevel.colliders.push({
+        isWaterfallCollider: true,
+        min: new THREE.Vector3(-25.4, 0, 17.1),
+        max: new THREE.Vector3(-24.6, 3.6, 17.9)
+      });
+    }
+
+    // 8. Light & Animation Controller
     const waterfallLight = new THREE.PointLight(0x38bdf8, 3.2, 30);
     waterfallLight.position.set(0, 6, 4);
     group.add(waterfallLight);
@@ -11963,6 +12164,114 @@ function updateSpaceLoop() {
             pVel.z *= 0.2;
           }
         }
+      }
+
+      // 5. Ayı Köyü (Hub) - Şelalenin İçine Girmeyi Engelleme & Lamba/Oturakların İçinden Geçilemezliği
+      if (game.currentRegion === 'hub' || !game.currentRegion) {
+        // A. Şelalenin İçine Girilmesini Engelleme (Su Perdesi & Dağ Kayaları Katı Duvarı)
+        // Şelale su perdesi x: -37.5 ile -22.5 arasında akar, z: 41.3'te durur. Oyuncu z >= 41.3'e geçemez!
+        if (pPos.x >= -37.5 && pPos.x <= -22.5 && pPos.z >= 41.3 && pPos.y < 22.0) {
+          pPos.z = 41.3;
+          if (pVel && pVel.z > 0) pVel.z = 0;
+          if (game.spawnSparkleParticles && Math.random() < 0.15) {
+            game.spawnSparkleParticles(new THREE.Vector3(pPos.x, Math.max(pPos.y, 0.5), 41.5), 2, 0x38bdf8);
+          }
+        }
+        // Şelalenin Arkasındaki Ana Dağ Bloğu (x: -42 ile -18, z: 42 ile 55)
+        if (pPos.x >= -42 && pPos.x <= -18 && pPos.z >= 42.0 && pPos.y < 25.0) {
+          pPos.z = 41.3;
+          if (pVel && pVel.z > 0) pVel.z = 0;
+        }
+        // Sol ve Sağ Dağ Çıkıntı Kayaları (Radial Pushout)
+        const leftRockDist = Math.hypot(pPos.x - (-39), pPos.z - 43);
+        const minLeftRock = 5.8 + playerRadius;
+        if (leftRockDist < minLeftRock && leftRockDist > 0.001) {
+          pPos.x = -39 + ((pPos.x - (-39)) / leftRockDist) * minLeftRock;
+          pPos.z = 43 + ((pPos.z - 43) / leftRockDist) * minLeftRock;
+        }
+        const rightRockDist = Math.hypot(pPos.x - (-21), pPos.z - 43);
+        const minRightRock = 5.5 + playerRadius;
+        if (rightRockDist < minRightRock && rightRockDist > 0.001) {
+          pPos.x = -21 + ((pPos.x - (-21)) / rightRockDist) * minRightRock;
+          pPos.z = 43 + ((pPos.z - 43) / rightRockDist) * minRightRock;
+        }
+
+        // B. Şelale Çevresindeki Ahşap Oturaklar (Park Bankları)
+        // Oturağın üstünde değilse (y < 0.72), oyuncu oturağın içinden ASLA geçemez!
+        const waterfallBenches = [
+          { x: -38.5, z: 30.0, r: 1.35, seatY: 0.75 }, // Sol Göl Kıyısı Oturağı
+          { x: -16.5, z: 31.0, r: 1.35, seatY: 0.75 }, // Sağ İskele Girişi Oturağı
+          { x: -28.0, z: 18.5, r: 1.35, seatY: 0.75 }  // Ön Manzara Patikası Oturağı
+        ];
+        waterfallBenches.forEach(b => {
+          if (pPos.y >= b.seatY - 0.05) return; // Oyuncu bankın üstündeyse engelleme
+          const d = Math.hypot(pPos.x - b.x, pPos.z - b.z);
+          const solidR = b.r + playerRadius;
+          if (d < solidR && d > 0.0001) {
+            const nx = (pPos.x - b.x) / d;
+            const nz = (pPos.z - b.z) / d;
+            pPos.x = b.x + nx * solidR;
+            pPos.z = b.z + nz * solidR;
+            if (pVel) {
+              const vDot = pVel.x * nx + pVel.z * nz;
+              if (vDot < 0) {
+                pVel.x -= vDot * nx;
+                pVel.z -= vDot * nz;
+              }
+            }
+          }
+        });
+
+        // C. Şelale Çevresindeki Sokak Lambaları (Fener Direkleri)
+        // Oyuncu fener direğinin içinden ASLA geçemez!
+        const waterfallLamps = [
+          { x: -39.5, z: 27.5, r: 0.45, h: 3.8 }, // Sol Patika Feneri
+          { x: -15.5, z: 33.0, r: 0.45, h: 3.8 }, // Sağ İskele Feneri
+          { x: -25.0, z: 17.5, r: 0.45, h: 3.8 }, // Ön Manzara Feneri
+          { x: -19.2, z: 35.5, r: 0.38, h: 3.5 }  // İskele Baş Feneri
+        ];
+        waterfallLamps.forEach(l => {
+          if (pPos.y > l.h) return;
+          const d = Math.hypot(pPos.x - l.x, pPos.z - l.z);
+          const solidR = l.r + playerRadius;
+          if (d < solidR && d > 0.0001) {
+            const nx = (pPos.x - l.x) / d;
+            const nz = (pPos.z - l.z) / d;
+            pPos.x = l.x + nx * solidR;
+            pPos.z = l.z + nz * solidR;
+            if (pVel) {
+              const vDot = pVel.x * nx + pVel.z * nz;
+              if (vDot < 0) {
+                pVel.x -= vDot * nx;
+                pVel.z -= vDot * nz;
+              }
+            }
+          }
+        });
+
+        // D. İskele Varili ve Balık Kutusu
+        const pierProps = [
+          { x: -19.6, z: 32.8, r: 0.65, h: 1.6 },
+          { x: -20.6, z: 32.7, r: 0.50, h: 1.1 }
+        ];
+        pierProps.forEach(prop => {
+          if (pPos.y > prop.h) return;
+          const d = Math.hypot(pPos.x - prop.x, pPos.z - prop.z);
+          const solidR = prop.r + playerRadius;
+          if (d < solidR && d > 0.0001) {
+            const nx = (pPos.x - prop.x) / d;
+            const nz = (pPos.z - prop.z) / d;
+            pPos.x = prop.x + nx * solidR;
+            pPos.z = prop.z + nz * solidR;
+            if (pVel) {
+              const vDot = pVel.x * nx + pVel.z * nz;
+              if (vDot < 0) {
+                pVel.x -= vDot * nx;
+                pVel.z -= vDot * nz;
+              }
+            }
+          }
+        });
       }
     }
   }
