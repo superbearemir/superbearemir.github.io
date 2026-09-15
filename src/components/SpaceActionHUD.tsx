@@ -15,7 +15,11 @@ import {
   Monitor,
   Check,
   Save,
-  CheckCircle2
+  CheckCircle2,
+  Volume2,
+  VolumeX,
+  Music,
+  SkipForward
 } from 'lucide-react';
 import { QualityProfile, optimizeGameRenderer } from '../utils/mobilePerformanceOptimizer';
 import { ControlMode } from './DeviceSelectionModal';
@@ -63,6 +67,66 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
   // Game Persistence & Auto-Save Manager hook
   const { saveData, lastSaveToast, manualSave } = useGameSave();
   const [saveFlash, setSaveFlash] = useState(false);
+  const [activeMusicTrack, setActiveMusicTrack] = useState<string>('hub');
+  const [isGameMuted, setIsGameMuted] = useState<boolean>(false);
+
+  const GAME_MUSIC_TRACKS = [
+    { id: 'hub', title: '🌸 1. Huzurlu Ayı Vadisi (Sakin)', genre: 'Dingin Akustik Lofi (Sakin Ses)' },
+    { id: 'boncuk_cat', title: '🐱 2. Boncuk\'un Kedi Dansı', genre: 'Zıp Zıp Sevimli Melodi' },
+    { id: 'forest_temple', title: '🌿 3. Antik Orman Tapınağı', genre: 'Mistik Dingin Çanlar' },
+    { id: 'pelican_plains', title: '🪽 4. Gök Adaları & Rüzgar', genre: 'Hafif Esinti & Rüya Melodisi' },
+    { id: 'snow_desert', title: '❄️ 5. Buz Kristalleri & Vadi', genre: 'Kristal Tınılar & Dinginlik' },
+    { id: 'space_realm', title: '🌌 6. Kozmik Boyut & Boncuk', genre: 'Uzay Senfonisi & Yumuşak Tınılar' },
+    { id: 'night_breeze', title: '🌙 7. Gece Esintisi & Lofi Chill', genre: 'Lofi Rahatlatıcı Akustik' },
+    { id: 'crystal_chimes', title: '💎 8. Kristal Mağara Işıltısı', genre: 'Işıltılı Çan Arpejleri' },
+    { id: 'hero_march', title: '🏆 9. Kahraman Zafer Marşı', genre: 'Epik Macera Teması' },
+    { id: 'beehive', title: '🐝 10. Arı Kovanı Macera Dansı', genre: 'Neşeli Arı Dünyası' },
+    { id: 'retro_arcade', title: '🎮 11. Retro Atari Parkuru', genre: '8-Bit Klasik Eğlence' },
+    { id: 'cyber_city', title: '🤖 12. Siber Şehir & Neon Gece', genre: 'Synthwave Melodisi' },
+    { id: 'boss_battle', title: '🔥 13. Macera Boss Karşılaşması', genre: 'Heyecanlı Boss Teması' },
+    { id: 'boss_fury', title: '⚔️ 14. Dev Patron Savaşı', genre: 'Enerjik Boss Mücadelesi' },
+    { id: 'cosmic_boss', title: '🌌 15. Kozmik Final Boss Müziği', genre: 'Görkemli Kozmik Final' },
+  ];
+
+  const handlePlayMusicTrack = (trackId: string) => {
+    setActiveMusicTrack(trackId);
+    setIsGameMuted(false);
+    if (typeof window !== 'undefined') {
+      if ((window as any).St) {
+        (window as any).St.setMuted(false);
+        (window as any).St.startMusic(trackId, true);
+      } else if ((window as any).playMusicTrack) {
+        (window as any).playMusicTrack(trackId);
+      }
+      const game = (window as any).__superBearGame;
+      if (game && game.callbacks && game.callbacks.onShowNotice) {
+        const tr = GAME_MUSIC_TRACKS.find(t => t.id === trackId);
+        game.callbacks.onShowNotice(`🎵 Şarkı Başlatıldı: ${tr ? tr.title : trackId}`, 'info');
+      }
+    }
+  };
+
+  const handleToggleMute = () => {
+    const nextMuted = !isGameMuted;
+    setIsGameMuted(nextMuted);
+    if (typeof window !== 'undefined' && (window as any).St) {
+      (window as any).St.setMuted(nextMuted);
+    }
+  };
+
+  const handleNextTrack = () => {
+    if (typeof window !== 'undefined' && (window as any).St && (window as any).St.nextTrack) {
+      (window as any).St.setMuted(false);
+      setIsGameMuted(false);
+      const nextId = (window as any).St.nextTrack();
+      setActiveMusicTrack(nextId);
+      const game = (window as any).__superBearGame;
+      if (game && game.callbacks && game.callbacks.onShowNotice) {
+        const tr = GAME_MUSIC_TRACKS.find(t => t.id === nextId);
+        game.callbacks.onShowNotice(`⏭️ Sıradaki Şarkı: ${tr ? tr.title : nextId}`, 'info');
+      }
+    }
+  };
 
   const handleQuickSave = () => {
     manualSave();
@@ -1232,6 +1296,78 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
                         >
                           <div>{p.label}</div>
                           <div className={`text-[9px] mt-0.5 ${perfProfile === p.id ? 'text-slate-900' : 'text-slate-500'}`}>{p.desc}</div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 🎵 Dynamic Music Player & Sound Controller */}
+                  <div className="p-3.5 rounded-2xl bg-gradient-to-b from-pink-950/40 to-slate-900/90 border border-pink-500/30 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Music className="w-4 h-4 text-pink-400 animate-pulse" />
+                        <span className="text-xs font-black text-pink-300">🎵 Dinamik Fon Müzikleri (15 Parça)</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={handleNextTrack}
+                          className="px-2 py-1 rounded-lg bg-pink-950/60 hover:bg-pink-900 border border-pink-500/40 text-[10px] font-bold text-pink-200 flex items-center gap-1 cursor-pointer active:scale-95"
+                          title="Sıradaki Parça"
+                        >
+                          <SkipForward className="w-3 h-3 text-pink-300" />
+                          <span>Sıradaki</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleToggleMute}
+                          className={`px-2 py-1 rounded-lg border text-[10px] font-bold flex items-center gap-1 cursor-pointer active:scale-95 transition ${
+                            isGameMuted
+                              ? 'bg-rose-950/80 border-rose-500 text-rose-300'
+                              : 'bg-emerald-950/80 border-emerald-500 text-emerald-300'
+                          }`}
+                        >
+                          {isGameMuted ? (
+                            <>
+                              <VolumeX className="w-3 h-3 text-rose-400" />
+                              <span>Sessiz</span>
+                            </>
+                          ) : (
+                            <>
+                              <Volume2 className="w-3 h-3 text-emerald-400" />
+                              <span>Ses Açık</span>
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="text-[10px] text-slate-400">
+                      Şarkıya dokunarak anında başlatabilirsin:
+                    </div>
+
+                    {/* Song List */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-48 overflow-y-auto pr-1">
+                      {GAME_MUSIC_TRACKS.map((track) => (
+                        <button
+                          key={track.id}
+                          type="button"
+                          onClick={() => handlePlayMusicTrack(track.id)}
+                          className={`p-2 rounded-xl text-left transition active:scale-95 cursor-pointer border flex items-center justify-between ${
+                            activeMusicTrack === track.id && !isGameMuted
+                              ? 'bg-pink-600/40 border-pink-400 text-white shadow-md ring-1 ring-pink-400/50'
+                              : 'bg-slate-950/60 hover:bg-slate-800 border-slate-800/80 text-slate-300'
+                          }`}
+                        >
+                          <div className="truncate">
+                            <div className="text-xs font-bold truncate">{track.title}</div>
+                            <div className="text-[9px] text-slate-400 truncate">{track.genre}</div>
+                          </div>
+                          {activeMusicTrack === track.id && !isGameMuted && (
+                            <span className="text-[9px] bg-pink-500 text-slate-950 font-black px-1.5 py-0.5 rounded-full shrink-0 ml-1">
+                              ▶ Çalıyor
+                            </span>
+                          )}
                         </button>
                       ))}
                     </div>

@@ -18,6 +18,8 @@ import { useLanguage } from '../i18n/LanguageContext';
 interface ArcadeGamesModalProps {
   isOpen: boolean;
   onClose: () => void;
+  initialGameId?: ArcadeGameId;
+  autoStart?: boolean;
   onRewardEarned?: (coins: number, tokens: number) => void;
 }
 
@@ -572,15 +574,51 @@ export function getLocalizedArcadeGames(lang: string): ArcadeGameMeta[] {
 export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
   isOpen,
   onClose,
+  initialGameId,
+  autoStart,
   onRewardEarned
 }) => {
   const { language } = useLanguage();
-  const [selectedGame, setSelectedGame] = useState<ArcadeGameId>('space_invaders');
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [selectedGame, setSelectedGame] = useState<ArcadeGameId>(initialGameId || 'target_blaster');
+  const [isPlaying, setIsPlaying] = useState(Boolean(autoStart));
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
-  const [activeTab, setActiveTab] = useState<'daily' | 'all' | 'rewards'>('daily');
+  const [activeTab, setActiveTab] = useState<'daily' | 'all' | 'target_range' | 'parkour' | 'rewards'>('all');
   const [dailyClaimed, setDailyClaimed] = useState(false);
+
+  // Sync initialGameId when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      if (initialGameId) {
+        setSelectedGame(initialGameId);
+        if (autoStart) {
+          setIsPlaying(true);
+          setGameOver(false);
+          setScore(0);
+        }
+      }
+    } else {
+      setIsPlaying(false);
+      setGameOver(false);
+    }
+  }, [isOpen, initialGameId, autoStart]);
+
+  // Global event listener for direct minigame triggers
+  useEffect(() => {
+    const handleOpenEvent = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && detail.gameId) {
+        setSelectedGame(detail.gameId as ArcadeGameId);
+        if (detail.autoStart) {
+          setIsPlaying(true);
+          setGameOver(false);
+          setScore(0);
+        }
+      }
+    };
+    window.addEventListener('superbear:open-arcade-games', handleOpenEvent);
+    return () => window.removeEventListener('superbear:open-arcade-games', handleOpenEvent);
+  }, []);
 
   const t = ARCADE_TRANSLATIONS[language] || ARCADE_TRANSLATIONS.tr;
   const allLocalizedGames = getLocalizedArcadeGames(language);
@@ -1781,6 +1819,10 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
 
   const displayGames = activeTab === 'daily' 
     ? dailyRotationGames 
+    : activeTab === 'target_range'
+    ? allLocalizedGames.filter(g => ['target_blaster', 'whack_mole', 'space_invaders', 'meteor_dodge'].includes(g.id))
+    : activeTab === 'parkour'
+    ? allLocalizedGames.filter(g => ['retro_runner', 'honey_rush', 'bubble_jump', 'flappy_bear'].includes(g.id))
     : allLocalizedGames;
 
   return (
@@ -1838,22 +1880,11 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
         </div>
 
         {/* Tabs Bar */}
-        <div className="px-4 py-2.5 bg-slate-950/70 border-b border-purple-500/30 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setActiveTab('daily')}
-              className={`px-4 py-1.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 cursor-pointer ${
-                activeTab === 'daily'
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 border border-purple-400'
-                  : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>{t.tabDaily}</span>
-            </button>
+        <div className="px-4 py-2 bg-slate-950/70 border-b border-purple-500/30 flex items-center justify-between shrink-0 overflow-x-auto gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap">
             <button
               onClick={() => setActiveTab('all')}
-              className={`px-4 py-1.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3 sm:px-4 py-1.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
                 activeTab === 'all'
                   ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 border border-purple-400'
                   : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800'
@@ -1862,9 +1893,42 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
               <Gamepad2 className="w-3.5 h-3.5 text-cyan-300" />
               <span>{t.tabAll}</span>
             </button>
+            <button
+              onClick={() => setActiveTab('target_range')}
+              className={`px-3 sm:px-4 py-1.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                activeTab === 'target_range'
+                  ? 'bg-rose-600 text-white shadow-md shadow-rose-600/30 border border-rose-400'
+                  : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800'
+              }`}
+            >
+              <span>🎯</span>
+              <span>Hedef Poligonu</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('parkour')}
+              className={`px-3 sm:px-4 py-1.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                activeTab === 'parkour'
+                  ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30 border border-amber-400'
+                  : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800'
+              }`}
+            >
+              <span>🏃</span>
+              <span>Engelli Parkur</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('daily')}
+              className={`px-3 sm:px-4 py-1.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
+                activeTab === 'daily'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 border border-purple-400'
+                  : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>{t.tabDaily}</span>
+            </button>
           </div>
 
-          <div className="text-[11px] font-bold text-amber-300 flex items-center gap-1.5 hidden sm:flex">
+          <div className="text-[11px] font-bold text-amber-300 flex items-center gap-1.5 hidden md:flex shrink-0">
             <Flame className="w-4 h-4 text-orange-400" />
             <span>{t.tabSubtitle}</span>
           </div>

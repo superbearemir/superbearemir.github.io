@@ -4171,396 +4171,585 @@ void main() {
     this.currentBgmInterval=null;
     this.musicGainNode=null;
     this.sfxGainNode=null;
-    this.musicVolume=0.28;
+    this.musicVolume=0.32;
     this.sfxVolume=0.45;
     this.currentStep=0;
     this.autoRotate=!0;
     this.loopCounter=0;
     this.trackKeys=["hub","boncuk_cat","forest_temple","beehive","pelican_plains","snow_desert","space_realm","cyber_city","crystal_chimes","hero_march","night_breeze","retro_arcade","boss_battle","boss_fury","cosmic_boss"];
+    
+    if (typeof window !== "undefined") {
+      const unlockAudio = () => {
+        this.initContext();
+        if (this.ctx && this.ctx.state === "suspended") {
+          this.ctx.resume().catch(()=>{});
+        }
+      };
+      ["touchstart", "touchend", "mousedown", "click", "keydown", "pointerdown"].forEach(evt => {
+        window.addEventListener(evt, unlockAudio, { passive: true });
+      });
+    }
   }
+
   initContext(){
     try{
       if(!this.ctx){
-        const AudioCtx=window.AudioContext||window.webkitAudioContext;
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
         if(AudioCtx){
-          this.ctx=new AudioCtx();
-          this.musicGainNode=this.ctx.createGain();
-          this.musicGainNode.gain.setValueAtTime(this.isMuted?0:this.musicVolume,this.ctx.currentTime);
+          this.ctx = new AudioCtx();
+          this.musicGainNode = this.ctx.createGain();
+          this.musicGainNode.gain.setValueAtTime(this.isMuted ? 0 : this.musicVolume, this.ctx.currentTime);
           this.musicGainNode.connect(this.ctx.destination);
-
-          this.sfxGainNode=this.ctx.createGain();
-          this.sfxGainNode.gain.setValueAtTime(this.isMuted?0:this.sfxVolume,this.ctx.currentTime);
+          this.sfxGainNode = this.ctx.createGain();
+          this.sfxGainNode.gain.setValueAtTime(this.isMuted ? 0 : this.sfxVolume, this.ctx.currentTime);
           this.sfxGainNode.connect(this.ctx.destination);
         }
       }
-      if(this.ctx&&this.ctx.state==="suspended"){
+      if(this.ctx && this.ctx.state === "suspended"){
         this.ctx.resume().catch(()=>{});
       }
     }catch(e){
-      console.warn("Audio init error:",e);
+      console.warn("Audio init error:", e);
     }
   }
+
   setMuted(e){
-    this.isMuted=!!e;
+    this.isMuted = !!e;
     this.initContext();
-    const curTime=(this.ctx&&this.ctx.currentTime)||0;
-    if(this.musicGainNode&&this.ctx){
+    const curTime = (this.ctx && this.ctx.currentTime) || 0;
+    if(this.musicGainNode && this.ctx){
       this.musicGainNode.gain.cancelScheduledValues(curTime);
-      this.musicGainNode.gain.setValueAtTime(this.isMuted?0:this.musicVolume,curTime);
+      this.musicGainNode.gain.setValueAtTime(this.isMuted ? 0 : this.musicVolume, curTime);
     }
-    if(this.sfxGainNode&&this.ctx){
+    if(this.sfxGainNode && this.ctx){
       this.sfxGainNode.gain.cancelScheduledValues(curTime);
-      this.sfxGainNode.gain.setValueAtTime(this.isMuted?0:this.sfxVolume,curTime);
+      this.sfxGainNode.gain.setValueAtTime(this.isMuted ? 0 : this.sfxVolume, curTime);
     }
     if(this.isMuted){
       this.stopMusic();
     }else{
-      if(this.ctx&&this.ctx.state==="suspended"){
+      if(this.ctx && this.ctx.state === "suspended"){
         this.ctx.resume().catch(()=>{});
       }
-      this.startMusic(this.currentBgmRegion||"hub",!0);
+      this.startMusic(this.currentBgmRegion || "hub", !0);
       this.playDialogueChirp(1.2);
     }
   }
+
   toggleMute(){
     this.setMuted(!this.isMuted);
     return this.isMuted;
   }
+
   getIsMuted(){
     return this.isMuted;
   }
+
   setMusicVolume(e){
-    this.musicVolume=Math.max(0,Math.min(1,e));
-    if(this.musicGainNode&&this.ctx&&!this.isMuted){
-      this.musicGainNode.gain.setValueAtTime(this.musicVolume,this.ctx.currentTime);
+    this.musicVolume = Math.max(0, Math.min(1, e));
+    if(this.musicGainNode && this.ctx && !this.isMuted){
+      this.musicGainNode.gain.setValueAtTime(this.musicVolume, this.ctx.currentTime);
     }
   }
+
   playJump(){
-    if(this.isMuted){return;}
+    if(this.isMuted) return;
     this.initContext();
-    if(!this.ctx||!this.sfxGainNode)return;
+    if(!this.ctx||!this.sfxGainNode) return;
     const e=this.ctx.createOscillator(),n=this.ctx.createGain();
-    e.type="triangle";const a=this.ctx.currentTime;
-    e.frequency.setValueAtTime(180,a);
-    e.frequency.exponentialRampToValueAtTime(520,a+.14);
-    n.gain.setValueAtTime(.3,a);
-    n.gain.exponentialRampToValueAtTime(.01,a+.14);
+    e.type="sine";const a=this.ctx.currentTime;
+    e.frequency.setValueAtTime(220,a);
+    e.frequency.exponentialRampToValueAtTime(440,a+.12);
+    n.gain.setValueAtTime(.2,a);
+    n.gain.exponentialRampToValueAtTime(.005,a+.12);
     e.connect(n);n.connect(this.sfxGainNode);
-    e.start(a);e.stop(a+.15);
+    e.start(a);e.stop(a+.13);
   }
+
   playDoubleJump(){
-    if(this.isMuted){return;}
+    if(this.isMuted) return;
     this.initContext();
-    if(!this.ctx||!this.sfxGainNode)return;
-    const e=this.ctx.currentTime,n=this.ctx.createOscillator(),a=this.ctx.createGain();
-    n.type="sine";n.frequency.setValueAtTime(400,e);n.frequency.exponentialRampToValueAtTime(800,e+.18);
-    a.gain.setValueAtTime(.32,e);a.gain.exponentialRampToValueAtTime(.01,e+.18);
-    n.connect(a);a.connect(this.sfxGainNode);n.start(e);n.stop(e+.19);
-    const o=this.ctx.createOscillator(),c=this.ctx.createGain();
-    o.type="triangle";o.frequency.setValueAtTime(920,e+.04);o.frequency.exponentialRampToValueAtTime(1400,e+.2);
-    c.gain.setValueAtTime(.22,e+.04);c.gain.exponentialRampToValueAtTime(.01,e+.2);
-    o.connect(c);c.connect(this.sfxGainNode);o.start(e+.04);o.stop(e+.21);
-  }
-  playRoll(){
-    if(this.isMuted){return;}
-    this.initContext();
-    if(!this.ctx||!this.sfxGainNode)return;
-    const e=this.ctx.createOscillator(),n=this.ctx.createGain();
-    e.type="sawtooth";const a=this.ctx.currentTime;
-    e.frequency.setValueAtTime(120,a);e.frequency.linearRampToValueAtTime(280,a+.2);
-    n.gain.setValueAtTime(.2,a);n.gain.exponentialRampToValueAtTime(.005,a+.2);
-    e.connect(n);n.connect(this.sfxGainNode);e.start(a);e.stop(a+.21);
-  }
-  playAttack(){
-    if(this.isMuted){return;}
-    this.initContext();
-    if(!this.ctx||!this.sfxGainNode)return;
-    const e=this.ctx.createOscillator(),n=this.ctx.createGain();
-    e.type="sawtooth";const a=this.ctx.currentTime;
-    e.frequency.setValueAtTime(360,a);e.frequency.exponentialRampToValueAtTime(95,a+.11);
-    n.gain.setValueAtTime(.4,a);n.gain.exponentialRampToValueAtTime(.01,a+.11);
-    e.connect(n);n.connect(this.sfxGainNode);e.start(a);e.stop(a+.12);
-  }
-  playHammerSlam(){
-    if(this.isMuted){return;}
-    this.initContext();
-    if(!this.ctx||!this.sfxGainNode)return;
-    const e=this.ctx.currentTime,n=this.ctx.createOscillator(),a=this.ctx.createGain();
-    n.type="triangle";n.frequency.setValueAtTime(160,e);n.frequency.exponentialRampToValueAtTime(25,e+.4);
-    a.gain.setValueAtTime(.6,e);a.gain.exponentialRampToValueAtTime(.01,e+.4);
-    n.connect(a);a.connect(this.sfxGainNode);n.start(e);n.stop(e+.41);
-  }
-  playCoin(){
-    if(this.isMuted){return;}
-    this.initContext();
-    if(!this.ctx||!this.sfxGainNode)return;
+    if(!this.ctx||!this.sfxGainNode) return;
     const e=this.ctx.currentTime;
-    [987.77,1318.51].forEach((n,a)=>{
-      if(!this.ctx||!this.sfxGainNode)return;
+    [330,550].forEach((n,a)=>{
+      if(!this.ctx||!this.sfxGainNode) return;
       const o=this.ctx.createOscillator(),c=this.ctx.createGain();
-      o.type="sine";o.frequency.setValueAtTime(n,e+a*.07);
-      c.gain.setValueAtTime(.25,e+a*.07);c.gain.exponentialRampToValueAtTime(.005,e+a*.07+.14);
-      o.connect(c);c.connect(this.sfxGainNode);o.start(e+a*.07);o.stop(e+a*.07+.15);
+      o.type="sine";o.frequency.setValueAtTime(n,e+a*.05);
+      c.gain.setValueAtTime(.2,e+a*.05);c.gain.exponentialRampToValueAtTime(.005,e+a*.05+.1);
+      o.connect(c);c.connect(this.sfxGainNode);o.start(e+a*.05);o.stop(e+a*.05+.11);
     });
   }
-  playHoneyGem(){
-    if(this.isMuted){return;}
+
+  playCoin(){
+    if(this.isMuted) return;
     this.initContext();
-    if(!this.ctx||!this.sfxGainNode)return;
+    if(!this.ctx||!this.sfxGainNode) return;
+    const e=this.ctx.currentTime;
+    [987.77,1318.51].forEach((n,a)=>{
+      if(!this.ctx||!this.sfxGainNode) return;
+      const o=this.ctx.createOscillator(),c=this.ctx.createGain();
+      o.type="sine";o.frequency.setValueAtTime(n,e+a*.06);
+      c.gain.setValueAtTime(.18,e+a*.06);c.gain.exponentialRampToValueAtTime(.005,e+a*.06+.14);
+      o.connect(c);c.connect(this.sfxGainNode);o.start(e+a*.06);o.stop(e+a*.06+.15);
+    });
+  }
+
+  playHoneyGem(){
+    if(this.isMuted) return;
+    this.initContext();
+    if(!this.ctx||!this.sfxGainNode) return;
     const e=this.ctx.currentTime;
     [523.25,659.25,783.99,1046.5].forEach((n,a)=>{
-      if(!this.ctx||!this.sfxGainNode)return;
+      if(!this.ctx||!this.sfxGainNode) return;
       const o=this.ctx.createOscillator(),c=this.ctx.createGain();
-      o.type="triangle";o.frequency.setValueAtTime(n,e+a*.06);
-      c.gain.setValueAtTime(.25,e+a*.06);c.gain.exponentialRampToValueAtTime(.01,e+a*.06+.2);
+      o.type="sine";o.frequency.setValueAtTime(n,e+a*.06);
+      c.gain.setValueAtTime(.22,e+a*.06);c.gain.exponentialRampToValueAtTime(.005,e+a*.06+.2);
       o.connect(c);c.connect(this.sfxGainNode);o.start(e+a*.06);o.stop(e+a*.06+.22);
     });
   }
-  playSkillUnlock(){
-    if(this.isMuted){return;}
+
+  playAttack(){
+    if(this.isMuted) return;
     this.initContext();
-    if(!this.ctx||!this.sfxGainNode)return;
+    if(!this.ctx||!this.sfxGainNode) return;
+    const e=this.ctx.currentTime,n=this.ctx.createOscillator(),a=this.ctx.createGain();
+    n.type="triangle";n.frequency.setValueAtTime(420,e);n.frequency.exponentialRampToValueAtTime(110,e+.12);
+    a.gain.setValueAtTime(.28,e);a.gain.exponentialRampToValueAtTime(.005,e+.12);
+    n.connect(a);a.connect(this.sfxGainNode);n.start(e);n.stop(e+.13);
+  }
+
+  playPunch(){
+    this.playAttack();
+  }
+
+  playLevelWin(){
+    this.playGoalFanfare();
+  }
+
+  playSkillUnlock(){
+    if(this.isMuted) return;
+    this.initContext();
+    if(!this.ctx||!this.sfxGainNode) return;
     const e=this.ctx.currentTime;
     [440,554.37,659.25,880,1108.73].forEach((n,a)=>{
-      if(!this.ctx||!this.sfxGainNode)return;
+      if(!this.ctx||!this.sfxGainNode) return;
       const o=this.ctx.createOscillator(),c=this.ctx.createGain();
       o.type="sine";o.frequency.setValueAtTime(n,e+a*.07);
-      c.gain.setValueAtTime(.3,e+a*.07);c.gain.exponentialRampToValueAtTime(.005,e+a*.07+.25);
+      c.gain.setValueAtTime(.25,e+a*.07);c.gain.exponentialRampToValueAtTime(.005,e+a*.07+.25);
       o.connect(c);c.connect(this.sfxGainNode);o.start(e+a*.07);o.stop(e+a*.07+.28);
     });
   }
+
   playEquip(){
-    if(this.isMuted){return;}
+    if(this.isMuted) return;
     this.initContext();
-    if(!this.ctx||!this.sfxGainNode)return;
+    if(!this.ctx||!this.sfxGainNode) return;
     const e=this.ctx.currentTime,n=this.ctx.createOscillator(),a=this.ctx.createGain();
-    n.type="triangle";n.frequency.setValueAtTime(320,e);n.frequency.exponentialRampToValueAtTime(640,e+.09);
-    a.gain.setValueAtTime(.2,e);a.gain.exponentialRampToValueAtTime(.01,e+.1);
+    n.type="sine";n.frequency.setValueAtTime(320,e);n.frequency.exponentialRampToValueAtTime(640,e+.09);
+    a.gain.setValueAtTime(.18,e);a.gain.exponentialRampToValueAtTime(.005,e+.1);
     n.connect(a);a.connect(this.sfxGainNode);n.start(e);n.stop(e+.11);
   }
+
   playPowerup(){
-    if(this.isMuted){return;}
+    if(this.isMuted) return;
     this.initContext();
-    if(!this.ctx||!this.sfxGainNode)return;
+    if(!this.ctx||!this.sfxGainNode) return;
     const e=this.ctx.currentTime;
     [329.63,440,554.37,659.25,880].forEach((n,a)=>{
-      if(!this.ctx||!this.sfxGainNode)return;
+      if(!this.ctx||!this.sfxGainNode) return;
       const o=this.ctx.createOscillator(),c=this.ctx.createGain();
-      o.type="sawtooth";o.frequency.setValueAtTime(n,e+a*.05);
-      c.gain.setValueAtTime(.18,e+a*.05);c.gain.exponentialRampToValueAtTime(.01,e+a*.05+.18);
+      o.type="sine";o.frequency.setValueAtTime(n,e+a*.05);
+      c.gain.setValueAtTime(.15,e+a*.05);c.gain.exponentialRampToValueAtTime(.005,e+a*.05+.18);
       o.connect(c);c.connect(this.sfxGainNode);o.start(e+a*.05);o.stop(e+a*.05+.2);
     });
   }
+
   playDamage(){
-    if(this.isMuted){return;}
+    if(this.isMuted) return;
     this.initContext();
-    if(!this.ctx||!this.sfxGainNode)return;
+    if(!this.ctx||!this.sfxGainNode) return;
     const e=this.ctx.currentTime,n=this.ctx.createOscillator(),a=this.ctx.createGain();
-    n.type="sawtooth";n.frequency.setValueAtTime(200,e);n.frequency.linearRampToValueAtTime(50,e+.2);
-    a.gain.setValueAtTime(.4,e);a.gain.exponentialRampToValueAtTime(.01,e+.2);
-    n.connect(a);a.connect(this.sfxGainNode);n.start(e);n.stop(e+.21);
+    n.type="sine";n.frequency.setValueAtTime(180,e);n.frequency.linearRampToValueAtTime(60,e+.18);
+    a.gain.setValueAtTime(.25,e);a.gain.exponentialRampToValueAtTime(.005,e+.18);
+    n.connect(a);a.connect(this.sfxGainNode);n.start(e);n.stop(e+.19);
   }
+
   playBossRoar(){
-    if(this.isMuted){return;}
+    if(this.isMuted) return;
     this.initContext();
-    if(!this.ctx||!this.sfxGainNode)return;
+    if(!this.ctx||!this.sfxGainNode) return;
     const e=this.ctx.currentTime,n=this.ctx.createOscillator(),a=this.ctx.createGain();
-    n.type="sawtooth";n.frequency.setValueAtTime(75,e);n.frequency.linearRampToValueAtTime(150,e+.3);
-    n.frequency.exponentialRampToValueAtTime(45,e+.75);
-    a.gain.setValueAtTime(.45,e);a.gain.exponentialRampToValueAtTime(.01,e+.8);
-    n.connect(a);a.connect(this.sfxGainNode);n.start(e);n.stop(e+.81);
+    n.type="sawtooth";n.frequency.setValueAtTime(75,e);n.frequency.linearRampToValueAtTime(140,e+.25);
+    n.frequency.exponentialRampToValueAtTime(50,e+.65);
+    a.gain.setValueAtTime(.35,e);a.gain.exponentialRampToValueAtTime(.005,e+.7);
+    n.connect(a);a.connect(this.sfxGainNode);n.start(e);n.stop(e+.71);
   }
+
   playLevelUp(){
-    if(this.isMuted){return;}
+    if(this.isMuted) return;
     this.initContext();
-    if(!this.ctx||!this.sfxGainNode)return;
+    if(!this.ctx||!this.sfxGainNode) return;
     const e=[440,554.37,659.25,880,1108.73],n=this.ctx.currentTime;
     e.forEach((a,o)=>{
-      if(!this.ctx||!this.sfxGainNode)return;
+      if(!this.ctx||!this.sfxGainNode) return;
       const c=this.ctx.createOscillator(),u=this.ctx.createGain();
-      c.type="sine";c.frequency.setValueAtTime(a,n+o*.09);
-      u.gain.setValueAtTime(.3,n+o*.09);u.gain.exponentialRampToValueAtTime(.005,n+o*.09+.28);
-      c.connect(u);u.connect(this.sfxGainNode);c.start(n+o*.09);c.stop(n+o*.09+.3);
+      c.type="sine";c.frequency.setValueAtTime(a,n+o*.08);
+      u.gain.setValueAtTime(.25,n+o*.08);u.gain.exponentialRampToValueAtTime(.005,n+o*.08+.25);
+      c.connect(u);u.connect(this.sfxGainNode);c.start(n+o*.08);c.stop(n+o*.08+.27);
     });
   }
+
   playBallKick(){
-    if(this.isMuted){return;}
+    if(this.isMuted) return;
     this.initContext();
-    if(!this.ctx||!this.sfxGainNode)return;
+    if(!this.ctx||!this.sfxGainNode) return;
     const e=this.ctx.currentTime,n=this.ctx.createOscillator(),a=this.ctx.createGain();
-    n.type="sine";n.frequency.setValueAtTime(260,e);n.frequency.exponentialRampToValueAtTime(80,e+.15);
-    a.gain.setValueAtTime(.35,e);a.gain.exponentialRampToValueAtTime(.01,e+.15);
-    n.connect(a);a.connect(this.sfxGainNode);n.start(e);n.stop(e+.16);
+    n.type="sine";n.frequency.setValueAtTime(220,e);n.frequency.exponentialRampToValueAtTime(70,e+.12);
+    a.gain.setValueAtTime(.3,e);a.gain.exponentialRampToValueAtTime(.005,e+.12);
+    n.connect(a);a.connect(this.sfxGainNode);n.start(e);n.stop(e+.13);
   }
+
   playGoalFanfare(){
-    if(this.isMuted){return;}
+    if(this.isMuted) return;
     this.initContext();
-    if(!this.ctx||!this.sfxGainNode)return;
+    if(!this.ctx||!this.sfxGainNode) return;
     const e=[[523.25,659.25,783.99],[587.33,739.99,880],[659.25,830.61,987.77],[1046.5,1318.51,1567.98]],n=this.ctx.currentTime;
     e.forEach((a,o)=>{
       a.forEach(c=>{
-        if(!this.ctx||!this.sfxGainNode)return;
+        if(!this.ctx||!this.sfxGainNode) return;
         const u=this.ctx.createOscillator(),h=this.ctx.createGain();
-        u.type="triangle";u.frequency.setValueAtTime(c,n+o*.14);
-        h.gain.setValueAtTime(.25,n+o*.14);h.gain.exponentialRampToValueAtTime(.01,n+o*.14+.35);
-        u.connect(h);h.connect(this.sfxGainNode);u.start(n+o*.14);u.stop(n+o*.14+.38);
+        u.type="sine";u.frequency.setValueAtTime(c,n+o*.12);
+        h.gain.setValueAtTime(.2,n+o*.12);h.gain.exponentialRampToValueAtTime(.005,n+o*.12+.3);
+        u.connect(h);h.connect(this.sfxGainNode);u.start(n+o*.12);u.stop(n+o*.12+.33);
       });
     });
   }
+
   playDialogueChirp(e=1){
-    if(this.isMuted){return;}
+    if(this.isMuted) return;
     this.initContext();
-    if(!this.ctx||!this.sfxGainNode)return;
+    if(!this.ctx||!this.sfxGainNode) return;
     const n=this.ctx.currentTime,a=this.ctx.createOscillator(),o=this.ctx.createGain();
     a.type="sine";a.frequency.setValueAtTime(360*e,n);a.frequency.exponentialRampToValueAtTime(520*e,n+.05);
-    o.gain.setValueAtTime(.15,n);o.gain.exponentialRampToValueAtTime(.005,n+.05);
+    o.gain.setValueAtTime(.12,n);o.gain.exponentialRampToValueAtTime(.005,n+.05);
     a.connect(o);o.connect(this.sfxGainNode);a.start(n);a.stop(n+.06);
   }
-  startMusic(e="hub",forceReset=!1){
-    this.currentBgmRegion=e;
-    if(this.isMuted)return;
-    if(!forceReset&&this.musicPlaying&&this.currentBgmRegion===e)return;
+
+  playEnemyHit(){
+    if(this.isMuted) return;
+    this.initContext();
+    if(!this.ctx||!this.sfxGainNode) return;
+    const e=this.ctx.currentTime,n=this.ctx.createOscillator(),a=this.ctx.createGain();
+    n.type="triangle";n.frequency.setValueAtTime(260,e);n.frequency.exponentialRampToValueAtTime(90,e+.1);
+    a.gain.setValueAtTime(.25,e);a.gain.exponentialRampToValueAtTime(.005,e+.1);
+    n.connect(a);a.connect(this.sfxGainNode);n.start(e);n.stop(e+.11);
+  }
+
+  playHammerSlam(){
+    if(this.isMuted) return;
+    this.initContext();
+    if(!this.ctx||!this.sfxGainNode) return;
+    const e=this.ctx.currentTime,n=this.ctx.createOscillator(),a=this.ctx.createGain();
+    n.type="sine";n.frequency.setValueAtTime(140,e);n.frequency.exponentialRampToValueAtTime(35,e+.25);
+    a.gain.setValueAtTime(.4,e);a.gain.exponentialRampToValueAtTime(.005,e+.25);
+    n.connect(a);a.connect(this.sfxGainNode);n.start(e);n.stop(e+.26);
+  }
+
+  playRoll(){
+    if(this.isMuted) return;
+    this.initContext();
+    if(!this.ctx||!this.sfxGainNode) return;
+    const e=this.ctx.currentTime,n=this.ctx.createOscillator(),a=this.ctx.createGain();
+    n.type="sine";n.frequency.setValueAtTime(160,e);n.frequency.linearRampToValueAtTime(240,e+.15);
+    a.gain.setValueAtTime(.15,e);a.gain.exponentialRampToValueAtTime(.005,e+.15);
+    n.connect(a);a.connect(this.sfxGainNode);n.start(e);n.stop(e+.16);
+  }
+
+  playWaterSplash(){
+    if(this.isMuted) return;
+    this.initContext();
+    if(!this.ctx||!this.sfxGainNode) return;
+    const e=this.ctx.currentTime,n=this.ctx.createOscillator(),a=this.ctx.createGain();
+    n.type="sine";n.frequency.setValueAtTime(350,e);n.frequency.exponentialRampToValueAtTime(120,e+.2);
+    a.gain.setValueAtTime(.2,e);a.gain.exponentialRampToValueAtTime(.005,e+.2);
+    n.connect(a);a.connect(this.sfxGainNode);n.start(e);n.stop(e+.21);
+  }
+
+  startMusic(e="hub", forceReset=!0){
+    this.currentBgmRegion = e;
+    this.isMuted = !1;
     this.stopMusic();
     this.initContext();
-    if(!this.ctx||!this.musicGainNode)return;
-    this.musicPlaying=!0;
-    this.currentStep=0;
-    this.loopCounter=0;
+    if(this.ctx && this.ctx.state === "suspended"){
+      this.ctx.resume().catch(()=>{});
+    }
+    if(!this.ctx || !this.musicGainNode) return;
+    this.musicPlaying = !0;
+    this.currentStep = 0;
+    this.loopCounter = 0;
 
-    const n={
-      hub:{bpm:128,leadWave:"triangle",bassWave:"sine",
-        melody:[261.63,329.63,392,523.25,440,392,329.63,392,293.66,349.23,440,523.25,493.88,440,392,329.63],
-        bass:[130.81,130.81,164.81,196,146.83,146.83,174.61,196],
-        chords:[[261.63,329.63,392],[261.63,329.63,392],[220,261.63,329.63],[196,246.94,293.66]]},
-      boncuk_cat:{bpm:134,leadWave:"sine",bassWave:"triangle",
-        melody:[523.25,659.25,783.99,880,1046.5,880,783.99,659.25,587.33,659.25,783.99,880,783.99,659.25,587.33,523.25],
-        bass:[130.81,196,164.81,196,146.83,174.61,196,261.63],
-        chords:[[261.63,329.63,392,523.25],[196,246.94,293.66,392],[220,261.63,329.63,440],[174.61,220,261.63,349.23]]},
-      forest_temple:{bpm:104,leadWave:"sine",bassWave:"triangle",
-        melody:[329.63,392,440,493.88,587.33,493.88,440,392,349.23,440,523.25,493.88,440,392,329.63,293.66],
-        bass:[110,110,130.81,146.83,98,98,123.47,130.81],
-        chords:[[220,261.63,329.63],[174.61,220,261.63],[196,246.94,293.66],[164.81,196,246.94]]},
-      beehive:{bpm:148,leadWave:"sawtooth",bassWave:"triangle",
-        melody:[440,466.16,440,392,440,523.25,493.88,392,440,587.33,523.25,466.16,440,392,349.23,415.3],
-        bass:[110,116.54,110,98,110,130.81,123.47,98],
-        chords:[[220,261.63,329.63],[233.08,277.18,349.23],[220,261.63,329.63],[196,246.94,293.66]]},
-      pelican_plains:{bpm:116,leadWave:"sine",bassWave:"sine",
-        melody:[523.25,587.33,659.25,783.99,880,783.99,659.25,587.33,523.25,659.25,783.99,1046.5,880,783.99,659.25,523.25],
-        bass:[130.81,164.81,196,261.63,174.61,220,261.63,196],
-        chords:[[261.63,329.63,392,523.25],[174.61,220,261.63,349.23],[220,261.63,329.63,440],[196,246.94,293.66,392]]},
-      snow_desert:{bpm:120,leadWave:"triangle",bassWave:"sine",
-        melody:[293.66,349.23,440,523.25,587.33,523.25,440,349.23,329.63,392,493.88,587.33,659.25,587.33,493.88,392],
-        bass:[146.83,146.83,174.61,196,164.81,164.81,196,220],
-        chords:[[293.66,349.23,440],[174.61,220,261.63],[164.81,196,246.94],[196,246.94,293.66]]},
-      space_realm:{bpm:98,leadWave:"sine",bassWave:"triangle",
-        melody:[261.63,329.63,392,523.25,659.25,783.99,1046.5,783.99,659.25,523.25,392,440,523.25,659.25,523.25,392],
-        bass:[65.41,65.41,82.41,98,87.31,87.31,110,98],
-        chords:[[130.81,196,261.63,329.63],[110,164.81,220,261.63],[87.31,130.81,174.61,220],[98,146.83,196,246.94]]},
-      cyber_city:{bpm:138,leadWave:"sawtooth",bassWave:"sawtooth",
-        melody:[440,523.25,659.25,783.99,880,783.99,659.25,523.25,440,392,349.23,392,440,523.25,659.25,880],
-        bass:[110,110,130.81,146.83,110,98,123.47,130.81],
-        chords:[[220,261.63,329.63,440],[174.61,220,261.63,349.23],[196,246.94,293.66,392],[220,261.63,329.63,440]]},
-      crystal_chimes:{bpm:108,leadWave:"sine",bassWave:"sine",
-        melody:[523.25,659.25,783.99,1046.5,1318.51,1046.5,783.99,659.25,587.33,739.99,880,1174.66,880,739.99,659.25,523.25],
-        bass:[130.81,164.81,196,261.63,146.83,174.61,220,293.66],
-        chords:[[261.63,329.63,392,523.25],[293.66,369.99,440,587.33],[220,261.63,329.63,440],[261.63,329.63,392,523.25]]},
-      hero_march:{bpm:132,leadWave:"triangle",bassWave:"sawtooth",
-        melody:[392,392,392,523.25,783.99,659.25,587.33,523.25,659.25,587.33,523.25,392,440,493.88,523.25,659.25],
-        bass:[196,196,196,261.63,196,164.81,146.83,130.81],
-        chords:[[196,246.94,293.66,392],[261.63,329.63,392,523.25],[174.61,220,261.63,349.23],[196,246.94,293.66,392]]},
-      night_breeze:{bpm:92,leadWave:"sine",bassWave:"sine",
-        melody:[392,440,493.88,587.33,523.25,440,392,329.63,349.23,392,440,523.25,440,392,349.23,293.66],
-        bass:[98,98,123.47,146.83,87.31,87.31,110,130.81],
-        chords:[[196,246.94,293.66],[174.61,220,261.63],[146.83,174.61,220],[130.81,164.81,196]]},
-      retro_arcade:{bpm:152,leadWave:"sawtooth",bassWave:"triangle",
-        melody:[523.25,659.25,783.99,1046.5,783.99,659.25,523.25,392,440,554.37,659.25,880,659.25,554.37,440,329.63],
-        bass:[130.81,164.81,196,261.63,110,138.59,164.81,220],
-        chords:[[261.63,329.63,392],[220,277.18,329.63],[174.61,220,261.63],[196,246.94,293.66]]},
-      boss_battle:{bpm:158,leadWave:"sawtooth",bassWave:"sawtooth",
-        melody:[440,466.16,523.25,587.33,659.25,587.33,523.25,466.16,440,523.25,659.25,783.99,880,783.99,659.25,523.25],
-        bass:[110,116.54,130.81,146.83,110,130.81,146.83,164.81],
-        chords:[[220,261.63,329.63,440],[233.08,277.18,349.23,466.16],[261.63,329.63,392,523.25],[196,246.94,293.66,392]]},
-      boss_fury:{bpm:162,leadWave:"sawtooth",bassWave:"square",
-        melody:[523.25,587.33,659.25,783.99,880,1046.5,880,783.99,659.25,783.99,880,1046.5,1174.66,1046.5,880,783.99],
-        bass:[130.81,146.83,164.81,196,220,261.63,220,196],
-        chords:[[261.63,329.63,392,523.25],[293.66,349.23,440,587.33],[329.63,392,493.88,659.25],[220,261.63,329.63,440]]},
-      cosmic_boss:{bpm:150,leadWave:"square",bassWave:"sawtooth",
-        melody:[392,440,523.25,659.25,783.99,880,1046.5,880,783.99,659.25,523.25,440,392,523.25,659.25,783.99],
-        bass:[98,110,130.81,164.81,196,220,261.63,196],
-        chords:[[196,246.94,293.66,392],[220,261.63,329.63,440],[261.63,329.63,392,523.25],[174.61,220,261.63,349.23]]}
+    if(this.musicGainNode){
+      const curT = this.ctx.currentTime || 0;
+      this.musicGainNode.gain.cancelScheduledValues(curT);
+      this.musicGainNode.gain.setValueAtTime(this.musicVolume, curT);
+    }
+
+    const n = {
+      // 1. SAKİN & HUZURLU AYI VADİSİ (ÇOK DAHA SAKİN, DİNLENDİRİCİ LOFI/AKUSTİK SES)
+      hub: {
+        bpm: 82,
+        leadWave: "sine",
+        bassWave: "sine",
+        melody: [
+          261.63, 293.66, 329.63, 392.00,
+          329.63, 293.66, 261.63, 196.00,
+          220.00, 261.63, 293.66, 329.63,
+          293.66, 261.63, 220.00, 196.00
+        ],
+        bass: [65.41, 65.41, 87.31, 87.31, 98.00, 98.00, 65.41, 65.41],
+        chords: [
+          [261.63, 329.63, 392.00, 493.88], // Cmaj7
+          [220.00, 261.63, 329.63, 392.00], // Am7
+          [174.61, 220.00, 261.63, 329.63], // Fmaj7
+          [196.00, 246.94, 293.66, 349.23]  // G7
+        ]
+      },
+      boncuk_cat: {
+        bpm: 112,
+        leadWave: "sine",
+        bassWave: "sine",
+        melody: [523.25, 659.25, 783.99, 880, 783.99, 659.25, 523.25, 587.33, 659.25, 783.99, 880, 1046.5, 880, 783.99, 659.25, 523.25],
+        bass: [130.81, 164.81, 196, 261.63, 146.83, 174.61, 196, 261.63],
+        chords: [[261.63, 329.63, 392, 523.25], [196, 246.94, 293.66, 392], [220, 261.63, 329.63, 440], [174.61, 220, 261.63, 349.23]]
+      },
+      forest_temple: {
+        bpm: 88,
+        leadWave: "sine",
+        bassWave: "sine",
+        melody: [329.63, 392, 440, 493.88, 440, 392, 349.23, 440, 523.25, 493.88, 440, 392, 329.63, 293.66, 261.63, 293.66],
+        bass: [110, 110, 130.81, 146.83, 98, 98, 123.47, 130.81],
+        chords: [[220, 261.63, 329.63], [174.61, 220, 261.63], [196, 246.94, 293.66], [164.81, 196, 246.94]]
+      },
+      beehive: {
+        bpm: 120,
+        leadWave: "triangle",
+        bassWave: "sine",
+        melody: [440, 493.88, 523.25, 587.33, 659.25, 587.33, 523.25, 493.88, 440, 392, 440, 523.25, 493.88, 440, 392, 349.23],
+        bass: [110, 110, 130.81, 146.83, 110, 110, 123.47, 98],
+        chords: [[220, 261.63, 329.63], [261.63, 329.63, 392], [220, 261.63, 329.63], [196, 246.94, 293.66]]
+      },
+      pelican_plains: {
+        bpm: 96,
+        leadWave: "sine",
+        bassWave: "sine",
+        melody: [523.25, 587.33, 659.25, 783.99, 659.25, 587.33, 523.25, 659.25, 783.99, 880, 783.99, 659.25, 587.33, 523.25, 440, 523.25],
+        bass: [130.81, 164.81, 196, 261.63, 174.61, 220, 261.63, 196],
+        chords: [[261.63, 329.63, 392, 523.25], [174.61, 220, 261.63, 349.23], [220, 261.63, 329.63, 440], [196, 246.94, 293.66, 392]]
+      },
+      snow_desert: {
+        bpm: 98,
+        leadWave: "sine",
+        bassWave: "sine",
+        melody: [293.66, 349.23, 440, 523.25, 440, 349.23, 329.63, 392, 493.88, 587.33, 493.88, 392, 349.23, 440, 392, 329.63],
+        bass: [146.83, 146.83, 174.61, 196, 164.81, 164.81, 196, 220],
+        chords: [[293.66, 349.23, 440], [174.61, 220, 261.63], [164.81, 196, 246.94], [196, 246.94, 293.66]]
+      },
+      space_realm: {
+        bpm: 88,
+        leadWave: "sine",
+        bassWave: "sine",
+        melody: [261.63, 329.63, 392, 523.25, 659.25, 523.25, 392, 329.63, 392, 440, 523.25, 659.25, 523.25, 392, 329.63, 261.63],
+        bass: [65.41, 65.41, 82.41, 98, 87.31, 87.31, 110, 98],
+        chords: [[130.81, 196, 261.63, 329.63], [110, 164.81, 220, 261.63], [87.31, 130.81, 174.61, 220], [98, 146.83, 196, 246.94]]
+      },
+      cyber_city: {
+        bpm: 118,
+        leadWave: "triangle",
+        bassWave: "sawtooth",
+        melody: [440, 523.25, 659.25, 783.99, 659.25, 523.25, 440, 392, 349.23, 392, 440, 523.25, 659.25, 523.25, 440, 392],
+        bass: [110, 110, 130.81, 146.83, 110, 98, 123.47, 130.81],
+        chords: [[220, 261.63, 329.63, 440], [174.61, 220, 261.63, 349.23], [196, 246.94, 293.66, 392], [220, 261.63, 329.63, 440]]
+      },
+      crystal_chimes: {
+        bpm: 94,
+        leadWave: "sine",
+        bassWave: "sine",
+        melody: [523.25, 659.25, 783.99, 1046.5, 783.99, 659.25, 523.25, 440, 587.33, 739.99, 880, 739.99, 587.33, 440, 523.25, 659.25],
+        bass: [130.81, 164.81, 196, 261.63, 146.83, 174.61, 220, 293.66],
+        chords: [[261.63, 329.63, 392, 523.25], [293.66, 369.99, 440, 587.33], [220, 261.63, 329.63, 440], [261.63, 329.63, 392, 523.25]]
+      },
+      hero_march: {
+        bpm: 110,
+        leadWave: "triangle",
+        bassWave: "triangle",
+        melody: [392, 392, 523.25, 659.25, 783.99, 659.25, 523.25, 392, 440, 493.88, 523.25, 659.25, 587.33, 523.25, 440, 392],
+        bass: [196, 196, 261.63, 196, 174.61, 220, 261.63, 196],
+        chords: [[196, 246.94, 293.66, 392], [261.63, 329.63, 392, 523.25], [174.61, 220, 261.63, 349.23], [196, 246.94, 293.66, 392]]
+      },
+      night_breeze: {
+        bpm: 78,
+        leadWave: "sine",
+        bassWave: "sine",
+        melody: [392, 440, 493.88, 523.25, 440, 392, 329.63, 293.66, 349.23, 392, 440, 523.25, 440, 392, 349.23, 293.66],
+        bass: [98, 98, 123.47, 146.83, 87.31, 87.31, 110, 130.81],
+        chords: [[196, 246.94, 293.66], [174.61, 220, 261.63], [146.83, 174.61, 220], [130.81, 164.81, 196]]
+      },
+      retro_arcade: {
+        bpm: 126,
+        leadWave: "triangle",
+        bassWave: "triangle",
+        melody: [523.25, 659.25, 783.99, 1046.5, 783.99, 659.25, 523.25, 392, 440, 554.37, 659.25, 880, 659.25, 554.37, 440, 329.63],
+        bass: [130.81, 164.81, 196, 261.63, 110, 138.59, 164.81, 220],
+        chords: [[261.63, 329.63, 392], [220, 277.18, 329.63], [174.61, 220, 261.63], [196, 246.94, 293.66]]
+      },
+      boss_battle: {
+        bpm: 136,
+        leadWave: "triangle",
+        bassWave: "sawtooth",
+        melody: [440, 466.16, 523.25, 587.33, 659.25, 587.33, 523.25, 466.16, 440, 523.25, 659.25, 783.99, 659.25, 523.25, 466.16, 440],
+        bass: [110, 116.54, 130.81, 146.83, 110, 130.81, 146.83, 164.81],
+        chords: [[220, 261.63, 329.63, 440], [233.08, 277.18, 349.23, 466.16], [261.63, 329.63, 392, 523.25], [196, 246.94, 293.66, 392]]
+      },
+      boss_fury: {
+        bpm: 140,
+        leadWave: "triangle",
+        bassWave: "sawtooth",
+        melody: [523.25, 587.33, 659.25, 783.99, 880, 783.99, 659.25, 587.33, 523.25, 659.25, 783.99, 880, 783.99, 659.25, 587.33, 523.25],
+        bass: [130.81, 146.83, 164.81, 196, 220, 261.63, 220, 196],
+        chords: [[261.63, 329.63, 392, 523.25], [293.66, 349.23, 440, 587.33], [329.63, 392, 493.88, 659.25], [220, 261.63, 329.63, 440]]
+      },
+      cosmic_boss: {
+        bpm: 130,
+        leadWave: "sine",
+        bassWave: "sawtooth",
+        melody: [392, 440, 523.25, 659.25, 783.99, 659.25, 523.25, 440, 392, 523.25, 659.25, 783.99, 659.25, 523.25, 440, 392],
+        bass: [98, 110, 130.81, 164.81, 196, 220, 261.63, 196],
+        chords: [[196, 246.94, 293.66, 392], [220, 261.63, 329.63, 440], [261.63, 329.63, 392, 523.25], [174.61, 220, 261.63, 349.23]]
+      }
     };
 
-    const a=n[e]||n.hub;
-    const o=60/a.bpm/2*1e3;
+    const a = n[e] || n.hub;
+    const o = 60 / a.bpm / 2 * 1e3;
 
-    this.currentBgmInterval=window.setInterval(()=>{
-      if(!this.ctx||!this.musicGainNode||this.isMuted)return;
-      const c=this.currentStep,u=this.ctx.currentTime,h=a.melody[c%a.melody.length];
+    this.currentBgmInterval = window.setInterval(() => {
+      if(!this.ctx || !this.musicGainNode || this.isMuted) return;
+      const c = this.currentStep;
+      const u = this.ctx.currentTime;
+      const h = a.melody[c % a.melody.length];
+
+      // Soft melodic lead tone
       if(h){
-        const m=this.ctx.createOscillator(),p=this.ctx.createGain();
-        m.type=a.leadWave;m.frequency.setValueAtTime(h,u);
-        p.gain.setValueAtTime(.06,u);
-        p.gain.exponentialRampToValueAtTime(.002,u+o/1e3*.9);
-        m.connect(p);p.connect(this.musicGainNode);
-        m.start(u);m.stop(u+o/1e3);
+        const m = this.ctx.createOscillator(), p = this.ctx.createGain();
+        m.type = a.leadWave;
+        m.frequency.setValueAtTime(h, u);
+        p.gain.setValueAtTime(0.045, u);
+        p.gain.exponentialRampToValueAtTime(0.001, u + (o / 1e3) * 0.95);
+        m.connect(p);
+        p.connect(this.musicGainNode);
+        m.start(u);
+        m.stop(u + o / 1e3);
       }
-      if(c%2===0){
-        const m=a.bass[c/2%a.bass.length],p=this.ctx.createOscillator(),g=this.ctx.createGain();
-        p.type=a.bassWave;p.frequency.setValueAtTime(m,u);
-        g.gain.setValueAtTime(.08,u);
-        g.gain.exponentialRampToValueAtTime(.005,u+o/1e3*1.8);
-        p.connect(g);g.connect(this.musicGainNode);
-        p.start(u);p.stop(u+o/1e3*1.9);
+
+      // Warm bass tone
+      if(c % 2 === 0){
+        const bassFreq = a.bass[Math.floor(c / 2) % a.bass.length];
+        const m = this.ctx.createOscillator(), p = this.ctx.createGain();
+        m.type = a.bassWave;
+        m.frequency.setValueAtTime(bassFreq, u);
+        p.gain.setValueAtTime(0.065, u);
+        p.gain.exponentialRampToValueAtTime(0.002, u + (o / 1e3) * 1.85);
+        m.connect(p);
+        p.connect(this.musicGainNode);
+        m.start(u);
+        m.stop(u + (o / 1e3) * 1.9);
       }
-      if(c%4===0&&a.chords[c/4%a.chords.length]){
-        a.chords[c/4%a.chords.length].forEach(p=>{
-          if(!this.ctx||!this.musicGainNode)return;
-          const g=this.ctx.createOscillator(),_=this.ctx.createGain();
-          g.type="sine";g.frequency.setValueAtTime(p,u);
-          _.gain.setValueAtTime(.03,u);
-          _.gain.exponentialRampToValueAtTime(.001,u+o/1e3*3.8);
-          g.connect(_);_.connect(this.musicGainNode);
-          g.start(u);g.stop(u+o/1e3*3.9);
+
+      // Calming, ambient background chord pads
+      if(c % 4 === 0 && a.chords[Math.floor(c / 4) % a.chords.length]){
+        a.chords[Math.floor(c / 4) % a.chords.length].forEach(chordNote => {
+          if(!this.ctx || !this.musicGainNode) return;
+          const g = this.ctx.createOscillator(), _ = this.ctx.createGain();
+          g.type = "sine";
+          g.frequency.setValueAtTime(chordNote, u);
+          _.gain.setValueAtTime(0.02, u);
+          _.gain.exponentialRampToValueAtTime(0.001, u + (o / 1e3) * 3.8);
+          g.connect(_);
+          _.connect(this.musicGainNode);
+          g.start(u);
+          g.stop(u + (o / 1e3) * 3.9);
         });
       }
-      if(c%2===1){
-        const m=this.ctx.createOscillator(),p=this.ctx.createGain();
-        m.type="triangle";m.frequency.setValueAtTime(c%4===3?1200:800,u);
-        p.gain.setValueAtTime(.015,u);
-        p.gain.exponentialRampToValueAtTime(.001,u+.04);
-        m.connect(p);p.connect(this.musicGainNode);
-        m.start(u);m.stop(u+.05);
-      }
-      this.currentStep++;
 
-      // Check for auto-rotation after 32 measures (~35-40 seconds)
+      // Very subtle, soft low warmth pulse on offbeat (replaces harsh clicks!)
+      if(c % 4 === 2){
+        const m = this.ctx.createOscillator(), p = this.ctx.createGain();
+        m.type = "sine";
+        m.frequency.setValueAtTime(130, u);
+        p.gain.setValueAtTime(0.008, u);
+        p.gain.exponentialRampToValueAtTime(0.0005, u + 0.05);
+        m.connect(p);
+        p.connect(this.musicGainNode);
+        m.start(u);
+        m.stop(u + 0.06);
+      }
+
+      this.currentStep++;
       if(this.autoRotate && this.currentStep >= 64){
-        this.currentStep=0;
+        this.currentStep = 0;
         this.loopCounter++;
-        if(this.loopCounter >= 2){
-          this.loopCounter=0;
-          const curIdx=this.trackKeys.indexOf(this.currentBgmRegion);
-          const nextIdx=(curIdx+1)%this.trackKeys.length;
-          this.startMusic(this.trackKeys[nextIdx],!0);
+        if(this.loopCounter >= 3){
+          this.loopCounter = 0;
+          const curIdx = this.trackKeys.indexOf(this.currentBgmRegion);
+          const nextIdx = (curIdx + 1) % this.trackKeys.length;
+          this.startMusic(this.trackKeys[nextIdx], !0);
         }
       }
-    },o);
+    }, o);
   }
+
   nextTrack(){
-    const curIdx=this.trackKeys.indexOf(this.currentBgmRegion);
-    const nextIdx=(curIdx+1)%this.trackKeys.length;
-    this.startMusic(this.trackKeys[nextIdx],!0);
+    const curIdx = this.trackKeys.indexOf(this.currentBgmRegion);
+    const nextIdx = (curIdx + 1) % this.trackKeys.length;
+    this.startMusic(this.trackKeys[nextIdx], !0);
     return this.trackKeys[nextIdx];
   }
+
   stopMusic(){
-    this.musicPlaying=!1;
-    if(this.currentBgmInterval!==null){
+    this.musicPlaying = !1;
+    if(this.currentBgmInterval !== null){
       clearInterval(this.currentBgmInterval);
-      this.currentBgmInterval=null;
+      this.currentBgmInterval = null;
     }
   }
 }
-const St=new Vw;
+const _rawSt = new Vw;
+const St = new Proxy(_rawSt, {
+  get(target, prop, receiver) {
+    if (prop in target) {
+      const val = Reflect.get(target, prop, receiver);
+      return typeof val === 'function' ? val.bind(target) : val;
+    }
+    if (typeof prop === 'string' && prop.startsWith('play')) {
+      return () => {
+        if (target.playAttack) target.playAttack();
+      };
+    }
+    return undefined;
+  }
+});
+if(typeof window!=="undefined"){
+  window.St = St;
+  window.__superBearSoundTrack = St;
+  window.__superBearSound = St;
+  window.playMusicTrack = (id) => { St.setMuted(!1); St.startMusic(id, !0); };
+  window.toggleGameMusic = () => { return St.toggleMute(); };
+}
+if(typeof window!=="undefined"){
+  window.__superBearSound=St;
+  window.addEventListener("superbear:play-music",(ev)=>{
+    if(ev&&ev.detail){St.startMusic(ev.detail,!0);}
+  });
+}
 function buildCatMesh(color=0xf59e0b,innerEar=0xf472b6,eyeColor=0x10b981,collarColor=0xef4444){  const grp=new kt();  const bodyMat=new Le({color:color,roughness:0.55});  const whiteMat=new Le({color:0xffffff,roughness:0.6});  const earMat=new Le({color:innerEar});  const eyeMat=new Le({color:eyeColor,roughness:0.2});  const noseMat=new Le({color:0xf472b6});  const darkMat=new Le({color:0x1e293b});  const body=new kt();  body.position.y=0.9;  grp.add(body);  const bodyGeo=new At(0.52,14,14);  bodyGeo.scale(0.95,1.1,1.0);  const bodyMesh=new Me(bodyGeo,bodyMat);  bodyMesh.castShadow=!0;  body.add(bodyMesh);  const bellyGeo=new At(0.36,12,12);  bellyGeo.scale(0.7,0.9,0.35);  const belly=new Me(bellyGeo,whiteMat);  belly.position.set(0,-0.05,0.35);  body.add(belly);  const legGeo=new jt(0.12,0.12,0.5,8);  const legPositions=[{x:-0.28,z:0.2},{x:0.28,z:0.2},{x:-0.28,z:-0.2},{x:0.28,z:-0.2}];  legPositions.forEach(p=>{const leg=new Me(legGeo,bodyMat);leg.position.set(p.x,-0.45,p.z);leg.castShadow=!0;body.add(leg);const paw=new Me(new At(0.13,10,10),whiteMat);paw.position.set(p.x,-0.68,p.z+0.06);paw.castShadow=!0;body.add(paw)});  const head=new kt();  head.position.set(0,0.6,0.08);  body.add(head);  const headGeo=new At(0.42,16,16);  headGeo.scale(1.1,0.95,1.0);  const headMesh=new Me(headGeo,bodyMat);  headMesh.castShadow=!0;  head.add(headMesh);  const earGeo=new Pn(0.16,0.36,4);  const earL=new Me(earGeo,bodyMat);  earL.position.set(-0.25,0.38,0.05);  earL.rotation.set(-0.1,0,0.38);  head.add(earL);  const earR=new Me(earGeo,bodyMat);  earR.position.set(0.25,0.38,0.05);  earR.rotation.set(-0.1,0,-0.38);  head.add(earR);  const inEarGeo=new Pn(0.11,0.25,4);  const inEarL=new Me(inEarGeo,earMat);  inEarL.position.set(-0.25,0.36,0.08);  inEarL.rotation.set(-0.1,0,0.38);  head.add(inEarL);  const inEarR=new Me(inEarGeo,earMat);  inEarR.position.set(0.25,0.36,0.08);  inEarR.rotation.set(-0.1,0,-0.38);  head.add(inEarR);  const muzzleL=new Me(new At(0.12,10,10),whiteMat);  muzzleL.position.set(-0.08,-0.08,0.34);  head.add(muzzleL);  const muzzleR=new Me(new At(0.12,10,10),whiteMat);  muzzleR.position.set(0.08,-0.08,0.34);  head.add(muzzleR);  const nose=new Me(new At(0.05,8,8),noseMat);  nose.position.set(0,-0.04,0.4);  head.add(nose);  const eyeL=new Me(new At(0.075,10,10),eyeMat);  eyeL.position.set(-0.17,0.08,0.35);  head.add(eyeL);  const pupilL=new Me(new At(0.03,8,8),darkMat);  pupilL.position.set(-0.17,0.08,0.41);  head.add(pupilL);  const eyeR=new Me(new At(0.075,10,10),eyeMat);  eyeR.position.set(0.17,0.08,0.35);  head.add(eyeR);  const pupilR=new Me(new At(0.03,8,8),darkMat);  pupilR.position.set(0.17,0.08,0.41);  head.add(pupilR);  if(collarColor){const collar=new Me(new jt(0.44,0.44,0.06,12),new Le({color:collarColor}));collar.position.set(0,-0.02,0);head.add(collar);const bell=new Me(new At(0.06,10,10),new Le({color:16498468,metalness:.8}));bell.position.set(0,-0.06,0.42);head.add(bell)}  const tail=new Me(new jt(0.05,0.07,0.6,8),bodyMat);  tail.position.set(0,0.15,-0.42);  tail.rotation.set(-0.8,0,0.2);  body.add(tail);  return grp;}
 function Xw(r){const e=document.createElement("canvas");e.width=512,e.height=512;const n=e.getContext("2d"),a=[{bg:"#064e3b",border:"#10b981",header:"#34d399",title:"ÇİZİM 1: 15:00 ORMAN TAPINAĞI"},{bg:"#78350f",border:"#f59e0b",header:"#fbbf24",title:"ÇİZİM 2: ARI KOVANI HARDCORE"},{bg:"#0c4a6e",border:"#0ea5e9",header:"#38bdf8",title:"ÇİZİM 3: 16:00 PELİKAN OVALARI"},{bg:"#7c2d12",border:"#f97316",header:"#fb923c",title:"ÇİZİM 4: YENİ DÜŞMAN & EŞYALAR"},{bg:"#4c1d95",border:"#a855f7",header:"#c084fc",title:"ÇİZİM 5: 17:00 ULTRA GÜNCELLEME"},{bg:"#311042",border:"#e879f9",header:"#f0abfc",title:"ÇİZİM 6: KOZMİK BOYUT & BONCUK (KEDİ)"}],o=a[r%a.length],c=n.createLinearGradient(0,0,512,512);c.addColorStop(0,"#1e293b"),c.addColorStop(.5,o.bg),c.addColorStop(1,"#0f172a"),n.fillStyle=c,n.fillRect(0,0,512,512),n.lineWidth=10,n.strokeStyle=o.border,n.strokeRect(10,10,492,492),n.lineWidth=2,n.strokeStyle="#ffffff40",n.strokeRect(20,20,472,472),n.strokeStyle="rgba(255, 255, 255, 0.07)",n.lineWidth=1;for(let h=30;h<512;h+=30)n.beginPath(),n.moveTo(h,20),n.lineTo(h,492),n.stroke(),n.beginPath(),n.moveTo(20,h),n.lineTo(492,h),n.stroke();n.fillStyle="rgba(0, 0, 0, 0.6)",n.fillRect(25,25,462,70),n.strokeStyle=o.border,n.lineWidth=3,n.strokeRect(25,25,462,70),n.fillStyle=o.header,n.font="bold 22px system-ui, sans-serif",n.textAlign="center",n.fillText(o.title,256,58),n.font="bold 13px system-ui, sans-serif",n.fillStyle="#cbd5e1",n.fillText("SUPER BEAR ADVENTURE - ORİJİNAL KONSEPT ÇİZİMİ",256,80),n.textAlign="left",r===0?(n.fillStyle="#d97706",n.beginPath(),n.arc(140,200,35,0,Math.PI*2),n.fill(),n.fillStyle="#fef3c7",n.font="40px sans-serif",n.fillText("🐻",120,215),n.strokeStyle="#38bdf8",n.strokeRect(90,110,100,30),n.strokeRect(40,200,60,40),n.strokeRect(180,200,60,40),n.fillStyle="#38bdf8",n.font="bold 11px system-ui",n.fillText("BAŞ / MASKE",100,130),n.fillText("PELERİN",45,225),n.fillText("SİLAH",190,225),n.fillStyle="#ffffff",n.font="bold 14px system-ui",n.fillText("MEKANİKLER:",260,130),n.fillStyle="#fbbf24",n.font="12px system-ui",n.fillText("• A : Zıplama / Jump",260,155),n.fillText("• B : Saldırı / Attack",260,180),n.fillText("• C : Yuvarlanma / Roll",260,205),n.fillText("• C + A : Kayma Deparı",260,230),n.fillText("• C + B : Duvar Tutunma",260,255),n.fillText("• C + B + A : Yere Ezme Şoku",260,280),n.fillStyle="#f43f5e",n.font="22px sans-serif",n.fillText("❤️❤️❤️❤️ (Can Barları)",50,330),n.fillStyle="#10b981",n.font="bold 13px system-ui",n.fillText("🏛️ ORMAN TAPINAĞI GİRİŞİ & ZEHR HAVUZU",50,375),n.fillStyle="#94a3b8",n.font="11px system-ui",n.fillText("Antik dikilitaşlar ve yeşil zehir göleti platformları.",50,400),n.fillText("Tapınak sonu ara sahnesiyle yeni pelerin kuşanılır.",50,420)):r===1?(n.fillStyle="#fbbf24",n.font="bold 15px system-ui",n.fillText("🐝 ARI KOVANI HARDCORE MODU",50,135),n.fillStyle="#9333ea",n.beginPath(),n.arc(120,220,45,0,Math.PI*2),n.fill(),n.fillStyle="#ffffff",n.font="50px sans-serif",n.fillText("👿",95,238),n.fillStyle="#c084fc",n.font="bold 13px system-ui",n.fillText("GÜÇLENDİRİLMİŞ MOR AYI",180,200),n.fillStyle="#e2e8f0",n.font="11px system-ui",n.fillText("Tenrex Çekici ile ezici darbeler savurur.",180,225),n.fillText("Zırhlı arı muhafızları çağırır.",180,245),n.fillStyle="rgba(251, 191, 36, 0.2)",n.fillRect(40,290,430,90),n.strokeStyle="#f59e0b",n.strokeRect(40,290,430,90),n.fillStyle="#fbbf24",n.font="bold 13px system-ui",n.fillText("🏆 SIFIR HASAR ÖDÜLÜ: ALTIN BAL PELERİNİ",55,318),n.fillStyle="#fde68a",n.font="11px system-ui",n.fillText("Hasar almadan bitirildiğinde efsanevi altın pelerin açılır!",55,340),n.fillText("Silah Ödülü: Tenrex (T-Rex) Çekici",55,360),n.fillStyle="#38bdf8",n.font="italic 12px system-ui",n.fillText('"Sen bizim Pelikan Ovalarına layıksın sana her kapımız açık!"',50,430)):r===2?(n.fillStyle="#38bdf8",n.font="bold 15px system-ui",n.fillText("🪽 PELİKAN OVALARI HARİTASI & GÖK ADALARI",50,135),n.fillStyle="#ffffff",n.font="45px sans-serif",n.fillText("🕊️",80,220),n.fillText("🏝️",200,200),n.fillText("☁️",340,220),n.fillStyle="#f8fafc",n.font="bold 13px system-ui",n.fillText("UÇAN GÖK ADALARI & RÜZGAR AKIMLARI",50,280),n.fillStyle="#94a3b8",n.font="12px system-ui",n.fillText("• Pelikan NPC ile dostluk kur.",50,310),n.fillText("• Rüzgar akımlarında süzülerek gizli sandıklara ulaş.",50,335),n.fillText("• Boss: Jilet kanatlı Pelikan Lordu ve su hortumu.",50,360),n.fillStyle="#34d399",n.font="bold 12px system-ui",n.fillText("Ödül: Pelikan Kanatları & Kozmik Süzülme",50,410)):r===3?(n.fillStyle="#fb923c",n.font="bold 15px system-ui",n.fillText("🌺 YENİ DÜŞMAN: TÜKÜREN KIRMIZI ÇİÇEK",50,135),n.fillStyle="#ffffff",n.font="45px sans-serif",n.fillText("🥀",80,215),n.fillText("💥",150,210),n.fillText("🎯",220,215),n.fillStyle="#f8fafc",n.font="12px system-ui",n.fillText("Platformlar arasında menzilli zehir mermisi fırlatır.",50,275),n.fillText("Yaklaşıp pençe veya çekiçle etkisiz hale getir.",50,300),n.fillStyle="#f59e0b",n.font="bold 14px system-ui",n.fillText("👒 YENİ EŞYA: PELİKAN BURNU MASKESİ",50,350),n.fillStyle="#cbd5e1",n.font="11px system-ui",n.fillText("Saldırılara delme gücü verir ve koşu hızını artırır.",50,375),n.fillText("17:00 Ultra Güncellemesi öncesi kritik ekipmandır.",50,400)):r===4?(n.fillStyle="#c084fc",n.font="bold 15px system-ui",n.fillText("⚽ 17:00 ULTRA MEGA GÜNCELLEME ALANLARI",50,130),n.fillStyle="#ffffff",n.font="28px sans-serif",n.fillText("⚽ 🏔️ ❄️ 🏜️ 🐝 🌋",50,185),n.fillStyle="#e2e8f0",n.font="bold 12px system-ui",n.fillText("6 FARKLI KEŞİF ALANI & SPOR SAHASI:",50,230),n.fillStyle="#cbd5e1",n.font="11px system-ui",n.fillText("1. Futbol & Voleybol Sahası (Oynanabilir Fizik Topu)",50,260),n.fillText("2. Behemoth Gölü & Şelaleler",50,285),n.fillText("3. Kar Vadisi (Buz Yamaçları)",50,310),n.fillText("4. Dikilitaş Çölü & Piramitler",50,335),n.fillText("5. Arı Kovanı Şehri",50,360),n.fillStyle="#f43f5e",n.font="bold 13px system-ui",n.fillText("🚨 HİKAYE: Sevimli kedi dostumuz Boncuk uzaya kaçırıldı!",50,410)):(n.fillStyle="#f0abfc",n.font="bold 15px system-ui",n.fillText("🌌 KOZMİK BOYUT & BONCUK KURTARMA (KEDİ)",50,130),n.fillStyle="#ffffff",n.font="40px sans-serif",n.fillText("🪐",70,205),n.fillText("🚀",170,195),n.fillText("🔒",270,205),n.fillText("🐻",350,205),n.fillStyle="#f8fafc",n.font="bold 12px system-ui",n.fillText("DÜŞÜK YERÇEKİMİ & GEZEGENLER ARASI ZIPLAMA",50,265),n.fillStyle="#cbd5e1",n.font="11px system-ui",n.fillText("• Asteroidler arasında zıplayarak mor portala ulaş.",50,295),n.fillText("• Boss: Kozmik Boyut Muhafızı (Karanlık Enerji Küreleri).",50,320),n.fillText("• Kedi dostumuz Boncuk'un kozmik kafesini kırarak oyunu tamamla!",50,345),n.fillStyle="#38bdf8",n.font="bold 12px system-ui",n.fillText("🌟 Pelikan Ovaları Hardcore & Kozmik Kanatlar Açılır!",50,400)),n.fillStyle="rgba(255, 255, 255, 0.15)",n.fillRect(30,450,452,30),n.fillStyle="#94a3b8",n.font="10px monospace",n.textAlign="center",n.fillText("SANAT ŞÖVALESİ • ÇİZİME DOKUNARAK TAM EKRAN İNCELE",256,470);const u=new eS(e);return u.needsUpdate=!0,u}function jw(r,e){const n=new kt,a=new Na({color:8736014,roughness:.8});new Na({color:14251782,metalness:.6,roughness:.3});const o=new jt(.06,.07,3.2,8),c=new Me(o,a);c.position.set(-.7,1.5,.1),c.rotation.z=.12,c.rotation.x=-.1,c.castShadow=!0,n.add(c);const u=new Me(o,a);u.position.set(.7,1.5,.1),u.rotation.z=-.12,u.rotation.x=-.1,u.castShadow=!0,n.add(u);const h=new Me(o,a);h.position.set(0,1.5,-.6),h.rotation.x=.35,h.castShadow=!0,n.add(h);const m=new Rn(2,.1,.25),p=new Me(m,a);p.position.set(0,1.2,.15),p.rotation.x=-.1,p.castShadow=!0,n.add(p);const g=new Me(new Rn(.6,.1,.2),a);g.position.set(0,2.7,0),g.rotation.x=-.1,n.add(g);const _=Xw(r),x=new Na({map:_,roughness:.4}),y=new Rn(1.7,1.5,.08),T=new Me(y,x);T.position.set(0,1.95,.08),T.rotation.x=-.1,T.castShadow=!0,n.add(T);const R=new At(.18,12,12),b=new yi({color:16096779}),S=new Me(R,b);return S.position.set(0,3.1,0),n.add(S),n.userData={isArtEasel:!0,pageIndex:r,title:e,orbMesh:S},n}function Ww(r){const e=new kt,n=[],a=[],o=[],c=[],u=[],h=[];let m,p,g,_,x=new Y(0,0.1,0);
   const checkpoints = [];
@@ -6465,9 +6654,9 @@ const Zw = [
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */const HA=[["path",{d:"M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z",key:"1xq2db"}]],no=$t("zap",HA),VA=({stats:r,currentRegion:e,storyCrystals:stCrystals=[],onOpenStoryBook:onStoryClick,activeNotice:n,proximityPrompt:a,activeBoss:o,onOpenSkillTree:c,onOpenInventory:u,onOpenMap:h,onOpenDrawings:m,onOpenControls:p,onOpenCharacterStudio:g,onActionTrigger:_,isMuted:x,onToggleMute:y,onSelectMusicTheme:T})=>{
-  const [R,b]=rt.useState(!1), [z,v]=rt.useState(!1);
+  const [R,b]=rt.useState(!1), [z,v]=rt.useState(!1), [curTrack,setCurTrack]=rt.useState("hub");
   const A=[
-    {id:"hub",title:"Neşeli Ayı & Kedi Köyü 🌳",genre:"Marimba & Flüt (Ana Köy)"},
+    {id:"hub",title:"Sakin Doğa & Huzurlu Ayı Köyü 🍃",genre:"Dingin Akustik, Rahatlatıcı Lofi (Ana Köy)"},
     {id:"boncuk_cat",title:"Boncuk'un Kedi Dansı 🐱",genre:"Zıp Zıp Sevimli Kedi Teması"},
     {id:"forest_temple",title:"Antik Orman Tapınağı 🌿",genre:"Mistik Koro & Çanlar"},
     {id:"beehive",title:"Vızıldayan Kovan & Mor Ayı 🐝",genre:"Hardcore Tekno Boss"},
@@ -6527,17 +6716,17 @@ const Zw = [
           ]}),
           E.jsx("button",{onClick:()=>b(!1),className:"p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white cursor-pointer",children:E.jsx(_s,{className:"w-5 h-5"})})
         ]}),
-        E.jsxs("button",{onClick:()=>{if(typeof St!=="undefined"&&St.nextTrack){const nextT=St.nextTrack();T(nextT);}},className:"px-3 py-2 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-black flex items-center justify-between cursor-pointer active:scale-95 transition",children:[
+        E.jsxs("button",{onClick:()=>{if(typeof St!=="undefined"&&St.nextTrack){const nextT=St.nextTrack();setCurTrack(nextT);if(T)T(nextT);}},className:"px-3 py-2 rounded-2xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-black flex items-center justify-between cursor-pointer active:scale-95 transition",children:[
           E.jsx("span",{children:"🎲 Sıradaki Parçayı Çal"}),
           E.jsx("span",{className:"text-sm",children:"⏭️"})
         ]}),
         E.jsx("div",{className:"flex flex-col gap-1.5 overflow-y-auto max-h-[50vh] pr-1 overscroll-contain",children:
-          A.map(D=>E.jsxs("button",{key:D.id,onClick:()=>{T(D.id);b(!1);},className:("px-3 py-2 rounded-2xl text-left text-xs font-bold transition-all flex items-center justify-between cursor-pointer " + (e.id===D.id?"bg-pink-600/40 text-pink-200 border-2 border-pink-400 shadow-md scale-[1.01]":"hover:bg-slate-800/80 bg-slate-950/50 text-slate-300 border border-slate-800/80")),children:[
+          A.map(D=>E.jsxs("button",{key:D.id,onClick:()=>{if(typeof St!=="undefined"){St.startMusic(D.id,!0);}setCurTrack(D.id);if(T)T(D.id);},className:("px-3 py-2 rounded-2xl text-left text-xs font-bold transition-all flex items-center justify-between cursor-pointer " + ((curTrack===D.id||e.id===D.id)?"bg-pink-600/40 text-pink-200 border-2 border-pink-400 shadow-md scale-[1.01]":"hover:bg-slate-800/80 bg-slate-950/50 text-slate-300 border border-slate-800/80")),children:[
             E.jsxs("div",{className:"flex flex-col",children:[
               E.jsx("span",{className:"font-black text-xs text-white",children:D.title}),
               E.jsx("span",{className:"text-[10px] text-slate-400",children:D.genre})
             ]}),
-            e.id===D.id&&E.jsx("span",{className:"text-[10px] font-black text-pink-400 bg-pink-950/60 px-2 py-0.5 rounded-full border border-pink-500/30 animate-pulse",children:"▶ Çalıyor"})
+            (curTrack===D.id||e.id===D.id)&&E.jsx("span",{className:"text-[10px] font-black text-pink-400 bg-pink-950/60 px-2 py-0.5 rounded-full border border-pink-500/30 animate-pulse",children:"▶ Çalıyor"})
           ]},D.id))
         })
       ]})
@@ -7384,7 +7573,7 @@ z(K=>K.map(ie=>ie.id===L?{...ie,bossDefeated:!0,hardcoreCompletedNoDamage:w||ie.
     p(ie => [...ie.filter(ue => ue.id !== K.id), K]);
     Ce("🎉 BÜYÜK EFSANEVİ ZAFER! Tüm 8 Bal Kristali Kurtarıldı ve Sonsuz Zaman Pelerini Kazandın!");
   }
-  if (L === "beehive" && w) {const K={id:"cape_golden_honey",name:"Altın Bal Pelerini (Hardcore Ödülü)",slot:"cape",rarity:"legendary",icon:"👑",stats:{defense:16,speed:2},meshType:"cape",color:"#f59e0b",unlocked:!0,description:"Arı Kovanını hiç hasar almadan geçen efsanevi ayı kahramanının pelerini!"};p(ie=>[...ie.filter(ue=>ue.id!==K.id),K]),Ce("🏆 Hardcore Zafer: Altın Bal Pelerini Kazandın!")}if(L==="space_realm"){const K={id:"cape_cosmic_wings",name:"Kozmik Kahraman Kanatları",slot:"cape",rarity:"legendary",icon:"✨",stats:{defense:25,speed:3.5,maxHp:50},meshType:"cape",color:"#c084fc",unlocked:!0,description:"Boncuk'u kurtararak tüm evrenin en yüce kahramanı oldun!"};p(ie=>[...ie.filter(ue=>ue.id!==K.id),K]),Ce("🎉 TEBRİKLER! Kedi Boncuk Kurtarıldı ve Evren Barışa Kavuştu!")}ct("defeat_"+ye,1)},ct=(ye,L)=>{S(w=>w.map(K=>{if(K.completed)return K;if(K.id===ye||"defeat_"+K.id===ye||"kill_"+K.id===ye){const ie=Math.min(K.target,K.progress+L),ue=ie>=K.target;return ue&&!K.completed&&(a(De=>{const Be=De.xp+K.rewardXp;let _e=De.level,be=De.xpToNext,Pe=De.skillPoints,Ve=Be;for(;Ve>=be;)Ve-=be,_e+=1,Pe+=1,be=Math.round(be*1.5),Ce(`🎉 Seviye Atladın! Seviye ${_e} Oldun (+1 Beceri Puanı)`);return{...De,xp:Ve,level:_e,xpToNext:be,skillPoints:Pe,coins:De.coins+K.rewardCoins}}),Ce(`✅ Görev Tamamlandı: "${K.title}" (+${K.rewardXp} XP, +${K.rewardCoins} Altın)`)),{...K,progress:ie,completed:ue}}return K}))},ze=ye=>{const L=T.find(w=>w.id===ye);if(L){if(n.skillPoints<L.cost){Ce("Yetersiz beceri puanı!");return}if(L.currentLevel>=L.maxLevel){Ce("Bu beceri zaten maksimum seviyede!");return}a(w=>{const K={...w,skillPoints:w.skillPoints-L.cost};return L.effect(K),K}),R(w=>w.map(K=>K.id===ye?{...K,currentLevel:K.currentLevel+1}:K)),St.playSkillUnlock(),Ce(`✨ Beceri Açıldı: ${L.name}!`)}},qe=ye=>{_(L=>({...L,[ye.slot]:ye})),yt({...g,[ye.slot]:ye}),St.playEquip(),Ce(`Kuşanıldı: ${ye.name}`)},at=ye=>{_(L=>({...L,[ye]:null})),yt({...g,[ye]:null}),St.playEquip()},yt=ye=>{let L=0,w=0,K=0,ie=0;Object.values(ye).forEach(ue=>{ue&&ue.stats&&(ue.stats.attack&&(L+=ue.stats.attack),ue.stats.defense&&(w+=ue.stats.defense),ue.stats.speed&&(K+=ue.stats.speed),ue.stats.maxHp&&(ie+=ue.stats.maxHp))}),a(ue=>({...ue,attackPower:12+L,defense:4+w,moveSpeed:7.5+K,maxHp:100+ie}))},xt=ye=>{const L=x.find(w=>w.id===ye);!L||L.count<=0||(ye==="honey_potion"?(a(w=>({...w,currentHp:Math.min(w.maxHp,w.currentHp+35)})),St.playHoneyGem(),Ce("🍯 Bal İksiri içildi (+35 Can)")):ye==="speed_honey"&&(a(w=>({...w,moveSpeed:w.moveSpeed+2})),St.playPowerup(),Ce("⚡ Hız Şurubu içildi (Geçici Süper Hız!)")),y(w=>w.map(K=>K.id===ye?{...K,count:K.count-1}:K)))},Ke=ye=>{e.current&&e.current.loadRegion(ye)},st=ye=>{if(ye==="interact"&&(W==null?void 0:W.type)==="easel"){H(W.pageIndex??0),te(!0);return}e.current&&e.current.triggerAction(ye)},q=()=>{const ye=!le;Re(ye),St.setMuted(ye)},et=k.find(ye=>ye.id===v)||k[0];return E.jsxs("div",{className:"fixed inset-0 w-full h-full overflow-hidden bg-slate-950 select-none touch-none",children:[E.jsx("div",{ref:r,className:"absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing z-0",style:{touchAction:"none"}}),E.jsx(VA,{stats:n,currentRegion:et,storyCrystals:storyCrystals,onOpenStoryBook:()=>setIsStoryBookOpen(!0),activeNotice:Q,proximityPrompt:W,activeBoss:xe,onOpenSkillTree:()=>B(!0),onOpenInventory:()=>D(!0),onOpenMap:()=>F(!0),onOpenDrawings:ye=>{ye!==void 0&&H(ye),te(!0)},onOpenControls:()=>G(!0),onOpenCharacterStudio:()=>pe(!0),onActionTrigger:st,isMuted:le,onToggleMute:q,onSelectMusicTheme:ye=>St.startMusic(ye)}),E.jsx(XA,{onMove:(ye,L)=>{e.current&&e.current.setAnalogJoystick(ye,L)},onCameraRotate:(ye,L)=>{e.current&&e.current.rotateCamera(ye,L)},onCameraDrag:(ye,L)=>{e.current&&e.current.rotateCamera(ye*.008,L*.008)},onActionTrigger:st,onAction:st,onButtonState:(ye,L)=>{e.current&&e.current.setButtonState(ye,L)},isInspectingAvailable:(W==null?void 0:W.type)==="easel"}),E.jsx(JA,{isOpen:Z,onClose:()=>pe(!1),stats:n,skins:o,activeSkinId:u,onSelectSkin:Ue,onUnlockSkin:ut,equipmentList:m,equipped:g,onEquipItem:qe,onUnlockEquipment:Ye}),E.jsx(jA,{isOpen:N,onClose:()=>B(!1),stats:n,skills:T,onUpgradeSkill:ze}),E.jsx(WA,{isOpen:A,onClose:()=>D(!1),stats:n,inventory:x,equipmentList:m,equipped:g,onEquipItem:qe,onUnequipSlot:at,onUseItem:xt}),E.jsx(qA,{isOpen:V,onClose:()=>F(!1),regions:k,currentRegionId:v,onSelectRegion:Ke}),E.jsx(YA,{npc:X,onClose:()=>{
+  if (L === "beehive" && w) {const K={id:"cape_golden_honey",name:"Altın Bal Pelerini (Hardcore Ödülü)",slot:"cape",rarity:"legendary",icon:"👑",stats:{defense:16,speed:2},meshType:"cape",color:"#f59e0b",unlocked:!0,description:"Arı Kovanını hiç hasar almadan geçen efsanevi ayı kahramanının pelerini!"};p(ie=>[...ie.filter(ue=>ue.id!==K.id),K]),Ce("🏆 Hardcore Zafer: Altın Bal Pelerini Kazandın!")}if(L==="space_realm"){const K={id:"cape_cosmic_wings",name:"Kozmik Kahraman Kanatları",slot:"cape",rarity:"legendary",icon:"✨",stats:{defense:25,speed:3.5,maxHp:50},meshType:"cape",color:"#c084fc",unlocked:!0,description:"Boncuk'u kurtararak tüm evrenin en yüce kahramanı oldun!"};p(ie=>[...ie.filter(ue=>ue.id!==K.id),K]),Ce("🎉 TEBRİKLER! Kedi Boncuk Kurtarıldı ve Evren Barışa Kavuştu!")}ct("defeat_"+ye,1)},ct=(ye,L)=>{S(w=>w.map(K=>{if(K.completed)return K;if(K.id===ye||"defeat_"+K.id===ye||"kill_"+K.id===ye){const ie=Math.min(K.target,K.progress+L),ue=ie>=K.target;return ue&&!K.completed&&(a(De=>{const Be=De.xp+K.rewardXp;let _e=De.level,be=De.xpToNext,Pe=De.skillPoints,Ve=Be;for(;Ve>=be;)Ve-=be,_e+=1,Pe+=1,be=Math.round(be*1.5),Ce(`🎉 Seviye Atladın! Seviye ${_e} Oldun (+1 Beceri Puanı)`);return{...De,xp:Ve,level:_e,xpToNext:be,skillPoints:Pe,coins:De.coins+K.rewardCoins}}),Ce(`✅ Görev Tamamlandı: "${K.title}" (+${K.rewardXp} XP, +${K.rewardCoins} Altın)`)),{...K,progress:ie,completed:ue}}return K}))},ze=ye=>{const L=T.find(w=>w.id===ye);if(L){if(n.skillPoints<L.cost){Ce("Yetersiz beceri puanı!");return}if(L.currentLevel>=L.maxLevel){Ce("Bu beceri zaten maksimum seviyede!");return}a(w=>{const K={...w,skillPoints:w.skillPoints-L.cost};return L.effect(K),K}),R(w=>w.map(K=>K.id===ye?{...K,currentLevel:K.currentLevel+1}:K)),St.playSkillUnlock(),Ce(`✨ Beceri Açıldı: ${L.name}!`)}},qe=ye=>{_(L=>({...L,[ye.slot]:ye})),yt({...g,[ye.slot]:ye}),St.playEquip(),Ce(`Kuşanıldı: ${ye.name}`)},at=ye=>{_(L=>({...L,[ye]:null})),yt({...g,[ye]:null}),St.playEquip()},yt=ye=>{let L=0,w=0,K=0,ie=0;Object.values(ye).forEach(ue=>{ue&&ue.stats&&(ue.stats.attack&&(L+=ue.stats.attack),ue.stats.defense&&(w+=ue.stats.defense),ue.stats.speed&&(K+=ue.stats.speed),ue.stats.maxHp&&(ie+=ue.stats.maxHp))}),a(ue=>({...ue,attackPower:12+L,defense:4+w,moveSpeed:7.5+K,maxHp:100+ie}))},xt=ye=>{const L=x.find(w=>w.id===ye);!L||L.count<=0||(ye==="honey_potion"?(a(w=>({...w,currentHp:Math.min(w.maxHp,w.currentHp+35)})),St.playHoneyGem(),Ce("🍯 Bal İksiri içildi (+35 Can)")):ye==="speed_honey"&&(a(w=>({...w,moveSpeed:w.moveSpeed+2})),St.playPowerup(),Ce("⚡ Hız Şurubu içildi (Geçici Süper Hız!)")),y(w=>w.map(K=>K.id===ye?{...K,count:K.count-1}:K)))},Ke=ye=>{e.current&&e.current.loadRegion(ye)},st=ye=>{if(ye==="interact"&&(W==null?void 0:W.type)==="easel"){H(W.pageIndex??0),te(!0);return}e.current&&e.current.triggerAction(ye)},q=()=>{const ye=!le;Re(ye),St.setMuted(ye)},et=k.find(ye=>ye.id===v)||k[0];return E.jsxs("div",{className:"fixed inset-0 w-full h-full overflow-hidden bg-slate-950 select-none touch-none",children:[E.jsx("div",{ref:r,className:"absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing z-0",style:{touchAction:"none"}}),E.jsx(VA,{stats:n,currentRegion:et,storyCrystals:storyCrystals,onOpenStoryBook:()=>setIsStoryBookOpen(!0),activeNotice:Q,proximityPrompt:W,activeBoss:xe,onOpenSkillTree:()=>B(!0),onOpenInventory:()=>D(!0),onOpenMap:()=>F(!0),onOpenDrawings:ye=>{ye!==void 0&&H(ye),te(!0)},onOpenControls:()=>G(!0),onOpenCharacterStudio:()=>pe(!0),onActionTrigger:st,isMuted:le,onToggleMute:q,onSelectMusicTheme:ye=>St.startMusic(ye,!0)}),E.jsx(XA,{onMove:(ye,L)=>{e.current&&e.current.setAnalogJoystick(ye,L)},onCameraRotate:(ye,L)=>{e.current&&e.current.rotateCamera(ye,L)},onCameraDrag:(ye,L)=>{e.current&&e.current.rotateCamera(ye*.008,L*.008)},onActionTrigger:st,onAction:st,onButtonState:(ye,L)=>{e.current&&e.current.setButtonState(ye,L)},isInspectingAvailable:(W==null?void 0:W.type)==="easel"}),E.jsx(JA,{isOpen:Z,onClose:()=>pe(!1),stats:n,skins:o,activeSkinId:u,onSelectSkin:Ue,onUnlockSkin:ut,equipmentList:m,equipped:g,onEquipItem:qe,onUnlockEquipment:Ye}),E.jsx(jA,{isOpen:N,onClose:()=>B(!1),stats:n,skills:T,onUpgradeSkill:ze}),E.jsx(WA,{isOpen:A,onClose:()=>D(!1),stats:n,inventory:x,equipmentList:m,equipped:g,onEquipItem:qe,onUnequipSlot:at,onUseItem:xt}),E.jsx(qA,{isOpen:V,onClose:()=>F(!1),regions:k,currentRegionId:v,onSelectRegion:Ke}),E.jsx(YA,{npc:X,onClose:()=>{
   if(X){
     const npcId=X.id||X.name;
     setTalkedNpcIds(prev=>{

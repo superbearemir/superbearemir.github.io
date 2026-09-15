@@ -2087,60 +2087,71 @@ function buildSpaceGalaxyWorld(scene) {
   spaceObjects.push(bakkal);
 
   // =========================================================================
-  // --- 2. RETRO ARCADE MİNİ OYUN SALONU KABİNİ (Arcade Station) ---
-  // Positioned at (-11, 0.2, -22)
+  // --- 2. MERKEZİ ARCADE BÖLGESİ (Centralized Arcade Zone Plaza) ---
+  // Positioned at (-12, 0.15, -23) in Ayı Köyü
   // =========================================================================
   const arcadeStation = new window.THREE.Group();
-  arcadeStation.position.set(-11, 0.2, -22);
-  arcadeStation.rotation.y = 0.4;
+  arcadeStation.position.set(-12, 0.15, -23);
   arcadeStation.name = 'retro_arcade_cabinet';
 
-  const arcadeBodyMat = new window.THREE.MeshStandardMaterial({ color: 0x3b0764, roughness: 0.4 });
+  const arcadeBodyMat = new window.THREE.MeshStandardMaterial({ color: 0x2e1065, roughness: 0.35, metalness: 0.3 });
   const arcadePurpleNeon = createGlowMat(0xa855f7, 0xc084fc);
-  const arcadeScreenMat = new window.THREE.MeshStandardMaterial({ color: 0x1e1b4b, emissive: 0x312e81, emissiveIntensity: 0.8 });
-  const cyberPlatformMat = new window.THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3, metalness: 0.7 });
-  const cyanGlowMat = createGlowMat(0x06b6d4, 0x38bdf8);
-  const yellowGoldMat = createGlowMat(0xf59e0b, 0xfde047);
+  const arcadeRoseNeon = createGlowMat(0xf43f5e, 0xfb7185);
+  const arcadeCyanNeon = createGlowMat(0x06b6d4, 0x38bdf8);
+  const arcadeGoldNeon = createGlowMat(0xf59e0b, 0xfde047);
+  const arcadeScreenMat = new window.THREE.MeshStandardMaterial({ color: 0x0f172a, emissive: 0x312e81, emissiveIntensity: 0.9 });
+  const cyberPlatformMat = new window.THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.4, metalness: 0.6 });
+  const woodStandMat = new window.THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8 });
+  const goldAccentMat = new window.THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8, roughness: 0.2 });
 
-  // Double Arcade Cabinets Side by Side
-  [-1.1, 1.1].forEach((cx, idx) => {
-    const cab = new window.THREE.Group();
-    cab.position.x = cx;
+  // --- A. GRAND ARCADE PLAZA BASE (Elevated Deck with Neon Borders) ---
+  const plazaBase = new window.THREE.Mesh(new window.THREE.BoxGeometry(22, 0.3, 16), cyberPlatformMat);
+  plazaBase.position.set(0, 0.15, 0);
+  arcadeStation.add(plazaBase);
 
-    const baseBox = new window.THREE.Mesh(new window.THREE.BoxGeometry(1.8, 4.2, 2.0), arcadeBodyMat);
-    baseBox.position.y = 2.1;
-    cab.add(baseBox);
-
-    [-0.92, 0.92].forEach(sx => {
-      const strip = new window.THREE.Mesh(new window.THREE.BoxGeometry(0.08, 4.3, 2.05), arcadePurpleNeon);
-      strip.position.set(sx, 2.15, 0);
-      cab.add(strip);
-    });
-
-    const crt = new window.THREE.Mesh(new window.THREE.PlaneGeometry(1.4, 1.3), arcadeScreenMat);
-    crt.position.set(0, 2.6, 1.02);
-    cab.add(crt);
-
-    const shelf = new window.THREE.Mesh(new window.THREE.BoxGeometry(1.7, 0.3, 0.9), cyberPlatformMat);
-    shelf.position.set(0, 1.7, 1.25);
-    shelf.rotation.x = -0.3;
-    cab.add(shelf);
-
-    const stick = new window.THREE.Mesh(new window.THREE.CylinderGeometry(0.04, 0.04, 0.35, 8), cyberPlatformMat);
-    stick.position.set(-0.35, 1.95, 1.25);
-    cab.add(stick);
-
-    const stickBall = new window.THREE.Mesh(new window.THREE.SphereGeometry(0.1, 8, 8), idx === 0 ? cyanGlowMat : yellowGoldMat);
-    stickBall.position.set(-0.35, 2.15, 1.25);
-    cab.add(stickBall);
-
-    const marquee = new window.THREE.Mesh(new window.THREE.BoxGeometry(1.7, 0.6, 0.4), arcadePurpleNeon);
-    marquee.position.set(0, 4.0, 0.9);
-    cab.add(marquee);
-
-    arcadeStation.add(cab);
+  // Plaza Neon Perimeter Edge Trims
+  [-11.05, 11.05].forEach(px => {
+    const sideRail = new window.THREE.Mesh(new window.THREE.BoxGeometry(0.2, 0.45, 16.2), arcadeCyanNeon);
+    sideRail.position.set(px, 0.35, 0);
+    arcadeStation.add(sideRail);
+  });
+  [-8.05, 8.05].forEach(pz => {
+    const frontRail = new window.THREE.Mesh(new window.THREE.BoxGeometry(22.2, 0.45, 0.2), pz > 0 ? arcadePurpleNeon : arcadeRoseNeon);
+    frontRail.position.set(0, 0.35, pz);
+    arcadeStation.add(frontRail);
   });
 
+  // Corner Cyber Pylons with Glowing Crystals
+  [[-10.8, -7.8], [10.8, -7.8], [-10.8, 7.8], [10.8, 7.8]].forEach(([cx, cz], pIdx) => {
+    const pylon = new window.THREE.Mesh(new window.THREE.CylinderGeometry(0.35, 0.45, 2.4, 8), cyberPlatformMat);
+    pylon.position.set(cx, 1.35, cz);
+    arcadeStation.add(pylon);
+
+    const pylonCap = new window.THREE.Mesh(new window.THREE.OctahedronGeometry(0.35), pIdx % 2 === 0 ? arcadeCyanNeon : arcadeGoldNeon);
+    pylonCap.position.set(cx, 2.7, cz);
+    pylonCap.name = `arcade_pylon_gem_${pIdx}`;
+    arcadeStation.add(pylonCap);
+  });
+
+  // --- B. GRAND ENTRANCE ARCHWAY & MARQUEE ---
+  const archGroup = new window.THREE.Group();
+  archGroup.position.set(0, 0, 7.8);
+
+  [-4.5, 4.5].forEach(px => {
+    const pillar = new window.THREE.Mesh(new window.THREE.BoxGeometry(0.8, 5.0, 0.8), arcadeBodyMat);
+    pillar.position.set(px, 2.6, 0);
+    archGroup.add(pillar);
+
+    const pillarGlow = new window.THREE.Mesh(new window.THREE.BoxGeometry(0.12, 5.05, 0.85), arcadePurpleNeon);
+    pillarGlow.position.set(px + (px > 0 ? -0.4 : 0.4), 2.6, 0);
+    archGroup.add(pillarGlow);
+  });
+
+  const archTop = new window.THREE.Mesh(new window.THREE.BoxGeometry(9.8, 0.9, 0.9), arcadePurpleNeon);
+  archTop.position.set(0, 5.2, 0);
+  archGroup.add(archTop);
+
+  // Grand Canvas Marquee Sign
   const arcadeCanvas = document.createElement('canvas');
   arcadeCanvas.width = 512;
   arcadeCanvas.height = 140;
@@ -2150,36 +2161,258 @@ function buildSpaceGalaxyWorld(scene) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const aData = (signs && signs.arcade) || IN_GAME_SIGN_TRANSLATIONS.tr.arcade;
-    ctx.fillStyle = '#2e1065';
+    ctx.fillStyle = '#1e1035';
     ctx.fillRect(0, 0, 512, 140);
     ctx.strokeStyle = '#c084fc';
     ctx.lineWidth = 6;
     ctx.strokeRect(4, 4, 504, 132);
     ctx.fillStyle = '#f43f5e';
-    ctx.font = 'bold 28px sans-serif';
+    ctx.font = 'bold 26px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(aData.title, 256, 48);
+    ctx.fillText('🕹️ MERKEZİ ARCADE ALANI 🎯', 256, 44);
     ctx.fillStyle = '#fde047';
-    ctx.font = 'bold 20px sans-serif';
-    ctx.fillText(aData.sub1, 256, 92);
-    ctx.fillStyle = '#e9d5ff';
-    ctx.font = '15px sans-serif';
-    ctx.fillText(aData.sub2, 256, 124);
+    ctx.font = 'bold 18px sans-serif';
+    ctx.fillText('🎯 Hedef Poligonu • 🏃 Engelli Parkur • 🍯 Altın Kazan!', 256, 88);
+    ctx.fillStyle = '#38bdf8';
+    ctx.font = 'bold 15px sans-serif';
+    ctx.fillText('[E / J Tuşu] 10 Hızlı Mini Oyun Oyna & Ödülleri Topla!', 256, 122);
     tex.needsUpdate = true;
   });
 
-  const marqueeSign = new window.THREE.Mesh(
-    new window.THREE.PlaneGeometry(4.0, 1.2),
+  const marqueeFront = new window.THREE.Mesh(
+    new window.THREE.PlaneGeometry(8.5, 2.2),
     new window.THREE.MeshBasicMaterial({ map: arcadeTex })
   );
-  marqueeSign.position.set(0, 4.8, 0.85);
-  arcadeStation.add(marqueeSign);
+  marqueeFront.position.set(0, 5.4, 0.52);
+  archGroup.add(marqueeFront);
 
-  const arcIconGeo = new window.THREE.BoxGeometry(0.8, 0.6, 0.2);
+  const marqueeBack = new window.THREE.Mesh(
+    new window.THREE.PlaneGeometry(8.5, 2.2),
+    new window.THREE.MeshBasicMaterial({ map: arcadeTex })
+  );
+  marqueeBack.position.set(0, 5.4, -0.52);
+  marqueeBack.rotation.y = Math.PI;
+  archGroup.add(marqueeBack);
+
+  arcadeStation.add(archGroup);
+
+  // --- C. STATION 1: TARGET PRACTICE RANGE (Sol Kanat: Hedef Vurma Poligonu) ---
+  const targetRangeStation = new window.THREE.Group();
+  targetRangeStation.position.set(-6.5, 0.3, -1.0);
+  targetRangeStation.name = 'arcade_target_range';
+
+  // Wooden & neon shooting booth
+  const boothCounter = new window.THREE.Mesh(new window.THREE.BoxGeometry(4.8, 1.1, 1.4), woodStandMat);
+  boothCounter.position.set(0, 0.65, 1.8);
+  targetRangeStation.add(boothCounter);
+
+  const boothTopShelf = new window.THREE.Mesh(new window.THREE.BoxGeometry(5.0, 0.15, 1.6), cyberPlatformMat);
+  boothTopShelf.position.set(0, 1.25, 1.8);
+  targetRangeStation.add(boothTopShelf);
+
+  // Roof Canopy
+  const canopy = new window.THREE.Mesh(new window.THREE.BoxGeometry(5.2, 0.35, 4.4), arcadeRoseNeon);
+  canopy.position.set(0, 4.2, 0.2);
+  canopy.rotation.x = 0.1;
+  targetRangeStation.add(canopy);
+
+  [-2.3, 2.3].forEach(px => {
+    const post = new window.THREE.Mesh(new window.THREE.CylinderGeometry(0.12, 0.12, 4.0, 8), woodStandMat);
+    post.position.set(px, 2.2, 1.8);
+    targetRangeStation.add(post);
+  });
+
+  // 3 Layered Bullseye Targets (Rotating & Bobbing in Animation Loop)
+  [-1.6, 0, 1.6].forEach((tx, idx) => {
+    const targetGroup = new window.THREE.Group();
+    targetGroup.position.set(tx, 2.0 + (idx % 2) * 0.4, -1.2);
+    targetGroup.name = `arcade_target_bullseye_${idx}`;
+
+    const tStand = new window.THREE.Mesh(new window.THREE.CylinderGeometry(0.06, 0.06, 2.0, 8), woodStandMat);
+    tStand.position.y = -0.9;
+    targetGroup.add(tStand);
+
+    const outerRing = new window.THREE.Mesh(new window.THREE.CylinderGeometry(0.65, 0.65, 0.08, 16), arcadeRoseNeon);
+    outerRing.rotation.x = Math.PI / 2;
+    targetGroup.add(outerRing);
+
+    const midRing = new window.THREE.Mesh(new window.THREE.CylinderGeometry(0.42, 0.42, 0.1, 16), new window.THREE.MeshStandardMaterial({ color: 0xffffff }));
+    midRing.rotation.x = Math.PI / 2;
+    targetGroup.add(midRing);
+
+    const centerBullseye = new window.THREE.Mesh(new window.THREE.CylinderGeometry(0.2, 0.2, 0.12, 16), arcadeGoldNeon);
+    centerBullseye.rotation.x = Math.PI / 2;
+    targetGroup.add(centerBullseye);
+
+    targetRangeStation.add(targetGroup);
+  });
+
+  // Floating 3D Target Blaster Hologram Icon
+  const targetIcon = new window.THREE.Group();
+  targetIcon.position.set(0, 5.4, 1.8);
+  targetIcon.name = 'arcade_target_icon';
+  const tIconTorus = new window.THREE.Mesh(new window.THREE.TorusGeometry(0.6, 0.12, 8, 24), arcadeRoseNeon);
+  const tIconCenter = new window.THREE.Mesh(new window.THREE.SphereGeometry(0.25, 8, 8), arcadeGoldNeon);
+  targetIcon.add(tIconTorus);
+  targetIcon.add(tIconCenter);
+  targetRangeStation.add(targetIcon);
+
+  arcadeStation.add(targetRangeStation);
+
+  // --- D. STATION 2: OBSTACLE COURSE / SPEED PARKOUR (Sağ Kanat: Engelli Parkur) ---
+  const parkourStation = new window.THREE.Group();
+  parkourStation.position.set(6.5, 0.3, -1.0);
+  parkourStation.name = 'arcade_parkour';
+
+  // Checkered starting track floor
+  const trackFloor = new window.THREE.Mesh(new window.THREE.BoxGeometry(4.8, 0.05, 4.4), new window.THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 }));
+  trackFloor.position.set(0, 0.05, 0);
+  parkourStation.add(trackFloor);
+
+  // Neon Starting Gate Arch
+  [-2.2, 2.2].forEach(px => {
+    const post = new window.THREE.Mesh(new window.THREE.CylinderGeometry(0.15, 0.15, 3.8, 8), cyberPlatformMat);
+    post.position.set(px, 2.0, 1.8);
+    parkourStation.add(post);
+  });
+  const gateTop = new window.THREE.Mesh(new window.THREE.BoxGeometry(4.8, 0.4, 0.4), arcadeGoldNeon);
+  gateTop.position.set(0, 3.9, 1.8);
+  parkourStation.add(gateTop);
+
+  // Obstacle Props (2 Jumping Rings + 2 Hurdles)
+  [-1.0, 1.0].forEach((ox, idx) => {
+    const jumpRing = new window.THREE.Mesh(new window.THREE.TorusGeometry(0.55, 0.08, 8, 20), arcadeGoldNeon);
+    jumpRing.position.set(ox, 1.8 + idx * 0.3, -0.4);
+    jumpRing.name = `arcade_parkour_ring_${idx}`;
+    parkourStation.add(jumpRing);
+
+    const hurdle = new window.THREE.Mesh(new window.THREE.BoxGeometry(1.2, 0.5, 0.1), arcadeCyanNeon);
+    hurdle.position.set(ox * 0.8, 0.35, -1.6);
+    parkourStation.add(hurdle);
+  });
+
+  // Floating 3D Running Trophy / Sneaker Hologram Icon
+  const parkourIcon = new window.THREE.Group();
+  parkourIcon.position.set(0, 5.4, 1.8);
+  parkourIcon.name = 'arcade_parkour_icon';
+  const pTrophyCup = new window.THREE.Mesh(new window.THREE.CylinderGeometry(0.4, 0.2, 0.6, 12), arcadeGoldNeon);
+  const pTrophyBase = new window.THREE.Mesh(new window.THREE.BoxGeometry(0.5, 0.2, 0.5), cyberPlatformMat);
+  pTrophyBase.position.y = -0.4;
+  parkourIcon.add(pTrophyCup);
+  parkourIcon.add(pTrophyBase);
+  parkourStation.add(parkourIcon);
+
+  arcadeStation.add(parkourStation);
+
+  // --- E. STATION 3: RETRO ARCADE MACHINES ROW (Merkez: 3 Deluxe Atari Kabini) ---
+  const cabinetGroup = new window.THREE.Group();
+  cabinetGroup.position.set(0, 0.3, -5.2);
+
+  const cabConfigs = [
+    { cx: -2.0, color: 0x0284c7, neon: arcadeCyanNeon, title: 'CYBER' },
+    { cx: 0, color: 0x6b21a8, neon: arcadePurpleNeon, title: 'MASTER' },
+    { cx: 2.0, color: 0xd97706, neon: arcadeGoldNeon, title: 'SUNSET' }
+  ];
+
+  cabConfigs.forEach((cfg, idx) => {
+    const cab = new window.THREE.Group();
+    cab.position.x = cfg.cx;
+
+    const baseBox = new window.THREE.Mesh(
+      new window.THREE.BoxGeometry(1.7, 4.2, 2.0),
+      new window.THREE.MeshStandardMaterial({ color: cfg.color, roughness: 0.4 })
+    );
+    baseBox.position.y = 2.1;
+    cab.add(baseBox);
+
+    [-0.87, 0.87].forEach(sx => {
+      const strip = new window.THREE.Mesh(new window.THREE.BoxGeometry(0.08, 4.3, 2.05), cfg.neon);
+      strip.position.set(sx, 2.15, 0);
+      cab.add(strip);
+    });
+
+    const crt = new window.THREE.Mesh(new window.THREE.PlaneGeometry(1.3, 1.2), arcadeScreenMat);
+    crt.position.set(0, 2.6, 1.02);
+    cab.add(crt);
+
+    const shelf = new window.THREE.Mesh(new window.THREE.BoxGeometry(1.6, 0.3, 0.9), cyberPlatformMat);
+    shelf.position.set(0, 1.7, 1.25);
+    shelf.rotation.x = -0.3;
+    cab.add(shelf);
+
+    const stick = new window.THREE.Mesh(new window.THREE.CylinderGeometry(0.04, 0.04, 0.35, 8), cyberPlatformMat);
+    stick.position.set(-0.35, 1.95, 1.25);
+    cab.add(stick);
+
+    const stickBall = new window.THREE.Mesh(new window.THREE.SphereGeometry(0.1, 8, 8), cfg.neon);
+    stickBall.position.set(-0.35, 2.15, 1.25);
+    cab.add(stickBall);
+
+    const marquee = new window.THREE.Mesh(new window.THREE.BoxGeometry(1.6, 0.6, 0.4), cfg.neon);
+    marquee.position.set(0, 4.0, 0.9);
+    cab.add(marquee);
+
+    cabinetGroup.add(cab);
+  });
+
+  // Floating Central Master Gamepad Icon
+  const arcIconGeo = new window.THREE.BoxGeometry(0.9, 0.6, 0.25);
   const arcIconMesh = new window.THREE.Mesh(arcIconGeo, arcadePurpleNeon);
-  arcIconMesh.position.set(0, 5.8, 0.8);
+  arcIconMesh.position.set(0, 5.6, 0.8);
   arcIconMesh.name = 'arcade_cabinet_icon';
-  arcadeStation.add(arcIconMesh);
+  cabinetGroup.add(arcIconMesh);
+
+  arcadeStation.add(cabinetGroup);
+
+  // --- F. STATION 4: GOLD & TOKEN REWARD ATM KIOSK ---
+  const atmGroup = new window.THREE.Group();
+  atmGroup.position.set(-4.2, 0.3, -5.0);
+  atmGroup.name = 'arcade_atm_kiosk';
+
+  const atmBody = new window.THREE.Mesh(new window.THREE.BoxGeometry(1.2, 3.2, 1.2), goldAccentMat);
+  atmBody.position.y = 1.6;
+  atmGroup.add(atmBody);
+
+  const atmScreen = new window.THREE.Mesh(new window.THREE.PlaneGeometry(0.8, 0.6), arcadeCyanNeon);
+  atmScreen.position.set(0, 2.2, 0.62);
+  atmGroup.add(atmScreen);
+
+  const floatingCoin = new window.THREE.Mesh(new window.THREE.CylinderGeometry(0.4, 0.4, 0.08, 16), arcadeGoldNeon);
+  floatingCoin.position.set(0, 3.8, 0);
+  floatingCoin.rotation.z = Math.PI / 2;
+  floatingCoin.name = 'arcade_atm_icon';
+  atmGroup.add(floatingCoin);
+
+  arcadeStation.add(atmGroup);
+
+  // --- G. MASCOT NPC: BONCUK THE ARCADE MASTER ---
+  const arcadeMaster = new window.THREE.Group();
+  arcadeMaster.position.set(0, 0.3, 3.2);
+  arcadeMaster.name = 'npc_arcade_master';
+
+  // Stylized Mascot Body & Head
+  const mBody = new window.THREE.Mesh(new window.THREE.CylinderGeometry(0.45, 0.55, 1.4, 12), new window.THREE.MeshStandardMaterial({ color: 0xd97706 }));
+  mBody.position.y = 0.9;
+  arcadeMaster.add(mBody);
+
+  const mHead = new window.THREE.Mesh(new window.THREE.SphereGeometry(0.45, 12, 12), new window.THREE.MeshStandardMaterial({ color: 0xfbbf24 }));
+  mHead.position.y = 1.95;
+  arcadeMaster.add(mHead);
+
+  // Gamer Headset
+  const headsetBand = new window.THREE.Mesh(new window.THREE.TorusGeometry(0.48, 0.06, 8, 16, Math.PI), arcadeCyanNeon);
+  headsetBand.position.set(0, 2.05, 0);
+  headsetBand.rotation.z = Math.PI;
+  arcadeMaster.add(headsetBand);
+
+  [-0.46, 0.46].forEach(ex => {
+    const earCup = new window.THREE.Mesh(new window.THREE.CylinderGeometry(0.15, 0.15, 0.15, 8), arcadePurpleNeon);
+    earCup.position.set(ex, 1.95, 0);
+    earCup.rotation.z = Math.PI / 2;
+    arcadeMaster.add(earCup);
+  });
+
+  arcadeStation.add(arcadeMaster);
 
   scene.add(arcadeStation);
   spaceObjects.push(arcadeStation);
@@ -7868,6 +8101,11 @@ function updateSpaceLoop() {
         removeGrandWaterfall(game.scene);
       }
     }
+
+    // 🏕️ Bölüme Özel Gizli Dinlenme Yerleri ve Özel Sandıkları (Secret Resting Sanctuaries & Chests)
+    if (typeof window.__maintainSecretSanctuaries === 'function') {
+      window.__maintainSecretSanctuaries(game);
+    }
   }
 
   // Super Bear Adventure Chapter Banner UI (Disabled per user request)
@@ -12101,22 +12339,71 @@ function updateSpaceLoop() {
       }
     }
 
-    // --- 🕹️ RETRO ARCADE MİNİ OYUN KABİNİ PROXIMITY & ANIMATION ---
+    // --- 🕹️ MERKEZİ ARCADE BÖLGESİ PROXIMITY & ANIMATION ENGINE ---
     const aCabinet = game.scene.getObjectByName('retro_arcade_cabinet');
     if (!isHub) {
       if (aCabinet) aCabinet.visible = false;
       window.dispatchEvent(new CustomEvent('superbear:arcade-proximity', { detail: { isNear: false } }));
     } else if (aCabinet) {
       aCabinet.visible = true;
+
+      // Animate floating holographic icons
       const aIcon = aCabinet.getObjectByName('arcade_cabinet_icon');
       if (aIcon) {
         aIcon.rotation.y += 0.03;
-        aIcon.position.y = 5.8 + Math.sin(Date.now() * 0.005) * 0.15;
+        aIcon.position.y = 5.6 + Math.sin(Date.now() * 0.005) * 0.15;
       }
+      const tIcon = aCabinet.getObjectByName('arcade_target_icon');
+      if (tIcon) {
+        tIcon.rotation.y -= 0.035;
+        tIcon.position.y = 5.4 + Math.sin(Date.now() * 0.006) * 0.12;
+      }
+      const pIcon = aCabinet.getObjectByName('arcade_parkour_icon');
+      if (pIcon) {
+        pIcon.rotation.y += 0.04;
+        pIcon.position.y = 5.4 + Math.cos(Date.now() * 0.0055) * 0.12;
+      }
+      const atmIcon = aCabinet.getObjectByName('arcade_atm_icon');
+      if (atmIcon) {
+        atmIcon.rotation.y += 0.05;
+        atmIcon.position.y = 3.8 + Math.sin(Date.now() * 0.004) * 0.1;
+      }
+
+      // Animate Target Range Bullseyes
+      [0, 1, 2].forEach(bIdx => {
+        const bullseye = aCabinet.getObjectByName(`arcade_target_bullseye_${bIdx}`);
+        if (bullseye) {
+          bullseye.position.y = 2.0 + (bIdx % 2) * 0.4 + Math.sin(Date.now() * 0.003 + bIdx) * 0.25;
+          bullseye.rotation.z = Math.sin(Date.now() * 0.002 + bIdx) * 0.15;
+        }
+      });
+
+      // Animate Corner Pylon Gems
+      [0, 1, 2, 3].forEach(gIdx => {
+        const gem = aCabinet.getObjectByName(`arcade_pylon_gem_${gIdx}`);
+        if (gem) {
+          gem.rotation.y += 0.02;
+          gem.rotation.x = Math.sin(Date.now() * 0.003 + gIdx) * 0.2;
+        }
+      });
+
+      // Zone Proximity & Sub-Zone Detection
       if (game.playerPos) {
         const dist = game.playerPos.distanceTo(aCabinet.position);
-        if (dist < 4.5) {
-          window.dispatchEvent(new CustomEvent('superbear:arcade-proximity', { detail: { isNear: true, dist } }));
+        if (dist < 13.5) {
+          let subZone = 'general';
+          // Check if closer to Target Practice (x ~ -18.5, z ~ -24) or Obstacle Course (x ~ -5.5, z ~ -24)
+          if (game.playerPos.x < -15.5) {
+            subZone = 'target_blaster';
+          } else if (game.playerPos.x > -8.5) {
+            subZone = 'retro_runner';
+          }
+          window.dispatchEvent(new CustomEvent('superbear:arcade-proximity', { detail: { isNear: true, dist, subZone } }));
+
+          // Mascot NPC Dialogue Tip
+          if (dist < 6.5 && game.callbacks && game.callbacks.onShowNotice && Date.now() % 5000 < 50) {
+            game.callbacks.onShowNotice("🕹️ Atari Ustası Boncuk: 'Hoş geldin! Hedef poligonu ve engelli parkurda sınırsız altın & jeton kazanabilirsin!'");
+          }
         } else {
           window.dispatchEvent(new CustomEvent('superbear:arcade-proximity', { detail: { isNear: false } }));
         }
