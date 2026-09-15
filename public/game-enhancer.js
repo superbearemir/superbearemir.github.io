@@ -8005,6 +8005,93 @@ function updateSpaceLoop() {
   var grandWaterfallBuilt = false;
   var grandWaterfallGroup = null;
 
+  function openWaterfallSecretChest(game) {
+    if (window.__waterfallSecretChestOpened) return;
+    window.__waterfallSecretChestOpened = true;
+
+    // Immediately swing chest lid
+    const group = window.__grandWaterfallGroup || grandWaterfallGroup || (game && game.scene && game.scene.getObjectByName("grand_waterfall_hub_group"));
+    if (group) {
+      const lid = group.getObjectByName("secret_chest_lid_group");
+      if (lid) lid.rotation.x = -Math.PI * 0.65;
+      const prompt = group.getObjectByName("chest_prompt_group");
+      if (prompt) prompt.visible = false;
+    }
+
+    // Reward player: coins, gems, xp
+    if (game) {
+      if (game.stats) {
+        game.stats.coins = (game.stats.coins || 0) + 100;
+        game.stats.honeyGems = (game.stats.honeyGems || 0) + 50;
+        game.stats.xp = (game.stats.xp || 0) + 300;
+        if (game.callbacks && game.callbacks.onStatsUpdate) {
+          game.callbacks.onStatsUpdate(game.stats);
+        }
+      }
+      if (typeof game.coins === 'number') game.coins += 100;
+      if (typeof game.honeyCount === 'number') game.honeyCount += 50;
+      if (typeof game.score === 'number') game.score += 500;
+      if (typeof game.updateUI === 'function') game.updateUI();
+
+      if (window.__superBearSaveManager) {
+        window.__superBearSaveManager.saveGame(
+          { goldBalance: (game.stats && game.stats.coins) || 100, honeyGems: (game.stats && game.stats.honeyGems) || 50 },
+          { immediate: true, showToast: true, message: "🎁 Kadim Hazine Sandığı Açıldı! (+100 Altın, +50 Bal)" }
+        );
+      }
+
+      if (typeof St !== "undefined" && typeof St.playLevelWin === "function") {
+        try { St.playLevelWin(); } catch (e) {}
+      }
+      if (game.playSound) {
+        try { game.playSound('fanfare') || game.playSound('coin') || game.playSound('treasure'); } catch (e) {}
+      }
+      if (game.spawnSparkleParticles && window.THREE) {
+        game.spawnSparkleParticles(new window.THREE.Vector3(-30.0, 1.8, 59.0), 45, 0xfacc15);
+        game.spawnSparkleParticles(new window.THREE.Vector3(-30.0, 2.2, 59.0), 25, 0x38bdf8);
+      }
+
+      if (game.callbacks && game.callbacks.onShowNotice) {
+        game.callbacks.onShowNotice("🎁 KADİM ALTIN SANDIK AÇILDI! (+100 Altın, +50 Bal, +300 XP)", "success");
+      } else if (game.showNotification) {
+        game.showNotification("🎁 Kadim Hazine Sandığı Açıldı! +100 Altın, +50 Bal!");
+      }
+      if (game.showDialogue) {
+        game.showDialogue("Kadim Altın Sandık 🎁", "Antik şelale sandığını açtın! İçinden pırıl pırıl 100 altın, 50 şifalı bal ve kadim bilgi çıktı! 🍯✨", "💎");
+      }
+    }
+  }
+  window.__openWaterfallSecretChest = openWaterfallSecretChest;
+
+  if (typeof window !== 'undefined' && !window.__waterfallKeyListenersAttached) {
+    window.__waterfallKeyListenersAttached = true;
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'e' || e.key === 'E' || e.code === 'KeyE') {
+        window.__isEKeyPressed = true;
+      }
+      if (e.key === ' ' || e.code === 'Space' || e.key === 'Enter') {
+        window.__isSpaceKeyPressed = true;
+      }
+    });
+    window.addEventListener('keyup', (e) => {
+      if (e.key === 'e' || e.key === 'E' || e.code === 'KeyE') {
+        window.__isEKeyPressed = false;
+      }
+      if (e.key === ' ' || e.code === 'Space' || e.key === 'Enter') {
+        window.__isSpaceKeyPressed = false;
+      }
+    });
+    window.addEventListener('pointerdown', () => {
+      const game = window.__superBearGame;
+      if (game && game.playerPos) {
+        const d = Math.hypot(game.playerPos.x - (-30.0), game.playerPos.z - 59.0);
+        if (d < 5.0 && !window.__waterfallSecretChestOpened) {
+          openWaterfallSecretChest(game);
+        }
+      }
+    });
+  }
+
   function removeGrandWaterfall(scene) {
     if (!scene) {
       if (window.__superBearGame && window.__superBearGame.scene) {
@@ -8023,10 +8110,18 @@ function updateSpaceLoop() {
     grandWaterfallGroup = null;
     grandWaterfallBuilt = false;
 
-    // Clean up waterfall colliders from current level
+    // Clean up waterfall colliders, NPCs and collectibles from current level
     const game = window.__superBearGame;
-    if (game && game.currentLevel && game.currentLevel.colliders) {
-      game.currentLevel.colliders = game.currentLevel.colliders.filter(c => !c.isWaterfallCollider);
+    if (game && game.currentLevel) {
+      if (game.currentLevel.colliders) {
+        game.currentLevel.colliders = game.currentLevel.colliders.filter(c => !c.isWaterfallCollider);
+      }
+      if (game.currentLevel.npcs) {
+        game.currentLevel.npcs = game.currentLevel.npcs.filter(n => n.id !== 'npc_secret_cave_frog');
+      }
+      if (game.currentLevel.collectibles) {
+        game.currentLevel.collectibles = game.currentLevel.collectibles.filter(c => !c.isWaterfallCollectible);
+      }
     }
   }
   window.__removeGrandWaterfall = removeGrandWaterfall;
@@ -8062,6 +8157,15 @@ function updateSpaceLoop() {
       roughness: 0.1,
       metalness: 0.3
     });
+    const secretVeilMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0ea5e9,
+      emissiveIntensity: 0.95,
+      transparent: true,
+      opacity: 0.48,
+      roughness: 0.05,
+      metalness: 0.2
+    });
     const foamMat = new THREE.MeshStandardMaterial({
       color: 0xffffff,
       emissive: 0xe0f2fe,
@@ -8083,19 +8187,34 @@ function updateSpaceLoop() {
     const ironMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.45, metalness: 0.7 });
     const lanternMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xf59e0b, emissiveIntensity: 1.6 });
 
-    // 1. Mountain Cliffs & Rocky Backdrop
-    const baseCliff = new THREE.Mesh(new THREE.BoxGeometry(22, 18, 12), darkRockMat);
-    baseCliff.position.set(0, 9, 8);
-    baseCliff.castShadow = true;
-    baseCliff.receiveShadow = true;
-    group.add(baseCliff);
+    // Cavern & Crystal Materials
+    const crystalCyanMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x0891b2, emissiveIntensity: 1.25, roughness: 0.15, metalness: 0.5 });
+    const crystalPurpleMat = new THREE.MeshStandardMaterial({ color: 0xa855f7, emissive: 0x7e22ce, emissiveIntensity: 1.15, roughness: 0.15, metalness: 0.5 });
+    const crystalGoldMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706, emissiveIntensity: 1.35, roughness: 0.15, metalness: 0.7 });
+    const runeGoldMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, emissive: 0xd97706, emissiveIntensity: 1.5 });
+    const runeCyanMat = new THREE.MeshStandardMaterial({ color: 0x22d3ee, emissive: 0x0891b2, emissiveIntensity: 1.4 });
+    const darkChestWood = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.75 });
+    const chestGoldMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.85, roughness: 0.25 });
 
-    const upperPeak = new THREE.Mesh(new THREE.BoxGeometry(16, 12, 10), darkRockMat);
-    upperPeak.position.set(-1, 20, 10);
+    // 1. Mountain Cliffs & Rocky Backdrop (Hollowed center for secret passage opening)
+    const leftCliff = new THREE.Mesh(new THREE.BoxGeometry(9.0, 18, 14), darkRockMat);
+    leftCliff.position.set(-7.0, 9, 8);
+    leftCliff.castShadow = true;
+    leftCliff.receiveShadow = true;
+    group.add(leftCliff);
+
+    const rightCliff = new THREE.Mesh(new THREE.BoxGeometry(9.0, 18, 14), darkRockMat);
+    rightCliff.position.set(7.0, 9, 8);
+    rightCliff.castShadow = true;
+    rightCliff.receiveShadow = true;
+    group.add(rightCliff);
+
+    const upperPeak = new THREE.Mesh(new THREE.BoxGeometry(24, 10, 14), darkRockMat);
+    upperPeak.position.set(0, 16.0, 8);
     upperPeak.castShadow = true;
     group.add(upperPeak);
 
-    const mossOverhang = new THREE.Mesh(new THREE.BoxGeometry(18, 2, 4), mossRockMat);
+    const mossOverhang = new THREE.Mesh(new THREE.BoxGeometry(20, 2, 4), mossRockMat);
     mossOverhang.position.set(0, 18.2, 5);
     group.add(mossOverhang);
 
@@ -8107,7 +8226,7 @@ function updateSpaceLoop() {
     rightBoulder.position.set(9, 4.2, 3);
     group.add(rightBoulder);
 
-    // 2. Cascading Waterfall Curtains
+    // 2. Cascading Waterfall Curtains & Secret Water Veil Entrance
     const upperWater = new THREE.Mesh(new THREE.BoxGeometry(9, 10, 0.9), waterCurtainMat);
     upperWater.position.set(0, 13.5, 5.5);
     upperWater.rotation.x = 0.08;
@@ -8117,10 +8236,23 @@ function updateSpaceLoop() {
     midBasin.position.set(0, 8.5, 4);
     group.add(midBasin);
 
-    const lowerWater = new THREE.Mesh(new THREE.BoxGeometry(11.5, 9.5, 0.9), waterCurtainMat);
-    lowerWater.position.set(0, 4.2, 2.5);
-    lowerWater.rotation.x = 0.06;
-    group.add(lowerWater);
+    // Left lower water curtain (x: -5.8 to -1.8)
+    const lowerWaterLeft = new THREE.Mesh(new THREE.BoxGeometry(4.2, 9.5, 0.8), waterCurtainMat);
+    lowerWaterLeft.position.set(-3.7, 4.2, 2.5);
+    lowerWaterLeft.rotation.x = 0.06;
+    group.add(lowerWaterLeft);
+
+    // Right lower water curtain (x: 1.8 to 5.8)
+    const lowerWaterRight = new THREE.Mesh(new THREE.BoxGeometry(4.2, 9.5, 0.8), waterCurtainMat);
+    lowerWaterRight.position.set(3.7, 4.2, 2.5);
+    lowerWaterRight.rotation.x = 0.06;
+    group.add(lowerWaterRight);
+
+    // Center Secret Water Veil (mysterious translucent curtain)
+    const secretWaterVeil = new THREE.Mesh(new THREE.BoxGeometry(3.6, 9.5, 0.35), secretVeilMat);
+    secretWaterVeil.position.set(0, 4.2, 2.5);
+    secretWaterVeil.name = "waterfall_secret_veil";
+    group.add(secretWaterVeil);
 
     const topFoam = new THREE.Mesh(new THREE.CylinderGeometry(4.8, 5.2, 0.6, 16), foamMat);
     topFoam.position.set(0, 18.2, 5.2);
@@ -8129,6 +8261,29 @@ function updateSpaceLoop() {
     const splashFoam = new THREE.Mesh(new THREE.CylinderGeometry(6.2, 7.0, 0.5, 24), foamMat);
     splashFoam.position.set(0, 0.35, 2.5);
     group.add(splashFoam);
+
+    // Secret Entrance Flanking Runic Lanterns (visible through the water veil!)
+    [-2.2, 2.2].forEach((px) => {
+      const runePillar = new THREE.Mesh(new THREE.BoxGeometry(0.5, 2.6, 0.5), darkRockMat);
+      runePillar.position.set(px, 1.3, 2.6);
+      group.add(runePillar);
+      const runeLightMesh = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.4, 0.35), runeCyanMat);
+      runeLightMesh.position.set(px, 2.6, 2.6);
+      group.add(runeLightMesh);
+      const entranceLight = new THREE.PointLight(0x06b6d4, 1.8, 8);
+      entranceLight.position.set(px, 2.6, 2.8);
+      group.add(entranceLight);
+    });
+
+    // Stepping stones across the pond leading to the secret entrance
+    const stoneGeo = new THREE.CylinderGeometry(1.2, 1.35, 0.45, 14);
+    [-3.0, -0.8, 1.4].forEach((sz) => {
+      const stoneMesh = new THREE.Mesh(stoneGeo, mossRockMat);
+      stoneMesh.position.set(0, 0.22, sz);
+      stoneMesh.castShadow = true;
+      stoneMesh.receiveShadow = true;
+      group.add(stoneMesh);
+    });
 
     // 3. Serene Fishing Lagoon / Pond Surface at the Waterfall Base
     const pondMesh = new THREE.Mesh(new THREE.CylinderGeometry(15, 15, 0.4, 32), pondWaterMat);
@@ -8299,38 +8454,389 @@ function updateSpaceLoop() {
     createLamppost(14.5, 0, -7.0, "waterfall_lamp_east");
     createLamppost(5.0, 0, -22.5, "waterfall_lamp_south");
 
-    // 7. Register Solid Physical Colliders in game.currentLevel.colliders (Anti-Phasing / Solid Floor & Walls)
+    // =========================================================================
+    // 7. GİZLİ ŞELALE MAĞARASI (SECRET WATERFALL GROTTO & SECRET TREASURES)
+    // =========================================================================
+    const caveGroup = new THREE.Group();
+    caveGroup.name = "waterfall_secret_cavern_group";
+
+    // Cavern Floor (Natural dark stone with subtle specular reflections)
+    const caveFloor = new THREE.Mesh(new THREE.BoxGeometry(11.0, 0.4, 22.0), darkRockMat);
+    caveFloor.position.set(0, -0.15, 13.0);
+    caveFloor.receiveShadow = true;
+    caveGroup.add(caveFloor);
+
+    // Cavern Walls (Left, Right, Back, and Vaulted Ceiling)
+    const caveLeftWall = new THREE.Mesh(new THREE.BoxGeometry(3.0, 10.0, 20.0), darkRockMat);
+    caveLeftWall.position.set(-5.5, 4.8, 13.0);
+    caveGroup.add(caveLeftWall);
+
+    const caveRightWall = new THREE.Mesh(new THREE.BoxGeometry(3.0, 10.0, 20.0), darkRockMat);
+    caveRightWall.position.set(5.5, 4.8, 13.0);
+    caveGroup.add(caveRightWall);
+
+    const caveBackWall = new THREE.Mesh(new THREE.BoxGeometry(14.0, 12.0, 4.0), darkRockMat);
+    caveBackWall.position.set(0, 5.8, 23.5);
+    caveGroup.add(caveBackWall);
+
+    const caveRoof = new THREE.Mesh(new THREE.BoxGeometry(14.0, 2.0, 22.0), darkRockMat);
+    caveRoof.position.set(0, 9.5, 13.0);
+    caveGroup.add(caveRoof);
+
+    // Subterranean Bioluminescent Crystal Pool
+    const cavePool = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.2, 0.3, 24), pondWaterMat);
+    cavePool.position.set(0, 0.08, 9.5);
+    caveGroup.add(cavePool);
+
+    // Stepping stones across the crystal pool
+    [-1.1, 1.1].forEach((px) => {
+      const pStone = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.95, 0.3, 10), mossRockMat);
+      pStone.position.set(px * 0.7, 0.22, 9.5);
+      caveGroup.add(pStone);
+    });
+
+    // Hanging Stalactites from ceiling
+    const stalactitePositions = [
+      [-2.5, 8.2, 6.0], [2.2, 8.2, 8.5], [-1.8, 8.2, 12.0], [2.8, 8.2, 15.0],
+      [-2.2, 8.2, 18.0], [1.5, 8.2, 20.5], [0, 8.2, 14.5]
+    ];
+    stalactitePositions.forEach(([sx, sy, sz]) => {
+      const stal = new THREE.Mesh(new THREE.ConeGeometry(0.35, 2.2, 6), darkRockMat);
+      stal.position.set(sx, sy, sz);
+      stal.rotation.x = Math.PI;
+      caveGroup.add(stal);
+    });
+
+    // Helper: Create Crystal Cluster
+    function createCrystalCluster(cx, cy, cz, mat, lightColor) {
+      const cluster = new THREE.Group();
+      cluster.position.set(cx, cy, cz);
+      for (let i = 0; i < 5; i++) {
+        const h = 0.8 + (i % 3) * 0.5;
+        const rad = 0.18 + (i % 2) * 0.06;
+        const shard = new THREE.Mesh(new THREE.ConeGeometry(rad, h, 6), mat);
+        shard.position.set((i - 2) * 0.22, h * 0.5, (i % 2) * 0.2);
+        shard.rotation.z = (i - 2) * 0.15;
+        shard.rotation.x = ((i % 3) - 1) * 0.12;
+        cluster.add(shard);
+      }
+      if (lightColor) {
+        const cLight = new THREE.PointLight(lightColor, 1.4, 8);
+        cLight.position.set(0, 1.0, 0);
+        cluster.add(cLight);
+      }
+      caveGroup.add(cluster);
+    }
+
+    createCrystalCluster(-3.4, 0, 6.5, crystalCyanMat, 0x06b6d4);
+    createCrystalCluster(3.4, 0, 12.0, crystalPurpleMat, 0xa855f7);
+    createCrystalCluster(-3.2, 0, 17.5, crystalCyanMat, 0x06b6d4);
+    createCrystalCluster(3.0, 0, 20.0, crystalGoldMat, 0xf59e0b);
+
+    // Bouncy Bioluminescent Giant Mushrooms
+    function createBouncyShroom(mx, my, mz, capColor, sporeColor) {
+      const shroomGroup = new THREE.Group();
+      shroomGroup.position.set(mx, my, mz);
+
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.45, 1.1, 10), new THREE.MeshStandardMaterial({ color: 0xf1f5f9, roughness: 0.6 }));
+      stem.position.set(0, 0.55, 0);
+      shroomGroup.add(stem);
+
+      const capMat = new THREE.MeshStandardMaterial({
+        color: capColor,
+        emissive: capColor,
+        emissiveIntensity: 0.75,
+        roughness: 0.35
+      });
+      const cap = new THREE.Mesh(new THREE.SphereGeometry(1.2, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), capMat);
+      cap.position.set(0, 1.05, 0);
+      shroomGroup.add(cap);
+
+      const sLight = new THREE.PointLight(sporeColor, 1.8, 9);
+      sLight.position.set(0, 1.5, 0);
+      shroomGroup.add(sLight);
+
+      caveGroup.add(shroomGroup);
+      return shroomGroup;
+    }
+
+    createBouncyShroom(-2.5, 0, 15.0, 0xa855f7, 0xc084fc);
+    createBouncyShroom(2.5, 0, 11.0, 0x10b981, 0x34d399);
+
+    // Ancient Bear Runic Monolith
+    const monolithGroup = new THREE.Group();
+    monolithGroup.position.set(-2.5, 0, 9.0);
+    const monoPillar = new THREE.Mesh(new THREE.BoxGeometry(0.75, 2.4, 0.75), darkRockMat);
+    monoPillar.position.set(0, 1.2, 0);
+    monolithGroup.add(monoPillar);
+    const monoRune1 = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.1, 0.8), runeCyanMat);
+    monoRune1.position.set(0, 1.5, 0);
+    monolithGroup.add(monoRune1);
+    const monoRune2 = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.1, 0.8), runeCyanMat);
+    monoRune2.position.set(0, 0.9, 0);
+    monolithGroup.add(monoRune2);
+    caveGroup.add(monolithGroup);
+
+    // Ancient Bear Archway at the Altar
+    const archGroup = new THREE.Group();
+    archGroup.position.set(0, 0, 21.0);
+    const pillarMat = darkRockMat;
+    [-2.6, 2.6].forEach(ax => {
+      const archPillar = new THREE.Mesh(new THREE.BoxGeometry(0.8, 6.0, 0.8), pillarMat);
+      archPillar.position.set(ax, 3.0, 0);
+      archGroup.add(archPillar);
+    });
+    const archLintel = new THREE.Mesh(new THREE.BoxGeometry(6.2, 1.0, 1.0), pillarMat);
+    archLintel.position.set(0, 6.0, 0);
+    archGroup.add(archLintel);
+    const archBearRune = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.45, 1.1), runeGoldMat);
+    archBearRune.position.set(0, 6.6, 0);
+    archGroup.add(archBearRune);
+    caveGroup.add(archGroup);
+
+    // Grand Altar Dais
+    const altarDais = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.5, 0.45, 16), darkRockMat);
+    altarDais.position.set(0, 0.22, 19.0);
+    altarDais.castShadow = true;
+    altarDais.receiveShadow = true;
+    caveGroup.add(altarDais);
+
+    // 🎁 ANTIK ALTIN HAZİNE SANDIĞI (Interactive Secret Treasure Chest)
+    const secretChestGroup = new THREE.Group();
+    secretChestGroup.name = "waterfall_secret_chest_group";
+    secretChestGroup.position.set(0, 0.45, 19.0);
+
+    const chestBody = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.85, 1.2), darkChestWood);
+    chestBody.position.set(0, 0.42, 0);
+    chestBody.castShadow = true;
+    secretChestGroup.add(chestBody);
+
+    const strapMat = chestGoldMat;
+    [-0.6, 0.6].forEach(bx => {
+      const bStrap = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.87, 1.22), strapMat);
+      bStrap.position.set(bx, 0.42, 0);
+      secretChestGroup.add(bStrap);
+    });
+
+    const chestLock = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.16), strapMat);
+    chestLock.position.set(0, 0.55, 0.62);
+    secretChestGroup.add(chestLock);
+
+    const chestLidGroup = new THREE.Group();
+    chestLidGroup.name = "secret_chest_lid_group";
+    chestLidGroup.position.set(0, 0.85, -0.6);
+
+    const lidHalf = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 0.6, 1.8, 16, 1, false, 0, Math.PI), darkChestWood);
+    lidHalf.rotation.z = Math.PI * 0.5;
+    lidHalf.position.set(0, 0, 0.6);
+    lidHalf.castShadow = true;
+    chestLidGroup.add(lidHalf);
+
+    [-0.6, 0.6].forEach(bx => {
+      const lidStrap = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.62, 0.12, 16, 1, false, 0, Math.PI), strapMat);
+      lidStrap.rotation.z = Math.PI * 0.5;
+      lidStrap.position.set(bx, 0, 0.6);
+      chestLidGroup.add(lidStrap);
+    });
+
+    if (window.__waterfallSecretChestOpened) {
+      chestLidGroup.rotation.x = -Math.PI * 0.65;
+    }
+    secretChestGroup.add(chestLidGroup);
+
+    // Floating Interaction Prompt Indicator (Golden diamond spinning over chest)
+    const chestPromptGroup = new THREE.Group();
+    chestPromptGroup.name = "chest_prompt_group";
+    chestPromptGroup.position.set(0, 1.8, 0);
+
+    const promptMesh = new THREE.Mesh(
+      new THREE.OctahedronGeometry(0.32, 0),
+      new THREE.MeshStandardMaterial({
+        color: 0xfef08a,
+        emissive: 0xf59e0b,
+        emissiveIntensity: 1.2
+      })
+    );
+    chestPromptGroup.add(promptMesh);
+    if (window.__waterfallSecretChestOpened) {
+      chestPromptGroup.visible = false;
+    }
+    secretChestGroup.add(chestPromptGroup);
+
+    const goldHoard = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.4, 0.9), runeGoldMat);
+    goldHoard.position.set(0, 0.65, 0);
+    secretChestGroup.add(goldHoard);
+
+    const chestLight = new THREE.PointLight(0xf59e0b, 2.4, 12);
+    chestLight.position.set(0, 1.5, 0);
+    secretChestGroup.add(chestLight);
+
+    caveGroup.add(secretChestGroup);
+
+    // 🐸 GİZLİ NPC: BİLGE MAĞARA KURBAĞASI "BARNABY"
+    const frogGroup = new THREE.Group();
+    frogGroup.name = "waterfall_frog_npc_group";
+    frogGroup.position.set(2.2, 0.7, 16.0);
+
+    const frogSkinMat = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.45 });
+    const frogBellyMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.6 });
+
+    const frogPad = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.25, 0.15, 16), lilyMat);
+    frogPad.position.set(0, 0.08, 0);
+    frogGroup.add(frogPad);
+
+    const fBody = new THREE.Mesh(new THREE.SphereGeometry(0.55, 14, 14), frogSkinMat);
+    fBody.scale.set(1.1, 0.85, 1.15);
+    fBody.position.set(0, 0.55, 0);
+    frogGroup.add(fBody);
+
+    const fBelly = new THREE.Mesh(new THREE.SphereGeometry(0.42, 12, 12), frogBellyMat);
+    fBelly.scale.set(0.9, 0.7, 0.9);
+    fBelly.position.set(0, 0.5, 0.22);
+    frogGroup.add(fBelly);
+
+    [-0.24, 0.24].forEach(ex => {
+      const eyeMount = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 10), frogSkinMat);
+      eyeMount.position.set(ex, 0.95, 0.25);
+      frogGroup.add(eyeMount);
+      const eyeBall = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), new THREE.MeshStandardMaterial({ color: 0xffffff }));
+      eyeBall.position.set(ex, 0.98, 0.35);
+      frogGroup.add(eyeBall);
+      const eyePupil = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), new THREE.MeshStandardMaterial({ color: 0x0f172a }));
+      eyePupil.position.set(ex, 1.0, 0.44);
+      frogGroup.add(eyePupil);
+    });
+
+    const fCrown = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.4, 6), runeGoldMat);
+    fCrown.position.set(0, 1.25, 0.1);
+    frogGroup.add(fCrown);
+
+    caveGroup.add(frogGroup);
+
+    // Register Barnaby in game.currentLevel.npcs
+    if (game && game.currentLevel) {
+      if (!game.currentLevel.npcs) game.currentLevel.npcs = [];
+      game.currentLevel.npcs = game.currentLevel.npcs.filter(n => n.id !== 'npc_secret_cave_frog');
+      game.currentLevel.npcs.push({
+        id: 'npc_secret_cave_frog',
+        name: 'Barnaby (Şelale Bilgesi 🐸)',
+        role: 'Kadim Mağara Muhafızı',
+        pos: new THREE.Vector3(-30 + 2.2, 0.7, 40 + 16.0),
+        mesh: frogGroup,
+        avatarIcon: '🐸',
+        dialogue: [
+          "Vraakk! Şelalenin ardındaki gizli geçidi keşfettin cesur ayı! 🐸✨",
+          "Burası yüzyıllardır saklı kalan Kadim Şelale Mağarası'dır.",
+          "Altın sandıktaki hazineleri ve sihirli kristalleri dilediğince alabilirsin!",
+          "Ayı Köyü'nün en büyük sırrına eriştin. Yolun her daim aydınlık olsun vraak! 🌟"
+        ]
+      });
+    }
+
+    // Register Secret Collectibles in game.currentLevel.collectibles
+    if (game && game.currentLevel) {
+      if (!game.currentLevel.collectibles) game.currentLevel.collectibles = [];
+      game.currentLevel.collectibles = game.currentLevel.collectibles.filter(c => !c.isWaterfallCollectible);
+
+      // A. Hovering Sacred Honey Gem
+      const gemMesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.75, 0), runeGoldMat);
+      gemMesh.position.set(0, 2.2, 14.0);
+      caveGroup.add(gemMesh);
+
+      game.currentLevel.collectibles.push({
+        id: 'waterfall_secret_honey_gem',
+        isWaterfallCollectible: true,
+        type: 'honey_gem',
+        mesh: gemMesh,
+        pos: new THREE.Vector3(-30, 2.2, 54.0),
+        collected: false,
+        value: 50
+      });
+
+      // B. 6 Secret Gold Coins Trail
+      const coinPositions = [
+        [0, 1.2, 5.0],
+        [-1.0, 1.2, 8.0],
+        [1.0, 1.2, 11.0],
+        [-1.2, 1.2, 14.5],
+        [1.2, 1.2, 16.5],
+        [0, 1.2, 17.5]
+      ];
+      coinPositions.forEach(([cx, cy, cz], cIdx) => {
+        const coinMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 0.1, 14), runeGoldMat);
+        coinMesh.rotation.x = Math.PI * 0.5;
+        coinMesh.position.set(cx, cy, cz);
+        caveGroup.add(coinMesh);
+
+        game.currentLevel.collectibles.push({
+          id: 'waterfall_secret_coin_' + cIdx,
+          isWaterfallCollectible: true,
+          type: 'coin',
+          mesh: coinMesh,
+          pos: new THREE.Vector3(-30 + cx, cy, 40 + cz),
+          collected: false,
+          value: 5
+        });
+      });
+    }
+
+    // Atmospheric Cavern Lights
+    const caveLightCyan = new THREE.PointLight(0x06b6d4, 2.5, 18);
+    caveLightCyan.position.set(0, 4.0, 7.0);
+    caveGroup.add(caveLightCyan);
+
+    const caveLightViolet = new THREE.PointLight(0xa855f7, 2.8, 20);
+    caveLightViolet.position.set(0, 4.5, 15.0);
+    caveGroup.add(caveLightViolet);
+
+    group.add(caveGroup);
+
+    // 8. Register Solid Physical Colliders in game.currentLevel.colliders (Anti-Phasing / Solid Floor & Walls)
     if (game && game.currentLevel) {
       if (!game.currentLevel.colliders) game.currentLevel.colliders = [];
       game.currentLevel.colliders = game.currentLevel.colliders.filter(c => !c.isWaterfallCollider);
 
-      // A. Şelalenin İçi ve Dağ Kayaları (Water Curtain & Mountain Cliff Backdrop - Solid Barrier)
-      // Şelalenin içine ve arkasındaki kayalara geçişi kesinlikle engeller
+      // Outside Mountain Cliff Left Wall (Solid barrier outside cave, leaves x: -32.5 to -27.5 open)
       game.currentLevel.colliders.push({
         isWaterfallCollider: true,
-        min: new THREE.Vector3(-42, 0, 41.4),
-        max: new THREE.Vector3(-18, 25, 56)
+        min: new THREE.Vector3(-45, 0, 41.3),
+        max: new THREE.Vector3(-32.5, 25, 43.0)
       });
-      // Sol ve Sağ Dağ Çıkıntıları
+      // Outside Mountain Cliff Right Wall (Solid barrier outside cave)
       game.currentLevel.colliders.push({
         isWaterfallCollider: true,
-        min: new THREE.Vector3(-45, 0, 38),
-        max: new THREE.Vector3(-35, 15, 48)
+        min: new THREE.Vector3(-27.5, 0, 41.3),
+        max: new THREE.Vector3(-15, 25, 43.0)
       });
+      // Cavern Left Wall (Solid stone wall inside the grotto, spacious x <= -35)
       game.currentLevel.colliders.push({
         isWaterfallCollider: true,
-        min: new THREE.Vector3(-25, 0, 38),
-        max: new THREE.Vector3(-15, 15, 48)
+        min: new THREE.Vector3(-45, 0, 43.0),
+        max: new THREE.Vector3(-35.0, 25, 65.0)
+      });
+      // Cavern Right Wall (Solid stone wall inside the grotto, spacious x >= -25)
+      game.currentLevel.colliders.push({
+        isWaterfallCollider: true,
+        min: new THREE.Vector3(-25.0, 0, 43.0),
+        max: new THREE.Vector3(-15, 25, 65.0)
+      });
+      // Cavern Back Mountain Wall (Solid back wall)
+      game.currentLevel.colliders.push({
+        isWaterfallCollider: true,
+        min: new THREE.Vector3(-36, 0, 62.0),
+        max: new THREE.Vector3(-24, 25, 68.0)
       });
 
-      // B. Ahşap Balıkçılık İskelesi Tabanı (Solid Walkable Pier Deck)
+      // Note: Altar platform & stepping stones are walkable floor features and intentionally NOT blocking AABB colliders so player can freely step on them and reach the chest!
+
+      // Ahşap Balıkçılık İskelesi Tabanı
       game.currentLevel.colliders.push({
         isWaterfallCollider: true,
         min: new THREE.Vector3(-25.3, 0, 32.1),
         max: new THREE.Vector3(-18.7, 0.48, 35.9)
       });
 
-      // C. İskele Eşyaları (Varil, Fener Direği, Balık Kutusu)
+      // İskele Eşyaları (Varil, Fener Direği, Balık Kutusu)
       game.currentLevel.colliders.push({
         isWaterfallCollider: true,
         min: new THREE.Vector3(-20.2, 0.3, 32.2),
@@ -8347,40 +8853,34 @@ function updateSpaceLoop() {
         max: new THREE.Vector3(-20.2, 1.0, 33.1)
       });
 
-      // D. Ahşap Oturaklar (Park Bankları) - Katı Çarpışma ve Üstüne Zıplama / Oturma Yüzeyi
-      // Bench 1 (Sol Bank)
+      // Ahşap Oturaklar (Park Bankları)
       game.currentLevel.colliders.push({
         isWaterfallCollider: true,
         min: new THREE.Vector3(-39.9, 0, 28.7),
         max: new THREE.Vector3(-37.1, 1.55, 31.3)
       });
-      // Bench 2 (İskele Girişi Bankı)
       game.currentLevel.colliders.push({
         isWaterfallCollider: true,
         min: new THREE.Vector3(-17.9, 0, 29.7),
         max: new THREE.Vector3(-15.1, 1.55, 32.3)
       });
-      // Bench 3 (Ön Patika Bankı)
       game.currentLevel.colliders.push({
         isWaterfallCollider: true,
         min: new THREE.Vector3(-29.4, 0, 17.8),
         max: new THREE.Vector3(-26.6, 1.55, 19.3)
       });
 
-      // E. Sokak Lambaları (Fener Direkleri) - İçinden Geçilemez Katı Direkler
-      // Lamp 1 (Sol Fener Direği)
+      // Sokak Lambaları (Fener Direkleri)
       game.currentLevel.colliders.push({
         isWaterfallCollider: true,
         min: new THREE.Vector3(-39.9, 0, 27.1),
         max: new THREE.Vector3(-39.1, 3.6, 27.9)
       });
-      // Lamp 2 (Sağ Fener Direği)
       game.currentLevel.colliders.push({
         isWaterfallCollider: true,
         min: new THREE.Vector3(-15.9, 0, 32.6),
         max: new THREE.Vector3(-15.1, 3.6, 33.4)
       });
-      // Lamp 3 (Ön Fener Direği)
       game.currentLevel.colliders.push({
         isWaterfallCollider: true,
         min: new THREE.Vector3(-25.4, 0, 17.1),
@@ -8388,23 +8888,45 @@ function updateSpaceLoop() {
       });
     }
 
-    // 8. Light & Animation Controller
+    // 9. Light & Animation Controller
     const waterfallLight = new THREE.PointLight(0x38bdf8, 3.2, 30);
     waterfallLight.position.set(0, 6, 4);
     group.add(waterfallLight);
 
     let animClock = 0;
+    let chestOpenProgress = window.__waterfallSecretChestOpened ? 1.0 : 0.0;
     group.userData = {
       update: () => {
         animClock += 0.04;
         waterCurtainMat.emissiveIntensity = 0.75 + Math.sin(animClock * 2.5) * 0.25;
+        secretVeilMat.emissiveIntensity = 0.85 + Math.sin(animClock * 3.0) * 0.2;
         splashFoam.scale.set(1 + Math.sin(animClock * 3) * 0.08, 1, 1 + Math.cos(animClock * 3) * 0.08);
         pondMesh.rotation.y += 0.002;
+        cavePool.rotation.y += 0.003;
+        frogGroup.position.y = 0.7 + Math.sin(animClock * 2.0) * 0.04;
+
+        // Animate floating prompt diamond
+        if (promptMesh) {
+          promptMesh.rotation.y += 0.04;
+          promptMesh.position.y = Math.sin(animClock * 3.0) * 0.12;
+        }
+
+        // Animate chest lid opening smoothly
+        if (window.__waterfallSecretChestOpened) {
+          if (chestPromptGroup) chestPromptGroup.visible = false;
+          if (chestOpenProgress < 1.0) {
+            chestOpenProgress = Math.min(1.0, chestOpenProgress + 0.06);
+            if (chestLidGroup) {
+              chestLidGroup.rotation.x = -chestOpenProgress * (Math.PI * 0.65);
+            }
+          }
+        }
       }
     };
 
     scene.add(group);
     grandWaterfallGroup = group;
+    window.__grandWaterfallGroup = group;
     grandWaterfallBuilt = true;
   }
   window.__buildGrandWaterfall = buildGrandWaterfall;
@@ -12166,23 +12688,133 @@ function updateSpaceLoop() {
         }
       }
 
-      // 5. Ayı Köyü (Hub) - Şelalenin İçine Girmeyi Engelleme & Lamba/Oturakların İçinden Geçilemezliği
+      // 5. Ayı Köyü (Hub) - Şelale Gizli Geçidi & Çarpışma / Etkileşim Sistemi
       if (game.currentRegion === 'hub' || !game.currentRegion) {
-        // A. Şelalenin İçine Girilmesini Engelleme (Su Perdesi & Dağ Kayaları Katı Duvarı)
-        // Şelale su perdesi x: -37.5 ile -22.5 arasında akar, z: 41.3'te durur. Oyuncu z >= 41.3'e geçemez!
-        if (pPos.x >= -37.5 && pPos.x <= -22.5 && pPos.z >= 41.3 && pPos.y < 22.0) {
-          pPos.z = 41.3;
-          if (pVel && pVel.z > 0) pVel.z = 0;
-          if (game.spawnSparkleParticles && Math.random() < 0.15) {
-            game.spawnSparkleParticles(new THREE.Vector3(pPos.x, Math.max(pPos.y, 0.5), 41.5), 2, 0x38bdf8);
+        const inSecretX = pPos.x >= -35.2 && pPos.x <= -24.8;
+        const isInsideCave = pPos.z >= 42.8 && inSecretX;
+
+        if (isInsideCave) {
+          // A1. Oyuncu Gizli Mağaranın İçinde: Mağaranın iç sınırlarında tut (Dışarı taşmayı engelle)
+          // Arka Duvar
+          if (pPos.z > 62.0) {
+            pPos.z = 62.0;
+            if (pVel && pVel.z > 0) pVel.z = 0;
+          }
+          // Sol Mağara Duvarı
+          if (pPos.x < -34.8) {
+            pPos.x = -34.8;
+            if (pVel && pVel.x < 0) pVel.x = 0;
+          }
+          // Sağ Mağara Duvarı
+          if (pPos.x > -25.2) {
+            pPos.x = -25.2;
+            if (pVel && pVel.x > 0) pVel.x = 0;
+          }
+
+          // İlk Keşif Bildirimi
+          if (!window.__waterfallSecretDiscovered) {
+            window.__waterfallSecretDiscovered = true;
+            if (game.showDialogue) {
+              game.showDialogue("Şelalenin Gizli Geçidi", "Tebrikler cesur ayı! Şelalenin ardındaki gizli mağarayı ve kadim sırları keşfettin! ✨", "🐸");
+            } else if (game.showNotification) {
+              game.showNotification("✨ Gizli Şelale Mağarası Keşfedildi! ✨");
+            }
+            if (game.playSound) {
+              try { game.playSound('fanfare') || game.playSound('coin'); } catch (e) {}
+            }
+            if (game.spawnSparkleParticles) {
+              game.spawnSparkleParticles(new THREE.Vector3(pPos.x, pPos.y + 1, pPos.z), 25, 0x38bdf8);
+            }
+          }
+
+          // Bouncy Bioluminescent Giant Mushrooms (Zıplatan Sihirli Mantarlar)
+          const bouncyShrooms = [
+            { x: -32.5, z: 55.0, color: 0xc084fc },
+            { x: -27.5, z: 51.0, color: 0x34d399 }
+          ];
+          bouncyShrooms.forEach(shroom => {
+            const sDist = Math.hypot(pPos.x - shroom.x, pPos.z - shroom.z);
+            if (sDist < 1.35 && pPos.y >= 0.2 && pPos.y <= 1.9) {
+              if (pVel) {
+                pVel.y = 13.5; // Güçlü yaylanma / zıplama
+              }
+              if (game.spawnSparkleParticles && Math.random() < 0.4) {
+                game.spawnSparkleParticles(new THREE.Vector3(shroom.x, 1.2, shroom.z), 8, shroom.color);
+              }
+              if (game.playSound && (!window.__lastShroomSound || Date.now() - window.__lastShroomSound > 300)) {
+                window.__lastShroomSound = Date.now();
+                try { game.playSound('jump'); } catch (e) {}
+              }
+            }
+          });
+
+          // Antik Altın Sandık Etkileşimi
+          const chestDist = Math.hypot(pPos.x - (-30.0), pPos.z - 59.0);
+          if (chestDist < 4.5 && !window.__waterfallSecretChestOpened) {
+            // Sandığa yaklaşınca (< 2.8m) veya E / Boşluk / Tıklama / Saldırı tuşlarıyla otomatik ve anında açılır!
+            const isNearEnough = chestDist < 2.85;
+            const isInteracting = window.__isEKeyPressed || window.__isSpaceKeyPressed ||
+              (game.inputs && (game.inputs.attack || game.inputs.interact || game.inputs.jump)) ||
+              game.isAttacking;
+
+            if (isNearEnough || isInteracting) {
+              if (typeof openWaterfallSecretChest === 'function') {
+                openWaterfallSecretChest(game);
+              } else if (typeof window.__openWaterfallSecretChest === 'function') {
+                window.__openWaterfallSecretChest(game);
+              }
+            }
+          }
+
+          // Mağara İçi Gizli Toplanabilir Eşyalar (Honey Gem & Coins)
+          if (game.currentLevel && game.currentLevel.collectibles) {
+            game.currentLevel.collectibles.forEach(col => {
+              if (!col || col.collected || !col.pos || !col.isWaterfallCollectible) return;
+              const cDist = Math.hypot(pPos.x - col.pos.x, pPos.z - col.pos.z);
+              if (cDist < 1.35 && Math.abs(pPos.y - col.pos.y) < 2.2) {
+                col.collected = true;
+                if (col.mesh) col.mesh.visible = false;
+                if (col.type === 'honey_gem') {
+                  if (game.honeyCount !== undefined) game.honeyCount += 25;
+                  if (game.score !== undefined) game.score += 250;
+                  if (game.showNotification) game.showNotification("💎 Kadim Bal Kristali Toplandı! (+25 Bal)");
+                } else {
+                  if (game.coins !== undefined) game.coins += (col.value || 5);
+                  if (game.score !== undefined) game.score += 50;
+                }
+                if (game.updateUI) game.updateUI();
+                if (game.playSound) {
+                  try { game.playSound('coin'); } catch (e) {}
+                }
+                if (game.spawnSparkleParticles) {
+                  game.spawnSparkleParticles(col.pos, 10, col.type === 'honey_gem' ? 0xf59e0b : 0xfacc15);
+                }
+              }
+            });
+          }
+        } else {
+          // A2. Oyuncu Dışarıda: Şelalenin Katı Duvarları (Gizli Geçit Hariç!)
+          // Gizli geçit x: -32.2 ile -27.8 arasındadır. Oyuncu buradan su perdesini yarıp geçebilir!
+          const inPassageOpening = pPos.x >= -32.2 && pPos.x <= -27.8;
+
+          if (!inPassageOpening) {
+            // Şelale su perdesi ve dağ kayalıkları (Sol ve Sağ Yanlar KATI ENGELDİR)
+            if (pPos.x >= -42.0 && pPos.x <= -18.0 && pPos.z >= 41.3 && pPos.y < 25.0) {
+              pPos.z = 41.3;
+              if (pVel && pVel.z > 0) pVel.z = 0;
+              if (game.spawnSparkleParticles && Math.random() < 0.1) {
+                game.spawnSparkleParticles(new THREE.Vector3(pPos.x, Math.max(pPos.y, 0.5), 41.5), 2, 0x38bdf8);
+              }
+            }
+          } else {
+            // Geçitten geçerken su sıçraması efekti
+            if (pPos.z >= 41.0 && pPos.z <= 43.0 && game.spawnSparkleParticles && Math.random() < 0.25) {
+              game.spawnSparkleParticles(new THREE.Vector3(pPos.x, Math.max(pPos.y, 0.5) + 0.8, pPos.z), 3, 0x38bdf8);
+            }
           }
         }
-        // Şelalenin Arkasındaki Ana Dağ Bloğu (x: -42 ile -18, z: 42 ile 55)
-        if (pPos.x >= -42 && pPos.x <= -18 && pPos.z >= 42.0 && pPos.y < 25.0) {
-          pPos.z = 41.3;
-          if (pVel && pVel.z > 0) pVel.z = 0;
-        }
-        // Sol ve Sağ Dağ Çıkıntı Kayaları (Radial Pushout)
+
+        // Sol ve Sağ Dış Dağ Çıkıntı Kayaları (Radial Pushout)
         const leftRockDist = Math.hypot(pPos.x - (-39), pPos.z - 43);
         const minLeftRock = 5.8 + playerRadius;
         if (leftRockDist < minLeftRock && leftRockDist > 0.001) {
