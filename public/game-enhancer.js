@@ -2088,10 +2088,10 @@ function buildSpaceGalaxyWorld(scene) {
 
   // =========================================================================
   // --- 2. MERKEZİ ARCADE BÖLGESİ (Centralized Arcade Zone Plaza) ---
-  // Positioned at (-12, 0.15, -23) in Ayı Köyü
+  // Positioned at (-12, 0.15, -21.0) in Ayı Köyü (3+ meters clearance from northern mountain rock)
   // =========================================================================
   const arcadeStation = new window.THREE.Group();
-  arcadeStation.position.set(-12, 0.15, -23);
+  arcadeStation.position.set(-12, 0.15, -21.0);
   arcadeStation.name = 'retro_arcade_cabinet';
 
   const arcadeBodyMat = new window.THREE.MeshStandardMaterial({ color: 0x2e1065, roughness: 0.35, metalness: 0.3 });
@@ -2115,10 +2115,32 @@ function buildSpaceGalaxyWorld(scene) {
     sideRail.position.set(px, 0.35, 0);
     arcadeStation.add(sideRail);
   });
-  [-8.05, 8.05].forEach(pz => {
-    const frontRail = new window.THREE.Mesh(new window.THREE.BoxGeometry(22.2, 0.45, 0.2), pz > 0 ? arcadePurpleNeon : arcadeRoseNeon);
-    frontRail.position.set(0, 0.35, pz);
-    arcadeStation.add(frontRail);
+  // Rear Neon Perimeter Trim (Full width at back)
+  const backRail = new window.THREE.Mesh(new window.THREE.BoxGeometry(22.2, 0.45, 0.2), arcadeRoseNeon);
+  backRail.position.set(0, 0.35, -8.05);
+  arcadeStation.add(backRail);
+
+  // Front Neon Perimeter Trims (LEFT and RIGHT sides only - keeping central 9m archway entrance 100% open & unobstructed)
+  [-7.75, 7.75].forEach(fx => {
+    const frontSideRail = new window.THREE.Mesh(new window.THREE.BoxGeometry(6.5, 0.45, 0.2), arcadePurpleNeon);
+    frontSideRail.position.set(fx, 0.35, 8.05);
+    arcadeStation.add(frontSideRail);
+  });
+
+  // Smooth Gentle Cyber Entrance Ramp (From village ground y=0.0 up to arcade plaza deck y=0.30)
+  const entranceRampGeo = new window.THREE.BoxGeometry(8.8, 0.28, 2.8);
+  entranceRampGeo.rotateX(0.08); // Gentle 4.5-degree slope
+  const entranceRamp = new window.THREE.Mesh(entranceRampGeo, cyberPlatformMat);
+  entranceRamp.position.set(0, 0.12, 8.8);
+  entranceRamp.receiveShadow = true;
+  arcadeStation.add(entranceRamp);
+
+  // Neon Edge Strips on Ramp Sides (Guiding player into the arcade)
+  [-4.45, 4.45].forEach(rx => {
+    const rampGlow = new window.THREE.Mesh(new window.THREE.BoxGeometry(0.15, 0.1, 2.8), arcadeCyanNeon);
+    rampGlow.position.set(rx, 0.25, 8.8);
+    rampGlow.rotation.x = 0.08;
+    arcadeStation.add(rampGlow);
   });
 
   // Corner Cyber Pylons with Glowing Crystals
@@ -2306,7 +2328,7 @@ function buildSpaceGalaxyWorld(scene) {
 
   // --- E. STATION 3: RETRO ARCADE MACHINES ROW (Merkez: 3 Deluxe Atari Kabini) ---
   const cabinetGroup = new window.THREE.Group();
-  cabinetGroup.position.set(0, 0.3, -5.2);
+  cabinetGroup.position.set(0, 0.3, -4.8);
 
   const cabConfigs = [
     { cx: -2.0, color: 0x0284c7, neon: arcadeCyanNeon, title: 'CYBER' },
@@ -2355,14 +2377,121 @@ function buildSpaceGalaxyWorld(scene) {
     cabinetGroup.add(cab);
   });
 
+  // --- SOLID WALKABLE ROOFTOP PLATFORM ON TOP OF ARCADE CABINETS ---
+  // Top surface aligns at y = 4.2 + 0.3 = 4.5 in local, 4.65 in world
+  const cabRoofDeck = new window.THREE.Mesh(
+    new window.THREE.BoxGeometry(5.9, 0.2, 2.3),
+    cyberPlatformMat
+  );
+  cabRoofDeck.position.set(0, 4.25, 0);
+  cabinetGroup.add(cabRoofDeck);
+
+  // Glowing Neon Safety Guard Trim on Rooftop
+  [-2.95, 2.95].forEach(rx => {
+    const rTrim = new window.THREE.Mesh(new window.THREE.BoxGeometry(0.12, 0.35, 2.34), arcadeCyanNeon);
+    rTrim.position.set(rx, 4.4, 0);
+    cabinetGroup.add(rTrim);
+  });
+  [-1.15, 1.15].forEach(rz => {
+    const rTrim = new window.THREE.Mesh(new window.THREE.BoxGeometry(5.94, 0.35, 0.12), arcadePurpleNeon);
+    rTrim.position.set(0, 4.4, rz);
+    cabinetGroup.add(rTrim);
+  });
+
+  // 4 Corner Rooftop Cyber Beacons
+  [[-2.9, -1.1], [-2.9, 1.1], [2.9, -1.1], [2.9, 1.1]].forEach(([bx, bz]) => {
+    const beacon = new window.THREE.Mesh(new window.THREE.CylinderGeometry(0.08, 0.08, 0.5, 8), arcadeGoldNeon);
+    beacon.position.set(bx, 4.5, bz);
+    cabinetGroup.add(beacon);
+  });
+
+  // 🏆 GRAND GOLDEN HIGH-SCORE ARCADE TROPHY ON THE ROOFTOP
+  const roofTrophyGroup = new window.THREE.Group();
+  roofTrophyGroup.position.set(0, 4.35, 0);
+  roofTrophyGroup.name = 'arcade_roof_trophy';
+
+  const rTrophyBase = new window.THREE.Mesh(new window.THREE.BoxGeometry(0.6, 0.2, 0.6), cyberPlatformMat);
+  roofTrophyGroup.add(rTrophyBase);
+
+  const rTrophyPillar = new window.THREE.Mesh(new window.THREE.CylinderGeometry(0.12, 0.16, 0.4, 8), goldAccentMat);
+  rTrophyPillar.position.y = 0.3;
+  roofTrophyGroup.add(rTrophyPillar);
+
+  const rTrophyCup = new window.THREE.Mesh(new window.THREE.CylinderGeometry(0.45, 0.22, 0.65, 12), goldAccentMat);
+  rTrophyCup.position.y = 0.75;
+  roofTrophyGroup.add(rTrophyCup);
+
+  const rTrophyStar = new window.THREE.Mesh(new window.THREE.OctahedronGeometry(0.32), arcadeGoldNeon);
+  rTrophyStar.position.y = 1.35;
+  rTrophyStar.name = 'arcade_roof_star';
+  roofTrophyGroup.add(rTrophyStar);
+
+  cabinetGroup.add(roofTrophyGroup);
+
+  // --- CLIMBABLE NEON CYBER LADDERS ON LEFT & RIGHT SIDES OF CABINETS ---
+  [-2.92, 2.92].forEach((lx, lIdx) => {
+    const ladderGroup = new window.THREE.Group();
+    ladderGroup.position.set(lx, 2.1, 0);
+    const lMat = lIdx === 0 ? arcadeCyanNeon : arcadeGoldNeon;
+
+    [-0.45, 0.45].forEach(rz => {
+      const rail = new window.THREE.Mesh(new window.THREE.CylinderGeometry(0.05, 0.05, 4.2, 8), cyberPlatformMat);
+      rail.position.set(0, 0, rz);
+      ladderGroup.add(rail);
+    });
+
+    for (let rung = -1.8; rung <= 1.9; rung += 0.42) {
+      const rungMesh = new window.THREE.Mesh(new window.THREE.CylinderGeometry(0.04, 0.04, 0.9, 8), lMat);
+      rungMesh.rotation.x = Math.PI / 2;
+      rungMesh.position.set(0, rung, 0);
+      ladderGroup.add(rungMesh);
+    }
+    cabinetGroup.add(ladderGroup);
+  });
+
   // Floating Central Master Gamepad Icon
   const arcIconGeo = new window.THREE.BoxGeometry(0.9, 0.6, 0.25);
   const arcIconMesh = new window.THREE.Mesh(arcIconGeo, arcadePurpleNeon);
-  arcIconMesh.position.set(0, 5.6, 0.8);
+  arcIconMesh.position.set(0, 6.2, 0.8);
   arcIconMesh.name = 'arcade_cabinet_icon';
   cabinetGroup.add(arcIconMesh);
 
   arcadeStation.add(cabinetGroup);
+
+  // --- RETRO TRAMPOLINE / ARCADE SPRING JUMP PAD (Launches player straight to cabinet roof) ---
+  const arcadeJumpPad = new window.THREE.Group();
+  arcadeJumpPad.position.set(3.6, 0.15, -3.6);
+  arcadeJumpPad.name = 'arcade_spring_jump_pad';
+
+  const jpBase = new window.THREE.Mesh(new window.THREE.CylinderGeometry(1.2, 1.4, 0.3, 16), cyberPlatformMat);
+  jpBase.position.y = 0.15;
+  arcadeJumpPad.add(jpBase);
+
+  const jpRingOuter = new window.THREE.Mesh(new window.THREE.TorusGeometry(1.0, 0.1, 8, 24), arcadeCyanNeon);
+  jpRingOuter.rotation.x = Math.PI / 2;
+  jpRingOuter.position.y = 0.32;
+  arcadeJumpPad.add(jpRingOuter);
+
+  const jpPad = new window.THREE.Mesh(new window.THREE.CylinderGeometry(0.85, 0.85, 0.12, 16), arcadeRoseNeon);
+  jpPad.position.y = 0.33;
+  arcadeJumpPad.add(jpPad);
+
+  const jpArrow = new window.THREE.Mesh(new window.THREE.ConeGeometry(0.35, 0.6, 8), arcadeGoldNeon);
+  jpArrow.position.set(0, 1.2, 0);
+  jpArrow.name = 'arcade_jump_arrow';
+  arcadeJumpPad.add(jpArrow);
+
+  arcadeStation.add(arcadeJumpPad);
+
+  // --- PARKOUR STEPPING CRATE (Left of cabinets for step-by-step parkour climb) ---
+  const stepCrate = new window.THREE.Mesh(new window.THREE.BoxGeometry(1.2, 0.9, 1.2), cyberPlatformMat);
+  stepCrate.position.set(-3.8, 0.6, -3.8);
+  arcadeStation.add(stepCrate);
+
+  const speakerGrille = new window.THREE.Mesh(new window.THREE.CylinderGeometry(0.4, 0.4, 0.05, 16), arcadePurpleNeon);
+  speakerGrille.rotation.x = Math.PI / 2;
+  speakerGrille.position.set(-3.8, 0.6, -3.18);
+  arcadeStation.add(speakerGrille);
 
   // --- F. STATION 4: GOLD & TOKEN REWARD ATM KIOSK ---
   const atmGroup = new window.THREE.Group();
@@ -2445,6 +2574,9 @@ function buildSpaceGalaxyWorld(scene) {
       });
   }
 
+  // Register Arcade Zone Colliders & Jump Pad
+  registerArcadeColliders(gameRef || window.__superBearGame);
+
   scene.add(bannerGroup);
   spaceObjects.push(bannerGroup);
 
@@ -2453,6 +2585,61 @@ function buildSpaceGalaxyWorld(scene) {
 
   notifySpaceState();
 
+}
+
+// --- 🕹️ MERKEZİ ARCADE ALANI COLLIDER & JUMP PAD REGISTRATION ---
+function registerArcadeColliders(game) {
+  const g = game || gameRef || window.__superBearGame;
+  if (!g || !g.currentLevel) return;
+  if (!g.currentLevel.colliders) g.currentLevel.colliders = [];
+  if (!g.currentLevel.jumpPads) g.currentLevel.jumpPads = [];
+
+  // Filter out any stale arcade colliders/jumpPads to prevent duplication
+  g.currentLevel.colliders = g.currentLevel.colliders.filter(c => !c.__isArcadeCollider);
+  g.currentLevel.jumpPads = g.currentLevel.jumpPads.filter(j => !j.__isArcadeJumpPad);
+
+  const THREE = window.THREE;
+  if (!THREE) return;
+
+  const arcadeColliders = [
+    // 1. Plaza Base Deck (Elevated deck floor, surface at y = 0.45, seamless walkable floor)
+    { min: new THREE.Vector3(-23.5, -0.5, -29.5), max: new THREE.Vector3(-0.5, 0.45, -12.5), isToxic: false, isIce: false, isWalkableFloor: true },
+    // 2. Entrance Ramp (Smooth slope transitioning from village ground into arcade plaza)
+    { min: new THREE.Vector3(-16.8, -0.5, -13.0), max: new THREE.Vector3(-7.2, 0.42, -9.6), isToxic: false, isIce: false, isWalkableFloor: true },
+    // 3. Arcade Cabinet Top Rooftop (Walkable surface at y = 4.65)
+    { min: new THREE.Vector3(-15.2, 4.45, -27.2), max: new THREE.Vector3(-8.8, 4.65, -24.4), isToxic: false, isIce: false, isWalkableFloor: true },
+    // 4. Arcade Cabinet Main Body (Behind the shelf, stops at maxY = 4.40 so never pushes player standing on roof)
+    { min: new THREE.Vector3(-15.0, 0.45, -27.0), max: new THREE.Vector3(-9.0, 4.40, -25.2), isToxic: false, isIce: false },
+    // 5. Arcade Control Panel Shelf (Front ledge, surface at y = 2.15)
+    { min: new THREE.Vector3(-14.9, 0.45, -25.2), max: new THREE.Vector3(-9.1, 2.15, -24.1), isToxic: false, isIce: false, isWalkableFloor: true },
+    // 6. Left Climbable Ladder (isClimbable: true prevents horizontal push and enables climb physics)
+    { min: new THREE.Vector3(-15.4, 0.45, -26.5), max: new THREE.Vector3(-14.6, 4.75, -25.1), isToxic: false, isIce: false, isClimbable: true },
+    // 7. Right Climbable Ladder
+    { min: new THREE.Vector3(-9.4, 0.45, -26.5), max: new THREE.Vector3(-8.6, 4.75, -25.1), isToxic: false, isIce: false, isClimbable: true },
+    // 8. Parkour Step 1 (Cyber Speaker Crate, height 1.15m)
+    { min: new THREE.Vector3(-16.5, 0.45, -25.5), max: new THREE.Vector3(-15.1, 1.15, -24.1), isToxic: false, isIce: false, isWalkableFloor: true },
+    // 9. Target Practice Booth Counter & Canopy Roof
+    { min: new THREE.Vector3(-21.5, 0.45, -20.6), max: new THREE.Vector3(-16.5, 1.65, -19.0), isToxic: false, isIce: false, isWalkableFloor: true },
+    { min: new THREE.Vector3(-21.8, 4.25, -23.8), max: new THREE.Vector3(-16.2, 4.65, -19.4), isToxic: false, isIce: false, isWalkableFloor: true },
+    // 10. ATM Kiosk Body
+    { min: new THREE.Vector3(-16.8, 0.45, -26.4), max: new THREE.Vector3(-15.6, 3.65, -25.2), isToxic: false, isIce: false },
+    // 11. Obstacle Course Gate Top
+    { min: new THREE.Vector3(-8.0, 3.8, -20.8), max: new THREE.Vector3(-3.0, 4.3, -19.6), isToxic: false, isIce: false, isWalkableFloor: true }
+  ];
+
+  arcadeColliders.forEach(c => {
+    c.__isArcadeCollider = true;
+    g.currentLevel.colliders.push(c);
+  });
+
+  // Dedicated Arcade Spring Jump Pad (World position x: -8.4, y: 0.45, z: -24.6, launches player to roof)
+  g.currentLevel.jumpPads.push({
+    __isArcadeJumpPad: true,
+    pos: new THREE.Vector3(-8.4, 0.45, -24.6),
+    boostForce: 22
+  });
+
+  g.currentLevel.__arcadeCollidersAdded = true;
 }
 
 // --- EXPANDED KEDİ KÖYÜ (CAT VILLAGE), ANIMALS, VOLLEYBALL & RIVER/FISHING ---
@@ -9257,15 +9444,15 @@ function updateSpaceLoop() {
     beehive: { x: 0, y: 1.5, z: 42, rotY: 0, title: "3. BÖLÜM: VIZILDIYAN BAL KOVANI", sub: "Altın Bal Petekleri ve Arı Kraliçesi Labirenti", icon: "🐝" },
     pelican_plains: { x: 0, y: 2.0, z: 46, rotY: 0, title: "4. BÖLÜM: PELİKAN OVALARI & GÖK ADALARI", sub: "Rüzgarlı Bulut Köprüleri ve Gök Tapınağı", icon: "🪶" },
     snow_desert: { x: 0, y: 2.0, z: 52, rotY: 0, title: "5. BÖLÜM: KAR VADİSİ & DONMUŞ ÇÖL", sub: "Buzul Sarkıtları ve Koca Ayak Zirvesi", icon: "❄️" },
-    volcano_cave: { x: 0, y: 2.5, z: 70, rotY: 0, title: "6. BÖLÜM: VOLKANİK EJDERHA MAĞARASI", sub: "Kızgın Magma Şelaleleri ve Lav Parkurları", icon: "🌋" },
-    underwater_palace: { x: 0, y: 2.0, z: 0, rotY: 0, title: "7. BÖLÜM: ANTİK SU ALTI KRİSTAL SARAYI", sub: "Biolüminesans Mercanlar ve Derin Deniz Yolları", icon: "🌊" },
-    golden_sanctuary: { x: 0, y: 2.2, z: 90, rotY: 0, title: "8. BÖLÜM: EFSANEVİ ALTIN CENNETİ", sub: "Güneş Mabedi ve Görkemli Altın Heykeller", icon: "🌟" },
-    dinosaur_world: { x: 0, y: 1.8, z: 60, rotY: 0, title: "9. BÖLÜM: DİNOZOR DÜNYASI", sub: "Prehistorik Vadiler ve T-Rex Gözlem Kulesi", icon: "🦖" },
-    sugar_world: { x: 0, y: 11.5, z: 70, rotY: 0, title: "10. BÖLÜM: ŞEKER DÜNYASI & LOLİPOP KRALLIĞI", sub: "Pamuk Şeker Bulutları ve Marshmallow Atlama Pedleri", icon: "🍬" },
+    volcano_cave: { x: 0, y: 1.8, z: 70, rotY: 0, title: "6. BÖLÜM: VOLKANİK EJDERHA MAĞARASI", sub: "Kızgın Magma Şelaleleri ve Lav Parkurları", icon: "🌋" },
+    underwater_palace: { x: 0, y: 1.0, z: 0, rotY: 0, title: "7. BÖLÜM: ANTİK SU ALTI KRİSTAL SARAYI", sub: "Biolüminesans Mercanlar ve Derin Deniz Yolları", icon: "🌊" },
+    golden_sanctuary: { x: 0, y: 2.0, z: 90, rotY: 0, title: "8. BÖLÜM: EFSANEVİ ALTIN CENNETİ", sub: "Güneş Mabedi ve Görkemli Altın Heykeller", icon: "🌟" },
+    dinosaur_world: { x: 0, y: 0.1, z: 60, rotY: 0, title: "9. BÖLÜM: DİNOZOR DÜNYASI", sub: "Prehistorik Vadiler ve T-Rex Gözlem Kulesi", icon: "🦖" },
+    sugar_world: { x: 0, y: 11.0, z: 70, rotY: 0, title: "10. BÖLÜM: ŞEKER DÜNYASI & LOLİPOP KRALLIĞI", sub: "Pamuk Şeker Bulutları ve Marshmallow Atlama Pedleri", icon: "🍬" },
     jokerooms: { x: 0, y: 1.2, z: 0, rotY: 0, title: "11. BÖLÜM: JOKEROOMS ŞAKA ODALARI", sub: "Sonsuz Sarı Labirent, Muz Kabukları ve Gizemli Odalar", icon: "🚪" },
-    ruin_village: { x: 0, y: 2.8, z: 80, rotY: 0, title: "12. BÖLÜM: YIKILMIŞ KÖY & SİRK HARABELERİ", sub: "Asit Nehri ve Terk Edilmiş Sirk Parkuru", icon: "🏚️" },
-    water_cave: { x: 0, y: 4.8, z: 60, rotY: 0, title: "13. BÖLÜM: KARANLIK SU MAĞARASI", sub: "Mavi Göletler, Mağara Sarkıtları ve Su Ejderhası", icon: "💧" },
-    bee_desert: { x: 0, y: 3.2, z: 60, rotY: 0, title: "14. BÖLÜM: ARI ÇÖLÜ & ANTİK PİRAMİT", sub: "Sonsuz Kum Tepeleri ve Antik Firavun Piramidi", icon: "🏜️" },
+    ruin_village: { x: 0, y: 2.0, z: 80, rotY: 0, title: "12. BÖLÜM: YIKILMIŞ KÖY & SİRK HARABELERİ", sub: "Asit Nehri ve Terk Edilmiş Sirk Parkuru", icon: "🏚️" },
+    water_cave: { x: 0, y: 4.0, z: 60, rotY: 0, title: "13. BÖLÜM: KARANLIK SU MAĞARASI", sub: "Mavi Göletler, Mağara Sarkıtları ve Su Ejderhası", icon: "💧" },
+    bee_desert: { x: 0, y: 4.0, z: 60, rotY: 0, title: "14. BÖLÜM: ARI ÇÖLÜ & ANTİK PİRAMİT", sub: "Sonsuz Kum Tepeleri ve Antik Firavun Piramidi", icon: "🏜️" },
     space_realm: { x: 0, y: 2.0, z: 25, rotY: 0, title: "15. BÖLÜM: KOZMİK BOYUT & BÜYÜK BOSSLAR", sub: "Yıldız Geçitleri ve Final Kozmik Savaş Arenası", icon: "🌌" },
   };
 
@@ -9274,19 +9461,40 @@ function updateSpaceLoop() {
     const THREE = window.THREE;
     if (!THREE) return;
 
-    const info = SAFE_SPAWNS[regionId] || { x: 0, y: 2.0, z: 0, rotY: 0, title: regionId, sub: "Yeni Bölüm", icon: "🌟" };
+    const info = SAFE_SPAWNS[regionId] || { x: 0, y: 0.2, z: 0, rotY: 0, title: regionId, sub: "Yeni Bölüm", icon: "🌟" };
+
+    // Find the exact solid floor height at spawn position (must be close to expected spawn height)
+    let floorY = info.y;
+    if (game.currentLevel && game.currentLevel.colliders) {
+      let maxSolidY = -999;
+      game.currentLevel.colliders.forEach(c => {
+        if (c && c.min && c.max && !c.isToxic) {
+          if (info.x >= c.min.x - 0.8 && info.x <= c.max.x + 0.8 && info.z >= c.min.z - 0.8 && info.z <= c.max.z + 0.8) {
+            if (c.max.y > maxSolidY && c.max.y <= info.y + 0.4 && c.max.y >= info.y - 1.0) {
+              maxSolidY = c.max.y;
+            }
+          }
+        }
+      });
+      if (maxSolidY > -900) {
+        floorY = maxSolidY;
+      }
+    }
 
     if (game.currentLevel) {
       if (!game.currentLevel.spawnPoint) game.currentLevel.spawnPoint = new THREE.Vector3();
-      game.currentLevel.spawnPoint.set(info.x, info.y, info.z);
+      game.currentLevel.spawnPoint.set(info.x, floorY, info.z);
     }
 
     if (game.playerPos) {
-      game.playerPos.set(info.x, info.y, info.z);
+      game.playerPos.set(info.x, floorY, info.z);
     }
     if (game.playerVel) {
       game.playerVel.set(0, 0, 0);
     }
+    game.isGrounded = true;
+    game.jumpCount = 0;
+    game.spawnGraceTimer = 2.5;
     game.playerRotY = info.rotY || 0;
 
     if (game.playerBear && game.playerBear.root) {
@@ -9312,8 +9520,8 @@ function updateSpaceLoop() {
         game.camYaw = Math.PI;
         game.camPitch = 0.22;
         game.camDist = 6.2;
-        game.camera.position.set(info.x, info.y + 2.6, info.z + 6.2);
-        game.camera.lookAt(info.x, info.y + 1.2, info.z - 5.0);
+        game.camera.position.set(info.x, floorY + 2.6, info.z + 6.2);
+        game.camera.lookAt(info.x, floorY + 1.2, info.z - 5.0);
       }
       // Remove any leftover invisible base colliders in non-hub levels
       if (game.currentLevel && game.currentLevel.colliders) {
@@ -9322,7 +9530,7 @@ function updateSpaceLoop() {
     }
 
     if (regionId !== "hub" && !isFollowup) {
-      addLevelReturnPortal(game, info.x, info.y, info.z + 7.5);
+      addLevelReturnPortal(game, info.x, floorY, info.z + 7.5);
     }
   }
 
@@ -9386,20 +9594,8 @@ function updateSpaceLoop() {
         }
       }
 
-      // Ensure player and camera spawn safely inside the map
+      // Ensure player and camera spawn safely and firmly on the ground
       ensureSafeLevelSpawn(this, regionId, false);
-
-      setTimeout(() => {
-        if (this.currentRegion === regionId) {
-          ensureSafeLevelSpawn(this, regionId, true);
-        }
-      }, 60);
-
-      setTimeout(() => {
-        if (this.currentRegion === regionId) {
-          ensureSafeLevelSpawn(this, regionId, true);
-        }
-      }, 180);
 
       return res;
     };
@@ -10641,6 +10837,7 @@ function updateSpaceLoop() {
               // Push moving collider
               game.currentLevel.colliders.push({
                   isMoving: true,
+                  isWalkableFloor: true,
                   min: new THREE.Vector3(plat.currentPos.x - plat.w / 2, plat.currentPos.y - plat.h / 2, plat.currentPos.z - plat.d / 2),
                   max: new THREE.Vector3(plat.currentPos.x + plat.w / 2, plat.currentPos.y + plat.h / 2, plat.currentPos.z + plat.d / 2)
               });
@@ -11083,6 +11280,7 @@ function updateSpaceLoop() {
               // Push moving collider
               game.currentLevel.colliders.push({
                   isSugarMoving: true,
+                  isWalkableFloor: true,
                   min: new THREE.Vector3(plat.currentPos.x - plat.w / 2, plat.currentPos.y - plat.h / 2, plat.currentPos.z - plat.d / 2),
                   max: new THREE.Vector3(plat.currentPos.x + plat.w / 2, plat.currentPos.y + plat.h / 2, plat.currentPos.z + plat.d / 2)
               });
@@ -11357,6 +11555,7 @@ function updateSpaceLoop() {
           (game.currentLevel.movingPlatforms || []).forEach(plat => {
               game.currentLevel.colliders.push({
                   isMoving: true,
+                  isWalkableFloor: true,
                   min: new THREE.Vector3(plat.currentPos.x - plat.w/2, plat.currentPos.y - plat.h/2, plat.currentPos.z - plat.d/2),
                   max: new THREE.Vector3(plat.currentPos.x + plat.w/2, plat.currentPos.y + plat.h/2, plat.currentPos.z + plat.d/2)
               });
@@ -12347,11 +12546,16 @@ function updateSpaceLoop() {
     } else if (aCabinet) {
       aCabinet.visible = true;
 
+      // Dynamically ensure Arcade Colliders & Jump Pad are registered
+      if (game.currentLevel && (!game.currentLevel.__arcadeCollidersAdded || !game.currentLevel.colliders || !game.currentLevel.colliders.some(c => c.__isArcadeCollider))) {
+        registerArcadeColliders(game);
+      }
+
       // Animate floating holographic icons
       const aIcon = aCabinet.getObjectByName('arcade_cabinet_icon');
       if (aIcon) {
         aIcon.rotation.y += 0.03;
-        aIcon.position.y = 5.6 + Math.sin(Date.now() * 0.005) * 0.15;
+        aIcon.position.y = 6.2 + Math.sin(Date.now() * 0.005) * 0.15;
       }
       const tIcon = aCabinet.getObjectByName('arcade_target_icon');
       if (tIcon) {
@@ -12367,6 +12571,25 @@ function updateSpaceLoop() {
       if (atmIcon) {
         atmIcon.rotation.y += 0.05;
         atmIcon.position.y = 3.8 + Math.sin(Date.now() * 0.004) * 0.1;
+      }
+
+      // Animate Rooftop Grand Golden Trophy & Spinning Star
+      const rTrophy = aCabinet.getObjectByName('arcade_roof_trophy');
+      if (rTrophy) {
+        rTrophy.rotation.y += 0.02;
+        const rStar = rTrophy.getObjectByName('arcade_roof_star');
+        if (rStar) {
+          rStar.rotation.x += 0.04;
+          rStar.rotation.y += 0.03;
+          rStar.position.y = 1.35 + Math.sin(Date.now() * 0.005) * 0.08;
+        }
+      }
+
+      // Animate Jump Pad Arrow
+      const jpArrow = aCabinet.getObjectByName('arcade_jump_arrow');
+      if (jpArrow) {
+        jpArrow.position.y = 1.2 + Math.sin(Date.now() * 0.007) * 0.15;
+        jpArrow.rotation.y += 0.05;
       }
 
       // Animate Target Range Bullseyes
@@ -12386,6 +12609,41 @@ function updateSpaceLoop() {
           gem.rotation.x = Math.sin(Date.now() * 0.003 + gIdx) * 0.2;
         }
       });
+
+      // Check if Player is Standing on Top of the Arcade Cabinet Roof!
+      // (World bounds: x: -15.4 to -8.6, z: -27.4 to -24.2, y >= 4.45)
+      if (game.playerPos) {
+        const onRoof = (
+          game.playerPos.x >= -15.4 && game.playerPos.x <= -8.6 &&
+          game.playerPos.z >= -27.4 && game.playerPos.z <= -24.2 &&
+          game.playerPos.y >= 4.45
+        );
+        if (onRoof) {
+          if (rTrophy) rTrophy.rotation.y += 0.08;
+          if (!window.__arcadeRoofClaimed) {
+            window.__arcadeRoofClaimed = true;
+            if (game.stats) {
+              game.stats.coins = (game.stats.coins || 0) + 50;
+              game.stats.honeyGems = (game.stats.honeyGems || 0) + 2;
+              if (game.callbacks && game.callbacks.onStatsUpdate) {
+                game.callbacks.onStatsUpdate(game.stats);
+              }
+            }
+            if (window.St && window.St.playLevelWin) {
+              window.St.playLevelWin();
+            } else if (window.St && window.St.playGoalFanfare) {
+              window.St.playGoalFanfare();
+            }
+            if (typeof game.spawnSparkleParticles === 'function') {
+              game.spawnSparkleParticles(game.playerPos, 35, 0xfacc15);
+              game.spawnSparkleParticles(game.playerPos, 25, 0x38bdf8);
+            }
+            if (game.callbacks && game.callbacks.onShowNotice) {
+              game.callbacks.onShowNotice("🏆 ATARİ ŞAMPİYONU! Arcade kabininin zirvesine başarıyla tırmandın! (+50 Altın, +2 Bal Kristali) ⭐", "success");
+            }
+          }
+        }
+      }
 
       // Zone Proximity & Sub-Zone Detection
       if (game.playerPos) {
