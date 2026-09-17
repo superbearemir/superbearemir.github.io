@@ -10,7 +10,7 @@ import { TreasureInventoryModal } from '../components/TreasureInventoryModal';
 import { SpaceBossDialogueOverlay } from '../components/SpaceBossDialogueOverlay';
 import { MapSelectorModal } from '../components/MapSelectorModal';
 import { UndergroundTrailerModal } from '../components/UndergroundTrailerModal';
-import { ArcadeGamesModal, ArcadeGameId } from '../components/ArcadeGamesModal';
+import { ArcadeGamesModal } from '../components/ArcadeGamesModal';
 import { TouchDragController } from '../components/TouchDragController';
 import { LandscapeOrientationHandler } from '../components/LandscapeOrientationHandler';
 import { SaveManagerModal } from '../components/SaveManagerModal';
@@ -18,7 +18,7 @@ import { LootBoxModal } from '../components/LootBoxModal';
 import { CountryLanguageModal } from '../components/CountryLanguageModal';
 import { OpeningCinematicModal } from '../components/OpeningCinematicModal';
 import { useLanguage } from '../i18n/LanguageContext';
-import { ShoppingBag, Gamepad2, Globe, Target, Footprints, Sparkles, Award } from 'lucide-react';
+import { ShoppingBag, Gamepad2, Globe } from 'lucide-react';
 
 export const CustomizerAppOverlay: React.FC = () => {
   const { language, country, t } = useLanguage();
@@ -30,10 +30,6 @@ export const CustomizerAppOverlay: React.FC = () => {
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [isTrailerOpen, setIsTrailerOpen] = useState(false);
   const [isArcadeGamesOpen, setIsArcadeGamesOpen] = useState(false);
-  const [selectedArcadeGame, setSelectedArcadeGame] = useState<ArcadeGameId>('target_blaster');
-  const [arcadeAutoStart, setArcadeAutoStart] = useState(false);
-  const [arcadeSubZone, setArcadeSubZone] = useState<'target_blaster' | 'retro_runner' | 'general' | null>(null);
-  const [rewardToast, setRewardToast] = useState<{ message: string; coins: number; tokens: number } | null>(null);
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isLootBoxModalOpen, setIsLootBoxModalOpen] = useState(false);
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
@@ -166,14 +162,7 @@ export const CustomizerAppOverlay: React.FC = () => {
     const handleCloseMapSelector = () => setIsMapModalOpen(false);
     window.addEventListener('superbear:close-map-selector', handleCloseMapSelector);
 
-    const handleOpenArcade = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (detail && detail.gameId) {
-        setSelectedArcadeGame(detail.gameId as ArcadeGameId);
-        setArcadeAutoStart(Boolean(detail.autoStart));
-      }
-      setIsArcadeGamesOpen(true);
-    };
+    const handleOpenArcade = () => setIsArcadeGamesOpen(true);
     window.addEventListener('superbear:open-arcade-games', handleOpenArcade);
 
     const handleOpenSaveModal = () => setIsSaveModalOpen(true);
@@ -223,11 +212,6 @@ export const CustomizerAppOverlay: React.FC = () => {
       const detail = (e as CustomEvent).detail;
       if (detail && typeof detail.isNear === 'boolean') {
         setIsNearArcade(detail.isNear);
-        if (detail.subZone) {
-          setArcadeSubZone(detail.subZone);
-        } else if (!detail.isNear) {
-          setArcadeSubZone(null);
-        }
       }
     };
     window.addEventListener('superbear:arcade-proximity', handleArcadeProximity);
@@ -241,7 +225,6 @@ export const CustomizerAppOverlay: React.FC = () => {
     const handleRegionChange = () => {
       setIsNearCatMerchant(false);
       setIsNearArcade(false);
-      setArcadeSubZone(null);
     };
     window.addEventListener('superbear:region-change', handleRegionChange);
     window.addEventListener('superbear:space-state-update', handleSpaceStateUpdate);
@@ -257,13 +240,6 @@ export const CustomizerAppOverlay: React.FC = () => {
         setIsMapModalOpen((prev) => !prev);
       } else if (e.code === 'KeyE' || e.key === 'e' || e.key === 'E') {
         if (isNearArcade) {
-          if (arcadeSubZone === 'target_blaster') {
-            setSelectedArcadeGame('target_blaster');
-            setArcadeAutoStart(true);
-          } else if (arcadeSubZone === 'retro_runner') {
-            setSelectedArcadeGame('retro_runner');
-            setArcadeAutoStart(true);
-          }
           setIsArcadeGamesOpen(true);
         } else if (isNearCatMerchant) {
           setIsCatShopOpen(true);
@@ -413,81 +389,27 @@ export const CustomizerAppOverlay: React.FC = () => {
         </div>
       )}
 
-      {/* Central Arcade Zone Proximity Interactive Floating Banner Hub */}
+      {/* Retro Arcade Proximity Floating Banner - Positioned top-center so it never blocks mobile controls */}
       {!isAnyModalOpen && isNearArcade && !isArcadeGamesOpen && (
-        <div className="fixed top-20 sm:top-24 left-1/2 -translate-x-1/2 z-[90] pointer-events-auto animate-in slide-in-from-top-4 duration-200 max-w-[95vw]">
-          <div className="bg-slate-950/90 border-2 border-purple-500/80 rounded-2xl shadow-2xl p-2 sm:p-2.5 backdrop-blur-xl flex flex-col sm:flex-row items-center gap-2">
-            
-            {/* Target Practice Quick Action */}
-            <button
-              onClick={() => {
-                setSelectedArcadeGame('target_blaster');
-                setArcadeAutoStart(true);
-                setIsArcadeGamesOpen(true);
-              }}
-              className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-gradient-to-r from-rose-600 to-pink-600 hover:from-rose-500 hover:to-pink-500 text-white font-black text-xs border border-rose-300 shadow-md flex items-center gap-2 transition active:scale-95 cursor-pointer"
-            >
-              <Target className="w-4 h-4 text-rose-200 animate-pulse" />
-              <div className="text-left">
-                <div className="flex items-center gap-1">
-                  <span>🎯 Hedef Poligonu</span>
-                  <span className="px-1 py-0.2 bg-slate-900 text-rose-300 rounded text-[9px] font-mono">Hızlı Başla</span>
-                </div>
-                <div className="text-[10px] text-rose-200 opacity-90 font-bold">Nişan Al & Altın Kazan</div>
+        <div className="fixed top-20 sm:top-24 left-1/2 -translate-x-1/2 z-[90] pointer-events-auto animate-in slide-in-from-top-4 duration-200">
+          <button
+            onClick={() => setIsArcadeGamesOpen(true)}
+            className="px-5 py-3 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-sm border-2 border-purple-300 shadow-2xl backdrop-blur-md flex items-center gap-3 transition transform active:scale-95 hover:scale-105 cursor-pointer"
+          >
+            <div className="w-8 h-8 rounded-xl bg-slate-950 flex items-center justify-center text-lg shadow-inner">
+              🕹️
+            </div>
+            <div className="text-left">
+              <div className="flex items-center gap-1.5 leading-tight">
+                <span>Retro Arcade Mini Oyun Salonu</span>
+                <span className="px-1.5 py-0.2 bg-slate-950 text-purple-300 rounded text-[10px] font-mono">[E / J Tuşu]</span>
               </div>
-            </button>
-
-            {/* Obstacle Course Quick Action */}
-            <button
-              onClick={() => {
-                setSelectedArcadeGame('retro_runner');
-                setArcadeAutoStart(true);
-                setIsArcadeGamesOpen(true);
-              }}
-              className="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-white font-black text-xs border border-amber-300 shadow-md flex items-center gap-2 transition active:scale-95 cursor-pointer"
-            >
-              <Footprints className="w-4 h-4 text-amber-200 animate-bounce" />
-              <div className="text-left">
-                <div className="flex items-center gap-1">
-                  <span>🏃 Engelli Parkur</span>
-                  <span className="px-1 py-0.2 bg-slate-900 text-amber-300 rounded text-[9px] font-mono">Hızlı Başla</span>
-                </div>
-                <div className="text-[10px] text-amber-200 opacity-90 font-bold">Engelleri Aş & Hızlan</div>
-              </div>
-            </button>
-
-            {/* Full Arcade Zone Game Catalog */}
-            <button
-              onClick={() => {
-                setSelectedArcadeGame('target_blaster');
-                setArcadeAutoStart(false);
-                setIsArcadeGamesOpen(true);
-              }}
-              className="w-full sm:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs border border-purple-300 shadow-md flex items-center gap-2 transition active:scale-95 cursor-pointer"
-            >
-              <Gamepad2 className="w-4 h-4 text-cyan-300" />
-              <div className="text-left">
-                <div className="flex items-center gap-1">
-                  <span>🕹️ Tüm 10 Mini Oyun</span>
-                  <span className="px-1 py-0.2 bg-slate-900 text-purple-300 rounded text-[9px] font-mono">[E / J]</span>
-                </div>
-                <div className="text-[10px] text-purple-200 opacity-90 font-bold">Arcade Salonu & 2X Gün</div>
-              </div>
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Floating Reward Toast */}
-      {rewardToast && (
-        <div className="fixed top-12 left-1/2 -translate-x-1/2 z-[130] pointer-events-none animate-in slide-in-from-top-4 duration-200">
-          <div className="px-5 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600 text-slate-950 font-black text-sm border-2 border-yellow-200 shadow-2xl flex items-center gap-2.5">
-            <Award className="w-5 h-5 text-slate-950 animate-bounce" />
-            <span>{rewardToast.message}</span>
-            <span className="px-2 py-0.5 rounded-full bg-slate-950 text-amber-300 text-xs">
-              +{rewardToast.coins} 🍯 | +{rewardToast.tokens} 🎟️
-            </span>
-          </div>
+              <p className="text-[11px] font-bold text-purple-200 opacity-90">
+                "10 Nostaljik Atari Oyunu & 2X Jeton!"
+              </p>
+            </div>
+            <Gamepad2 className="w-5 h-5 text-white animate-bounce ml-1" />
+          </button>
         </div>
       )}
 
@@ -518,20 +440,7 @@ export const CustomizerAppOverlay: React.FC = () => {
       {/* Arcade Games Modal */}
       <ArcadeGamesModal
         isOpen={isArcadeGamesOpen}
-        initialGameId={selectedArcadeGame}
-        autoStart={arcadeAutoStart}
-        onRewardEarned={(coins, tokens) => {
-          setRewardToast({
-            message: 'Tebrikler! Mini Oyun Ödülü Kazanıldı!',
-            coins,
-            tokens
-          });
-          setTimeout(() => setRewardToast(null), 3500);
-        }}
-        onClose={() => {
-          setIsArcadeGamesOpen(false);
-          setArcadeAutoStart(false);
-        }}
+        onClose={() => setIsArcadeGamesOpen(false)}
       />
 
       {/* Drawing Inspector Modal */}

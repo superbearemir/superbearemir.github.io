@@ -25,6 +25,16 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
   if (!isOpen) return null;
 
   const handleSelectLevel = (regionId: string, levelNo: number, isWorld: boolean) => {
+    // Explicitly block levels that are coming in future updates
+    const BLOCKED_UPDATE_REGIONS = ['golden_sanctuary', 'ruin_village', 'bee_desert'];
+    if (BLOCKED_UPDATE_REGIONS.includes(regionId)) {
+      const game = (window as any).__superBearGame;
+      if (game && game.callbacks && game.callbacks.onShowNotice) {
+        game.callbacks.onShowNotice('⏳ Bu bölüm güncellemede gelecek! Şu an oynanamaz.', 'warning');
+      }
+      return;
+    }
+
     // Only allow entering if level is within unlocked limit (First 14 levels open)
     if (!isWorld || levelNo > unlockedMax) {
       return;
@@ -56,13 +66,13 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
     { id: 'snow_desert', no: 5, name: 'Kar Vadisi & Buzul Gölü', icon: '❄️', desc: 'Kaygan buz pisti, karlı çam ağaçları ve Kar Tilkisi Yuki.' },
     { id: 'volcano_cave', no: 6, name: 'Volkanik Ejderha Mağarası', icon: '🌋', desc: 'Kızıl lav nehirleri, bazalt basamaklar ve Ateş Semenderi Pyro.' },
     { id: 'underwater_palace', no: 7, name: 'Antik Su Altı Kristal Sarayı', icon: '🧜‍♀️', desc: 'Mermer sualtı sütunları ve Prenses Coral.' },
-    { id: 'golden_sanctuary', no: 8, name: 'Efsanevi Altın Cenneti', icon: '🌟', desc: 'Işıltılı altın tapınak ve Başmelek Ayı.' },
+    { id: 'golden_sanctuary', no: 8, name: 'Efsanevi Altın Cenneti (Güncellemede Gelecek)', icon: '🌟', desc: '⏳ Güncellemede Gelecek! Bu bölüm yeni güncellemeyle aktif olacaktır.', isComingSoon: true },
     { id: 'dinosaur_world', no: 9, name: 'Tarih Öncesi Dinozor Dünyası', icon: '🦖', desc: 'Devasa dinozor iskelet kemerleri ve Arkeo.' },
     { id: 'sugar_world', no: 10, name: 'Şeker Dünyası & Lolipop Krallığı', icon: '🍭', desc: 'Dev girdap lolipoplar ve Şeker Perisi Bonbon.' },
     { id: 'jokerooms', no: 11, name: 'Jokerooms - Şaka Labirenti', icon: '🟡', desc: 'Sonsuz sarı koridorlar ve Dedektif Ayı Holmes.' },
-    { id: 'ruin_village', no: 12, name: 'Yıkılmış Köy Harabeleri', icon: '🏚️', desc: 'Terk edilmiş gotik kalıntılar ve Son Sakin Bruno.' },
+    { id: 'ruin_village', no: 12, name: 'Yıkılmış Köy Harabeleri (Güncellemede Gelecek)', icon: '🏚️', desc: '⏳ Güncellemede Gelecek! Bu bölüm yeni güncellemeyle aktif olacaktır.', isComingSoon: true },
     { id: 'water_cave', no: 13, name: 'Karanlık Su Mağarası', icon: '💧', desc: 'Mavi kristal göletler ve Kaşif Kedi Felix.' },
-    { id: 'bee_desert', no: 14, name: 'Arıların Çölü & Antik Piramit', icon: '🏜️', desc: 'Altın kum tepeleri, devasa basamaklı piramit ve Deve Kemal.' },
+    { id: 'bee_desert', no: 14, name: 'Arıların Çölü & Antik Piramit (Güncellemede Gelecek)', icon: '🏜️', desc: '⏳ Güncellemede Gelecek! Bu bölüm yeni güncellemeyle aktif olacaktır.', isComingSoon: true },
     { id: 'earth_summit', no: 15, name: 'Dünya Final Zirvesi & Kırmızı Çizgi', icon: '⛰️', desc: '14 hatıra dikilitaşı, Bilge Gandor ve Kozmik Uzay Kapısı!' },
   ];
 
@@ -320,7 +330,8 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {earthLevels.map((lvl) => {
-                  const isLocked = lvl.no > 14;
+                  const isComingSoon = (lvl as any).isComingSoon || ['golden_sanctuary', 'ruin_village', 'bee_desert'].includes(lvl.id);
+                  const isLocked = lvl.no > 14 || isComingSoon;
                   return (
                     <button
                       key={lvl.id}
@@ -340,7 +351,7 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
                               ? 'bg-amber-500/20 text-amber-300 flex items-center gap-1 border border-amber-500/30'
                               : 'bg-emerald-500/20 text-emerald-300'
                           }`}>
-                            {isLocked ? '⏳ Çok Yakında' : `Dünya #${lvl.no}`}
+                            {isComingSoon ? '⏳ Güncellemede Gelecek' : isLocked ? '⏳ Çok Yakında' : `Dünya #${lvl.no}`}
                           </span>
                         </div>
                         <h4 className={`font-bold text-sm transition-colors ${
@@ -349,7 +360,7 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
                           {lvl.name}
                         </h4>
                         <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
-                          {isLocked ? '⏳ Çok Yakında! Bu bölüm yeni güncellemeyle aktif olacaktır.' : lvl.desc}
+                          {isComingSoon ? '⏳ Güncellemede Gelecek! Bu bölüm yeni güncellemeyle aktif olacaktır.' : isLocked ? '⏳ Çok Yakında! Bu bölüm yeni güncellemeyle aktif olacaktır.' : lvl.desc}
                         </p>
                       </div>
                       <div className={`mt-3 flex items-center justify-between text-[11px] font-bold pt-2 border-t ${
@@ -357,7 +368,7 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
                           ? 'text-amber-400/80 border-slate-800'
                           : 'text-emerald-400 border-slate-700/60'
                       }`}>
-                        <span>{isLocked ? '⏳ Çok Yakında' : 'Bölüme Işınlan'}</span>
+                        <span>{isComingSoon ? '⏳ Güncellemede Gelecek' : isLocked ? '⏳ Çok Yakında' : 'Bölüme Işınlan'}</span>
                         {!isLocked && <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />}
                       </div>
                     </button>
