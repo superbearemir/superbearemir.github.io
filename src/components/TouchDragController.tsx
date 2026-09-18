@@ -23,8 +23,20 @@ export const TouchDragController: React.FC<TouchDragControllerProps> = ({
     return (localStorage.getItem('super_bear_perf_profile') as QualityProfile) || 'smooth60';
   });
 
+  useEffect(() => {
+    const handlePerfChange = (e: any) => {
+      if (e && e.detail && e.detail.profile) {
+        setPerfProfile(e.detail.profile);
+      }
+    };
+    window.addEventListener('superbear:performance-changed', handlePerfChange);
+    return () => window.removeEventListener('superbear:performance-changed', handlePerfChange);
+  }, []);
+
   const togglePerformanceProfile = () => {
-    const nextProfile: QualityProfile = perfProfile === 'smooth60' ? 'ultra' : perfProfile === 'ultra' ? 'balanced' : 'smooth60';
+    const cycle: QualityProfile[] = ['smooth60', 'batterySaver', 'balanced', 'ultra'];
+    const idx = cycle.indexOf(perfProfile);
+    const nextProfile: QualityProfile = cycle[(idx + 1) % cycle.length];
     setPerfProfile(nextProfile);
     optimizeGameRenderer(nextProfile);
   };
