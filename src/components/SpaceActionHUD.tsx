@@ -47,6 +47,7 @@ interface SpaceActionHUDProps {
   aliensRescued?: number;
   controlMode?: ControlMode;
   onOpenDeviceSelector?: () => void;
+  isModalActive?: boolean;
 }
 
 export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
@@ -58,6 +59,7 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
   aliensRescued = 0,
   controlMode = 'touch',
   onOpenDeviceSelector,
+  isModalActive = false,
 }) => {
   const [activeSprayColor, setActiveSprayColor] = useState<'green' | 'purple' | 'gold' | 'red' | 'blue' | 'pink' | 'orange' | 'white' | 'cyan' | 'lime' | 'yellow' | 'magenta' | 'teal' | 'brown' | 'black' | 'indigo'>('green');
   const [activeSprayShape, setActiveSprayShape] = useState<'circle' | 'star' | 'heart' | 'square' | 'badge' | 'triangle' | 'diamond' | 'crescent' | 'ring' | 'flower' | 'cross'>('circle');
@@ -219,14 +221,14 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
 
   // Synchronize master modal state with global flag to avoid dead zones
   useEffect(() => {
-    const active = isMenuOpen;
+    const active = isMenuOpen || isModalActive;
     (window as any).__superBearModalOpen = active;
     if (active) {
       document.body.classList.add('modal-open');
     } else {
       document.body.classList.remove('modal-open');
     }
-  }, [isMenuOpen]);
+  }, [isMenuOpen, isModalActive]);
 
   // Listen for global open master menu event
   useEffect(() => {
@@ -684,7 +686,7 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
   return (
     <>
       {/* Top Left Performance, Map & Device Quick Controls (Positioned at top-12/16 to NEVER overlap game stats bar in portrait mode) */}
-      {!isMenuOpen && (
+      {!isMenuOpen && !isModalActive && (
         <div className="fixed top-12 sm:top-16 left-3 sm:left-4 z-[40] flex items-center gap-1.5 sm:gap-2 pointer-events-none select-none">
           
           {/* Quick Map Selector Button */}
@@ -1535,7 +1537,7 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
       )}
 
       {/* Horizontal Expandable Superpower Action Dock (Opens horizontally to the left of the button cluster) */}
-      {!isMenuOpen && isPowersRackOpen && (
+      {!isMenuOpen && !isModalActive && isPowersRackOpen && (
         <div className="fixed bottom-5 right-20 sm:right-24 z-[85] pointer-events-auto max-w-[calc(100vw-95px)] sm:max-w-2xl bg-slate-950/95 border-2 border-purple-400/80 rounded-2xl p-2 sm:p-2.5 shadow-2xl backdrop-blur-xl animate-in slide-in-from-right-4 duration-200 text-slate-100 flex flex-col gap-1.5 select-none">
           {/* Header */}
           <div className="flex items-center justify-between px-1 pb-1 border-b border-purple-500/30">
@@ -1584,7 +1586,7 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
       )}
 
       {/* Vertical Round Button Cluster (Anchored bottom right) */}
-      {!isMenuOpen && (
+      {!isMenuOpen && !isModalActive && (
         <div className="fixed bottom-5 right-4 sm:right-6 z-[80] flex flex-col items-end gap-3 pointer-events-none select-none">
 
           {/* Vertical Stack of Circular Action Buttons (Ordered bottom-up) */}

@@ -64,7 +64,7 @@ const savedProfile = localStorage.getItem('super_bear_perf_profile') as QualityP
 const initialProfile: QualityProfile = savedProfile || (isMobileOrTab ? 'smooth60' : 'balanced');
 
 const savedShadows = localStorage.getItem('super_bear_shadows_enabled');
-const initialShadows = savedShadows !== null ? savedShadows === 'true' : true;
+const initialShadows = savedShadows !== null ? savedShadows === 'true' : !isMobileOrTab;
 
 const state: PerformanceState = {
   currentProfile: initialProfile,
@@ -299,7 +299,11 @@ export function initMobilePerformanceOptimizer() {
     checkCount++;
     const game = (window as any).__superBearGame;
     if (game && game.renderer) {
-      optimizeGameRenderer();
+      if (isMobileOrTab && !savedProfile) {
+        applyAntiLagBoost();
+      } else {
+        optimizeGameRenderer();
+      }
       clearInterval(checkInterval);
     }
     if (checkCount > 100) {

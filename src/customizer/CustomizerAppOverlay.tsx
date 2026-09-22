@@ -79,20 +79,7 @@ export const CustomizerAppOverlay: React.FC = () => {
   });
   const [, setActiveDesign] = useState<CustomCharacterDesign>(getCurrentSavedDesign);
 
-  const [isExternalModalOpen, setIsExternalModalOpen] = useState(false);
-
-  useEffect(() => {
-    const checkExternalModal = () => {
-      const isBodyOpen = document.body.classList.contains('modal-open');
-      const isWindowOpen = !!(window as any).__superBearModalOpen;
-      setIsExternalModalOpen(isBodyOpen || isWindowOpen);
-    };
-
-    const interval = setInterval(checkExternalModal, 100);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Synchronize modal open status to prevent touch/joystick conflicts
+  // Synchronize modal open status directly from actual open modal states
   const isAnyModalOpen =
     isOpen ||
     isDrawingModalOpen ||
@@ -105,8 +92,7 @@ export const CustomizerAppOverlay: React.FC = () => {
     isSaveModalOpen ||
     isLootBoxModalOpen ||
     isLanguageModalOpen ||
-    isCinematicOpen ||
-    isExternalModalOpen;
+    isCinematicOpen;
 
   useEffect(() => {
     (window as any).__superBearModalOpen = isAnyModalOpen;
@@ -115,6 +101,10 @@ export const CustomizerAppOverlay: React.FC = () => {
     } else {
       document.body.classList.remove('modal-open');
     }
+    return () => {
+      (window as any).__superBearModalOpen = false;
+      document.body.classList.remove('modal-open');
+    };
   }, [isAnyModalOpen]);
 
   useEffect(() => {
@@ -352,18 +342,17 @@ export const CustomizerAppOverlay: React.FC = () => {
 
   return (
     <>
-      {/* Space HUD Bar - Automatically hidden when any modal or menu is active */}
-      {!isAnyModalOpen && (
-        <SpaceActionHUD
-          onOpenDrawingModal={() => setIsDrawingModalOpen(true)}
-          onOpenCatShop={() => setIsCatShopOpen(true)}
-          onOpenMapModal={() => setIsMapModalOpen(true)}
-          onOpenArcade={() => setIsArcadeGamesOpen(true)}
-          onOpenSaveModal={() => setIsSaveModalOpen(true)}
-          aliensRescued={aliensRescued}
-          controlMode="touch"
-        />
-      )}
+      {/* Space HUD Bar - Stays mounted so state, events and buttons are never destroyed */}
+      <SpaceActionHUD
+        onOpenDrawingModal={() => setIsDrawingModalOpen(true)}
+        onOpenCatShop={() => setIsCatShopOpen(true)}
+        onOpenMapModal={() => setIsMapModalOpen(true)}
+        onOpenArcade={() => setIsArcadeGamesOpen(true)}
+        onOpenSaveModal={() => setIsSaveModalOpen(true)}
+        aliensRescued={aliensRescued}
+        controlMode="touch"
+        isModalActive={isAnyModalOpen}
+      />
 
       {/* Cat Merchant Proximity Interactive Floating Banner */}
       {!isAnyModalOpen && isNearCatMerchant && !isCatShopOpen && (
@@ -486,11 +475,11 @@ export const CustomizerAppOverlay: React.FC = () => {
       />
 
       {/* Global Mobile / Tablet Touch Controls (Hidden during Studio and any active modal) */}
-      {!isAnyModalOpen && (
+      <div className={isAnyModalOpen ? 'hidden pointer-events-none' : 'block'}>
         <TouchDragController
           mode="touch"
         />
-      )}
+      </div>
 
       {/* Standalone Loot Box Opening Modal with 4 Bundles & Shaking Animations */}
       <LootBoxModal

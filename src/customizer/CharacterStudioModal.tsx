@@ -19,6 +19,7 @@ import {
   getCurrentSavedDesign, syncDesignToGameInstance, savePreset,
   loadPresets, deletePreset, createDefaultDesign, normalizeDesign
 } from './GameBridge';
+import { detectIsMobileOrTablet } from '../utils/mobilePerformanceOptimizer';
 
 interface CharacterStudioModalProps {
   isOpen: boolean;
@@ -109,12 +110,13 @@ export const CharacterStudioModal: React.FC<CharacterStudioModalProps> = ({
     camera.position.set(0, 1.2, 3.6);
     cameraRef.current = camera;
 
-    // 3. Renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true, alpha: true });
+    // 3. Renderer - Tablet & Mobile optimized
+    const isMobileDevice = detectIsMobileOrTablet();
+    const renderer = new THREE.WebGLRenderer({ antialias: !isMobileDevice, preserveDrawingBuffer: true, alpha: true, powerPreference: 'high-performance' });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.setPixelRatio(isMobileDevice ? 1.0 : Math.min(window.devicePixelRatio || 1, 1.5));
+    renderer.shadowMap.enabled = !isMobileDevice;
+    renderer.shadowMap.type = THREE.BasicShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.1;
 
@@ -130,9 +132,9 @@ export const CharacterStudioModal: React.FC<CharacterStudioModalProps> = ({
 
     const directional = new THREE.DirectionalLight(0xfff5e6, 1.2);
     directional.position.set(3, 5, 4);
-    directional.castShadow = true;
-    directional.shadow.mapSize.width = 1024;
-    directional.shadow.mapSize.height = 1024;
+    directional.castShadow = !isMobileDevice;
+    directional.shadow.mapSize.width = isMobileDevice ? 512 : 1024;
+    directional.shadow.mapSize.height = isMobileDevice ? 512 : 1024;
     scene.add(directional);
 
     const point = new THREE.PointLight(0xf59e0b, 0.8, 10);
