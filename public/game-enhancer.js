@@ -17685,3 +17685,108 @@ window.__ensureLevelExitPortalExists = function(game) {
     window.__createCaveExitPortal(game, portalInfo.pos.x, portalInfo.pos.y, portalInfo.pos.z, portalInfo.next, portalInfo.name, portalInfo.icon);
   }
 };
+
+
+// ============================================================
+// UNIVERSAL BOX3 COLLIDER & CREATURE GROUNDING ENGINE
+// ============================================================
+window.__registerBox3Obstacle = function(meshOrGroup) {
+  if (!meshOrGroup || !window.THREE) return;
+  const game = window.__superBearGame;
+  if (!game || !game.currentLevel) return;
+  if (!game.currentLevel.colliders) game.currentLevel.colliders = [];
+  meshOrGroup.updateMatrixWorld(true);
+  const bbox = new window.THREE.Box3().setFromObject(meshOrGroup);
+  const col = {
+    min: bbox.min.clone(),
+    max: bbox.max.clone(),
+    isBox3Obstacle: true,
+    sourceMesh: meshOrGroup
+  };
+  game.currentLevel.colliders.push(col);
+  return col;
+};
+
+window.__alignCreaturesToGround = function(game) {
+  if (!game || !game.currentLevel || !window.THREE) return;
+  const THREE = window.THREE;
+  const colliders = [
+    ...(game.currentLevel.colliders || []),
+    ...(game.currentLevel.collisionBounds || [])
+  ];
+
+  function getGroundHeightAt(x, z, maxScanY = 30) {
+    let highest = 0;
+    for (const c of colliders) {
+      if (!c || !c.min || !c.max) continue;
+      if (c.isToxic) continue;
+      if (x >= c.min.x - 0.2 && x <= c.max.x + 0.2 && z >= c.min.z - 0.2 && z <= c.max.z + 0.2) {
+        if (c.max.y <= maxScanY && c.max.y > highest) {
+          highest = c.max.y;
+        }
+      }
+    }
+    return highest;
+  }
+
+  // 1. Align all NPCs registered in game.currentLevel.npcs
+  if (Array.isArray(game.currentLevel.npcs)) {
+    game.currentLevel.npcs.forEach(npc => {
+      if (!npc || !npc.mesh) return;
+      npc.mesh.updateMatrixWorld(true);
+      const bbox = new THREE.Box3().setFromObject(npc.mesh);
+      const groundY = getGroundHeightAt(npc.mesh.position.x, npc.mesh.position.z, bbox.max.y + 0.5);
+      if (bbox.min.y < groundY + 0.02) {
+        const lift = (groundY + 0.04) - bbox.min.y;
+        npc.mesh.position.y += lift;
+        if (npc.pos) npc.pos.y = npc.mesh.position.y;
+      }
+    });
+  }
+
+  // 2. Align friendly creatures from cat-bear-village-expansion & village-expansion
+  const allCreatures = [...(window.__animatedCreaturesList || []), ...(window.__villageFriendlyCreatures || [])];
+  if (Array.isArray(allCreatures)) {
+    allCreatures.forEach(c => {
+      const grp = c.group || c.mesh || c;
+      if (!grp || !grp.position) return;
+      grp.updateMatrixWorld(true);
+      const bbox = new THREE.Box3().setFromObject(grp);
+      const groundY = getGroundHeightAt(grp.position.x, grp.position.z, bbox.max.y + 0.5);
+      if (bbox.min.y < groundY + 0.02) {
+        const lift = (groundY + 0.04) - bbox.min.y;
+        grp.position.y += lift;
+      }
+    });
+  }
+  if (false) {
+    window.__animatedCreaturesList.forEach(c => {
+      const grp = c.group || c.mesh;
+      if (!grp) return;
+      grp.updateMatrixWorld(true);
+      const bbox = new THREE.Box3().setFromObject(grp);
+      const groundY = getGroundHeightAt(grp.position.x, grp.position.z, bbox.max.y + 0.5);
+      if (bbox.min.y < groundY + 0.02) {
+        const lift = (groundY + 0.04) - bbox.min.y;
+        grp.position.y += lift;
+      }
+    });
+  }
+};
+
+let lastCreatureAlignTime = 0;
+function creatureAlignTicker() {
+  const now = Date.now();
+  if (now - lastCreatureAlignTime > 1500) {
+    lastCreatureAlignTime = now;
+    if (window.__superBearGame) {
+      window.__alignCreaturesToGround(window.__superBearGame);
+    }
+  }
+  if (typeof requestAnimationFrame !== "undefined") {
+    requestAnimationFrame(creatureAlignTicker);
+  }
+}
+if (typeof requestAnimationFrame !== "undefined") {
+  requestAnimationFrame(creatureAlignTicker);
+}

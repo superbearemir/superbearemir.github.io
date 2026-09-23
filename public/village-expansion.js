@@ -13,7 +13,7 @@
 
   let villageExpansionGroup = null;
   let expansionColliders = [];
-  let friendlyCreatures = [];
+  let friendlyCreatures = []; window.__villageFriendlyCreatures = friendlyCreatures;
   let storyScrolls = [];
   let secretPassages = [];
   let windmillBlades = null;
@@ -695,7 +695,7 @@
 
     // Playful Kittens in East Garden 🐾
     const kittenMia = createKittenMesh(THREE, 0xf97316);
-    kittenMia.position.set(60, 1.5, -12);
+    kittenMia.position.set(60, 1.95, -12);
     kittenMia.rotation.y = 0.6;
     villageExpansionGroup.add(kittenMia);
     bouncingKittens.push(kittenMia);
@@ -721,7 +721,7 @@
 
     // Swimming Otter in Lotus Pond 🦦
     swimmingOtter = createOtterMesh(THREE);
-    swimmingOtter.position.set(65, 1.4, 5);
+    swimmingOtter.position.set(65, 1.45, 5);
     villageExpansionGroup.add(swimmingOtter);
     friendlyCreatures.push({
       id: 'npc_otter_findik',
@@ -811,7 +811,7 @@
 
     // Wise Healer Turtle Tonton (West Farm, x: -60, z: 28) 🐢
     healingTurtle = createTurtleMesh(THREE);
-    healingTurtle.position.set(-60, 0.8, 28);
+    healingTurtle.position.set(-60, 1.05, 28);
     healingTurtle.rotation.y = 2.4;
     villageExpansionGroup.add(healingTurtle);
     friendlyCreatures.push({
@@ -841,7 +841,7 @@
 
     // Faithful Dog Çakıl (Farm cottage, x: -85, z: -15) 🐶
     const puppyCakil = createPuppyMesh(THREE);
-    puppyCakil.position.set(-85, 0.8, -15);
+    puppyCakil.position.set(-85, 1.25, -15);
     puppyCakil.rotation.y = 1.2;
     villageExpansionGroup.add(puppyCakil);
     friendlyCreatures.push({

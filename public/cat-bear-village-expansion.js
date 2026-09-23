@@ -673,7 +673,7 @@
 
     // 2. Minik Kirpi Pıtırcık 🦔 (Meyve Bahçesinde)
     const hedgehogGrp = new THREE.Group();
-    hedgehogGrp.position.set(45, 3.8, -16);
+    hedgehogGrp.position.set(45, 4.05, -16);
     hedgehogGrp.name = 'creature_hedgehog_pitircik';
 
     const hBody = new THREE.Mesh(new THREE.SphereGeometry(0.5, 10, 8), new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.9 }));
@@ -747,7 +747,7 @@
 
     // 4. Nehir Samuru Neşeli Çapkın 🦦 (Nilüfer Kordonunda)
     const otterGrp = new THREE.Group();
-    otterGrp.position.set(-8, 0.5, 36);
+    otterGrp.position.set(-8, 0.95, 36);
     otterGrp.name = 'creature_otter_capkin';
 
     const otterBody = new THREE.Mesh(new THREE.CapsuleGeometry(0.42, 1.1, 8, 10), new THREE.MeshStandardMaterial({ color: 0x5c2b08, roughness: 0.6 }));
@@ -995,7 +995,7 @@
 
     // Check if player is near base ground (y <= 0.2) or on colliders
     if (pPos.y <= 0.15 && pVel.y <= 0) {
-      pPos.y = 0.1;
+      pPos.y = 0.05;
       pVel.y = 0;
       game.isGrounded = true;
       game.jumpCount = 0;
