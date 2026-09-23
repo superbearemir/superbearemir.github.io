@@ -2990,13 +2990,37 @@
   }
 
   // --- PONEİX TICK LOOP ---
+  let _poneixLoopActive = false;
+  let _lastPoneixTick = 0;
+
   function updatePoneixLoop() {
-    requestAnimationFrame(updatePoneixLoop);
+    _poneixLoopActive = true;
+    let nextDelay = 0;
 
     try {
       const game = window.__superBearGame;
-      if (!game || !game.playerPos) return;
-      if (!game.currentRegion || !PONEIX_LEVEL_MAP[game.currentRegion]) return;
+      if (!game || !game.playerPos || !game.currentRegion || !PONEIX_LEVEL_MAP[game.currentRegion]) {
+        nextDelay = 300; // Back off to 300ms when not in a poneix region
+        return;
+      }
+
+      const now = performance.now();
+      const isMob = (typeof navigator !== "undefined" && (
+        /android|tablet|ipad|iphone|ipod|wv|appcreator24/i.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ||
+        navigator.maxTouchPoints > 0
+      ));
+      if (now - _lastPoneixTick < (isMob ? 33.3 : 20)) {
+        nextDelay = 0;
+        return;
+      }
+      _lastPoneixTick = now;
+
+      if (game.isPaused || window.__superBearPaused || window.__superBearModalOpen || (typeof document !== 'undefined' && document.hidden)) {
+        nextDelay = 150;
+        return;
+      }
+
       const pPos = game.playerPos;
 
     if (isCutscenePlaying) {
@@ -3315,6 +3339,12 @@
     }
   } catch (err) {
     console.warn("Poneix loop tick error:", err);
+  } finally {
+    if (nextDelay > 0) {
+      setTimeout(updatePoneixLoop, nextDelay);
+    } else {
+      requestAnimationFrame(updatePoneixLoop);
+    }
   }
 }
 
@@ -3327,7 +3357,9 @@
     PONEIX_LEVEL_IDS
   };
 
-  requestAnimationFrame(updatePoneixLoop);
+  if (!_poneixLoopActive) {
+    updatePoneixLoop();
+  }
 
   function hookIntoGame() {
     const game = window.__superBearGame;

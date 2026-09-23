@@ -337,48 +337,15 @@ window.__superBearPurgeScene = function(game) {
     if (!game) game = window.__superBearGame;
     if (!game || !game.scene) return;
     console.log("🧹 [Universal Purge] Deep cleaning previous scene objects, colliders and states...");
-
-    function disposeHierarchy(obj) {
-      if (!obj) return;
-      if (obj.geometry) {
-        try { obj.geometry.dispose(); } catch(e) {}
-      }
-      if (obj.material) {
-        if (Array.isArray(obj.material)) {
-          obj.material.forEach(m => {
-            if (m && m.map) try { m.map.dispose(); } catch(e) {}
-            if (m) try { m.dispose(); } catch(e) {}
-          });
-        } else {
-          if (obj.material.map) try { obj.material.map.dispose(); } catch(e) {}
-          try { obj.material.dispose(); } catch(e) {}
-        }
-      }
-      if (obj.children && obj.children.length > 0) {
-        for (let i = obj.children.length - 1; i >= 0; i--) {
-          disposeHierarchy(obj.children[i]);
-        }
-      }
-    }
-
     if (game._returnPortals) {
-        game._returnPortals.forEach(p => {
-          if (p) {
-            disposeHierarchy(p);
-            if (p.parent) p.parent.remove(p);
-          }
-        });
+        game._returnPortals.forEach(p => { if (p && p.parent) p.parent.remove(p); });
         game._returnPortals = [];
     }
     if (game._caveExitPortals) {
-        game._caveExitPortals.forEach(p => {
-          if (p) {
-            disposeHierarchy(p);
-            if (p.parent) p.parent.remove(p);
-          }
-        });
+        game._caveExitPortals.forEach(p => { if (p && p.parent) p.parent.remove(p); });
         game._caveExitPortals = [];
     }
+
 
     // 1. Clean up Space Realm if active
     if (window.__superBearSpaceLevels && typeof window.__superBearSpaceLevels.cleanUpSpaceRealm === 'function') {
@@ -397,10 +364,7 @@ window.__superBearPurgeScene = function(game) {
         removeGrandWaterfall(game.scene);
     } else if (game.scene) {
         const wf = game.scene.getObjectByName("grand_waterfall_hub_group");
-        if (wf) {
-          disposeHierarchy(wf);
-          game.scene.remove(wf);
-        }
+        if (wf) game.scene.remove(wf);
     }
 
     // 2. Hide all boss health bars
@@ -421,20 +385,15 @@ window.__superBearPurgeScene = function(game) {
 
     // 4. Clean up currentLevel objects & colliders
     if (game.currentLevel) {
-        if (game.currentLevel.mesh) {
-            disposeHierarchy(game.currentLevel.mesh);
-            if (game.currentLevel.mesh.parent) game.currentLevel.mesh.parent.remove(game.currentLevel.mesh);
+        if (game.currentLevel.mesh && game.currentLevel.mesh.parent) {
+            game.currentLevel.mesh.parent.remove(game.currentLevel.mesh);
         }
-        if (game.currentLevel.sceneGroup) {
-            disposeHierarchy(game.currentLevel.sceneGroup);
-            if (game.currentLevel.sceneGroup.parent) game.currentLevel.sceneGroup.parent.remove(game.currentLevel.sceneGroup);
+        if (game.currentLevel.sceneGroup && game.currentLevel.sceneGroup.parent) {
+            game.currentLevel.sceneGroup.parent.remove(game.currentLevel.sceneGroup);
         }
         if (game.currentLevel.invisibleWallMeshes && Array.isArray(game.currentLevel.invisibleWallMeshes)) {
             ((game.currentLevel && game.currentLevel.invisibleWallMeshes) || []).forEach(m => {
-                if (m) {
-                  disposeHierarchy(m);
-                  if (m.parent) m.parent.remove(m);
-                }
+                if (m && m.parent) m.parent.remove(m);
             });
         }
         game.currentLevel.colliders = [];
@@ -494,7 +453,6 @@ window.__superBearPurgeScene = function(game) {
         });
 
         toRemove.forEach(c => {
-            disposeHierarchy(c);
             if (c.parent) c.parent.remove(c);
             else game.scene.remove(c);
         });
@@ -7896,18 +7854,38 @@ window.addEventListener('superbear:teleport-sugar', () => {
     teleportToSugarWorld();
 });
 
-let _lastSpaceLoopTime = 0;
-function updateSpaceLoop(timestamp) {
+// 🚀 Single-instance guard and FPS throttle for Mobile / WebView / AppCreator24
+let _spaceLoopRunning = false;
+let _lastSpaceTickTime = 0;
+
+function updateSpaceLoop() {
+  _spaceLoopRunning = true;
+  let nextDelay = 0;
+
   try {
-    const now = timestamp || (typeof performance !== 'undefined' ? performance.now() : Date.now());
-    if (now - _lastSpaceLoopTime < 33) {
-      requestAnimationFrame(updateSpaceLoop);
+    const game = window.__superBearGame;
+    if (!game || !game.scene) {
+      nextDelay = 200;
       return;
     }
-    _lastSpaceLoopTime = now;
 
-    const game = window.__superBearGame;
-    if (!game) {
+    // FPS Limiter for Mobile / WebView / Low-end CPU (max 30-40 FPS for enhancer background loop)
+    const now = performance.now();
+    const isMobileDevice = (typeof navigator !== "undefined" && (
+      /android|tablet|ipad|iphone|ipod|wv|appcreator24/i.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ||
+      navigator.maxTouchPoints > 0
+    ));
+    const targetInterval = isMobileDevice ? 33.3 : 22.2; // 30 FPS on mobile, 45 FPS on desktop
+    if (now - _lastSpaceTickTime < targetInterval) {
+      nextDelay = 0;
+      return;
+    }
+    _lastSpaceTickTime = now;
+
+    // Check if game is paused, modal open, or document is hidden in background
+    if (game.isPaused || window.__superBearPaused || window.__superBearModalOpen || (typeof document !== 'undefined' && document.hidden)) {
+      nextDelay = 150;
       return;
     }
   // 🌊 Grand Waterfall maintainer in Ayı Köyü (Hub)
@@ -13054,7 +13032,11 @@ function updateSpaceLoop(timestamp) {
   } catch (err) {
     console.warn("Game enhancer loop tick error:", err);
   } finally {
-    requestAnimationFrame(updateSpaceLoop);
+    if (nextDelay > 0) {
+      setTimeout(updateSpaceLoop, nextDelay);
+    } else {
+      requestAnimationFrame(updateSpaceLoop);
+    }
   }
 }
 
@@ -16384,7 +16366,9 @@ function enhanceGame() {
   if (typeof buildGrandWaterfall === 'function' && (game.currentRegion === 'hub' || !game.currentRegion)) {
     buildGrandWaterfall(game.scene);
   }
-  updateSpaceLoop();
+  if (!_spaceLoopRunning) {
+    updateSpaceLoop();
+  }
 
   // Jump helper function
 function triggerJump() {

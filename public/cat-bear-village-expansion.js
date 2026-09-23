@@ -1068,13 +1068,47 @@
   // HOOK INTO GAME RUNTIME LOOP
   // ==========================================================================
   function initModuleHook() {
+    let _lastCatBearTick = 0;
+
     function tick() {
-      const game = window.__superBearGame;
-      if (game) {
+      let nextDelay = 0;
+
+      try {
+        const game = window.__superBearGame;
+        if (!game || !game.scene || (game.currentRegion && game.currentRegion !== 'hub')) {
+          nextDelay = 300;
+          return;
+        }
+
+        const now = performance.now();
+        const isMob = (typeof navigator !== "undefined" && (
+          /android|tablet|ipad|iphone|ipod|wv|appcreator24/i.test(navigator.userAgent) ||
+          (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ||
+          navigator.maxTouchPoints > 0
+        ));
+        if (now - _lastCatBearTick < (isMob ? 33.3 : 20)) {
+          nextDelay = 0;
+          return;
+        }
+        _lastCatBearTick = now;
+
+        if (game.isPaused || window.__superBearPaused || window.__superBearModalOpen || (typeof document !== 'undefined' && document.hidden)) {
+          nextDelay = 150;
+          return;
+        }
+
         updateGrandVillageExpansion(game);
+      } catch (err) {
+        console.warn("Cat-bear village expansion error:", err);
+      } finally {
+        if (nextDelay > 0) {
+          setTimeout(tick, nextDelay);
+        } else {
+          requestAnimationFrame(tick);
+        }
       }
-      requestAnimationFrame(tick);
     }
+
     requestAnimationFrame(tick);
   }
 

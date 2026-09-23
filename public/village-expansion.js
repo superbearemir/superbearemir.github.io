@@ -1178,15 +1178,52 @@
   });
 
   // Continuous animation loop tick
+  let _villageTickRunning = false;
+  let _lastVillageTick = 0;
+
   function tick() {
+    _villageTickRunning = true;
+    let nextDelay = 0;
+
     try {
+      const game = window.__superBearGame;
+      if (!game || !game.playerPos || !game.scene || (game.currentRegion && game.currentRegion !== 'hub')) {
+        nextDelay = 300; // Back off to 300ms when not in village/hub
+        return;
+      }
+
+      const now = performance.now();
+      const isMob = (typeof navigator !== "undefined" && (
+        /android|tablet|ipad|iphone|ipod|wv|appcreator24/i.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ||
+        navigator.maxTouchPoints > 0
+      ));
+      if (now - _lastVillageTick < (isMob ? 33.3 : 20)) {
+        nextDelay = 0;
+        return;
+      }
+      _lastVillageTick = now;
+
+      if (game.isPaused || window.__superBearPaused || window.__superBearModalOpen || (typeof document !== 'undefined' && document.hidden)) {
+        nextDelay = 150;
+        return;
+      }
+
       updateVillageExpansionEngine();
     } catch (e) {
       console.warn("Village expansion tick error:", e);
+    } finally {
+      if (nextDelay > 0) {
+        setTimeout(tick, nextDelay);
+      } else {
+        requestAnimationFrame(tick);
+      }
     }
-    requestAnimationFrame(tick);
   }
-  requestAnimationFrame(tick);
+
+  if (!_villageTickRunning) {
+    tick();
+  }
 
   // Keydown listener for [E] / interact key
   window.addEventListener('keydown', (e) => {

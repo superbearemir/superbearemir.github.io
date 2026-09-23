@@ -12,13 +12,23 @@ import { LanguageProvider } from './i18n/LanguageContext';
 // Start Anti-Lag Mobile / Tablet Performance Engine
 initMobilePerformanceOptimizer();
 
-const portalEl = document.getElementById('customizer-portal');
-if (portalEl) {
-  const root = ReactDOM.createRoot(portalEl);
-  root.render(
-    <LanguageProvider>
-      <CustomizerAppOverlay />
-    </LanguageProvider>
-  );
+function mountCustomizer() {
+  const portalEl = document.getElementById('customizer-portal');
+  if (portalEl && !portalEl.hasChildNodes()) {
+    const root = ReactDOM.createRoot(portalEl);
+    root.render(
+      <React.StrictMode>
+        <LanguageProvider>
+          <CustomizerAppOverlay />
+        </LanguageProvider>
+      </React.StrictMode>
+    );
+  }
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', mountCustomizer, { once: true });
+} else {
+  mountCustomizer();
 }
 

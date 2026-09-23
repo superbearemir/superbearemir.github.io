@@ -212,8 +212,6 @@
       this.baseFogColor = 0x88bbff;
       this.baseFogDensity = 0.02;
 
-      // Store pre-bound render function to avoid GC closure allocations in RAF
-      this._boundRenderLoop = this.renderLoop.bind(this);
       this.initialized = false;
     }
 
@@ -241,6 +239,7 @@
 
       // Start global weather loop
       this.lastFrameTime = performance.now();
+      this._boundRenderLoop = this.renderLoop.bind(this);
       requestAnimationFrame(this._boundRenderLoop);
     }
 
@@ -248,26 +247,16 @@
       if (!window.THREE || !game || !game.scene) return;
       const THREE = window.THREE;
 
-      // Dispose existing particle geometries and materials to prevent GPU VRAM memory leaks
       if (this.weatherGroup) {
-        try {
-          this.weatherGroup.traverse((child) => {
-            if (child.geometry) child.geometry.dispose();
-            if (child.material) {
-              if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
-              else child.material.dispose();
-            }
-          });
-          game.scene.remove(this.weatherGroup);
-        } catch(e) {}
+        try { game.scene.remove(this.weatherGroup); } catch(e) {}
       }
 
       this.weatherGroup = new THREE.Group();
       this.weatherGroup.name = 'superbear_dynamic_weather_system';
       game.scene.add(this.weatherGroup);
 
-      // 1. OPTIMIZED RAIN SYSTEM (280 line streaks - 80% lighter GPU load)
-      const rainCount = 280;
+      // 1. RAIN SYSTEM (1500 line streaks)
+      const rainCount = 1400;
       const rainGeo = new THREE.BufferGeometry();
       const rainPos = new Float32Array(rainCount * 3);
       for (let i = 0; i < rainCount; i++) {
@@ -280,9 +269,9 @@
 
       const rainMat = new THREE.PointsMaterial({
         color: 0x93c5fd,
-        size: 0.45,
+        size: 0.35,
         transparent: true,
-        opacity: 0.8,
+        opacity: 0.75,
         blending: THREE.AdditiveBlending,
         depthWrite: false
       });
@@ -290,8 +279,8 @@
       this.rainMesh.visible = false;
       this.weatherGroup.add(this.rainMesh);
 
-      // 2. OPTIMIZED SNOW SYSTEM (220 soft snowflakes)
-      const snowCount = 220;
+      // 2. SNOW SYSTEM (1200 soft snowflakes)
+      const snowCount = 1200;
       const snowGeo = new THREE.BufferGeometry();
       const snowPos = new Float32Array(snowCount * 3);
       this.snowVelocities = new Float32Array(snowCount * 3);
@@ -308,7 +297,7 @@
 
       const snowMat = new THREE.PointsMaterial({
         color: 0xffffff,
-        size: 0.65,
+        size: 0.55,
         transparent: true,
         opacity: 0.85,
         depthWrite: false
@@ -317,8 +306,8 @@
       this.snowMesh.visible = false;
       this.weatherGroup.add(this.snowMesh);
 
-      // 3. OPTIMIZED MYSTIC PARTICLES (140 Embers, Bubbles, Spores, Pollen)
-      const mysticCount = 140;
+      // 3. MYSTIC PARTICLES (Embers, Bubbles, Spores, Pollen, Golden Dust, Stardust)
+      const mysticCount = 900;
       const mysticGeo = new THREE.BufferGeometry();
       const mysticPos = new Float32Array(mysticCount * 3);
       this.mysticVelocities = new Float32Array(mysticCount * 3);
@@ -335,7 +324,7 @@
 
       const mysticMat = new THREE.PointsMaterial({
         color: 0xfef08a,
-        size: 0.7,
+        size: 0.65,
         transparent: true,
         opacity: 0.85,
         blending: THREE.AdditiveBlending,
@@ -345,7 +334,7 @@
       this.mysticMesh.visible = false;
       this.weatherGroup.add(this.mysticMesh);
 
-      // 4. VOLUMETRIC FOG CLOUDS (Soft drifting atmosphere clouds - 6 low-poly spheres)
+      // 4. VOLUMETRIC FOG CLOUDS (Soft drifting atmosphere clouds)
       this.fogCloudsGroup = new THREE.Group();
       this.fogCloudsGroup.name = 'superbear_fog_clouds';
       const cloudMat = new THREE.MeshBasicMaterial({
@@ -355,9 +344,9 @@
         depthWrite: false
       });
       const cloudGeo = new THREE.SphereGeometry(6, 6, 6);
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < 16; i++) {
         const cloud = new THREE.Mesh(cloudGeo, cloudMat);
-        const angle = (i / 6) * Math.PI * 2;
+        const angle = (i / 16) * Math.PI * 2;
         const radius = 22 + Math.random() * 18;
         cloud.position.set(Math.cos(angle) * radius, 2 + Math.random() * 8, Math.sin(angle) * radius);
         cloud.scale.set(1.8 + Math.random(), 0.6 + Math.random() * 0.4, 1.8 + Math.random());
@@ -486,13 +475,36 @@
     }
 
     renderLoop(timestamp) {
-      requestAnimationFrame(this._boundRenderLoop);
+      const scheduleNext = (delay) => {
+        if (delay) setTimeout(this._boundRenderLoop, delay);
+        else requestAnimationFrame(this._boundRenderLoop);
+      };
+
+      const game = window.__superBearGame;
+      if (!game || !game.scene || !this.weatherGroup) {
+        scheduleNext(300);
+        return;
+      }
+
+      if (game.isPaused || window.__superBearPaused || window.__superBearModalOpen || (typeof document !== 'undefined' && document.hidden)) {
+        scheduleNext(200);
+        return;
+      }
+
+      const isMob = (typeof navigator !== "undefined" && (
+        /android|tablet|ipad|iphone|ipod|wv|appcreator24/i.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ||
+        navigator.maxTouchPoints > 0
+      ));
+      if (timestamp - this.lastFrameTime < (isMob ? 33.3 : 16.6)) {
+        scheduleNext();
+        return;
+      }
+
+      scheduleNext();
 
       const dt = Math.min((timestamp - this.lastFrameTime) / 1000, 0.1);
       this.lastFrameTime = timestamp;
-
-      const game = window.__superBearGame;
-      if (!game || !game.scene || !this.weatherGroup) return;
 
       // Auto weather cycle timer
       if (this.isAutoCycleEnabled && Date.now() - this.lastCycleTime > this.cycleIntervalSeconds * 1000) {

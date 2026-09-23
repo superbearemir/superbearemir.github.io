@@ -3367,13 +3367,37 @@ function createDarkLordBoss(game, scene, spawnPos) {
   }
 
   // --- TICK LOOP FOR SPACE HAZARDS, PLATFORMS & BOSS AI ---
+  let _spaceLevelsLoopActive = false;
+  let _lastSpaceLevelsTick = 0;
+
   function updateSpaceLevelsLoop() {
-    requestAnimationFrame(updateSpaceLevelsLoop);
+    _spaceLevelsLoopActive = true;
+    let nextDelay = 0;
 
     try {
       const game = window.__superBearGame;
-      if (!game || !game.playerPos) return;
-      if (!game.currentRegion || !SPACE_LEVEL_MAP[game.currentRegion]) return;
+      if (!game || !game.playerPos || !game.currentRegion || !SPACE_LEVEL_MAP[game.currentRegion]) {
+        nextDelay = 300; // Back off to 300ms when not in a space region
+        return;
+      }
+
+      const now = performance.now();
+      const isMob = (typeof navigator !== "undefined" && (
+        /android|tablet|ipad|iphone|ipod|wv|appcreator24/i.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1) ||
+        navigator.maxTouchPoints > 0
+      ));
+      if (now - _lastSpaceLevelsTick < (isMob ? 33.3 : 20)) {
+        nextDelay = 0;
+        return;
+      }
+      _lastSpaceLevelsTick = now;
+
+      if (game.isPaused || window.__superBearPaused || window.__superBearModalOpen || (typeof document !== 'undefined' && document.hidden)) {
+        nextDelay = 150;
+        return;
+      }
+
       const pPos = game.playerPos;
 
       // Decrement iframe timer
@@ -3872,6 +3896,12 @@ function createDarkLordBoss(game, scene, spawnPos) {
     }
   } catch (err) {
     console.warn("Space loop tick error:", err);
+  } finally {
+    if (nextDelay > 0) {
+      setTimeout(updateSpaceLevelsLoop, nextDelay);
+    } else {
+      requestAnimationFrame(updateSpaceLevelsLoop);
+    }
   }
 }
 
@@ -3893,7 +3923,9 @@ function createDarkLordBoss(game, scene, spawnPos) {
     }
   });
 
-  requestAnimationFrame(updateSpaceLevelsLoop);
+  if (!_spaceLevelsLoopActive) {
+    updateSpaceLevelsLoop();
+  }
 
   // Hook into game.loadRegion
   function hookIntoGame() {

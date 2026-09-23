@@ -48,7 +48,7 @@ export function detectIsTablet(): boolean {
 export function detectIsMobileOrTablet(): boolean {
   if (typeof window === 'undefined') return false;
   const ua = (navigator.userAgent || '').toLowerCase();
-  const isMobileUa = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet|silk|kindle/i.test(ua);
+  const isMobileUa = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet|silk|kindle|wv|appcreator24/i.test(ua);
   const isIpadOS = (navigator.platform === 'MacIntel' || navigator.platform === 'Macintosh') && navigator.maxTouchPoints > 1;
   const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
   const isMobileScreen = Math.min(window.innerWidth, window.innerHeight) <= 950 || Math.max(window.innerWidth, window.innerHeight) <= 1400;
@@ -56,21 +56,32 @@ export function detectIsMobileOrTablet(): boolean {
   return isMobileUa || isIpadOS || (hasTouch && isMobileScreen);
 }
 
+/**
+ * Detection of WebViews (AppCreator24, Android System WebView, Cordova, Capacitor)
+ */
+export function detectIsWebView(): boolean {
+  if (typeof window === 'undefined') return false;
+  const ua = (navigator.userAgent || '').toLowerCase();
+  return /wv|appcreator24|crosswalk|android.*version\/[0-9.]+/i.test(ua) || (window as any).__isAppCreator24 === true;
+}
+
 const isTablet = detectIsTablet();
 const isMobileOrTab = detectIsMobileOrTablet();
+const isWebViewDevice = detectIsWebView();
 
-// Stored preferences with tablet-first defaults
+// Stored preferences with tablet/mobile/webview defaults
 const savedProfile = localStorage.getItem('super_bear_perf_profile') as QualityProfile | null;
-const initialProfile: QualityProfile = savedProfile || (isMobileOrTab ? 'smooth60' : 'balanced');
+const initialProfile: QualityProfile = savedProfile || (isWebViewDevice ? 'batterySaver' : isMobileOrTab ? 'smooth60' : 'balanced');
 
 const savedShadows = localStorage.getItem('super_bear_shadows_enabled');
-const initialShadows = savedShadows !== null ? savedShadows === 'true' : !isMobileOrTab;
+// Shadows are OFF by default on mobile and WebViews to ensure smooth 60fps and prevent GPU freezes in AppCreator24
+const initialShadows = savedShadows !== null ? savedShadows === 'true' : (!isMobileOrTab && !isWebViewDevice);
 
 const state: PerformanceState = {
   currentProfile: initialProfile,
-  currentPixelRatio: isMobileOrTab ? 1.0 : Math.min(window.devicePixelRatio || 1, 1.5),
+  currentPixelRatio: (isMobileOrTab || isWebViewDevice) ? 1.0 : Math.min(window.devicePixelRatio || 1, 1.5),
   avgFps: 60,
-  isMobileDevice: isMobileOrTab,
+  isMobileDevice: isMobileOrTab || isWebViewDevice,
   isTabletDevice: isTablet,
   shadowsEnabled: initialShadows,
   isOptimized: false,
