@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { RotateCw, Smartphone, X } from 'lucide-react';
+import { requestImmersiveFullscreen } from '../utils/fullscreenHelper';
 
 export const LandscapeOrientationHandler: React.FC = () => {
   const [isPortrait, setIsPortrait] = useState<boolean>(() => {
@@ -45,14 +46,7 @@ export const LandscapeOrientationHandler: React.FC = () => {
   }, []);
 
   const handleTryRotate = () => {
-    if (window.screen && window.screen.orientation && typeof (window.screen.orientation as any).lock === 'function') {
-      try {
-        (window.screen.orientation as any).lock('landscape').catch(() => {});
-      } catch (e) {}
-    }
-    if (document.documentElement.requestFullscreen) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    }
+    requestImmersiveFullscreen();
   };
 
   if (!isPortrait) return null;

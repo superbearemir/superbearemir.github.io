@@ -16,11 +16,9 @@ const portalEl = document.getElementById('customizer-portal');
 if (portalEl) {
   const root = ReactDOM.createRoot(portalEl);
   root.render(
-    <React.StrictMode>
-      <LanguageProvider>
-        <CustomizerAppOverlay />
-      </LanguageProvider>
-    </React.StrictMode>
+    <LanguageProvider>
+      <CustomizerAppOverlay />
+    </LanguageProvider>
   );
 }
 

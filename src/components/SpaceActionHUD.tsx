@@ -24,8 +24,14 @@ import {
   Cpu,
   ShieldCheck,
   Flame,
-  Layers
+  Layers,
+  Maximize,
+  Minimize
 } from 'lucide-react';
+import { 
+  toggleImmersiveFullscreen, 
+  isFullscreenActive 
+} from '../utils/fullscreenHelper';
 import { 
   QualityProfile, 
   optimizeGameRenderer, 
@@ -87,6 +93,19 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
   const [saveFlash, setSaveFlash] = useState(false);
   const [activeMusicTrack, setActiveMusicTrack] = useState<string>('hub');
   const [isGameMuted, setIsGameMuted] = useState<boolean>(false);
+  const [isFullscreen, setIsFullscreen] = useState<boolean>(() => isFullscreenActive());
+
+  useEffect(() => {
+    const handleFsChange = () => {
+      setIsFullscreen(isFullscreenActive());
+    };
+    window.addEventListener('superbear:fullscreen-change', handleFsChange);
+    document.addEventListener('fullscreenchange', handleFsChange);
+    return () => {
+      window.removeEventListener('superbear:fullscreen-change', handleFsChange);
+      document.removeEventListener('fullscreenchange', handleFsChange);
+    };
+  }, []);
 
   const GAME_MUSIC_TRACKS = [
     { id: 'hub', title: '🌸 1. Huzurlu Ayı Vadisi (Sakin)', genre: 'Dingin Akustik Lofi (Sakin Ses)' },
@@ -887,6 +906,25 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
               )}
             </button>
           )}
+
+          {/* Immersive Fullscreen Toggle Button */}
+          <button
+            onClick={() => toggleImmersiveFullscreen()}
+            title={isFullscreen ? 'Tam Ekrandan Çık' : 'Tam Ekran Modu (Bildirim ve Tuş Çubuğunu Gizle)'}
+            className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-700 to-indigo-800 text-white border border-purple-400/80 hover:border-amber-300 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-purple-600 hover:to-indigo-700"
+          >
+            {isFullscreen ? (
+              <>
+                <Minimize className="w-3.5 h-3.5 text-amber-300" />
+                <span className="hidden sm:inline">Pencere</span>
+              </>
+            ) : (
+              <>
+                <Maximize className="w-3.5 h-3.5 text-amber-300" />
+                <span className="hidden sm:inline">Tam Ekran</span>
+              </>
+            )}
+          </button>
 
           {/* Quick Save & Progress Manager Button */}
           <button

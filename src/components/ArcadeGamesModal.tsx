@@ -11,9 +11,20 @@ import {
   Calendar,
   Flame,
   CheckCircle2,
-  Gift
+  Gift,
+  Maximize,
+  Minimize,
+  ArrowUp,
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight
 } from 'lucide-react';
 import { useLanguage } from '../i18n/LanguageContext';
+import { 
+  requestImmersiveFullscreen, 
+  toggleImmersiveFullscreen, 
+  isFullscreenActive 
+} from '../utils/fullscreenHelper';
 
 interface ArcadeGamesModalProps {
   isOpen: boolean;
@@ -64,6 +75,11 @@ export const ARCADE_TRANSLATIONS: Record<string, {
   footerTitle: string;
   footerDesc: string;
   closeBtn: string;
+  fullscreenBtn: string;
+  swipeOrDpad: string;
+  tapToStart: string;
+  jumpBtn: string;
+  shootBtn: string;
   games: Record<ArcadeGameId, {
     title: string;
     subtitle: string;
@@ -81,7 +97,7 @@ export const ARCADE_TRANSLATIONS: Record<string, {
     tabAll: 'Tüm 10 Atari Oyunu',
     tabSubtitle: 'Her Gün Yepyeni Oyunlar & 2X Çifte Kazanç!',
     liveScore: 'Canlı Skor',
-    changeGame: '◀ Oyun Değiştir',
+    changeGame: '◀ Oyunlar',
     howToPlay: 'Nasıl Oynanır?',
     gameOver: 'Oyun Bitti!',
     highScore: 'En Yüksek Skor',
@@ -92,481 +108,221 @@ export const ARCADE_TRANSLATIONS: Record<string, {
     footerTitle: '🎁 Günlük Atari Ödül Sistemi:',
     footerDesc: 'Her gün atari salonunu ziyaret et, günün 2X oyununu oyna ve bolca Altın ile Atari Jetonu topla!',
     closeBtn: 'Kapat',
+    fullscreenBtn: 'Tam Ekran',
+    swipeOrDpad: '🕹️ Ekranda Kaydır veya D-Pad Tuşlarını Kullan!',
+    tapToStart: 'Başlamak İçin Ekrana veya Tuşa Dokun!',
+    jumpBtn: 'ZIPLA',
+    shootBtn: 'ATEŞ',
     games: {
       honey_rush: {
         title: 'Bal & Altın Koşusu',
         subtitle: 'Hızlı Koşu & Engelden Kaçış',
         badge: 'Refleks & Hız',
         description: 'Ayımızla koşarken dikenli kutulardan ve kayalardan kaçın, parıldayan altın petekleri ve bal kavanozlarını toplayarak rekor kır!',
-        rules: ['Boşluk veya Tık: Zıpla', 'Bal Kavanozu: +10 Puan', 'Altın Petek: +25 Puan', 'Çarparsan oyun biter!']
+        rules: ['Boşluk, Tık veya ZIPLA Tuşu: Zıpla', 'Bal Kavanozu: +10 Puan', 'Altın Petek: +25 Puan', 'Çarparsan oyun biter!']
       },
       bubble_jump: {
         title: 'Baloncuk Zıplama & Patlatma',
         subtitle: 'Gökyüzü Baloncuk Trambolini',
         badge: 'Zamanlama & Kombo',
         description: 'Yükselen renkli su baloncuklarının üzerine basarak yukarı zıpla! Baloncukları tam zamanında patlatıp gökyüzü bulutlarına ulaş!',
-        rules: ['Sol/Sağ Tuşları veya Mouse: Hareket et', 'Baloncuğa bas: Süper Zıplama', 'Gökkuşağı Balon: +50 Puan', 'Aşağı düşme!']
+        rules: ['Ekranda Kaydır veya Sol/Sağ: Hareket et', 'Baloncuğa bas: Süper Zıplama', 'Gökkuşağı Balon: +50 Puan', 'Aşağı düşme!']
       },
       space_invaders: {
         title: 'Galaktik Ayı İstilası',
         subtitle: 'Kozmik Atari & Lazer Savaşı',
         badge: 'Kozmik Savaş',
         description: 'Uzay gemini yönlendir, dalga dalga inen mutant uzay arılarını ve UFO patronlarını lazer atışlarıyla patlat!',
-        rules: ['Mouse veya Sol/Sağ: Hareket', 'Boşluk veya Tık: Lazer Ateşle', 'Düşman Arı: +20 Puan', 'UFO Boss: +60 Puan']
+        rules: ['Ekranda Kaydır veya Sol/Sağ: Hareket', 'ATEŞ Tuşu, Boşluk veya Tık: Ateş Et', 'Düşman Arı: +20 Puan', 'UFO Boss: +60 Puan']
       },
       flappy_bear: {
         title: 'Uçan Bal Ayısı',
         subtitle: 'Kanat Çırp & Bal Peteği Uçuşu',
         badge: 'Beceri & Uçuş',
         description: 'Küçük peri kanatlarını çırparak bal sütunları ve bambu engelleri arasından süzül! En uzak mesafeye uç!',
-        rules: ['Tık veya Boşluk: Kanat Çırp', 'Engellerin arasından geç: +10 Puan', 'Ortadaki Bal: +25 Puan', 'Zemine veya direğe çarpma!']
+        rules: ['Tık, Boşluk veya KANAT Tuşu: Kanat Çırp', 'Engellerin arasından geç: +10 Puan', 'Ortadaki Bal: +25 Puan', 'Zemine veya direğe çarpma!']
       },
       brick_breaker: {
         title: 'Bal Tuğlası Kırıcı',
         subtitle: 'Klasik Arkanoid & Enerji Topu',
         badge: 'Retro Kırıcı',
         description: 'Paleti kontrol et, enerji küresini sektirerek renkli bal peteklerini ve şeker tuğlalarını kır!',
-        rules: ['Mouse veya Sol/Sağ Tuşlar: Raket', 'Kırılan Her Tuğla: +15 Puan', 'Hepsini temizle: +200 Bonus', 'Topu düşürme!']
+        rules: ['Ekranda Kaydır veya Sol/Sağ: Raket', 'Kırılan Her Tuğla: +15 Puan', 'Hepsini temizle: +200 Bonus', 'Topu düşürme!']
       },
       bear_snake: {
         title: 'Çilek Avcısı Piksel Yılan',
         subtitle: 'Efsanevi Yılan & Meyve Ziyafeti',
         badge: 'Nostaljik Yılan',
-        description: 'Klasik atari yılanı! Çilekleri topla, uzadıkça uzayan kuyruğuna ve duvarlara çarpmadan devasa bir skora ulaş!',
-        rules: ['Ok Tuşları veya WASD: Yön Değiştir', 'Kırmızı Çilek: +10 Puan & Büyüme', 'Altın Ananas: +50 Puan', 'Kuyruğuna çarpma!']
+        description: 'Klasik atari yılanı! D-Pad tuşları veya ekranda parmağını kaydırarak yön ver, çilekleri topla ve duvarlara çarpmadan rekora koş!',
+        rules: ['D-Pad Tuşları veya Ekranda Kaydır: Yön Ver', 'Kırmızı Çilek: +10 Puan & Büyüme', 'Altın Ananas: +50 Puan', 'Kuyruğuna veya duvara çarpma!']
       },
       meteor_dodge: {
         title: 'Meteor Yağmuru Kaçış',
         subtitle: 'Ateşli Göktaşı & Hayatta Kalma',
         badge: 'Hayatta Kalma',
         description: 'Gökyüzünden yağan kızgın lav meteorlarından kaç! Düşen parıldayan uzay elmaslarını kapıp hayatta kal!',
-        rules: ['Mouse veya Sol/Sağ: Kaç', 'Uzay Elması: +25 Puan', 'Hayatta Kalınan Her Saniye: +3 Puan', 'Meteordan kaç!']
+        rules: ['Ekranda Kaydır veya Sol/Sağ: Kaç', 'Uzay Elması: +25 Puan', 'Hayatta Kalınan Her Saniye: +3 Puan', 'Meteordan kaç!']
       },
       whack_mole: {
         title: 'Hırsız Arı & Köstebek Yakala',
         subtitle: 'Refleks & Hızlı Tıklama Poligonu',
         badge: 'Hızlı Refleks',
-        description: 'Ağaç kovuklarından ve bal küplerinden kafasını çıkaran yaramaz hırsızlara hemen tıkla, kaçmadan yakala!',
-        rules: ['Çıkan Hırsıza Hızlıca Tıkla', 'Normal Hırsız: +20 Puan', 'Altın Kraliçe: +50 Puan', 'Süre: 30 Saniye']
+        description: 'Ağaç kovuklarından ve bal küplerinden kafasını çıkaran yaramaz hırsızlara hemen dokun, kaçmadan yakala!',
+        rules: ['Çıkan Hırsıza Hızlıca Dokun', 'Normal Hırsız: +20 Puan', 'Altın Kraliçe: +50 Puan', 'Süre: 30 Saniye']
       },
       target_blaster: {
         title: 'Hedef Vurma & Meşe Poligonu',
         subtitle: 'Nişan Al & Bullseye Vuruşu',
         badge: 'Nişancılık & Odak',
-        description: 'Ekranda beliren ve hareket eden renkli hedeflere, altın balonlara ve palamutlara tıkla! Zaman dolmadan en yüksek puanı topla!',
-        rules: ['Hedefe Tıkla: Vur', 'Merkez Bullseye: +30 Puan', 'Altın Balon: +50 Puan & +3 sn', 'Süre: 30 Saniye']
+        description: 'Ekranda beliren ve hareket eden renkli hedeflere, altın balonlara ve palamutlara dokun! Zaman dolmadan en yüksek puanı topla!',
+        rules: ['Hedefe Dokun: Vur', 'Merkez Bullseye: +30 Puan', 'Altın Balon: +50 Puan & +3 sn', 'Süre: 30 Saniye']
       },
       retro_runner: {
         title: '8-Bit Piksel Parkur',
-        subtitle: 'Klasik Chiptune Engel Yarışı',
-        badge: 'Chiptune Klasik',
-        description: 'Retro piksel grafiklerle hazırlanan nostaljik atari oyunu! Giderek hızlanan platformlarda zıpla ve en uzun mesafeye koş!',
-        rules: ['Boşluk veya Tık: Zıpla', 'Çift Zıplama Destekli', 'Piksel Elmasları: +15 Puan', 'Hız sürekli artar!']
+        subtitle: 'Cyberpunk Neon Zıplama',
+        badge: 'Retro Koşucu',
+        description: 'Neon ışıklı retro şehirde pikselleri topla, tehlikeli lazer engellerinin üzerinden tam zamanında zıpla!',
+        rules: ['ZIPLA Tuşu, Boşluk veya Dokun: Zıpla', 'Geçilen Engel: +5 Puan', 'Lazer bloklarına çarpma!']
       }
     }
   },
   en: {
-    headerTitle: 'SUPER BEAR RETRO ARCADE HALL',
-    gameCount: '10 DIFFERENT GAMES 🔥',
+    headerTitle: 'SUPER BEAR RETRO ARCADE ZONE',
+    gameCount: '10 ARCADE GAMES 🔥',
     gameOfTheDay: 'Game of the Day',
     claimDailyGift: 'Claim Daily Gift! (+150 🍯)',
-    tabDaily: "Today's Games (Rotation)",
+    tabDaily: "Today's Games (Daily Rotation)",
     tabAll: 'All 10 Arcade Games',
-    tabSubtitle: 'New Daily Lineup & 2X Double Rewards!',
+    tabSubtitle: 'New Games Daily & 2X Double Rewards!',
     liveScore: 'Live Score',
-    changeGame: '◀ Switch Game',
+    changeGame: '◀ Games',
     howToPlay: 'How to Play?',
     gameOver: 'Game Over!',
     highScore: 'High Score',
-    points: 'Pts',
+    points: 'Points',
     playBtn: 'Start Game',
     playAgainBtn: 'Play Again',
-    bonusAdded: '2X Double Rewards Added to Account!',
-    footerTitle: '🎁 Daily Arcade Reward System:',
-    footerDesc: 'Visit the arcade daily, play the 2X Game of the Day, and collect Honey Coins and Arcade Tokens!',
+    bonusAdded: '2X Double Bonus Credited!',
+    footerTitle: '🎁 Daily Arcade Rewards:',
+    footerDesc: 'Visit daily, play the 2X featured game, and earn bonus Gold & Tokens!',
     closeBtn: 'Close',
+    fullscreenBtn: 'Fullscreen',
+    swipeOrDpad: '🕹️ Swipe on screen or use on-screen D-Pad!',
+    tapToStart: 'Tap screen or press any control to start!',
+    jumpBtn: 'JUMP',
+    shootBtn: 'FIRE',
     games: {
       honey_rush: {
         title: 'Honey & Gold Rush',
-        subtitle: 'Fast Sprint & Hazard Evasion',
-        badge: 'Reflex & Speed',
-        description: 'Dash as our hero bear, dodge spiky crates and rocks, and collect radiant honey jars and golden combs!',
-        rules: ['Space or Click: Jump', 'Honey Jar: +10 Pts', 'Gold Honeycomb: +25 Pts', 'Collision ends game!']
+        subtitle: 'Fast Endless Runner',
+        badge: 'Speed & Reflex',
+        description: 'Dodge spiked crates and stones while gathering honey jars and golden combs!',
+        rules: ['Space, Tap or JUMP Button: Jump', 'Honey Jar: +10 pts', 'Golden Honeycomb: +25 pts', 'Avoid obstacles!']
       },
       bubble_jump: {
         title: 'Bubble Jump & Pop',
         subtitle: 'Sky Bubble Trampoline',
         badge: 'Timing & Combo',
-        description: 'Bounce upon rising colorful bubbles! Pop bubbles at the perfect instant to ascend into the clouds!',
-        rules: ['Left/Right or Mouse: Move', 'Bounce on Bubble: Super Jump', 'Rainbow Bubble: +50 Pts', "Don't fall!"]
+        description: 'Bounce higher on floating bubbles and pop them to reach the clouds!',
+        rules: ['Swipe or Left/Right: Move', 'Bounce on bubble: High Jump', 'Rainbow Bubble: +50 pts', "Don't fall down!"]
       },
       space_invaders: {
         title: 'Galactic Bear Invaders',
-        subtitle: 'Cosmic Arcade & Laser War',
-        badge: 'Cosmic Battle',
-        description: 'Pilot your starfighter and obliterate invading alien swarms and giant UFO bosses with rapid laser strikes!',
-        rules: ['Mouse or Left/Right: Move', 'Space or Click: Fire Laser', 'Alien Bee: +20 Pts', 'UFO Boss: +60 Pts']
+        subtitle: 'Cosmic 80s Space Shooter',
+        badge: 'Space Battle',
+        description: 'Pilot your ship and shoot down alien bee waves and boss UFOs!',
+        rules: ['Swipe or Left/Right: Move', 'FIRE button or Tap: Shoot', 'Alien Bee: +20 pts', 'UFO Boss: +60 pts']
       },
       flappy_bear: {
         title: 'Flappy Honey Bear',
-        subtitle: 'Wing Flap & Hive Navigation',
-        badge: 'Skill & Flight',
-        description: 'Flap tiny fairy wings through tight honey pillars and bamboo towers to achieve maximum flight distance!',
-        rules: ['Click or Space: Flap Wings', 'Clear Obstacle: +10 Pts', 'Center Honey: +25 Pts', 'Avoid ground and pipes!']
+        subtitle: 'Wing Flap & Honey Pillars',
+        badge: 'Skill Flight',
+        description: 'Flap wings to navigate between sweet honey obstacles without crashing!',
+        rules: ['Tap, Space or FLAP Button: Flap', 'Pass column: +10 pts', 'Collect Honey: +25 pts', "Don't crash!"]
       },
       brick_breaker: {
-        title: 'Honey Brick Breaker',
-        subtitle: 'Classic Arkanoid & Energy Sphere',
+        title: 'Honeycomb Brick Breaker',
+        subtitle: 'Classic Arkanoid & Energy Ball',
         badge: 'Retro Breaker',
-        description: 'Command the bottom paddle, rebound energy spheres, and shatter colorful sugar bricks and honey blocks!',
-        rules: ['Mouse or Left/Right: Move Paddle', 'Break Brick: +15 Pts', 'Clear Screen: +200 Bonus', "Don't drop ball!"]
+        description: 'Glide the paddle to bounce the energy orb and smash all honey bricks!',
+        rules: ['Swipe or Left/Right: Paddle', 'Brick hit: +15 pts', 'Clear all: +200 pts bonus', "Don't drop the ball!"]
       },
       bear_snake: {
-        title: 'Pixel Strawberry Snake',
-        subtitle: 'Legendary Snake & Fruit Feast',
-        badge: 'Nostalgic Snake',
-        description: 'The nostalgic classic! Devour ripe berries, avoid your ever-growing tail and boundary walls to score big!',
-        rules: ['Arrow Keys or WASD: Turn', 'Strawberry: +10 Pts & Grow', 'Golden Pineapple: +50 Pts', 'Avoid tail!']
+        title: 'Berry Hunter Pixel Snake',
+        subtitle: 'Classic Snake & Fruit Feast',
+        badge: 'Retro Snake',
+        description: 'Classic arcade snake! Steer using the on-screen D-Pad or swipe on screen to grab delicious fruits!',
+        rules: ['D-Pad Buttons or Swipe: Turn', 'Red Strawberry: +10 pts & Growth', 'Golden Pineapple: +50 pts', "Don't hit walls or tail!"]
       },
       meteor_dodge: {
         title: 'Meteor Shower Dodge',
         subtitle: 'Fiery Asteroids & Survival',
         badge: 'Survival',
-        description: 'Evade raining molten asteroids from deep space and collect glowing stardust diamonds to survive!',
-        rules: ['Mouse or Left/Right: Dodge', 'Cosmic Diamond: +25 Pts', 'Each Second Survived: +3 Pts', 'Dodge meteors!']
+        description: 'Dodge falling fireballs and collect falling cosmic star gems!',
+        rules: ['Swipe or Left/Right: Dodge', 'Cosmic Star: +25 pts', 'Survival per second: +3 pts', 'Dodge meteorites!']
       },
       whack_mole: {
-        title: 'Whack-a-Thief & Mole',
-        subtitle: 'Fast Reflex Target Arena',
+        title: 'Thief Raccoon & Bee Whack',
+        subtitle: 'Reflex & Fast Tapping',
         badge: 'Fast Reflex',
-        description: 'Rapidly strike mischievous thieves popping out of honey barrels and tree hollows before they vanish!',
-        rules: ['Click Thief Quickly', 'Normal Thief: +20 Pts', 'Golden Queen: +50 Pts', 'Time: 30 Seconds']
+        description: 'Tap pesky thieves popping out of honey jars before they escape!',
+        rules: ['Tap thief quickly', 'Standard Thief: +20 pts', 'Queen Bee: +50 pts', 'Time limit: 30s']
       },
       target_blaster: {
-        title: 'Target Blaster & Shooting Range',
-        subtitle: 'Aim & Bullseye Mastery',
-        badge: 'Precision & Focus',
-        description: 'Aim and shoot moving targets, golden bonus balloons, and flying acorns before time expires!',
-        rules: ['Click Target: Hit', 'Bullseye Center: +30 Pts', 'Golden Balloon: +50 Pts & +3s', 'Time: 30 Seconds']
+        title: 'Target Blaster Range',
+        subtitle: 'Precision Aim & Hit',
+        badge: 'Shooting Range',
+        description: 'Tap moving targets, balloons and acorns before time expires!',
+        rules: ['Tap target: Hit', 'Bullseye Center: +30 pts', 'Golden Balloon: +50 pts', 'Time limit: 30s']
       },
       retro_runner: {
-        title: '8-Bit Pixel Runner',
-        subtitle: 'Classic Chiptune Obstacle Race',
-        badge: 'Chiptune Classic',
-        description: 'A nostalgic retro pixel run! Leap across accelerating platforms and leap over pits to run the furthest!',
-        rules: ['Space or Click: Jump', 'Double Jump Supported', 'Pixel Diamond: +15 Pts', 'Speed accelerates!']
-      }
-    }
-  },
-  es: {
-    headerTitle: 'SALÓN RETRO ARCADE SUPER BEAR',
-    gameCount: '10 JUEGOS DIFERENTES 🔥',
-    gameOfTheDay: 'Juego del Día',
-    claimDailyGift: '¡Reclamar Regalo Diario! (+150 🍯)',
-    tabDaily: 'Juegos de Hoy (Rotación)',
-    tabAll: 'Los 10 Juegos Arcade',
-    tabSubtitle: '¡Nuevos Juegos Diarios y 2X Recompensa Doble!',
-    liveScore: 'Puntuación',
-    changeGame: '◀ Cambiar Juego',
-    howToPlay: '¿Cómo Jugar?',
-    gameOver: '¡Juego Terminado!',
-    highScore: 'Récord',
-    points: 'Pts',
-    playBtn: 'Iniciar Juego',
-    playAgainBtn: 'Jugar de Nuevo',
-    bonusAdded: '¡Doble Recompensa 2X Agregada!',
-    footerTitle: '🎁 Sistema de Premios Arcade:',
-    footerDesc: '¡Visita el salón a diario, juega al Juego 2X y acumula monedas de miel y fichas arcade!',
-    closeBtn: 'Cerrar',
-    games: {
-      honey_rush: {
-        title: 'Carrera de Miel y Oro',
-        subtitle: 'Sprint Rápido y Evasión',
-        badge: 'Reflejo y Velocidad',
-        description: '¡Corre con nuestro oso, esquiva cajas con púas y rocas, y recoge miel y panales dorados!',
-        rules: ['Espacio o Clic: Saltar', 'Tarro de Miel: +10 Pts', 'Panal Dorado: +25 Pts', '¡Chocar termina el juego!']
-      },
-      bubble_jump: {
-        title: 'Salto y Estallido de Burbujas',
-        subtitle: 'Trampolín Celestial',
-        badge: 'Tiempo y Combo',
-        description: '¡Rebota sobre las burbujas de colores y elévate hasta las nubes celestiales!',
-        rules: ['Teclas Izq/Der o Ratón: Moverse', 'Pisar Burbuja: Súper Salto', 'Burbuja Arcoíris: +50 Pts', '¡No caigas!']
-      },
-      space_invaders: {
-        title: 'Invasores Galácticos',
-        subtitle: 'Batalla Láser Espacial',
-        badge: 'Guerra Cósmica',
-        description: '¡Pilota tu nave espacial y destruye las hordas alienígenas y jefes OVNI con disparos láser!',
-        rules: ['Ratón o Izq/Der: Mover', 'Espacio o Clic: Disparar', 'Abeja Alien: +20 Pts', 'Jefe OVNI: +60 Pts']
-      },
-      flappy_bear: {
-        title: 'Oso Volador de Miel',
-        subtitle: 'Vuelo y Esquive de Obstáculos',
-        badge: 'Habilidad y Vuelo',
-        description: '¡Aletea a través de columnas de miel y tubos de bambú para alcanzar la máxima distancia!',
-        rules: ['Clic o Espacio: Aletear', 'Superar Obstáculo: +10 Pts', 'Miel Central: +25 Pts', '¡Evita chocar!']
-      },
-      brick_breaker: {
-        title: 'Rompe Ladrillos de Miel',
-        subtitle: 'Arkanoid Clásico y Bola de Energía',
-        badge: 'Retro Rompedor',
-        description: '¡Controla la pala, rebota la esfera de energía y destruye ladrillos dulces!',
-        rules: ['Ratón o Flechas: Mover Pala', 'Ladrillo Roto: +15 Pts', 'Pantalla Limpia: +200 Bonus', '¡No dejes caer la bola!']
-      },
-      bear_snake: {
-        title: 'Serpiente Come Fresas',
-        subtitle: 'Serpiente Legendaria y Frutas',
-        badge: 'Serpiente Nostálgica',
-        description: '¡El clásico arcade! Come fresas, evita tu propia cola creciente y rompe tu récord.',
-        rules: ['Flechas o WASD: Girar', 'Fresa: +10 Pts y Crecer', 'Piña Dorada: +50 Pts', '¡No choques tu cola!']
-      },
-      meteor_dodge: {
-        title: 'Esquiva de Meteoros',
-        subtitle: 'Asteroides y Supervivencia',
-        badge: 'Supervivencia',
-        description: '¡Esquiva los meteoros ardientes del espacio exterior y recoge diamantes estelares!',
-        rules: ['Ratón o Izq/Der: Esquivar', 'Diamante Cósmico: +25 Pts', 'Por Segundo Vivo: +3 Pts', '¡Esquiva meteoros!']
-      },
-      whack_mole: {
-        title: 'Golpea al Ladrón y Topo',
-        subtitle: 'Reflejos y Clics Rápidos',
-        badge: 'Reflejo Rápido',
-        description: '¡Golpea a los traviesos ladrones que asoman la cabeza por los barriles de miel!',
-        rules: ['Clic Rápido al Ladrón', 'Ladrón Normal: +20 Pts', 'Reina Dorada: +50 Pts', 'Tiempo: 30 Segundos']
-      },
-      target_blaster: {
-        title: 'Tiro al Blanco y Polígono',
-        subtitle: 'Puntería y Diana',
-        badge: 'Puntería y Enfoque',
-        description: '¡Apunta y dispara a las dianas móviles, globos dorados y bellotas voladoras!',
-        rules: ['Clic en Diana: Acertar', 'Centro Diana: +30 Pts', 'Globo Dorado: +50 Pts y +3s', 'Tiempo: 30 Segundos']
-      },
-      retro_runner: {
-        title: 'Corredor 8-Bit Pixel',
-        subtitle: 'Carrera Chiptune Clásica',
-        badge: 'Clásico Chiptune',
-        description: '¡Salta en plataformas aceleradas y supera abismos en este nostálgico juego pixelado!',
-        rules: ['Espacio o Clic: Saltar', 'Doble Salto Disponible', 'Diamante Pixel: +15 Pts', '¡La velocidad aumenta!']
-      }
-    }
-  },
-  de: {
-    headerTitle: 'SUPER BÄR RETRO-ARCADE-HALLE',
-    gameCount: '10 VERSCHIEDENE SPIELE 🔥',
-    gameOfTheDay: 'Spiel des Tages',
-    claimDailyGift: 'Tagesbelohnung abholen! (+150 🍯)',
-    tabDaily: 'Heutige Spiele (Rotation)',
-    tabAll: 'Alle 10 Arcade-Spiele',
-    tabSubtitle: 'Täglich neue Spiele & 2X Doppel-Belohnung!',
-    liveScore: 'Live-Punktestand',
-    changeGame: '◀ Spiel Wechseln',
-    howToPlay: 'Spielanleitung',
-    gameOver: 'Spiel Vorbei!',
-    highScore: 'Bester Punktestand',
-    points: 'Pkt',
-    playBtn: 'Spiel Starten',
-    playAgainBtn: 'Erneut Spielen',
-    bonusAdded: '2X Doppel-Belohnung Gutgeschrieben!',
-    footerTitle: '🎁 Tägliches Arcade-Belohnungssystem:',
-    footerDesc: 'Besuche die Spielhalle täglich, spiele das 2X-Spiel und sammle Honigmünzen und Arcade-Tokens!',
-    closeBtn: 'Schließen',
-    games: {
-      honey_rush: {
-        title: 'Honig- & Gold-Rausch',
-        subtitle: 'Schneller Sprint & Hindernislauf',
-        badge: 'Reflex & Tempo',
-        description: 'Rase mit unserem Bären, weiche Stachelkisten aus und sammle goldene Honigwaben!',
-        rules: ['Leertaste oder Klick: Springen', 'Honigtopf: +10 Pkt', 'Goldwabe: +25 Pkt', 'Kollision beendet das Spiel!']
-      },
-      bubble_jump: {
-        title: 'Blasensprung & Platzen',
-        subtitle: 'Himmelsblasen-Trampolin',
-        badge: 'Timing & Kombo',
-        description: 'Springe auf aufsteigende Seifenblasen und klettere empor bis in die Wolken!',
-        rules: ['Pfeiltasten oder Maus: Bewegen', 'Auf Blase springen: Super-Sprung', 'Regenbogenblase: +50 Pkt', 'Nicht abstürzen!']
-      },
-      space_invaders: {
-        title: 'Galaktische Bären-Invasoren',
-        subtitle: 'Kosmischer Laser-Krieg',
-        badge: 'Weltraum-Schlacht',
-        description: 'Steuere dein Raumschiff und vernichte feindliche Alien-Scharen mit Lasern!',
-        rules: ['Maus oder Links/Rechts: Bewegen', 'Leertaste/Klick: Schießen', 'Alien-Biene: +20 Pkt', 'UFO-Boss: +60 Pkt']
-      },
-      flappy_bear: {
-        title: 'Fliegender Honigbär',
-        subtitle: 'Flügelschlag & Hindernisflug',
-        badge: 'Geschick & Flug',
-        description: 'Schlage mit den Feenflügeln und gleite durch enge Honigsäulen und Bambusrohre!',
-        rules: ['Klick oder Leertaste: Flügelschlag', 'Hindernis passieren: +10 Pkt', 'Mittel-Honig: +25 Pkt', 'Nicht anstoßen!']
-      },
-      brick_breaker: {
-        title: 'Honigziegel-Brecher',
-        subtitle: 'Klassischer Arkanoid-Brecher',
-        badge: 'Retro-Brecher',
-        description: 'Lenke das Paddel, reflektiere die Energiekugel und zerschlage bunte Zuckerziegel!',
-        rules: ['Maus oder Pfeiltasten: Paddel', 'Ziegel zerstört: +15 Pkt', 'Feld geräumt: +200 Bonus', 'Ball nicht fallen lassen!']
-      },
-      bear_snake: {
-        title: 'Pixel-Erdbeer-Schlange',
-        subtitle: 'Legendäre Schlange & Früchte',
-        badge: 'Retro-Schlange',
-        description: 'Der Klassiker! Sammle Erdbeeren, weiche deinem langen Schwanz aus und hole den Rekord!',
-        rules: ['Pfeiltasten oder WASD: Lenken', 'Erdbeere: +10 Pkt & Wachsen', 'Gold-Ananas: +50 Pkt', 'Schwanz meiden!']
-      },
-      meteor_dodge: {
-        title: 'Meteoriten-Ausweichen',
-        subtitle: 'Glühende Asteroiden & Überleben',
-        badge: 'Überleben',
-        description: 'Weiche herabregnenden Lavameteoriten aus und sammle glitzernde Sternendiamanten!',
-        rules: ['Maus oder Links/Rechts: Ausweichen', 'Kosmischer Diamant: +25 Pkt', 'Überlebte Sekunde: +3 Pkt', 'Meteoren ausweichen!']
-      },
-      whack_mole: {
-        title: 'Hau-den-Maulwurf & Dieb',
-        subtitle: 'Schnelle Reflexe & Zielklicks',
-        badge: 'Schneller Reflex',
-        description: 'Treffe die frechen Diebe, die aus den Honigfässern hervorschauen, bevor sie entkommen!',
-        rules: ['Schnell auf Dieb klicken', 'Normaler Dieb: +20 Pkt', 'Goldene Königin: +50 Pkt', 'Zeit: 30 Sekunden']
-      },
-      target_blaster: {
-        title: 'Zielschießen & Schießstand',
-        subtitle: 'Zielen & Volltreffer',
-        badge: 'Präzision & Fokus',
-        description: 'Triff bewegliche Zielscheiben, goldene Bonusballons und Eicheln in der Zeit!',
-        rules: ['Klick auf Ziel: Treffer', 'Zentrum / Bullseye: +30 Pkt', 'Goldballon: +50 Pkt & +3s', 'Zeit: 30 Sekunden']
-      },
-      retro_runner: {
-        title: '8-Bit Pixel-Läufer',
-        subtitle: 'Klassischer Chiptune-Hindernislauf',
-        badge: 'Chiptune-Klassiker',
-        description: 'Nostalgischer Pixel-Sprint! Springe über Plattformen und Schluchten für die weiteste Distanz!',
-        rules: ['Leertaste oder Klick: Springen', 'Doppelsprung verfügbar', 'Pixel-Diamant: +15 Pkt', 'Tempo steigt ständig!']
-      }
-    }
-  },
-  it: {
-    headerTitle: 'SALA RETRO ARCADE SUPER BEAR',
-    gameCount: '10 GIOCHI DIVERSI 🔥',
-    gameOfTheDay: 'Gioco del Giorno',
-    claimDailyGift: 'Riscatta Regalo del Giorno! (+150 🍯)',
-    tabDaily: 'Giochi di Oggi (Rotazione)',
-    tabAll: 'Tutti i 10 Giochi Arcade',
-    tabSubtitle: 'Nuovi Giochi Ogni Giorno & 2X Doppia Ricompensa!',
-    liveScore: 'Punteggio',
-    changeGame: '◀ Cambia Gioco',
-    howToPlay: 'Come Giocare?',
-    gameOver: 'Partita Finita!',
-    highScore: 'Punteggio Più Alto',
-    points: 'Pti',
-    playBtn: 'Inizia Partita',
-    playAgainBtn: 'Gioca Ancora',
-    bonusAdded: '2X Doppia Ricompensa Aggiunta!',
-    footerTitle: '🎁 Sistema Premi Arcade Giornaliero:',
-    footerDesc: 'Visita la sala giochi ogni giorno, gioca al Gioco 2X e raccogli monete di miele e gettoni arcade!',
-    closeBtn: 'Chiudi',
-    games: {
-      honey_rush: {
-        title: 'Corsa di Miele & Oro',
-        subtitle: 'Sprint Rapido & Schivata',
-        badge: 'Riflessi & Velocità',
-        description: 'Corri col nostro orso, schiva casse con spine e rocce, e raccogli vasi di miele e favi d’oro!',
-        rules: ['Spazio o Clic: Salta', 'Vaso di Miele: +10 Pti', 'Favo Dorato: +25 Pti', 'Gli impatti terminano il gioco!']
-      },
-      bubble_jump: {
-        title: 'Salto e Scoppio di Bolle',
-        subtitle: 'Trampolino Celeste',
-        badge: 'Tempismo & Combo',
-        description: 'Rimbalza sulle bolle d’acqua colorate e sali verso le nuvole celesti!',
-        rules: ['Tasti Sin/Des o Mouse: Muoviti', 'Salta sulla Bolla: Super Salto', 'Bolla Arcobaleno: +50 Pti', 'Non cadere!']
-      },
-      space_invaders: {
-        title: 'Invasori Galattici',
-        subtitle: 'Guerra Laser Cosmica',
-        badge: 'Battaglia Spaziale',
-        description: 'Pilota la tua astronave e annienta sciami alieni e boss UFO con potenti colpi laser!',
-        rules: ['Mouse o Sin/Des: Muovi', 'Spazio o Clic: Spara Laser', 'Ape Aliena: +20 Pti', 'Boss UFO: +60 Pti']
-      },
-      flappy_bear: {
-        title: 'Orso Volante di Miele',
-        subtitle: 'Battito d’Ali & Volo tra Colonne',
-        badge: 'Abilità & Volo',
-        description: 'Batti le ali fatate e plana tra colonne di miele e canne di bambù per volare più lontano possibile!',
-        rules: ['Clic o Spazio: Batti le ali', 'Supera Ostacolo: +10 Pti', 'Miele Centrale: +25 Pti', 'Evita il suolo e i tubi!']
-      },
-      brick_breaker: {
-        title: 'Spacca Mattoni di Miele',
-        subtitle: 'Arkanoid Classico & Sfera d’Energia',
-        badge: 'Retro Breaker',
-        description: 'Controlla la racchetta, fai rimbalzare la sfera d’energia e distruggi mattoni di zucchero!',
-        rules: ['Mouse o Frecce: Muovi Racchetta', 'Mattone Rotto: +15 Pti', 'Schermo Pulito: +200 Bonus', 'Non far cadere la palla!']
-      },
-      bear_snake: {
-        title: 'Serpente Pixel Mangia Fragole',
-        subtitle: 'Serpente Leggendario & Frutta',
-        badge: 'Serpente Classico',
-        description: 'Il classico arcade! Raccogli fragole, evita la coda che cresce sempre di più e fai il record!',
-        rules: ['Frecce o WASD: Direzione', 'Fragola: +10 Pti & Cresci', 'Ananas d’Oro: +50 Pti', 'Evita la coda!']
-      },
-      meteor_dodge: {
-        title: 'Schiva Pioggia di Meteore',
-        subtitle: 'Asteroidi Infuocati & Sopravvivenza',
-        badge: 'Sopravvivenza',
-        description: 'Schiva i meteoriti infuocati che cadono dallo spazio e raccogli diamanti stellari!',
-        rules: ['Mouse o Sin/Des: Schiva', 'Diamante Cosmico: +25 Pti', 'Ogni Secondo Vivo: +3 Pti', 'Schiva le meteore!']
-      },
-      whack_mole: {
-        title: 'Colpisci la Talpa e il Ladro',
-        subtitle: 'Riflessi Rapidi & Bersagli',
-        badge: 'Riflessi Veloci',
-        description: 'Colpisci rapidamente i ladruncoli che spuntano dai barili di miele prima che scappino!',
-        rules: ['Clic Rapido sul Ladro', 'Ladro Normale: +20 Pti', 'Regina Dorata: +50 Pti', 'Tempo: 30 Secondi']
-      },
-      target_blaster: {
-        title: 'Tiro a Segno & Bersagli',
-        subtitle: 'Mira & Centro Perfetto',
-        badge: 'Precisione & Mira',
-        description: 'Mira e spara ai bersagli in movimento, ai palloncini dorati e alle ghiande prima dello scadere del tempo!',
-        rules: ['Clic sul Bersaglio: Colpisci', 'Centro Bersaglio: +30 Pti', 'Palloncino d’Oro: +50 Pti & +3s', 'Tempo: 30 Secondi']
-      },
-      retro_runner: {
-        title: 'Corridore 8-Bit Pixel',
-        subtitle: 'Corsa a Ostacoli Chiptune',
-        badge: 'Classico Chiptune',
-        description: 'Corsa pixel retrò! Salta su piattaforme sempre più veloci e supera i baratri!',
-        rules: ['Spazio o Clic: Salta', 'Doppio Salto Disponibile', 'Diamante Pixel: +15 Pti', 'La velocità aumenta!']
+        title: '8-Bit Pixel Parkour',
+        subtitle: 'Cyberpunk Neon Runner',
+        badge: 'Retro Runner',
+        description: 'Leap over neon laser fences and dash through pixel streets!',
+        rules: ['JUMP button or Tap: Jump', 'Clear obstacle: +5 pts', 'Avoid laser beams!']
       }
     }
   }
 };
 
-export const BASE_ARCADE_GAMES_LIST: { id: ArcadeGameId; icon: string; themeColor: string }[] = [
-  { id: 'honey_rush', icon: '🍯', themeColor: 'from-amber-500 to-yellow-600' },
-  { id: 'bubble_jump', icon: '🫧', themeColor: 'from-cyan-500 to-blue-600' },
-  { id: 'space_invaders', icon: '🚀', themeColor: 'from-violet-600 to-fuchsia-600' },
-  { id: 'flappy_bear', icon: '🐝', themeColor: 'from-yellow-500 to-amber-600' },
-  { id: 'brick_breaker', icon: '🧱', themeColor: 'from-pink-500 to-rose-600' },
-  { id: 'bear_snake', icon: '🐍', themeColor: 'from-emerald-500 to-teal-600' },
-  { id: 'meteor_dodge', icon: '☄️', themeColor: 'from-orange-500 to-red-600' },
-  { id: 'whack_mole', icon: '🦔', themeColor: 'from-lime-500 to-green-600' },
-  { id: 'target_blaster', icon: '🎯', themeColor: 'from-rose-500 to-red-600' },
-  { id: 'retro_runner', icon: '👾', themeColor: 'from-purple-500 to-indigo-600' }
-];
+export const getLocalizedArcadeGames = (lang: string): ArcadeGameMeta[] => {
+  const dictionary = ARCADE_TRANSLATIONS[lang] || ARCADE_TRANSLATIONS.tr;
+  const defaults: { id: ArcadeGameId; icon: string; themeColor: string; accentBadge: string }[] = [
+    { id: 'honey_rush', icon: '🍯', themeColor: '#f59e0b', accentBadge: 'Hız' },
+    { id: 'bubble_jump', icon: '🫧', themeColor: '#38bdf8', accentBadge: 'Kombo' },
+    { id: 'space_invaders', icon: '🚀', themeColor: '#8b5cf6', accentBadge: 'Kozmik' },
+    { id: 'flappy_bear', icon: '🐝', themeColor: '#10b981', accentBadge: 'Uçuş' },
+    { id: 'brick_breaker', icon: '🧱', themeColor: '#ec4899', accentBadge: 'Retro' },
+    { id: 'bear_snake', icon: '🐍', themeColor: '#14b8a6', accentBadge: 'Yılan' },
+    { id: 'meteor_dodge', icon: '☄️', themeColor: '#ef4444', accentBadge: 'Kaçış' },
+    { id: 'whack_mole', icon: '🦝', themeColor: '#84cc16', accentBadge: 'Refleks' },
+    { id: 'target_blaster', icon: '🎯', themeColor: '#f97316', accentBadge: 'Nişan' },
+    { id: 'retro_runner', icon: '👾', themeColor: '#06b6d4', accentBadge: 'Parkur' }
+  ];
 
-export function getLocalizedArcadeGames(lang: string): ArcadeGameMeta[] {
-  const trans = ARCADE_TRANSLATIONS[lang] || ARCADE_TRANSLATIONS.tr;
-  return BASE_ARCADE_GAMES_LIST.map(base => {
-    const gTrans = trans.games[base.id] || ARCADE_TRANSLATIONS.tr.games[base.id];
+  return defaults.map(def => {
+    const localized = dictionary.games[def.id];
     return {
-      id: base.id,
-      icon: base.icon,
-      themeColor: base.themeColor,
-      title: gTrans.title,
-      subtitle: gTrans.subtitle,
-      accentBadge: gTrans.badge,
-      description: gTrans.description,
-      rules: gTrans.rules
+      id: def.id,
+      title: localized?.title || def.id,
+      subtitle: localized?.subtitle || '',
+      icon: def.icon,
+      themeColor: def.themeColor,
+      accentBadge: localized?.badge || def.accentBadge,
+      description: localized?.description || '',
+      rules: localized?.rules || []
     };
   });
+};
+
+interface GameControls {
+  onDpad?: (direction: 'up' | 'down' | 'left' | 'right') => void;
+  onDpadRelease?: (direction: 'up' | 'down' | 'left' | 'right') => void;
+  onAction?: (action: 'jump' | 'shoot' | 'special') => void;
+  onTouchMove?: (normX: number, normY: number, clientX: number, clientY: number) => void;
+  onTouchTap?: (normX: number, normY: number, clientX: number, clientY: number) => void;
+  onSwipe?: (direction: 'up' | 'down' | 'left' | 'right') => void;
 }
 
 export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
@@ -575,12 +331,13 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
   onRewardEarned
 }) => {
   const { language } = useLanguage();
-  const [selectedGame, setSelectedGame] = useState<ArcadeGameId>('space_invaders');
+  const [selectedGame, setSelectedGame] = useState<ArcadeGameId>('bear_snake');
   const [isPlaying, setIsPlaying] = useState(false);
   const [score, setScore] = useState(0);
   const [gameOver, setGameOver] = useState(false);
-  const [activeTab, setActiveTab] = useState<'daily' | 'all' | 'rewards'>('daily');
+  const [activeTab, setActiveTab] = useState<'daily' | 'all'>('daily');
   const [dailyClaimed, setDailyClaimed] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(isFullscreenActive());
 
   const t = ARCADE_TRANSLATIONS[language] || ARCADE_TRANSLATIONS.tr;
   const allLocalizedGames = getLocalizedArcadeGames(language);
@@ -602,11 +359,9 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
     year: 'numeric' 
   }).format(now);
 
-  // Today's featured Game of the Day (2x bonus rewards!)
   const featuredGameIndex = Math.abs(todayDayNumber) % allLocalizedGames.length;
   const featuredGame = allLocalizedGames[featuredGameIndex];
 
-  // Daily 4-game rotation lineup
   const dailyRotationGames = [
     allLocalizedGames[featuredGameIndex],
     allLocalizedGames[(featuredGameIndex + 2) % allLocalizedGames.length],
@@ -618,6 +373,19 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animFrameIdRef = useRef<number | null>(null);
+  const gameControlsRef = useRef<GameControls>({});
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+
+  // Track Fullscreen state
+  useEffect(() => {
+    const handleFs = () => setIsFullscreen(isFullscreenActive());
+    window.addEventListener('superbear:fullscreen-change', handleFs);
+    document.addEventListener('fullscreenchange', handleFs);
+    return () => {
+      window.removeEventListener('superbear:fullscreen-change', handleFs);
+      document.removeEventListener('fullscreenchange', handleFs);
+    };
+  }, []);
 
   // Audio Context helper for arcade sound effects
   const playSound = (freq = 440, type: OscillatorType = 'sine', duration = 0.1) => {
@@ -650,6 +418,14 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
       }
     } catch (e) {}
   }, [isOpen]);
+
+  // Request fullscreen when opening arcade or starting game
+  const handleStartGame = () => {
+    requestImmersiveFullscreen();
+    setIsPlaying(true);
+    setGameOver(false);
+    setScore(0);
+  };
 
   const claimDailyReward = () => {
     if (dailyClaimed) return;
@@ -692,7 +468,6 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
       return prev;
     });
 
-    // 2X Bonus if today's featured game!
     const isTodayFeatured = selectedGame === featuredGame.id;
     const multiplier = isTodayFeatured ? 2 : 1;
     const earnedCoins = Math.max(10, Math.floor((finalScore / 2) * multiplier));
@@ -754,8 +529,14 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
         }
       };
 
+      gameControlsRef.current = {
+        onAction: () => jump(),
+        onDpad: (dir) => { if (dir === 'up') jump(); },
+        onTouchTap: () => jump()
+      };
+
       const handleKey = (e: KeyboardEvent) => {
-        if (e.code === 'Space' || e.code === 'ArrowUp') {
+        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
           e.preventDefault();
           jump();
         }
@@ -768,13 +549,11 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
         frame++;
         ctx.clearRect(0, 0, width, height);
 
-        // Ground & Sky
         ctx.fillStyle = '#1e293b';
         ctx.fillRect(0, 0, width, height);
         ctx.fillStyle = '#334155';
         ctx.fillRect(0, height - 30, width, 30);
 
-        // Physics
         pVy += 0.6;
         py += pVy;
         if (py >= height - 60) {
@@ -783,7 +562,6 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
           isGrounded = true;
         }
 
-        // Spawn
         if (frame % 75 === 0) {
           obstacles.push({
             x: width + 20,
@@ -800,11 +578,9 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
           });
         }
 
-        // Draw Bear
         ctx.font = '32px sans-serif';
         ctx.fillText('🐻', px - 12, py + 24);
 
-        // Obstacles
         for (let i = obstacles.length - 1; i >= 0; i--) {
           const obs = obstacles[i];
           obs.x -= speed;
@@ -819,7 +595,6 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
           if (obs.x < -40) obstacles.splice(i, 1);
         }
 
-        // Items
         for (let i = items.length - 1; i >= 0; i--) {
           const it = items[i];
           it.x -= speed;
@@ -868,9 +643,22 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
         });
       }
 
+      const setBearNormX = (normX: number) => {
+        bearX = Math.max(25, Math.min(width - 25, normX * width));
+      };
+
+      gameControlsRef.current = {
+        onDpad: (dir) => {
+          if (dir === 'left') bearX = Math.max(25, bearX - 40);
+          if (dir === 'right') bearX = Math.min(width - 25, bearX + 40);
+        },
+        onTouchMove: (normX) => setBearNormX(normX),
+        onTouchTap: (normX) => setBearNormX(normX)
+      };
+
       const handleMove = (e: MouseEvent) => {
         const rect = canvas.getBoundingClientRect();
-        bearX = ((e.clientX - rect.left) / rect.width) * width;
+        setBearNormX((e.clientX - rect.left) / rect.width);
       };
       canvas.addEventListener('mousemove', handleMove);
 
@@ -944,7 +732,7 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
       };
     }
 
-    // --- 3: SPACE INVADERS (GALAGA STYLE) ---
+    // --- 3: SPACE INVADERS ---
     else if (selectedGame === 'space_invaders') {
       let playerX = width / 2;
       let playerVx = 0;
@@ -954,126 +742,131 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
       let currentScore = 0;
       let fireCooldown = 0;
 
-      // Spawn fleet
       for (let r = 0; r < 3; r++) {
         for (let c = 0; c < 7; c++) {
           enemies.push({
-            x: 90 + c * 75,
-            y: 50 + r * 45,
+            x: 70 + c * 75,
+            y: 50 + r * 42,
             alive: true,
             isUfo: r === 0 && c === 3
           });
         }
       }
 
-      const handleMove = (e: MouseEvent) => {
-        const rect = canvas.getBoundingClientRect();
-        playerX = ((e.clientX - rect.left) / rect.width) * width;
-      };
       const shoot = () => {
         if (fireCooldown <= 0) {
-          bullets.push({ x: playerX, y: height - 55 });
+          bullets.push({ x: playerX, y: height - 45 });
           fireCooldown = 12;
-          playSound(650, 'sawtooth', 0.08);
+          playSound(640, 'square', 0.08);
+        }
+      };
+
+      gameControlsRef.current = {
+        onDpad: (dir) => {
+          if (dir === 'left') playerVx = -7;
+          if (dir === 'right') playerVx = 7;
+        },
+        onDpadRelease: () => {
+          playerVx = 0;
+        },
+        onAction: (act) => {
+          if (act === 'shoot') shoot();
+        },
+        onTouchMove: (normX) => {
+          playerX = Math.max(30, Math.min(width - 30, normX * width));
+        },
+        onTouchTap: (normX) => {
+          playerX = Math.max(30, Math.min(width - 30, normX * width));
+          shoot();
+        }
+      };
+
+      const handleMove = (e: MouseEvent) => {
+        const rect = canvas.getBoundingClientRect();
+        playerX = Math.max(30, Math.min(width - 30, ((e.clientX - rect.left) / rect.width) * width));
+      };
+      const handleKey = (e: KeyboardEvent) => {
+        if (e.code === 'ArrowLeft' || e.code === 'KeyA') playerVx = -7;
+        if (e.code === 'ArrowRight' || e.code === 'KeyD') playerVx = 7;
+        if (e.code === 'Space' || e.code === 'ArrowUp') {
+          e.preventDefault();
+          shoot();
+        }
+      };
+      const handleKeyUp = (e: KeyboardEvent) => {
+        if (['ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD'].includes(e.code)) {
+          playerVx = 0;
         }
       };
 
       canvas.addEventListener('mousemove', handleMove);
       canvas.addEventListener('click', shoot);
-      const handleKey = (e: KeyboardEvent) => {
-        if (e.code === 'Space') {
-          e.preventDefault();
-          shoot();
-        }
-        if (e.code === 'ArrowLeft' || e.code === 'KeyA') playerVx = -5;
-        if (e.code === 'ArrowRight' || e.code === 'KeyD') playerVx = 5;
-      };
-      const handleKeyUp = (e: KeyboardEvent) => {
-        if (['ArrowLeft', 'ArrowRight', 'KeyA', 'KeyD'].includes(e.code)) playerVx = 0;
-      };
       window.addEventListener('keydown', handleKey);
       window.addEventListener('keyup', handleKeyUp);
 
       const loop = () => {
         if (!active) return;
         ctx.clearRect(0, 0, width, height);
-        if (fireCooldown > 0) fireCooldown--;
 
-        playerX += playerVx;
-        playerX = Math.max(30, Math.min(width - 30, playerX));
-
-        // Space background
-        ctx.fillStyle = '#090d16';
+        ctx.fillStyle = '#09090b';
         ctx.fillRect(0, 0, width, height);
 
-        // Move Enemies
-        let hitEdge = false;
-        enemies.forEach(e => {
-          if (e.alive) {
-            e.x += enemyVx;
-            if (e.x < 30 || e.x > width - 30) hitEdge = true;
-          }
-        });
-        if (hitEdge) {
-          enemyVx *= -1.05;
-          enemies.forEach(e => {
-            if (e.alive) e.y += 18;
-          });
-        }
+        playerX = Math.max(30, Math.min(width - 30, playerX + playerVx));
+        if (fireCooldown > 0) fireCooldown--;
 
-        // Bullets
-        ctx.fillStyle = '#38bdf8';
         for (let i = bullets.length - 1; i >= 0; i--) {
           const b = bullets[i];
-          b.y -= 7.5;
-          ctx.fillRect(b.x - 2, b.y - 8, 4, 16);
+          b.y -= 8.5;
+          ctx.fillStyle = '#38bdf8';
+          ctx.fillRect(b.x - 2.5, b.y, 5, 12);
 
-          // Hit enemies
-          for (const e of enemies) {
-            if (e.alive && Math.hypot(b.x - e.x, b.y - e.y) < 22) {
-              e.alive = false;
+          for (const enemy of enemies) {
+            if (enemy.alive && Math.hypot(b.x - enemy.x, b.y - enemy.y) < 24) {
+              enemy.alive = false;
               bullets.splice(i, 1);
-              const pts = e.isUfo ? 60 : 20;
+              const pts = enemy.isUfo ? 60 : 20;
               currentScore += pts;
               setScore(currentScore);
-              playSound(e.isUfo ? 880 : 350, 'triangle', 0.12);
+              playSound(enemy.isUfo ? 880 : 350, 'sawtooth', 0.12);
               break;
             }
           }
-          if (b.y < -20) bullets.splice(i, 1);
+          if (b && b.y < -10) bullets.splice(i, 1);
         }
 
-        // Draw enemies
-        let livingCount = 0;
+        let changeDir = false;
+        let anyAlive = false;
         enemies.forEach(e => {
-          if (e.alive) {
-            livingCount++;
-            ctx.font = '26px sans-serif';
-            ctx.fillText(e.isUfo ? '🛸' : '👾', e.x - 13, e.y + 10);
+          if (!e.alive) return;
+          anyAlive = true;
+          e.x += enemyVx;
+          if (e.x < 35 || e.x > width - 35) changeDir = true;
 
-            // Reached bottom?
-            if (e.y >= height - 70) {
-              active = false;
-              recordScore(currentScore);
-              return;
-            }
+          ctx.font = '28px sans-serif';
+          ctx.fillText(e.isUfo ? '🛸' : '🐝', e.x - 14, e.y + 10);
+
+          if (e.y > height - 60) {
+            active = false;
+            recordScore(currentScore);
+            return;
           }
         });
 
-        // Respawn wave if all dead
-        if (livingCount === 0) {
-          currentScore += 100;
+        if (!anyAlive) {
+          currentScore += 150;
           setScore(currentScore);
-          enemies.forEach((e, idx) => {
-            e.alive = true;
-            e.y = 50 + Math.floor(idx / 7) * 45;
-          });
-          enemyVx = 1.6;
+          active = false;
+          recordScore(currentScore);
+          return;
         }
 
-        // Draw player spaceship
+        if (changeDir) {
+          enemyVx = -enemyVx * 1.05;
+          enemies.forEach(e => { e.y += 14; });
+        }
+
         ctx.font = '34px sans-serif';
-        ctx.fillText('🚀', playerX - 17, height - 35);
+        ctx.fillText('🚀', playerX - 17, height - 20);
 
         ctx.fillStyle = '#a855f7';
         ctx.font = 'bold 20px sans-serif';
@@ -1099,14 +892,23 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
       let currentScore = 0;
       let pipes: { x: number; topH: number; bottomY: number; passed?: boolean }[] = [];
       let frame = 0;
+      let hasStarted = false;
 
       const flap = () => {
+        hasStarted = true;
         bearVy = -6.5;
         playSound(480, 'sine', 0.08);
       };
+
+      gameControlsRef.current = {
+        onAction: () => flap(),
+        onDpad: () => flap(),
+        onTouchTap: () => flap()
+      };
+
       canvas.onclick = flap;
       const handleKey = (e: KeyboardEvent) => {
-        if (e.code === 'Space' || e.code === 'ArrowUp') {
+        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
           e.preventDefault();
           flap();
         }
@@ -1118,24 +920,26 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
         frame++;
         ctx.clearRect(0, 0, width, height);
 
-        // Sky & Honey Pillars
         ctx.fillStyle = '#065f46';
         ctx.fillRect(0, 0, width, height);
 
-        bearVy += 0.32;
-        bearY += bearVy;
+        if (!hasStarted) {
+          bearY = height / 2 + Math.sin(frame * 0.08) * 8;
+        } else {
+          bearVy += 0.32;
+          bearY += bearVy;
 
-        if (frame % 85 === 0) {
-          const gap = 110;
-          const topH = 40 + Math.random() * (height - gap - 90);
-          pipes.push({
-            x: width + 20,
-            topH,
-            bottomY: topH + gap
-          });
+          if (frame % 85 === 0) {
+            const gap = 115;
+            const topH = 40 + Math.random() * (height - gap - 90);
+            pipes.push({
+              x: width + 20,
+              topH,
+              bottomY: topH + gap
+            });
+          }
         }
 
-        // Draw pipes
         for (let i = pipes.length - 1; i >= 0; i--) {
           const p = pipes[i];
           p.x -= 3.2;
@@ -1144,7 +948,6 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
           ctx.fillRect(p.x, 0, 48, p.topH);
           ctx.fillRect(p.x, p.bottomY, 48, height - p.bottomY);
 
-          // Collision
           const bearX = 100;
           if (bearX + 14 > p.x && bearX - 14 < p.x + 48) {
             if (bearY - 12 < p.topH || bearY + 12 > p.bottomY) {
@@ -1164,11 +967,10 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
           if (p.x < -60) pipes.splice(i, 1);
         }
 
-        // Bear with wings
         ctx.font = '32px sans-serif';
         ctx.fillText('🐻', 85, bearY + 10);
 
-        if (bearY > height + 20 || bearY < -20) {
+        if (hasStarted && (bearY > height + 20 || bearY < -20)) {
           active = false;
           recordScore(currentScore);
           return;
@@ -1177,6 +979,14 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
         ctx.fillStyle = '#fef08a';
         ctx.font = 'bold 20px sans-serif';
         ctx.fillText(`🐝 Flappy Skoru: ${currentScore}`, 20, 36);
+
+        if (!hasStarted) {
+          ctx.fillStyle = '#fde047';
+          ctx.font = 'bold 18px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('🪽 Uçmak için ZIPLA Tuşuna veya Ekrana Dokun!', width / 2, height / 2 + 60);
+          ctx.textAlign = 'left';
+        }
 
         animFrameIdRef.current = requestAnimationFrame(loop);
       };
@@ -1190,13 +1000,14 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
 
     // --- 5: BRICK BREAKER ---
     else if (selectedGame === 'brick_breaker') {
-      let paddleX = width / 2 - 45;
       let paddleW = 90;
+      let paddleX = width / 2 - paddleW / 2;
       let ballX = width / 2;
       let ballY = height - 70;
       let ballVx = 3.5 * (Math.random() < 0.5 ? 1 : -1);
       let ballVy = -4.0;
       let currentScore = 0;
+      let ballLaunched = false;
 
       let bricks: { x: number; y: number; w: number; h: number; color: string; alive: boolean }[] = [];
       const colors = ['#f43f5e', '#ec4899', '#a855f7', '#3b82f6'];
@@ -1213,12 +1024,30 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
         }
       }
 
+      const setPaddleNormX = (normX: number) => {
+        paddleX = Math.max(0, Math.min(width - paddleW, normX * width - paddleW / 2));
+      };
+
+      gameControlsRef.current = {
+        onDpad: (dir) => {
+          ballLaunched = true;
+          if (dir === 'left') paddleX = Math.max(0, paddleX - 45);
+          if (dir === 'right') paddleX = Math.min(width - paddleW, paddleX + 45);
+        },
+        onTouchMove: (normX) => setPaddleNormX(normX),
+        onTouchTap: (normX) => {
+          ballLaunched = true;
+          setPaddleNormX(normX);
+        },
+        onAction: () => { ballLaunched = true; }
+      };
+
       const handleMove = (e: MouseEvent) => {
         const rect = canvas.getBoundingClientRect();
-        const mx = ((e.clientX - rect.left) / rect.width) * width;
-        paddleX = Math.max(0, Math.min(width - paddleW, mx - paddleW / 2));
+        setPaddleNormX((e.clientX - rect.left) / rect.width);
       };
       canvas.addEventListener('mousemove', handleMove);
+      canvas.addEventListener('click', () => { ballLaunched = true; });
 
       const loop = () => {
         if (!active) return;
@@ -1227,68 +1056,66 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
         ctx.fillStyle = '#1e1b4b';
         ctx.fillRect(0, 0, width, height);
 
-        ballX += ballVx;
-        ballY += ballVy;
+        if (!ballLaunched) {
+          ballX = paddleX + paddleW / 2;
+          ballY = height - 55;
+        } else {
+          ballX += ballVx;
+          ballY += ballVy;
 
-        // Bounce walls
-        if (ballX < 10 || ballX > width - 10) {
-          ballVx *= -1;
-          playSound(300, 'sine', 0.05);
-        }
-        if (ballY < 10) {
-          ballVy *= -1;
-          playSound(300, 'sine', 0.05);
-        }
-
-        // Paddle hit
-        if (ballY + 8 >= height - 35 && ballY - 8 <= height - 20) {
-          if (ballX >= paddleX && ballX <= paddleX + paddleW) {
-            ballVy = -Math.abs(ballVy);
-            const hitRatio = (ballX - (paddleX + paddleW / 2)) / (paddleW / 2);
-            ballVx = hitRatio * 5.0;
-            playSound(520, 'triangle', 0.08);
+          if (ballX < 10 || ballX > width - 10) {
+            ballVx *= -1;
+            playSound(300, 'sine', 0.05);
           }
-        }
+          if (ballY < 10) {
+            ballVy *= -1;
+            playSound(300, 'sine', 0.05);
+          }
 
-        // Bricks hit
-        let remaining = 0;
-        bricks.forEach(b => {
-          if (b.alive) {
-            remaining++;
-            ctx.fillStyle = b.color;
-            ctx.fillRect(b.x, b.y, b.w, b.h);
-
-            if (ballX > b.x && ballX < b.x + b.w && ballY > b.y && ballY < b.y + b.h) {
-              b.alive = false;
-              ballVy *= -1;
-              currentScore += 15;
-              setScore(currentScore);
-              playSound(660, 'sine', 0.08);
+          if (ballY + 8 >= height - 35 && ballY - 8 <= height - 20) {
+            if (ballX >= paddleX && ballX <= paddleX + paddleW) {
+              ballVy = -Math.abs(ballVy);
+              const hitRatio = (ballX - (paddleX + paddleW / 2)) / (paddleW / 2);
+              ballVx = hitRatio * 5.0;
+              playSound(520, 'triangle', 0.08);
             }
           }
-        });
 
-        // Clear bonus
-        if (remaining === 0) {
-          currentScore += 200;
-          setScore(currentScore);
-          active = false;
-          recordScore(currentScore);
-          return;
+          let remaining = 0;
+          bricks.forEach(b => {
+            if (b.alive) {
+              remaining++;
+              ctx.fillStyle = b.color;
+              ctx.fillRect(b.x, b.y, b.w, b.h);
+
+              if (ballX > b.x && ballX < b.x + b.w && ballY > b.y && ballY < b.y + b.h) {
+                b.alive = false;
+                ballVy *= -1;
+                currentScore += 15;
+                setScore(currentScore);
+                playSound(660, 'sine', 0.08);
+              }
+            }
+          });
+
+          if (remaining === 0) {
+            currentScore += 200;
+            setScore(currentScore);
+            active = false;
+            recordScore(currentScore);
+            return;
+          }
+
+          if (ballY > height + 20) {
+            active = false;
+            recordScore(currentScore);
+            return;
+          }
         }
 
-        // Fell down
-        if (ballY > height + 20) {
-          active = false;
-          recordScore(currentScore);
-          return;
-        }
-
-        // Draw Paddle
         ctx.fillStyle = '#f59e0b';
         ctx.fillRect(paddleX, height - 35, paddleW, 14);
 
-        // Draw Ball
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.arc(ballX, ballY, 8, 0, Math.PI * 2);
@@ -1297,6 +1124,14 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
         ctx.fillStyle = '#ec4899';
         ctx.font = 'bold 20px sans-serif';
         ctx.fillText(`🧱 Tuğla Skoru: ${currentScore}`, 20, 36);
+
+        if (!ballLaunched) {
+          ctx.fillStyle = '#fde047';
+          ctx.font = 'bold 18px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('🕹️ Topu Fırlatmak İçin Ekrana Dokun!', width / 2, height / 2);
+          ctx.textAlign = 'left';
+        }
 
         animFrameIdRef.current = requestAnimationFrame(loop);
       };
@@ -1313,9 +1148,10 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
       const gridSize = 20;
       let snake = [{ x: 10, y: 10 }, { x: 9, y: 10 }, { x: 8, y: 10 }];
       let dir = { x: 1, y: 0 };
-      let food = { x: 15, y: 10, isGold: false };
+      let food = { x: 16, y: 10, isGold: false };
       let currentScore = 0;
       let frame = 0;
+      let hasStarted = false;
 
       const spawnFood = () => {
         food = {
@@ -1325,15 +1161,50 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
         };
       };
 
+      const setSnakeDirection = (newDir: { x: number; y: number }) => {
+        hasStarted = true;
+        if (newDir.x !== 0 && dir.x === 0) {
+          dir = newDir;
+          playSound(480, 'triangle', 0.05);
+        } else if (newDir.y !== 0 && dir.y === 0) {
+          dir = newDir;
+          playSound(440, 'triangle', 0.05);
+        } else if (!hasStarted) {
+          dir = newDir;
+          playSound(480, 'triangle', 0.05);
+        }
+      };
+
+      gameControlsRef.current = {
+        onDpad: (dirName) => {
+          if (dirName === 'up') setSnakeDirection({ x: 0, y: -1 });
+          else if (dirName === 'down') setSnakeDirection({ x: 0, y: 1 });
+          else if (dirName === 'left') setSnakeDirection({ x: -1, y: 0 });
+          else if (dirName === 'right') setSnakeDirection({ x: 1, y: 0 });
+        },
+        onSwipe: (dirName) => {
+          if (dirName === 'up') setSnakeDirection({ x: 0, y: -1 });
+          else if (dirName === 'down') setSnakeDirection({ x: 0, y: 1 });
+          else if (dirName === 'left') setSnakeDirection({ x: -1, y: 0 });
+          else if (dirName === 'right') setSnakeDirection({ x: 1, y: 0 });
+        },
+        onTouchTap: (normX, normY) => {
+          if (normY < 0.35) setSnakeDirection({ x: 0, y: -1 });
+          else if (normY > 0.65) setSnakeDirection({ x: 0, y: 1 });
+          else if (normX < 0.5) setSnakeDirection({ x: -1, y: 0 });
+          else setSnakeDirection({ x: 1, y: 0 });
+        }
+      };
+
       const handleKey = (e: KeyboardEvent) => {
-        if ((e.code === 'ArrowUp' || e.code === 'KeyW') && dir.y === 0) {
-          e.preventDefault(); dir = { x: 0, y: -1 };
-        } else if ((e.code === 'ArrowDown' || e.code === 'KeyS') && dir.y === 0) {
-          e.preventDefault(); dir = { x: 0, y: 1 };
-        } else if ((e.code === 'ArrowLeft' || e.code === 'KeyA') && dir.x === 0) {
-          e.preventDefault(); dir = { x: -1, y: 0 };
-        } else if ((e.code === 'ArrowRight' || e.code === 'KeyD') && dir.x === 0) {
-          e.preventDefault(); dir = { x: 1, y: 0 };
+        if ((e.code === 'ArrowUp' || e.code === 'KeyW')) {
+          e.preventDefault(); setSnakeDirection({ x: 0, y: -1 });
+        } else if ((e.code === 'ArrowDown' || e.code === 'KeyS')) {
+          e.preventDefault(); setSnakeDirection({ x: 0, y: 1 });
+        } else if ((e.code === 'ArrowLeft' || e.code === 'KeyA')) {
+          e.preventDefault(); setSnakeDirection({ x: -1, y: 0 });
+        } else if ((e.code === 'ArrowRight' || e.code === 'KeyD')) {
+          e.preventDefault(); setSnakeDirection({ x: 1, y: 0 });
         }
       };
       window.addEventListener('keydown', handleKey);
@@ -1342,18 +1213,16 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
         if (!active) return;
         frame++;
 
-        // Update every 8 frames
-        if (frame % 8 === 0) {
+        // Only advance snake once started
+        if (hasStarted && frame % 8 === 0) {
           const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
 
-          // Wall collision
           if (head.x < 0 || head.x >= width / gridSize || head.y < 0 || head.y >= height / gridSize) {
             active = false;
             recordScore(currentScore);
             return;
           }
 
-          // Self collision
           for (const s of snake) {
             if (s.x === head.x && s.y === head.y) {
               active = false;
@@ -1364,7 +1233,6 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
 
           snake.unshift(head);
 
-          // Eat food
           if (head.x === food.x && head.y === food.y) {
             const pts = food.isGold ? 50 : 10;
             currentScore += pts;
@@ -1376,7 +1244,6 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
           }
         }
 
-        // Draw
         ctx.fillStyle = '#064e3b';
         ctx.fillRect(0, 0, width, height);
 
@@ -1398,6 +1265,14 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
         ctx.font = 'bold 20px sans-serif';
         ctx.fillText(`🐍 Yılan Skoru: ${currentScore}`, 20, 36);
 
+        if (!hasStarted) {
+          ctx.fillStyle = '#fde047';
+          ctx.font = 'bold 18px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('🕹️ Başlamak İçin D-Pad Tuşuna Bas veya Ekranda Kaydır!', width / 2, height / 2);
+          ctx.textAlign = 'left';
+        }
+
         animFrameIdRef.current = requestAnimationFrame(loop);
       };
       loop();
@@ -1416,9 +1291,22 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
       let currentScore = 0;
       let frame = 0;
 
+      const setPlayerNormX = (normX: number) => {
+        playerX = Math.max(25, Math.min(width - 25, normX * width));
+      };
+
+      gameControlsRef.current = {
+        onDpad: (dir) => {
+          if (dir === 'left') playerX = Math.max(25, playerX - 40);
+          if (dir === 'right') playerX = Math.min(width - 25, playerX + 40);
+        },
+        onTouchMove: (normX) => setPlayerNormX(normX),
+        onTouchTap: (normX) => setPlayerNormX(normX)
+      };
+
       const handleMove = (e: MouseEvent) => {
         const rect = canvas.getBoundingClientRect();
-        playerX = ((e.clientX - rect.left) / rect.width) * width;
+        setPlayerNormX((e.clientX - rect.left) / rect.width);
       };
       canvas.addEventListener('mousemove', handleMove);
 
@@ -1446,7 +1334,6 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
           });
         }
 
-        // Draw stars
         for (let i = stars.length - 1; i >= 0; i--) {
           const st = stars[i];
           st.y += st.vy;
@@ -1462,7 +1349,6 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
           if (st.y > height + 20) stars.splice(i, 1);
         }
 
-        // Draw meteors
         for (let i = meteors.length - 1; i >= 0; i--) {
           const m = meteors[i];
           m.y += m.vy;
@@ -1481,7 +1367,6 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
           }
         }
 
-        // Player Bear
         ctx.font = '34px sans-serif';
         ctx.fillText('🐻', playerX - 17, height - 25);
 
@@ -1499,7 +1384,7 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
       };
     }
 
-    // --- 8: WHACK A MOLE / THIEF ---
+    // --- 8: WHACK A MOLE ---
     else if (selectedGame === 'whack_mole') {
       let currentScore = 0;
       let timeLeft = 30;
@@ -1517,6 +1402,22 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
         }
       }
 
+      const hitAt = (mx: number, my: number) => {
+        holes.forEach(h => {
+          if (h.hasMole && Math.hypot(mx - h.x, my - (h.y - 10)) < 48) {
+            const pts = h.isQueen ? 50 : 20;
+            currentScore += pts;
+            setScore(currentScore);
+            playSound(h.isQueen ? 800 : 450, 'triangle', 0.12);
+            h.hasMole = false;
+          }
+        });
+      };
+
+      gameControlsRef.current = {
+        onTouchTap: (normX, normY) => hitAt(normX * width, normY * height)
+      };
+
       const timerInterval = setInterval(() => {
         timeLeft--;
         if (timeLeft <= 0) {
@@ -1528,18 +1429,7 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
 
       const handleClick = (e: MouseEvent) => {
         const rect = canvas.getBoundingClientRect();
-        const mx = ((e.clientX - rect.left) / rect.width) * width;
-        const my = ((e.clientY - rect.top) / rect.height) * height;
-
-        holes.forEach(h => {
-          if (h.hasMole && Math.hypot(mx - h.x, my - (h.y - 10)) < 45) {
-            const pts = h.isQueen ? 50 : 20;
-            currentScore += pts;
-            setScore(currentScore);
-            playSound(h.isQueen ? 800 : 450, 'triangle', 0.12);
-            h.hasMole = false;
-          }
-        });
+        hitAt(((e.clientX - rect.left) / rect.width) * width, ((e.clientY - rect.top) / rect.height) * height);
       };
       canvas.addEventListener('click', handleClick);
 
@@ -1552,7 +1442,6 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
         ctx.fillStyle = '#14532d';
         ctx.fillRect(0, 0, width, height);
 
-        // Random popup
         if (frame % 45 === 0) {
           const emptyHoles = holes.filter(h => !h.hasMole);
           if (emptyHoles.length > 0) {
@@ -1563,7 +1452,6 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
           }
         }
 
-        // Draw holes
         holes.forEach(h => {
           ctx.beginPath();
           ctx.ellipse(h.x, h.y + 15, 45, 18, 0, 0, Math.PI * 2);
@@ -1612,6 +1500,25 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
       };
       for (let i = 0; i < 4; i++) spawnTarget();
 
+      const shootAt = (mx: number, my: number) => {
+        for (let i = targets.length - 1; i >= 0; i--) {
+          const t = targets[i];
+          if (Math.hypot(mx - t.x, my - t.y) < t.r + 10) {
+            const pts = t.isGold ? 40 : 15;
+            currentScore += pts;
+            setScore(currentScore);
+            playSound(t.isGold ? 784 : 523, 'triangle', 0.12);
+            targets.splice(i, 1);
+            spawnTarget();
+            break;
+          }
+        }
+      };
+
+      gameControlsRef.current = {
+        onTouchTap: (normX, normY) => shootAt(normX * width, normY * height)
+      };
+
       const timerInterval = setInterval(() => {
         timeLeft--;
         if (timeLeft <= 0) {
@@ -1623,21 +1530,7 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
 
       const handleClick = (e: MouseEvent) => {
         const rect = canvas.getBoundingClientRect();
-        const mx = ((e.clientX - rect.left) / rect.width) * width;
-        const my = ((e.clientY - rect.top) / rect.height) * height;
-
-        for (let i = targets.length - 1; i >= 0; i--) {
-          const t = targets[i];
-          if (Math.hypot(mx - t.x, my - t.y) < t.r) {
-            const pts = t.isGold ? 40 : 15;
-            currentScore += pts;
-            setScore(currentScore);
-            playSound(t.isGold ? 784 : 523, 'triangle', 0.12);
-            targets.splice(i, 1);
-            spawnTarget();
-            break;
-          }
-        }
+        shootAt(((e.clientX - rect.left) / rect.width) * width, ((e.clientY - rect.top) / rect.height) * height);
       };
       canvas.addEventListener('click', handleClick);
 
@@ -1650,23 +1543,22 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
 
         targets.forEach(t => {
           t.x += t.vx;
-          if (t.x < -30 || t.x > width + 30) t.vx *= -1;
+          if (t.vx > 0 && t.x > width + 30) t.x = -30;
+          if (t.vx < 0 && t.x < -30) t.x = width + 30;
 
           ctx.beginPath();
           ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2);
-          ctx.fillStyle = t.isGold ? '#eab308' : '#dc2626';
+          ctx.fillStyle = t.isGold ? '#eab308' : '#ef4444';
           ctx.fill();
-          ctx.strokeStyle = '#ffffff';
           ctx.lineWidth = 3;
+          ctx.strokeStyle = '#ffffff';
           ctx.stroke();
 
-          ctx.beginPath();
-          ctx.arc(t.x, t.y, t.r * 0.5, 0, Math.PI * 2);
-          ctx.fillStyle = '#ffffff';
-          ctx.fill();
+          ctx.font = `${Math.floor(t.r * 1.1)}px sans-serif`;
+          ctx.fillText(t.isGold ? '⭐' : '🎯', t.x - t.r * 0.55, t.y + t.r * 0.4);
         });
 
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = '#f87171';
         ctx.font = 'bold 20px sans-serif';
         ctx.fillText(`🎯 Skor: ${currentScore}`, 20, 36);
         ctx.fillStyle = timeLeft < 8 ? '#ef4444' : '#fde047';
@@ -1701,8 +1593,15 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
           playSound(330, 'sawtooth', 0.1);
         }
       };
+
+      gameControlsRef.current = {
+        onAction: () => jump(),
+        onDpad: (dir) => { if (dir === 'up') jump(); },
+        onTouchTap: () => jump()
+      };
+
       const handleKey = (e: KeyboardEvent) => {
-        if (e.code === 'Space' || e.code === 'ArrowUp') {
+        if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
           e.preventDefault();
           jump();
         }
@@ -1774,6 +1673,78 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
 
   }, [isPlaying, selectedGame]);
 
+  // Touch & Swipe handlers on the game viewport
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      touchStartRef.current = {
+        x: touch.clientX,
+        y: touch.clientY,
+        time: Date.now()
+      };
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const normX = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+        const normY = Math.max(0, Math.min(1, (touch.clientY - rect.top) / rect.height));
+        gameControlsRef.current.onTouchMove?.(normX, normY, touch.clientX, touch.clientY);
+      }
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 1 && touchStartRef.current) {
+      const touch = e.touches[0];
+      const canvas = canvasRef.current;
+      if (canvas) {
+        const rect = canvas.getBoundingClientRect();
+        const normX = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+        const normY = Math.max(0, Math.min(1, (touch.clientY - rect.top) / rect.height));
+        gameControlsRef.current.onTouchMove?.(normX, normY, touch.clientX, touch.clientY);
+      }
+
+      // Check for swipe gesture
+      const dx = touch.clientX - touchStartRef.current.x;
+      const dy = touch.clientY - touchStartRef.current.y;
+      if (Math.abs(dx) > 30 || Math.abs(dy) > 30) {
+        if (Math.abs(dx) > Math.abs(dy)) {
+          gameControlsRef.current.onSwipe?.(dx > 0 ? 'right' : 'left');
+        } else {
+          gameControlsRef.current.onSwipe?.(dy > 0 ? 'down' : 'up');
+        }
+        // reset anchor for continuous gestures
+        touchStartRef.current = { x: touch.clientX, y: touch.clientY, time: Date.now() };
+      }
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartRef.current) {
+      const touch = e.changedTouches[0];
+      const dx = touch.clientX - touchStartRef.current.x;
+      const dy = touch.clientY - touchStartRef.current.y;
+      const dt = Date.now() - touchStartRef.current.time;
+
+      if (dt < 350 && Math.abs(dx) < 20 && Math.abs(dy) < 20) {
+        // Quick Tap
+        const canvas = canvasRef.current;
+        if (canvas) {
+          const rect = canvas.getBoundingClientRect();
+          const normX = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+          const normY = Math.max(0, Math.min(1, (touch.clientY - rect.top) / rect.height));
+          gameControlsRef.current.onTouchTap?.(normX, normY, touch.clientX, touch.clientY);
+        }
+      } else if (Math.abs(dx) >= 20 || Math.abs(dy) >= 20) {
+        if (Math.abs(dx) > Math.abs(dy)) {
+          gameControlsRef.current.onSwipe?.(dx > 0 ? 'right' : 'left');
+        } else {
+          gameControlsRef.current.onSwipe?.(dy > 0 ? 'down' : 'up');
+        }
+      }
+      touchStartRef.current = null;
+    }
+  };
+
   if (!isOpen) return null;
 
   const currentMeta = allLocalizedGames.find(g => g.id === selectedGame) || allLocalizedGames[0];
@@ -1783,69 +1754,283 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
     ? dailyRotationGames 
     : allLocalizedGames;
 
+  // 1. GAMEPLAY SCREEN: DEDICATED IMMERSIVE RETRO ARCADE VIEW
+  if (isPlaying) {
+    return (
+      <div 
+        className="fixed inset-0 z-[150] w-screen h-screen bg-black flex flex-col justify-between select-none overflow-hidden touch-none"
+        style={{
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          paddingLeft: 'env(safe-area-inset-left, 0px)',
+          paddingRight: 'env(safe-area-inset-right, 0px)'
+        }}
+      >
+        {/* Floating Minimal Top HUD Bar */}
+        <div className="h-11 sm:h-12 px-3 sm:px-5 bg-slate-900/95 border-b border-purple-500/40 flex items-center justify-between shrink-0 shadow-xl backdrop-blur-md z-30">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setIsPlaying(false);
+                setGameOver(false);
+              }}
+              className="px-2.5 py-1 rounded-xl bg-purple-950/90 hover:bg-purple-900 text-purple-200 border border-purple-400/50 text-xs font-black flex items-center gap-1 transition active:scale-95 cursor-pointer shadow"
+            >
+              <span>{t.changeGame}</span>
+            </button>
+            <span className="text-xl sm:text-2xl">{currentMeta.icon}</span>
+            <div className="flex items-center gap-1.5">
+              <span className="font-black text-xs sm:text-sm text-white">{currentMeta.title}</span>
+              {isSelectedGameDaily && (
+                <span className="px-1.5 py-0.2 rounded bg-amber-400 text-slate-950 font-black text-[10px]">
+                  2X
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Center Scores */}
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="px-3 py-0.5 rounded-full bg-slate-950 border border-amber-400/60 flex items-center gap-1.5 shadow">
+              <span className="text-[11px] text-purple-300 font-bold">{t.liveScore}:</span>
+              <span className="text-sm sm:text-base font-black text-amber-300">{score}</span>
+            </div>
+            <div className="hidden sm:flex items-center gap-1 text-xs text-amber-400 font-bold">
+              <Trophy className="w-3.5 h-3.5 text-amber-400" />
+              <span>{highScores[selectedGame] || 0}</span>
+            </div>
+          </div>
+
+          {/* Right Action Tools */}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => {
+                setIsPlaying(false);
+                setTimeout(() => {
+                  setGameOver(false);
+                  setScore(0);
+                  setIsPlaying(true);
+                }, 50);
+              }}
+              title={t.playAgainBtn}
+              className="p-1.5 sm:px-2.5 sm:py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-600 text-xs font-bold transition active:scale-95 cursor-pointer flex items-center gap-1"
+            >
+              <RotateCcw className="w-4 h-4 text-purple-300" />
+              <span className="hidden md:inline">{t.playAgainBtn}</span>
+            </button>
+            <button
+              onClick={() => toggleImmersiveFullscreen()}
+              title={isFullscreen ? 'Pencere Modu' : 'Tam Ekran Modu'}
+              className="p-1.5 sm:px-2.5 sm:py-1 rounded-xl bg-gradient-to-r from-purple-700 to-indigo-800 hover:from-purple-600 hover:to-indigo-700 text-amber-300 border border-purple-400/60 text-xs font-bold transition active:scale-95 cursor-pointer flex items-center gap-1"
+            >
+              {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+              <span className="hidden md:inline">{t.fullscreenBtn}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Center Game Viewport */}
+        <div 
+          className="relative flex-1 w-full flex items-center justify-center bg-black overflow-hidden touch-none"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          <canvas
+            ref={canvasRef}
+            className="w-full h-full max-h-full max-w-full aspect-[680/380] object-contain cursor-crosshair border border-purple-900/30"
+          />
+
+          {/* ON-SCREEN VIRTUAL TOUCH CONTROLLER OVERLAYS */}
+          {/* A. 4-WAY D-PAD FOR BEAR SNAKE */}
+          {selectedGame === 'bear_snake' && (
+            <>
+              {/* Retro Arcade D-Pad on bottom-left */}
+              <div className="absolute bottom-3 left-3 sm:bottom-4 sm:left-6 z-20 flex flex-col items-center gap-1.5 pointer-events-auto select-none">
+                <button
+                  onPointerDown={(e) => { e.preventDefault(); gameControlsRef.current.onDpad?.('up'); }}
+                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-purple-950/85 active:bg-purple-600 border-2 border-purple-400 text-amber-300 flex items-center justify-center shadow-2xl active:scale-90 transition-transform"
+                  aria-label="Yukarı"
+                >
+                  <ArrowUp className="w-7 h-7 stroke-[3]" />
+                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onPointerDown={(e) => { e.preventDefault(); gameControlsRef.current.onDpad?.('left'); }}
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-purple-950/85 active:bg-purple-600 border-2 border-purple-400 text-amber-300 flex items-center justify-center shadow-2xl active:scale-90 transition-transform"
+                    aria-label="Sol"
+                  >
+                    <ArrowLeft className="w-7 h-7 stroke-[3]" />
+                  </button>
+                  <div className="w-5 h-5 rounded-full bg-purple-500/40 border border-purple-300/40"></div>
+                  <button
+                    onPointerDown={(e) => { e.preventDefault(); gameControlsRef.current.onDpad?.('right'); }}
+                    className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-purple-950/85 active:bg-purple-600 border-2 border-purple-400 text-amber-300 flex items-center justify-center shadow-2xl active:scale-90 transition-transform"
+                    aria-label="Sağ"
+                  >
+                    <ArrowRight className="w-7 h-7 stroke-[3]" />
+                  </button>
+                </div>
+                <button
+                  onPointerDown={(e) => { e.preventDefault(); gameControlsRef.current.onDpad?.('down'); }}
+                  className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-purple-950/85 active:bg-purple-600 border-2 border-purple-400 text-amber-300 flex items-center justify-center shadow-2xl active:scale-90 transition-transform"
+                  aria-label="Aşağı"
+                >
+                  <ArrowDown className="w-7 h-7 stroke-[3]" />
+                </button>
+              </div>
+
+              {/* On-Screen Touch / Swipe Guide Hint */}
+              <div className="absolute bottom-2.5 right-3 z-10 pointer-events-none select-none px-3 py-1.5 rounded-xl bg-slate-950/80 border border-purple-400/40 text-[11px] font-bold text-purple-200 backdrop-blur-md hidden sm:block">
+                <span>{t.swipeOrDpad}</span>
+              </div>
+            </>
+          )}
+
+          {/* B. SPACE INVADERS: LEFT/RIGHT + FIRE BUTTON */}
+          {selectedGame === 'space_invaders' && (
+            <>
+              {/* Left/Right controls on bottom-left */}
+              <div className="absolute bottom-4 left-4 z-20 flex items-center gap-3 pointer-events-auto select-none">
+                <button
+                  onPointerDown={(e) => { e.preventDefault(); gameControlsRef.current.onDpad?.('left'); }}
+                  onPointerUp={(e) => { e.preventDefault(); gameControlsRef.current.onDpadRelease?.('left'); }}
+                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-indigo-950/85 active:bg-indigo-600 border-2 border-indigo-400 text-white flex items-center justify-center shadow-2xl active:scale-90 transition-transform"
+                >
+                  <ArrowLeft className="w-8 h-8 stroke-[3]" />
+                </button>
+                <button
+                  onPointerDown={(e) => { e.preventDefault(); gameControlsRef.current.onDpad?.('right'); }}
+                  onPointerUp={(e) => { e.preventDefault(); gameControlsRef.current.onDpadRelease?.('right'); }}
+                  className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-indigo-950/85 active:bg-indigo-600 border-2 border-indigo-400 text-white flex items-center justify-center shadow-2xl active:scale-90 transition-transform"
+                >
+                  <ArrowRight className="w-8 h-8 stroke-[3]" />
+                </button>
+              </div>
+
+              {/* Fire Button on bottom-right */}
+              <div className="absolute bottom-4 right-4 z-20 pointer-events-auto select-none">
+                <button
+                  onPointerDown={(e) => { e.preventDefault(); gameControlsRef.current.onAction?.('shoot'); }}
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-rose-600 to-amber-500 active:brightness-125 border-3 border-amber-300 text-white flex flex-col items-center justify-center shadow-2xl active:scale-90 transition-transform font-black text-xs sm:text-sm"
+                >
+                  <span className="text-xl sm:text-2xl leading-none">🔥</span>
+                  <span>{t.shootBtn}</span>
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* C. JUMP RUNNERS: HONEY RUSH, FLAPPY BEAR, RETRO RUNNER */}
+          {['honey_rush', 'flappy_bear', 'retro_runner'].includes(selectedGame) && (
+            <div className="absolute bottom-4 right-4 z-20 pointer-events-auto select-none">
+              <button
+                onPointerDown={(e) => { e.preventDefault(); gameControlsRef.current.onAction?.('jump'); }}
+                className="w-18 h-18 sm:w-22 sm:h-22 rounded-full bg-gradient-to-tr from-amber-500 via-yellow-400 to-amber-500 active:brightness-125 border-3 border-amber-200 text-slate-950 flex flex-col items-center justify-center shadow-2xl active:scale-90 transition-transform font-black text-xs sm:text-sm"
+              >
+                <span className="text-2xl sm:text-3xl leading-none">
+                  {selectedGame === 'flappy_bear' ? '🪽' : '🦘'}
+                </span>
+                <span>{selectedGame === 'flappy_bear' ? 'UÇ' : t.jumpBtn}</span>
+              </button>
+            </div>
+          )}
+
+          {/* D. PADDLE / DODGE: BRICK BREAKER, BUBBLE JUMP, METEOR DODGE */}
+          {['brick_breaker', 'bubble_jump', 'meteor_dodge'].includes(selectedGame) && (
+            <div className="absolute bottom-4 inset-x-4 z-20 flex items-center justify-between pointer-events-none select-none">
+              <button
+                onPointerDown={(e) => { e.preventDefault(); gameControlsRef.current.onDpad?.('left'); }}
+                className="pointer-events-auto w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-purple-950/85 active:bg-purple-600 border-2 border-purple-400 text-white flex items-center justify-center shadow-2xl active:scale-90 transition-transform"
+              >
+                <ArrowLeft className="w-8 h-8 stroke-[3]" />
+              </button>
+              <div className="px-3 py-1 rounded-full bg-slate-950/80 border border-purple-400/40 text-[11px] font-bold text-purple-200 backdrop-blur-md hidden sm:block">
+                <span>👈 Ekranda Parmağını Kaydır veya Tuşlara Bas 👉</span>
+              </div>
+              <button
+                onPointerDown={(e) => { e.preventDefault(); gameControlsRef.current.onDpad?.('right'); }}
+                className="pointer-events-auto w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-purple-950/85 active:bg-purple-600 border-2 border-purple-400 text-white flex items-center justify-center shadow-2xl active:scale-90 transition-transform"
+              >
+                <ArrowRight className="w-8 h-8 stroke-[3]" />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // 2. SELECTION / INTRO SCREEN: MOBILE-FIRST FULLSCREEN RESPONSIVE LAYOUT
   return (
     <div 
-      className="fixed inset-0 z-[125] flex items-center justify-center p-1.5 sm:p-5 bg-slate-950/85 backdrop-blur-md animate-in fade-in select-none"
+      className="fixed inset-0 z-[130] flex items-center justify-center p-0 sm:p-4 bg-slate-950/90 backdrop-blur-md select-none overflow-hidden"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="relative w-full max-w-5xl bg-slate-900/95 border-2 border-purple-500/50 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] sm:max-h-[92vh] text-slate-100">
+      <div className="relative w-full h-full sm:h-auto sm:max-h-[94vh] max-w-5xl bg-slate-900 border-0 sm:border-2 border-purple-500/50 rounded-none sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col text-slate-100">
         
-        {/* Sticky Header with Daily Rotation Badge */}
-        <div className="p-3 sm:p-5 bg-gradient-to-r from-purple-800 via-indigo-700 to-purple-900 text-white flex flex-wrap items-center justify-between gap-3 border-b-2 border-purple-400/50 shrink-0 shadow-md">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-slate-950 border-2 border-purple-300 flex items-center justify-center text-xl sm:text-2xl shadow-xl animate-pulse shrink-0">
+        {/* Compact Header */}
+        <div className="px-3 py-2.5 sm:px-5 sm:py-3.5 bg-gradient-to-r from-purple-800 via-indigo-700 to-purple-900 text-white flex items-center justify-between gap-2 border-b-2 border-purple-400/50 shrink-0 shadow-md">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 rounded-2xl bg-slate-950 border-2 border-purple-300 flex items-center justify-center text-lg sm:text-2xl shadow-xl shrink-0">
               🕹️
             </div>
-            <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h2 className="text-base sm:text-2xl font-black tracking-wider text-white">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm sm:text-xl font-black tracking-wider text-white truncate">
                   {t.headerTitle}
                 </h2>
-                <span className="px-2 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-xs border border-amber-300 shadow">
+                <span className="px-2 py-0.2 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] shrink-0">
                   {t.gameCount}
                 </span>
               </div>
-              <div className="flex items-center gap-2 text-xs text-purple-200 mt-0.5 font-medium">
-                <Calendar className="w-3.5 h-3.5 text-amber-300" />
-                <span>{todayDateStr}</span>
-                <span className="text-purple-400">•</span>
-                <span className="text-amber-300 font-bold">{t.gameOfTheDay}: {featuredGame.title} (2X!)</span>
+              <div className="flex items-center gap-2 text-[11px] text-purple-200 font-medium truncate">
+                <span className="hidden sm:inline">{todayDateStr}</span>
+                <span className="hidden sm:inline text-purple-400">•</span>
+                <span className="text-amber-300 font-bold">⭐ {t.gameOfTheDay}: {featuredGame.title} (2X!)</span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             {!dailyClaimed && (
               <button
                 onClick={claimDailyReward}
-                className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-slate-950 font-black text-xs shadow-md flex items-center gap-1.5 transition active:scale-95 cursor-pointer"
+                className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-slate-950 font-black text-xs shadow flex items-center gap-1 transition active:scale-95 cursor-pointer"
               >
-                <Gift className="w-4 h-4 animate-bounce" />
-                <span>{t.claimDailyGift}</span>
+                <Gift className="w-3.5 h-3.5 animate-bounce" />
+                <span className="hidden xs:inline">{t.claimDailyGift}</span>
               </button>
             )}
             <button
+              onClick={() => toggleImmersiveFullscreen()}
+              title={isFullscreen ? 'Pencere' : 'Tam Ekran'}
+              className="p-2 rounded-xl bg-purple-950/80 hover:bg-purple-900 text-amber-300 border border-purple-400/50 transition active:scale-95 cursor-pointer"
+            >
+              {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+            </button>
+            <button
               onClick={onClose}
-              className="min-w-[42px] min-h-[42px] p-2 rounded-2xl bg-rose-600 hover:bg-rose-700 text-white font-black flex items-center justify-center transition active:scale-95 cursor-pointer border-2 border-rose-300 shadow-md"
+              className="p-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-black transition active:scale-95 cursor-pointer border border-rose-300 shadow"
               title={t.closeBtn}
               aria-label={t.closeBtn}
             >
-              <X className="w-6 h-6 stroke-[3]" />
+              <X className="w-5 h-5 stroke-[3]" />
             </button>
           </div>
         </div>
 
         {/* Tabs Bar */}
-        <div className="px-4 py-2.5 bg-slate-950/70 border-b border-purple-500/30 flex items-center justify-between shrink-0">
+        <div className="px-3 py-1.5 sm:px-4 sm:py-2 bg-slate-950/80 border-b border-purple-500/30 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setActiveTab('daily')}
-              className={`px-4 py-1.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3 py-1 sm:px-4 sm:py-1.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 cursor-pointer ${
                 activeTab === 'daily'
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 border border-purple-400'
-                  : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800'
+                  ? 'bg-purple-600 text-white shadow border border-purple-400'
+                  : 'bg-slate-900 text-slate-300 hover:bg-slate-800'
               }`}
             >
               <Sparkles className="w-3.5 h-3.5 text-amber-300" />
@@ -1853,10 +2038,10 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
             </button>
             <button
               onClick={() => setActiveTab('all')}
-              className={`px-4 py-1.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 cursor-pointer ${
+              className={`px-3 py-1 sm:px-4 sm:py-1.5 rounded-xl font-black text-xs transition flex items-center gap-1.5 cursor-pointer ${
                 activeTab === 'all'
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30 border border-purple-400'
-                  : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800'
+                  ? 'bg-purple-600 text-white shadow border border-purple-400'
+                  : 'bg-slate-900 text-slate-300 hover:bg-slate-800'
               }`}
             >
               <Gamepad2 className="w-3.5 h-3.5 text-cyan-300" />
@@ -1864,174 +2049,152 @@ export const ArcadeGamesModal: React.FC<ArcadeGamesModalProps> = ({
             </button>
           </div>
 
-          <div className="text-[11px] font-bold text-amber-300 flex items-center gap-1.5 hidden sm:flex">
-            <Flame className="w-4 h-4 text-orange-400" />
+          <div className="text-[11px] font-bold text-amber-300 hidden sm:flex items-center gap-1">
+            <Flame className="w-3.5 h-3.5 text-orange-400" />
             <span>{t.tabSubtitle}</span>
           </div>
         </div>
 
-        {/* Content Body */}
-        <div className="p-3 sm:p-5 overflow-y-auto space-y-4 flex-1 overscroll-contain">
+        {/* Body Area */}
+        <div className="p-2 sm:p-4 overflow-y-auto space-y-3 flex-1 overscroll-contain">
           
-          {/* Game Selection Grid */}
-          {!isPlaying ? (
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 gap-2 sm:gap-2.5">
-              {displayGames.map(g => {
-                const isSel = selectedGame === g.id;
-                const hs = highScores[g.id] || 0;
-                const isFeatured = g.id === featuredGame.id;
+          {/* Game Selection Horizontal/Grid Strip */}
+          <div className="grid grid-cols-2 xs:grid-cols-4 sm:grid-cols-4 md:grid-cols-5 gap-1.5 sm:gap-2">
+            {displayGames.map(g => {
+              const isSel = selectedGame === g.id;
+              const hs = highScores[g.id] || 0;
+              const isFeatured = g.id === featuredGame.id;
 
-                return (
-                  <button
-                    key={g.id}
-                    disabled={isPlaying}
-                    onClick={() => {
-                      setSelectedGame(g.id);
-                      setGameOver(false);
-                      setScore(0);
-                    }}
-                    className={`p-2.5 sm:p-3 rounded-2xl border-2 text-left transition transform duration-150 flex flex-col justify-between relative overflow-hidden ${
-                      isSel
-                        ? 'border-purple-400 bg-purple-950/60 shadow-lg shadow-purple-500/20 scale-[1.02]'
-                        : 'border-slate-800 bg-slate-900/60 hover:bg-slate-800/50 opacity-85 hover:opacity-100 cursor-pointer'
-                    } ${isPlaying ? 'cursor-not-allowed opacity-50' : ''}`}
-                  >
-                    {isFeatured && (
-                      <span className="absolute top-0 right-0 px-2 py-0.5 bg-gradient-to-l from-amber-400 to-yellow-500 text-slate-950 font-black text-[9px] rounded-bl-lg shadow">
-                        ⭐ 2X
-                      </span>
-                    )}
+              return (
+                <button
+                  key={g.id}
+                  onClick={() => {
+                    setSelectedGame(g.id);
+                    setGameOver(false);
+                    setScore(0);
+                  }}
+                  className={`p-2 rounded-xl border-2 text-left transition transform duration-150 flex flex-col justify-between relative overflow-hidden ${
+                    isSel
+                      ? 'border-purple-400 bg-purple-950/70 shadow-lg shadow-purple-500/30 scale-[1.02]'
+                      : 'border-slate-800 bg-slate-900/70 hover:bg-slate-800/60 opacity-85 hover:opacity-100 cursor-pointer'
+                  }`}
+                >
+                  {isFeatured && (
+                    <span className="absolute top-0 right-0 px-1.5 py-0.2 bg-gradient-to-l from-amber-400 to-yellow-500 text-slate-950 font-black text-[9px] rounded-bl shadow">
+                      2X ⭐
+                    </span>
+                  )}
 
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-2xl">{g.icon}</span>
-                      <span className="text-[9px] font-bold text-purple-300 px-1.5 py-0.5 rounded bg-purple-950/80 border border-purple-800/50">
-                        {g.accentBadge}
-                      </span>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xl sm:text-2xl">{g.icon}</span>
+                    <span className="text-[9px] font-bold text-purple-300 px-1 rounded bg-purple-950/80 border border-purple-800/50">
+                      {g.accentBadge}
+                    </span>
+                  </div>
+
+                  <h4 className="font-black text-xs text-white leading-tight truncate">{g.title}</h4>
+                  
+                  <div className="mt-1 flex items-center justify-between text-[10px] font-bold text-amber-300">
+                    <div className="flex items-center gap-0.5">
+                      <Trophy className="w-3 h-3 text-amber-400" />
+                      <span>{hs}</span>
                     </div>
+                    {isFeatured && <span className="text-amber-400 font-black">2X</span>}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
 
-                    <h4 className="font-black text-sm text-white leading-tight">{g.title}</h4>
-                    
-                    <div className="mt-2 flex items-center justify-between text-[11px] font-bold">
-                      <div className="text-amber-300 flex items-center gap-1">
-                        <Trophy className="w-3 h-3 text-amber-400" />
-                        <span>{hs}</span>
-                      </div>
-                      {isFeatured && (
-                        <span className="text-[10px] text-amber-400 font-black">2X 🍯</span>
+          {/* Selected Game Intro & Play Dashboard */}
+          <div className="rounded-2xl border-2 border-purple-500/40 bg-slate-950/90 p-3 sm:p-5 shadow-xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+              
+              {/* Left Column: Game Meta & Rules */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-purple-950 border border-purple-400/60 flex items-center justify-center text-3xl shadow">
+                    {currentMeta.icon}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg sm:text-xl font-black text-white">{currentMeta.title}</h3>
+                      {isSelectedGameDaily && (
+                        <span className="px-2 py-0.5 bg-amber-400 text-slate-950 font-black rounded text-[10px]">
+                          2X GÜNÜN OYUNU
+                        </span>
                       )}
                     </div>
-                  </button>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex items-center justify-between p-2.5 sm:p-3 bg-purple-950/70 border border-purple-500/40 rounded-2xl shrink-0 animate-in fade-in duration-150">
-              <div className="flex items-center gap-2.5">
-                <span className="text-2xl sm:text-3xl">{currentMeta.icon}</span>
-                <div>
-                  <div className="font-black text-sm sm:text-base text-white flex items-center gap-2">
-                    <span>{currentMeta.title}</span>
-                    {isSelectedGameDaily && (
-                      <span className="px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 font-black text-[10px]">
-                        2X
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-xs text-amber-300 font-bold">
-                    {t.liveScore}: {score} {t.points}
+                    <p className="text-xs text-purple-300 font-semibold">{currentMeta.subtitle}</p>
                   </div>
                 </div>
-              </div>
-              <button
-                onClick={() => {
-                  setIsPlaying(false);
-                  setGameOver(false);
-                }}
-                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-purple-200 border border-purple-400/40 text-xs font-bold transition active:scale-95 cursor-pointer"
-              >
-                {t.changeGame}
-              </button>
-            </div>
-          )}
 
-          {/* Game Screen Canvas or Intro Box */}
-          <div className="relative rounded-2xl overflow-hidden border-2 border-purple-500/40 bg-slate-950 flex items-center justify-center min-h-[260px] sm:min-h-[380px]">
-            {isPlaying ? (
-              <canvas
-                ref={canvasRef}
-                className="w-full h-[260px] sm:h-[380px] max-w-[680px] cursor-pointer touch-none"
-              />
-            ) : (
-              <div className="p-8 text-center max-w-lg space-y-4 animate-in zoom-in-95 duration-200">
-                <div className="text-6xl animate-bounce">{currentMeta.icon}</div>
-                <div>
-                  <div className="flex items-center justify-center gap-2">
-                    <h3 className="text-2xl font-black text-white">{currentMeta.title}</h3>
-                    {isSelectedGameDaily && (
-                      <span className="px-2 py-0.5 bg-amber-400 text-slate-950 font-black rounded-lg text-xs">
-                        🌟 2X
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-purple-300 mt-1 font-semibold">{currentMeta.subtitle}</p>
-                </div>
-
-                <p className="text-sm text-slate-300 leading-relaxed">
+                <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
                   {currentMeta.description}
                 </p>
 
-                <div className="bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-1 text-left inline-block w-full">
-                  <div className="font-black text-purple-300 mb-1 flex items-center gap-1.5">
-                    <Gamepad2 className="w-4 h-4" />
+                {/* Rules List */}
+                <div className="bg-slate-900/90 p-2.5 rounded-xl border border-slate-800 text-xs text-slate-300 space-y-1">
+                  <div className="font-black text-purple-300 flex items-center gap-1.5 text-[11px]">
+                    <Gamepad2 className="w-3.5 h-3.5 text-purple-400" />
                     <span>{t.howToPlay}</span>
                   </div>
                   {currentMeta.rules.map((rule, idx) => (
-                    <div key={idx} className="flex items-center gap-2">
+                    <div key={idx} className="flex items-center gap-1.5 text-[11px]">
                       <span className="text-purple-400">•</span>
                       <span>{rule}</span>
                     </div>
                   ))}
                 </div>
+              </div>
 
+              {/* Right Column: Score, Result & Big Play Button */}
+              <div className="flex flex-col items-center justify-center space-y-3 bg-purple-950/30 p-4 rounded-2xl border border-purple-500/20">
                 {gameOver && (
-                  <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 font-black text-sm flex items-center justify-center gap-3">
-                    <Award className="w-5 h-5 text-amber-400" />
-                    <span>{t.gameOver} {score} {t.points}!</span>
-                    <span className="text-emerald-400 text-xs">
-                      {isSelectedGameDaily ? `(${t.bonusAdded})` : ''}
-                    </span>
+                  <div className="w-full p-2.5 bg-amber-500/15 border border-amber-500/40 rounded-xl text-center">
+                    <div className="flex items-center justify-center gap-2 text-amber-300 font-black text-sm">
+                      <Award className="w-4 h-4 text-amber-400" />
+                      <span>{t.gameOver} {score} {t.points}!</span>
+                    </div>
+                    {isSelectedGameDaily && (
+                      <span className="text-emerald-400 text-[11px] font-bold block mt-0.5">
+                        {t.bonusAdded}
+                      </span>
+                    )}
                   </div>
                 )}
 
-                <div>
-                  <button
-                    onClick={() => {
-                      setIsPlaying(true);
-                      setGameOver(false);
-                      setScore(0);
-                    }}
-                    className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600 hover:from-purple-400 hover:to-indigo-400 text-white font-black text-base shadow-xl flex items-center gap-2 mx-auto transition transform active:scale-95 cursor-pointer"
-                  >
-                    <Play className="w-5 h-5 fill-current" />
-                    <span>{gameOver ? t.playAgainBtn : t.playBtn}</span>
-                  </button>
+                <div className="flex items-center gap-3 text-xs text-purple-200">
+                  <span className="font-bold">{t.highScore}:</span>
+                  <span className="px-2 py-0.5 rounded-lg bg-amber-400/20 text-amber-300 font-black text-sm">
+                    🏆 {highScores[selectedGame] || 0}
+                  </span>
                 </div>
+
+                <button
+                  onClick={handleStartGame}
+                  className="w-full max-w-xs py-3 px-6 rounded-2xl bg-gradient-to-r from-purple-500 via-indigo-500 to-purple-600 hover:from-purple-400 hover:to-indigo-400 text-white font-black text-base shadow-xl shadow-purple-600/30 flex items-center justify-center gap-2 transition transform active:scale-95 cursor-pointer border border-purple-300"
+                >
+                  <Play className="w-5 h-5 fill-current text-amber-300" />
+                  <span>{gameOver ? t.playAgainBtn : t.playBtn}</span>
+                </button>
               </div>
-            )}
+
+            </div>
           </div>
 
         </div>
 
-        {/* Footer */}
-        <div className="p-4 bg-slate-950 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-400 shrink-0">
-          <div className="flex items-center gap-2">
+        {/* Compact Footer */}
+        <div className="px-3 py-2 sm:px-4 sm:py-2.5 bg-slate-950 border-t border-slate-800 flex items-center justify-between gap-2 text-xs text-slate-400 shrink-0">
+          <div className="flex items-center gap-2 text-[11px] truncate">
             <span className="text-amber-400 font-bold">{t.footerTitle}</span>
-            <span>{t.footerDesc}</span>
+            <span className="hidden sm:inline">{t.footerDesc}</span>
           </div>
 
           <button
             onClick={onClose}
-            className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition cursor-pointer border border-slate-700"
+            className="px-4 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold transition cursor-pointer border border-slate-700 text-xs shrink-0"
           >
             {t.closeBtn}
           </button>

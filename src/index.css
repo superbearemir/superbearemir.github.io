@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+:root {
+  --sat: env(safe-area-inset-top, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+}
+
 html,
 body,
 #root {
@@ -16,13 +23,33 @@ body,
   overflow: hidden;
 }
 
+/* Immersive Fullscreen and Notch handling */
+:fullscreen,
+:-webkit-full-screen,
+:-moz-full-screen,
+:-ms-fullscreen {
+  width: 100vw !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background-color: #020617 !important;
+  overflow: hidden !important;
+}
+
+/* Prevent unwanted pull-to-refresh or bounce scrolling on mobile */
+body {
+  overscroll-behavior: none;
+  -webkit-touch-callout: none;
+}
+
 /* Ensure modals and dialogue cards fit within screen in landscape mode */
 @media (max-height: 520px) {
   .modal-container,
   [role="dialog"] > div,
   .dialog-content {
-    max-height: 94vh !important;
-    padding: 0.5rem !important;
+    max-height: 98vh !important;
+    padding: 0.35rem !important;
   }
 }
+
 
