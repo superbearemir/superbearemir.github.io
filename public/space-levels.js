@@ -3370,14 +3370,16 @@ function createDarkLordBoss(game, scene, spawnPos) {
   function updateSpaceLevelsLoop() {
     requestAnimationFrame(updateSpaceLevelsLoop);
 
-    const game = window.__superBearGame;
-    if (!game || !game.playerPos) return;
-    const pPos = game.playerPos;
+    try {
+      const game = window.__superBearGame;
+      if (!game || !game.playerPos) return;
+      if (!game.currentRegion || !SPACE_LEVEL_MAP[game.currentRegion]) return;
+      const pPos = game.playerPos;
 
-    // Decrement iframe timer
-    if (damageIframeTimer > 0) {
-      damageIframeTimer -= 0.016;
-    }
+      // Decrement iframe timer
+      if (damageIframeTimer > 0) {
+        damageIframeTimer -= 0.016;
+      }
 
     // 1. VOID FALL CHECK (HIGH STAKES: FALLING OFF PLATFORMS DEALS DAMAGE)
     if (SPACE_LEVEL_MAP[game.currentRegion]) {
@@ -3868,7 +3870,10 @@ function createDarkLordBoss(game, scene, spawnPos) {
       );
       bademBirdMesh.rotation.y = time + Math.PI / 2;
     }
+  } catch (err) {
+    console.warn("Space loop tick error:", err);
   }
+}
 
   // --- ATTACH GLOBAL HELPERS ---
   window.__superBearSpaceLevels = {

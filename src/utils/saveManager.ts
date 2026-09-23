@@ -61,6 +61,7 @@ export interface SuperBearSaveData {
 
   // 5. Quests & Activities
   quests: any[];
+  dailyChallenges?: any;
   arcadeHighScores: Record<string, number>;
 }
 

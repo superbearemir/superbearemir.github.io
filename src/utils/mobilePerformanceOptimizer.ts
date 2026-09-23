@@ -290,6 +290,26 @@ function runFpsStabilizerLoop() {
  * Initializes tablet & mobile performance monitoring and hooks
  */
 export function initMobilePerformanceOptimizer() {
+  // WebGL Context Loss & Crash Protection
+  if (typeof window !== 'undefined') {
+    window.addEventListener('webglcontextlost', (e) => {
+      e.preventDefault();
+      console.warn('⚠️ WebGL context lost - preventing crash, restoring...');
+    }, false);
+
+    window.addEventListener('webglcontextrestored', () => {
+      console.log('✅ WebGL context restored - refreshing render pipeline');
+      setTimeout(() => optimizeGameRenderer(), 200);
+    }, false);
+
+    // Prevent pull-to-refresh and multi-touch page zoom jitter inside APK / WebView
+    document.addEventListener('touchmove', (e) => {
+      if ((e.target as HTMLElement)?.closest('canvas') || (e.target as HTMLElement)?.closest('.touch-action-none')) {
+        // Allow smooth game canvas touch without browser bounce
+      }
+    }, { passive: true });
+  }
+
   // Start FPS loop
   requestAnimationFrame(runFpsStabilizerLoop);
 

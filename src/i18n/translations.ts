@@ -30,6 +30,9 @@ export const TRANSLATIONS = {
     mobile: 'Mobil',
     pc: 'PC',
     save: 'Kaydet',
+    challenges: 'Görevler',
+    dailyChallenges: 'Günlük Görevler',
+    dailyChallengesDesc: 'Bonus Altın ve Kristal Kazanmak İçin Görevleri Tamamla!',
 
     // Language Modal
     selectLanguageTitle: 'Oyun Dilini Seçin',
@@ -128,6 +131,9 @@ export const TRANSLATIONS = {
     mobile: 'Mobile',
     pc: 'PC',
     save: 'Save',
+    challenges: 'Challenges',
+    dailyChallenges: 'Daily Challenges',
+    dailyChallengesDesc: 'Complete tasks to earn bonus coins & gems!',
 
     // Language Modal
     selectLanguageTitle: 'Select Game Language',
@@ -226,6 +232,9 @@ export const TRANSLATIONS = {
     mobile: 'Móvil',
     pc: 'PC',
     save: 'Guardar',
+    challenges: 'Desafíos',
+    dailyChallenges: 'Desafíos Diarios',
+    dailyChallengesDesc: '¡Completa tareas para ganar monedas y gemas!',
 
     // Language Modal
     selectLanguageTitle: 'Selecciona el Idioma del Juego',
@@ -324,6 +333,9 @@ export const TRANSLATIONS = {
     mobile: 'Mobil',
     pc: 'PC',
     save: 'Speichern',
+    challenges: 'Aufgaben',
+    dailyChallenges: 'Tägliche Aufgaben',
+    dailyChallengesDesc: 'Erfülle Aufgaben für Bonus-Gold und Edelsteine!',
 
     // Language Modal
     selectLanguageTitle: 'Spiel-Sprache Auswählen',
@@ -422,6 +434,9 @@ export const TRANSLATIONS = {
     mobile: 'Mobile',
     pc: 'PC',
     save: 'Salva',
+    challenges: 'Sfide',
+    dailyChallenges: 'Sfide Giornaliere',
+    dailyChallengesDesc: 'Completa le sfide per ottenere monete bonus e gemme!',
 
     // Language Modal
     selectLanguageTitle: 'Seleziona la Lingua di Gioco',

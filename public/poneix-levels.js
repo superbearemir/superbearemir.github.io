@@ -2993,9 +2993,11 @@
   function updatePoneixLoop() {
     requestAnimationFrame(updatePoneixLoop);
 
-    const game = window.__superBearGame;
-    if (!game || !game.playerPos) return;
-    const pPos = game.playerPos;
+    try {
+      const game = window.__superBearGame;
+      if (!game || !game.playerPos) return;
+      if (!game.currentRegion || !PONEIX_LEVEL_MAP[game.currentRegion]) return;
+      const pPos = game.playerPos;
 
     if (isCutscenePlaying) {
       if (game.inputs) {
@@ -3311,7 +3313,10 @@
         }
       }
     }
+  } catch (err) {
+    console.warn("Poneix loop tick error:", err);
   }
+}
 
   // --- ATTACH GLOBAL HOOKS ---
   window.__superBearPoneixLevels = {

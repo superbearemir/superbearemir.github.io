@@ -25,23 +25,10 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
   if (!isOpen) return null;
 
   const handleSelectLevel = (regionId: string, levelNo: number, isWorld: boolean) => {
-    // Explicitly block levels that are coming in future updates
-    const BLOCKED_UPDATE_REGIONS = ['golden_sanctuary', 'ruin_village', 'bee_desert'];
-    if (BLOCKED_UPDATE_REGIONS.includes(regionId)) {
-      const game = (window as any).__superBearGame;
-      if (game && game.callbacks && game.callbacks.onShowNotice) {
-        game.callbacks.onShowNotice('⏳ Bu bölüm güncellemede gelecek! Şu an oynanamaz.', 'warning');
-      }
-      return;
-    }
-
-    // Only allow entering if level is within unlocked limit (First 14 levels open)
-    if (!isWorld || levelNo > unlockedMax) {
-      return;
-    }
     const game = (window as any).__superBearGame;
     const poneix = (window as any).__superBearPoneixLevels;
     const phelix = (window as any).__superBearPhelixLevels;
+    const space = (window as any).__superBearSpaceLevels;
     if (game) {
       if (typeof (window as any).__superBearPurgeScene === 'function') {
         (window as any).__superBearPurgeScene(game);
@@ -50,6 +37,8 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
         phelix.loadPhelixLevel(regionId);
       } else if (poneix && poneix.PONEIX_LEVEL_MAP && poneix.PONEIX_LEVEL_MAP[regionId]) {
         poneix.loadPoneixLevel(regionId);
+      } else if (space && space.SPACE_LEVEL_MAP && space.SPACE_LEVEL_MAP[regionId]) {
+        space.loadSpaceLevel(regionId);
       } else if (game.loadRegion) {
         game.loadRegion(regionId);
       }
@@ -66,13 +55,13 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
     { id: 'snow_desert', no: 5, name: 'Kar Vadisi & Buzul Gölü', icon: '❄️', desc: 'Kaygan buz pisti, karlı çam ağaçları ve Kar Tilkisi Yuki.' },
     { id: 'volcano_cave', no: 6, name: 'Volkanik Ejderha Mağarası', icon: '🌋', desc: 'Kızıl lav nehirleri, bazalt basamaklar ve Ateş Semenderi Pyro.' },
     { id: 'underwater_palace', no: 7, name: 'Antik Su Altı Kristal Sarayı', icon: '🧜‍♀️', desc: 'Mermer sualtı sütunları ve Prenses Coral.' },
-    { id: 'golden_sanctuary', no: 8, name: 'Efsanevi Altın Cenneti (Güncellemede Gelecek)', icon: '🌟', desc: '⏳ Güncellemede Gelecek! Bu bölüm yeni güncellemeyle aktif olacaktır.', isComingSoon: true },
+    { id: 'golden_sanctuary', no: 8, name: 'Efsanevi Altın Cenneti', icon: '🌟', desc: 'Güneş mabedi, parlayan altın sütunlar ve kadim hazineler.' },
     { id: 'dinosaur_world', no: 9, name: 'Tarih Öncesi Dinozor Dünyası', icon: '🦖', desc: 'Devasa dinozor iskelet kemerleri ve Arkeo.' },
     { id: 'sugar_world', no: 10, name: 'Şeker Dünyası & Lolipop Krallığı', icon: '🍭', desc: 'Dev girdap lolipoplar ve Şeker Perisi Bonbon.' },
     { id: 'jokerooms', no: 11, name: 'Jokerooms - Şaka Labirenti', icon: '🟡', desc: 'Sonsuz sarı koridorlar ve Dedektif Ayı Holmes.' },
-    { id: 'ruin_village', no: 12, name: 'Yıkılmış Köy Harabeleri (Güncellemede Gelecek)', icon: '🏚️', desc: '⏳ Güncellemede Gelecek! Bu bölüm yeni güncellemeyle aktif olacaktır.', isComingSoon: true },
-    { id: 'water_cave', no: 13, name: 'Karanlık Su Mağarası', icon: '💧', desc: 'Mavi kristal göletler ve Kaşif Kedi Felix.' },
-    { id: 'bee_desert', no: 14, name: 'Arıların Çölü & Antik Piramit (Güncellemede Gelecek)', icon: '🏜️', desc: '⏳ Güncellemede Gelecek! Bu bölüm yeni güncellemeyle aktif olacaktır.', isComingSoon: true },
+    { id: 'ruin_village', no: 12, name: 'Yıkılmış Köy & Sirk Harabeleri', icon: '🏚️', desc: 'Terk edilmiş sirk çadırları, asit nehri ve tehlikeli harabeler.' },
+    { id: 'water_cave', no: 13, name: 'Karanlık Su Mağarası', icon: '💧', desc: 'Mavi kristal göletler, köstebekler ve Su Ejderhası arenası.' },
+    { id: 'bee_desert', no: 14, name: 'Arıların Çölü & Antik Piramit', icon: '🏜️', desc: 'Sonsuz altın kumlar, çöl arıları ve Dev Timsah Sobek mabedi.' },
     { id: 'earth_summit', no: 15, name: 'Dünya Final Zirvesi & Kırmızı Çizgi', icon: '⛰️', desc: '14 hatıra dikilitaşı, Bilge Gandor ve Kozmik Uzay Kapısı!' },
   ];
 
@@ -330,46 +319,29 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                 {earthLevels.map((lvl) => {
-                  const isComingSoon = (lvl as any).isComingSoon || ['golden_sanctuary', 'ruin_village', 'bee_desert'].includes(lvl.id);
-                  const isLocked = lvl.no > 14 || isComingSoon;
                   return (
                     <button
                       key={lvl.id}
-                      disabled={isLocked}
                       onClick={() => handleSelectLevel(lvl.id, lvl.no, true)}
-                      className={`p-3.5 rounded-2xl border transition text-left flex flex-col justify-between shadow-md ${
-                        isLocked
-                          ? 'bg-slate-900/30 border-dashed border-slate-700/50 opacity-40 backdrop-blur-sm cursor-not-allowed select-none'
-                          : 'bg-slate-800/80 hover:bg-emerald-950/40 border-slate-700 hover:border-emerald-500/60 transform hover:-translate-y-0.5 group cursor-pointer'
-                      }`}
+                      className="p-3.5 rounded-2xl border transition text-left flex flex-col justify-between shadow-md bg-slate-800/80 hover:bg-emerald-950/40 border-slate-700 hover:border-emerald-500/60 transform hover:-translate-y-0.5 group cursor-pointer"
                     >
                       <div>
                         <div className="flex items-center justify-between mb-1.5">
                           <span className="text-xl">{lvl.icon}</span>
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-black font-mono ${
-                            isLocked
-                              ? 'bg-amber-500/20 text-amber-300 flex items-center gap-1 border border-amber-500/30'
-                              : 'bg-emerald-500/20 text-emerald-300'
-                          }`}>
-                            {isComingSoon ? '⏳ Güncellemede Gelecek' : isLocked ? '⏳ Çok Yakında' : `Dünya #${lvl.no}`}
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-black font-mono bg-emerald-500/20 text-emerald-300">
+                            {`Dünya #${lvl.no}`}
                           </span>
                         </div>
-                        <h4 className={`font-bold text-sm transition-colors ${
-                          isLocked ? 'text-slate-400' : 'text-slate-100 group-hover:text-emerald-300'
-                        }`}>
+                        <h4 className="font-bold text-sm transition-colors text-slate-100 group-hover:text-emerald-300">
                           {lvl.name}
                         </h4>
-                        <p className="text-[11px] text-slate-500 mt-1 line-clamp-2">
-                          {isComingSoon ? '⏳ Güncellemede Gelecek! Bu bölüm yeni güncellemeyle aktif olacaktır.' : isLocked ? '⏳ Çok Yakında! Bu bölüm yeni güncellemeyle aktif olacaktır.' : lvl.desc}
+                        <p className="text-[11px] text-slate-400 mt-1 line-clamp-2">
+                          {lvl.desc}
                         </p>
                       </div>
-                      <div className={`mt-3 flex items-center justify-between text-[11px] font-bold pt-2 border-t ${
-                        isLocked
-                          ? 'text-amber-400/80 border-slate-800'
-                          : 'text-emerald-400 border-slate-700/60'
-                      }`}>
-                        <span>{isComingSoon ? '⏳ Güncellemede Gelecek' : isLocked ? '⏳ Çok Yakında' : 'Bölüme Işınlan'}</span>
-                        {!isLocked && <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />}
+                      <div className="mt-3 flex items-center justify-between text-[11px] font-bold pt-2 border-t text-emerald-400 border-slate-700/60">
+                        <span>Bölüme Işınlan</span>
+                        <ChevronRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
                       </div>
                     </button>
                   );

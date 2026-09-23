@@ -17,6 +17,7 @@ import { SaveManagerModal } from '../components/SaveManagerModal';
 import { LootBoxModal } from '../components/LootBoxModal';
 import { CountryLanguageModal } from '../components/CountryLanguageModal';
 import { OpeningCinematicModal } from '../components/OpeningCinematicModal';
+import { VillageLoreModal } from '../components/VillageLoreModal';
 import { useLanguage } from '../i18n/LanguageContext';
 import { ShoppingBag, Gamepad2, Globe } from 'lucide-react';
 
@@ -500,6 +501,9 @@ export const CustomizerAppOverlay: React.FC = () => {
         isOpen={isLanguageModalOpen}
         onClose={() => setIsLanguageModalOpen(false)}
       />
+
+      {/* Village Ancient Lore Scrolls and Story Mystery Modal */}
+      <VillageLoreModal />
 
       {/* Opening Animated Cutscene Movie Modal */}
       <OpeningCinematicModal

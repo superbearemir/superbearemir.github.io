@@ -72,6 +72,10 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isPowersRackOpen, setIsPowersRackOpen] = useState(false);
   const [isNearInteractable, setIsNearInteractable] = useState(false);
+  const [isNearCatMerchant, setIsNearCatMerchant] = useState(false);
+  const [isNearArcade, setIsNearArcade] = useState(false);
+  const [currentWeather, setCurrentWeather] = useState<{ id: string; nameTr: string; icon: string }>({ id: 'clear', nameTr: 'Güneşli & Berrak', icon: '☀️' });
+  const [isWeatherMenuOpen, setIsWeatherMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'powers' | 'emotes' | 'shop' | 'settings'>('powers');
   const [selectedPowerId, setSelectedPowerId] = useState<'teleport' | 'laser' | 'rocket' | 'ground_pound' | 'roll' | 'fish' | 'spray' | 'companion' | 'dance' | 'triple_jump' | 'interact'>('laser');
   const [rocketUsesLeft, setRocketUsesLeft] = useState<number>(5);
@@ -164,13 +168,25 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
     const handleCatMerchantProximity = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail && typeof detail.isNear === 'boolean') {
+        setIsNearCatMerchant(detail.isNear);
         if (detail.isNear) setIsNearInteractable(true);
       }
     };
     const handleArcadeProximity = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail && typeof detail.isNear === 'boolean') {
+        setIsNearArcade(detail.isNear);
         if (detail.isNear) setIsNearInteractable(true);
+      }
+    };
+    const handleWeatherChanged = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && detail.profile) {
+        setCurrentWeather({
+          id: detail.weather || 'clear',
+          nameTr: detail.profile.nameTr || 'Güneşli & Berrak',
+          icon: detail.profile.icon || '☀️'
+        });
       }
     };
     const handleOpenPowersRack = () => {
@@ -181,6 +197,7 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
     window.addEventListener('superbear:cat-merchant-proximity', handleCatMerchantProximity);
     window.addEventListener('superbear:arcade-proximity', handleArcadeProximity);
     window.addEventListener('superbear:open-powers-rack', handleOpenPowersRack);
+    window.addEventListener('superbear:weather-changed', handleWeatherChanged);
 
     const handleResetRocket = () => {
       setRocketUsesLeft(5);
@@ -208,6 +225,7 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
       window.removeEventListener('superbear:cat-merchant-proximity', handleCatMerchantProximity);
       window.removeEventListener('superbear:arcade-proximity', handleArcadeProximity);
       window.removeEventListener('superbear:open-powers-rack', handleOpenPowersRack);
+      window.removeEventListener('superbear:weather-changed', handleWeatherChanged);
       window.removeEventListener('superbear:reset-rocket', handleResetRocket);
       window.removeEventListener('superbear:region-changed', handleResetRocket);
       window.removeEventListener('superbear:level-selected', handleResetRocket);
@@ -494,18 +512,43 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
   };
 
   const handleInteract = () => {
+    const game = (window as any).__superBearGame;
+
+    // 1. Direct Cat Merchant Check
+    let nearCat = isNearCatMerchant;
+    if (!nearCat && game && game.scene && game.playerPos) {
+      const cat = game.scene.getObjectByName('merchant_cat');
+      if (cat && game.playerPos.distanceTo(cat.position) < 9.5) {
+        nearCat = true;
+      }
+    }
+    if (nearCat) {
+      if (onOpenCatShop) {
+        onOpenCatShop();
+      }
+      window.dispatchEvent(new CustomEvent('superbear:open-cat-shop'));
+      return;
+    }
+
+    // 2. Direct Arcade Machine Check
+    if (isNearArcade) {
+      if (onOpenArcade) {
+        onOpenArcade();
+      }
+      window.dispatchEvent(new CustomEvent('superbear:open-arcade'));
+      return;
+    }
+
     const isNear = isNearInteractable || (typeof window !== 'undefined' && !!(window as any).__superBearNearInteractable);
     if (!isNear) return;
 
-    const game = (window as any).__superBearGame;
     if (game && game.handleInteract) {
       game.handleInteract();
-    } else {
-      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyE', key: 'e' }));
-      setTimeout(() => {
-        window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyE', key: 'e' }));
-      }, 150);
     }
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyE', key: 'e' }));
+    setTimeout(() => {
+      window.dispatchEvent(new KeyboardEvent('keyup', { code: 'KeyE', key: 'e' }));
+    }, 150);
   };
 
   const handleToggleTripleJump = () => {
@@ -702,6 +745,16 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
             <span>{t('map')}</span>
           </button>
 
+          {/* Quick Village Lore Scrolls & Mystery Codex Button */}
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent('superbear:open-lore-codex'))}
+            title="Ayı Kedi Köyü Hikaye Parşömenleri ve Köyün Gizemi"
+            className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-600 via-orange-600 to-yellow-600 text-white border border-amber-300 shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:brightness-110"
+          >
+            <span className="text-xs">📜</span>
+            <span>Parşömenler</span>
+          </button>
+
           {/* Quick Opening Story Cinematic Button */}
           <button
             onClick={() => window.dispatchEvent(new CustomEvent('superbear:open-intro-cinematic'))}
@@ -724,6 +777,63 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
             <span className="text-xs">🕹️</span>
             <span>{t('arcade')}</span>
           </button>
+
+          {/* Dynamic Atmospheric Weather Controller */}
+          <div className="relative pointer-events-auto">
+            <button
+              onClick={() => setIsWeatherMenuOpen((prev) => !prev)}
+              title="Dinamik Hava Durumu (Yağmur, Kar, Sis, Güneş, Fırtına)"
+              className="px-2.5 py-1 rounded-full bg-gradient-to-r from-sky-700 via-indigo-700 to-purple-800 text-white border border-sky-300 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:brightness-110"
+            >
+              <span className="text-xs">{currentWeather.icon}</span>
+              <span className="hidden md:inline">{currentWeather.nameTr}</span>
+            </button>
+
+            {isWeatherMenuOpen && (
+              <div className="absolute top-full mt-2 left-0 z-50 w-56 p-2 rounded-2xl bg-slate-950/95 border-2 border-sky-400/80 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 text-xs">
+                <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-800 px-1 font-black text-sky-300">
+                  <span>🌦️ Hava Durumu</span>
+                  <button
+                    onClick={() => {
+                      const ws = (window as any).__superBearWeatherSystem;
+                      if (ws) ws.toggleAutoCycle();
+                      setIsWeatherMenuOpen(false);
+                    }}
+                    className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
+                  >
+                    🔄 Otomatik
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { id: 'clear', name: 'Güneşli', icon: '☀️' },
+                    { id: 'rain', name: 'Yağmur', icon: '🌧️' },
+                    { id: 'snow', name: 'Kar', icon: '❄️' },
+                    { id: 'fog', name: 'Yoğun Sis', icon: '🌫️' },
+                    { id: 'storm', name: 'Fırtına', icon: '⚡' },
+                    { id: 'mystic', name: 'Büyülü', icon: '✨' },
+                  ].map((w) => (
+                    <button
+                      key={w.id}
+                      onClick={() => {
+                        const ws = (window as any).__superBearWeatherSystem;
+                        if (ws) ws.setWeather(w.id);
+                        setIsWeatherMenuOpen(false);
+                      }}
+                      className={`px-2 py-1.5 rounded-xl flex items-center gap-1.5 font-bold transition ${
+                        currentWeather.id === w.id
+                          ? 'bg-sky-600 text-white font-black border border-sky-300 shadow'
+                          : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800 hover:text-white'
+                      }`}
+                    >
+                      <span className="text-sm">{w.icon}</span>
+                      <span className="text-[11px] truncate">{w.name}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Quick Country & Language Selector Button */}
           <button
@@ -1637,17 +1747,27 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
                   e.preventDefault();
                   e.stopPropagation();
                   handleInteract();
-                  if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
+                  if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(25);
                 }}
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   handleInteract();
-                  if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
+                  if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(25);
                 }}
-                className="pointer-events-auto w-14 h-14 rounded-full bg-gradient-to-tr from-amber-400 via-yellow-400 to-orange-500 text-slate-950 border-2 border-yellow-100 shadow-2xl flex flex-col items-center justify-center font-black active:scale-90 transition transform cursor-pointer hover:scale-105 animate-bounce"
-                title="Etkileşim / Konuş / Dükkan Aç [E]"
+                className={`pointer-events-auto w-14 h-14 rounded-full ${
+                  isNearCatMerchant
+                    ? 'bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-600 text-slate-950 border-2 border-amber-200 ring-4 ring-amber-400/50 animate-pulse'
+                    : isNearArcade
+                    ? 'bg-gradient-to-tr from-purple-600 via-pink-500 to-indigo-600 text-white border-2 border-pink-200 ring-4 ring-purple-400/50 animate-pulse'
+                    : 'bg-gradient-to-tr from-amber-400 via-yellow-400 to-orange-500 text-slate-950 border-2 border-yellow-100'
+                } shadow-2xl flex flex-col items-center justify-center font-black active:scale-90 transition transform cursor-pointer hover:scale-105 animate-bounce`}
+                title={isNearCatMerchant ? "Bakkal Kedi Dükkanı [E]" : isNearArcade ? "Arcade Oyunları [E]" : "Etkileşim / Konuş [E]"}
               >
-                <span className="text-lg leading-none">💬</span>
-                <span className="text-[9px] font-black mt-0.5">[E]</span>
+                <span className="text-xl leading-none">{isNearCatMerchant ? '🐱' : isNearArcade ? '🕹️' : '💬'}</span>
+                <span className="text-[9px] font-black mt-0.5 tracking-tight">
+                  {isNearCatMerchant ? 'BAKKAL' : isNearArcade ? 'OYUN' : '[E]'}
+                </span>
               </button>
             )}
 

@@ -7,41 +7,11 @@ var grandWaterfallBuilt = false;
 window.createCaveExitPortal = function(game, px, py, pz, targetRegion, targetName, targetIcon) {
   if (!game || !game.scene || !window.THREE) return null;
 
-  // Global protection: intercept loadRegion to prevent accessing regions planned for future updates
-  if (!game._blockedUpdateRegionsHook) {
-    game._blockedUpdateRegionsHook = true;
-    const origLoad = game.loadRegion ? game.loadRegion.bind(game) : null;
-    if (origLoad) {
-      game.loadRegion = function(regId) {
-        if (['golden_sanctuary', 'ruin_village', 'bee_desert'].includes(regId)) {
-          if (game.callbacks && game.callbacks.onShowNotice) {
-            game.callbacks.onShowNotice('⏳ Bu bölüm güncellemede gelecek! Şu an oynanamaz.', 'warning');
-          }
-          return;
-        }
-        return origLoad(regId);
-      };
-    }
-  }
-
-  // Adjust target if it points to a blocked update region
-  if (targetRegion === 'golden_sanctuary') {
-    targetRegion = 'dinosaur_world';
-    targetName = '9. BÖLÜM: DİNOZOR DÜNYASI';
-    targetIcon = '🦖';
-  } else if (targetRegion === 'ruin_village') {
-    targetRegion = 'water_cave';
-    targetName = '13. BÖLÜM: KARANLIK SU MAĞARASI';
-    targetIcon = '💧';
-  } else if (targetRegion === 'bee_desert') {
-    targetRegion = 'hub';
-    targetName = '1. BÖLÜM: AYI VE KEDİ KÖYÜ (DÖNÜŞ)';
-    targetIcon = '🏡';
-  }
   const THREE = window.THREE;
   const portalGroup = new THREE.Group();
   portalGroup.name = 'cave_exit_portal_' + targetRegion;
   portalGroup.position.set(px, py, pz);
+  portalGroup._spawnTime = Date.now() + 2000;
 
   // Grand Arch Pillars
   const archMat = new THREE.MeshStandardMaterial({
@@ -117,24 +87,30 @@ window.createCaveExitPortal = function(game, px, py, pz, targetRegion, targetNam
           }
 
           if (!portalGroup._used) {
+            if (portalGroup._spawnTime && Date.now() < portalGroup._spawnTime) return;
             portalGroup._used = true;
-            const actualTarget = (targetRegion === 'space_realm' || targetRegion === 'earth_summit' || game.currentRegion === 'bee_desert') ? 'hub' : targetRegion;
-            const actualName = actualTarget === 'hub' ? 'Ayı Köyü' : targetName;
-            const actualIcon = actualTarget === 'hub' ? '🏡' : targetIcon;
+            const actualTarget = targetRegion;
+            const actualName = targetName;
+            const actualIcon = targetIcon || '🌀';
 
             if (game.callbacks && game.callbacks.onShowNotice) {
-              if (actualTarget === 'hub' && game.currentRegion === 'bee_desert') {
-                game.callbacks.onShowNotice("🎉 TEBRİKLER! 14 Dünya Bölümünü ve Baş Düşmanları Tamamladın! Ayı Köyü'ne Şampiyon Olarak Dönülüyor! 👑", "success");
-              } else {
-                game.callbacks.onShowNotice("🌀 " + actualIcon + " " + actualName + " Diyarına Geçiliyor...", "success");
-              }
+              game.callbacks.onShowNotice("🌀 " + actualIcon + " " + actualName + " Bölgesine Geçiliyor...", "success");
             }
             if (game.spawnSparkleParticles) {
-              game.spawnSparkleParticles(game.playerPos, 50, 0x38bdf8);
+              game.spawnSparkleParticles(game.playerPos, 40, 0x38bdf8);
             }
             setTimeout(() => {
-              if (game.loadRegion) game.loadRegion(actualTarget);
-              else if (game.callbacks && game.callbacks.onSelectRegion) game.callbacks.onSelectRegion(actualTarget);
+              if (window.__superBearPhelixLevels && window.__superBearPhelixLevels.PHELIX_LEVEL_MAP && window.__superBearPhelixLevels.PHELIX_LEVEL_MAP[actualTarget]) {
+                window.__superBearPhelixLevels.loadPhelixLevel(actualTarget);
+              } else if (window.__superBearPoneixLevels && window.__superBearPoneixLevels.PONEIX_LEVEL_MAP && window.__superBearPoneixLevels.PONEIX_LEVEL_MAP[actualTarget]) {
+                window.__superBearPoneixLevels.loadPoneixLevel(actualTarget);
+              } else if (window.__superBearSpaceLevels && window.__superBearSpaceLevels.SPACE_LEVEL_MAP && window.__superBearSpaceLevels.SPACE_LEVEL_MAP[actualTarget]) {
+                window.__superBearSpaceLevels.loadSpaceLevel(actualTarget);
+              } else if (game.loadRegion) {
+                game.loadRegion(actualTarget);
+              } else if (game.callbacks && game.callbacks.onSelectRegion) {
+                game.callbacks.onSelectRegion(actualTarget);
+              }
             }, 450);
           }
         }
@@ -2218,7 +2194,7 @@ function buildSpaceGalaxyWorld(scene) {
 
   // Tatlış Pelikan Piko (Standing Pelican NPC near pond in Ayı Köyü)
   const pelikanPiko = createCutePelicanMesh(window.THREE, false);
-  pelikanPiko.position.set(-14, 0.15, 6); // Positioned cleanly on meadow near pond bank
+  pelikanPiko.position.set(-14, 0.6, 6); // Positioned cleanly on meadow near pond bank
   pelikanPiko.rotation.y = 0.6; // Facing towards spawn area
   pelikanPiko.name = 'npc_pelican_piko';
   scene.add(pelikanPiko);
@@ -2420,7 +2396,7 @@ function buildExpandedKediKoyu(scene) {
 
   // A) Tilki Kurnaz Rüstem 🦊
   const foxMesh = createFoxMesh(THREE);
-  foxMesh.position.set(-18, 0.1, 10);
+  foxMesh.position.set(-18, 0.65, 10);
   foxMesh.rotation.y = 0.8;
   foxMesh.name = 'npc_fox_rustem';
   villageGroup.add(foxMesh);
@@ -2440,7 +2416,7 @@ function buildExpandedKediKoyu(scene) {
 
   // B) Tavşan Zıpzıp Pamuk 🐰 (Stands on East hill by the Volleyball court)
   const bunnyMesh = createBunnyMesh(THREE);
-  bunnyMesh.position.set(22, 2.1, -12);
+  bunnyMesh.position.set(22, 2.9, -12);
   bunnyMesh.rotation.y = -0.6;
   bunnyMesh.name = 'npc_bunny_pamuk';
   villageGroup.add(bunnyMesh);
@@ -2460,7 +2436,7 @@ function buildExpandedKediKoyu(scene) {
 
   // C) Zürafa Uzunboy Zeki 🦒
   const giraffeMesh = createGiraffeMesh(THREE);
-  giraffeMesh.position.set(12, 0.1, 30);
+  giraffeMesh.position.set(12, 0.75, 30);
   giraffeMesh.rotation.y = 2.8;
   giraffeMesh.name = 'npc_giraffe_zeki';
   villageGroup.add(giraffeMesh);
@@ -3862,7 +3838,7 @@ function buildBeginnerTrainingGround(THREE, villageGroup) {
 
   // 8. Antrenör Kedi Pamuk NPC 🐱🥋 (Standing directly beside Tonton Fırıncı 🍞🐻)
   const coachCat = createCoachCatMesh(THREE);
-  coachCat.position.set(-34, 0, -6);
+  coachCat.position.set(-34, BASE_Y, -6);
   coachCat.rotation.y = Math.PI / 4;
   villageGroup.add(coachCat);
 
@@ -5873,9 +5849,9 @@ function populateVolcanoCave(game) {
 underwaterPalacePopulated = false;
 
 function populateUnderwaterPalace(game) {
-  // Level Exit Portal to Next Region (Bypasses golden_sanctuary which is coming in an update)
+  // Level Exit Portal to Next Region (8. Golden Sanctuary)
   if (window.createCaveExitPortal) {
-    window.createCaveExitPortal(game, 0, 32, -520, 'dinosaur_world', '9. BÖLÜM: DİNOZOR DÜNYASI', '🦖');
+    window.createCaveExitPortal(game, 0, 32, -520, 'golden_sanctuary', '8. BÖLÜM: EFSANEVİ ALTIN CENNETİ', '🌟');
   }
 
     if (game && game.currentLevel) ensureLevelArrays(game.currentLevel);
@@ -7172,9 +7148,9 @@ const JOKEROOMS_JOKES = [
 ];
 
 function populateJokerooms(game) {
-  // Level Exit Portal to Next Region (Bypasses ruin_village which is coming in an update)
+  // Level Exit Portal to Next Region (12. Ruin Village)
   if (window.createCaveExitPortal) {
-    window.createCaveExitPortal(game, 0, 4, -480, 'water_cave', '13. BÖLÜM: KARANLIK SU MAĞARASI', '💧');
+    window.createCaveExitPortal(game, 0, 4, -480, 'ruin_village', '12. BÖLÜM: YIKILMIŞ KÖY HARABELERİ', '🏚️');
   }
 
     if (game && game.currentLevel) ensureLevelArrays(game.currentLevel);
@@ -7879,11 +7855,11 @@ window.addEventListener('superbear:teleport-sugar', () => {
 });
 
 function updateSpaceLoop() {
-  const game = window.__superBearGame;
-  if (!game) {
-    requestAnimationFrame(updateSpaceLoop);
-    return;
-  }
+  try {
+    const game = window.__superBearGame;
+    if (!game) {
+      return;
+    }
   // 🌊 Grand Waterfall maintainer in Ayı Köyü (Hub)
   if (game.scene) {
     if (game.currentRegion === "hub" || !game.currentRegion) {
@@ -8001,31 +7977,38 @@ function updateSpaceLoop() {
       game.scene.add(portalGroup);
     }
 
+    portalGroup._spawnTime = Date.now() + 2000;
     portalGroup.userData = {
       update: () => {
         vortex.rotation.z += 0.03;
         if (game.playerPos) {
           const d = game.playerPos.distanceTo(portalGroup.position);
           if (d < 3.5) {
+            if (portalGroup._spawnTime && Date.now() < portalGroup._spawnTime) return;
             if (!portalGroup._used) {
               portalGroup._used = true;
               const actualTarget = targetRegion;
               const actualName = targetName;
-              const actualIcon = targetIcon;
+              const actualIcon = targetIcon || '🌀';
 
               if (game.callbacks && game.callbacks.onShowNotice) {
-                if (actualTarget === 'hub' && game.currentRegion === 'bee_desert') {
-                  game.callbacks.onShowNotice("🎉 TEBRİKLER! 14 Dünya Bölümünü ve Baş Düşmanları Tamamladın! Ayı Köyü'ne Şampiyon Olarak Dönülüyor! 👑", "success");
-                } else {
-                  game.callbacks.onShowNotice(`🌀 ${actualIcon} ${actualName} Diyarına Geçiliyor...`, "success");
-                }
+                game.callbacks.onShowNotice(`🌀 ${actualIcon} ${actualName} Bölgesine Geçiliyor...`, "success");
               }
               if (game.spawnSparkleParticles) {
-                game.spawnSparkleParticles(game.playerPos, 50, 0x38bdf8);
+                game.spawnSparkleParticles(game.playerPos, 40, 0x38bdf8);
               }
               setTimeout(() => {
-                if (game.loadRegion) game.loadRegion(actualTarget);
-                else if (game.callbacks && game.callbacks.onSelectRegion) game.callbacks.onSelectRegion(actualTarget);
+                if (window.__superBearPhelixLevels && window.__superBearPhelixLevels.PHELIX_LEVEL_MAP && window.__superBearPhelixLevels.PHELIX_LEVEL_MAP[actualTarget]) {
+                  window.__superBearPhelixLevels.loadPhelixLevel(actualTarget);
+                } else if (window.__superBearPoneixLevels && window.__superBearPoneixLevels.PONEIX_LEVEL_MAP && window.__superBearPoneixLevels.PONEIX_LEVEL_MAP[actualTarget]) {
+                  window.__superBearPoneixLevels.loadPoneixLevel(actualTarget);
+                } else if (window.__superBearSpaceLevels && window.__superBearSpaceLevels.SPACE_LEVEL_MAP && window.__superBearSpaceLevels.SPACE_LEVEL_MAP[actualTarget]) {
+                  window.__superBearSpaceLevels.loadSpaceLevel(actualTarget);
+                } else if (game.loadRegion) {
+                  game.loadRegion(actualTarget);
+                } else if (game.callbacks && game.callbacks.onSelectRegion) {
+                  game.callbacks.onSelectRegion(actualTarget);
+                }
               }, 450);
             }
           }
@@ -9007,11 +8990,13 @@ function updateSpaceLoop() {
 
     game.scene.add(portalGroup);
 
+    portalGroup._spawnTime = Date.now() + 3500;
     portalGroup.userData = {
       update: () => {
         ring.rotation.z += 0.03;
         vortex.rotation.z -= 0.02;
         if (game.playerPos && game.currentRegion !== 'hub') {
+          if (portalGroup._spawnTime && Date.now() < portalGroup._spawnTime) return;
           const dist = game.playerPos.distanceTo(portalGroup.position);
           if (dist < 2.5 && !portalGroup._used) {
             portalGroup._used = true;
@@ -9022,10 +9007,14 @@ function updateSpaceLoop() {
               snow_desert: { prev: 'pelican_plains', name: '4. BÖLÜM: PELİKAN OVALARI', icon: '🪶' },
               volcano_cave: { prev: 'snow_desert', name: '5. BÖLÜM: KAR VADİSİ', icon: '❄️' },
               underwater_palace: { prev: 'volcano_cave', name: '6. BÖLÜM: VOLKANİK EJDERHA MAĞARASI', icon: '🌋' },
-              dinosaur_world: { prev: 'underwater_palace', name: '7. BÖLÜM: ANTİK SU ALTI KRİSTAL SARAYI', icon: '🌊' },
+              golden_sanctuary: { prev: 'underwater_palace', name: '7. BÖLÜM: ANTİK SU ALTI KRİSTAL SARAYI', icon: '🌊' },
+              dinosaur_world: { prev: 'golden_sanctuary', name: '8. BÖLÜM: EFSANEVİ ALTIN CENNETİ', icon: '🌟' },
               sugar_world: { prev: 'dinosaur_world', name: '9. BÖLÜM: DİNOZOR DÜNYASI', icon: '🦖' },
               jokerooms: { prev: 'sugar_world', name: '10. BÖLÜM: ŞEKER DÜNYASI', icon: '🍬' },
-              water_cave: { prev: 'jokerooms', name: '11. BÖLÜM: JOKEROOMS', icon: '🚪' }
+              ruin_village: { prev: 'jokerooms', name: '11. BÖLÜM: JOKEROOMS ŞAKA ODALARI', icon: '🚪' },
+              water_cave: { prev: 'ruin_village', name: '12. BÖLÜM: YIKILMIŞ KÖY HARABELERİ', icon: '🏚️' },
+              bee_desert: { prev: 'water_cave', name: '13. BÖLÜM: KARANLIK SU MAĞARASI', icon: '💧' },
+              space_realm: { prev: 'bee_desert', name: '14. BÖLÜM: ARI ÇÖLÜ & ANTİK PİRAMİT', icon: '🏜️' }
             };
 
             const target = PREVIOUS_SEQUENTIAL_REGIONS[game.currentRegion] || { prev: 'hub', name: "Ayı Köyü", icon: '🏡' };
@@ -9122,6 +9111,71 @@ function updateSpaceLoop() {
     }
   }
 
+  function alignAllObjectsToGround(game) {
+    if (!game || !game.currentLevel) return;
+    const level = game.currentLevel;
+    const colliders = level.colliders || [];
+    if (colliders.length === 0) return;
+
+    function getGroundYAt(x, z) {
+      let highestY = -999;
+      for (let i = 0; i < colliders.length; i++) {
+        const c = colliders[i];
+        if (!c || !c.min || !c.max || c.isToxic) continue;
+        if (x >= c.min.x - 0.25 && x <= c.max.x + 0.25 && z >= c.min.z - 0.25 && z <= c.max.z + 0.25) {
+          if (c.max.y > highestY) {
+            highestY = c.max.y;
+          }
+        }
+      }
+      return highestY;
+    }
+
+    if (level.npcs) {
+      level.npcs.forEach(npc => {
+        if (!npc || !npc.mesh || !npc.pos) return;
+        const groundY = getGroundYAt(npc.pos.x, npc.pos.z);
+        if (groundY > -500 && npc.mesh.position.y < groundY) {
+          npc.mesh.position.y = groundY;
+          npc.pos.y = groundY;
+        }
+      });
+    }
+
+    if (typeof villageNpcsList !== 'undefined' && Array.isArray(villageNpcsList)) {
+      villageNpcsList.forEach(npc => {
+        if (!npc || !npc.mesh || !npc.pos) return;
+        const groundY = getGroundYAt(npc.pos.x, npc.pos.z);
+        if (groundY > -500 && npc.mesh.position.y < groundY) {
+          npc.mesh.position.y = groundY;
+          npc.pos.y = groundY;
+        }
+      });
+    }
+
+    if (level.collectibles) {
+      level.collectibles.forEach(col => {
+        if (!col || !col.mesh || !col.pos) return;
+        const groundY = getGroundYAt(col.pos.x, col.pos.z);
+        if (groundY > -500 && col.mesh.position.y < groundY) {
+          col.mesh.position.y = groundY + 0.3;
+          col.pos.y = groundY + 0.3;
+        }
+      });
+    }
+
+    if (level.artEasels) {
+      level.artEasels.forEach(e => {
+        if (!e || !e.mesh || !e.pos) return;
+        const groundY = getGroundYAt(e.pos.x, e.pos.z);
+        if (groundY > -500 && e.mesh.position.y < groundY) {
+          e.mesh.position.y = groundY;
+          e.pos.y = groundY;
+        }
+      });
+    }
+  }
+
   // Enhanced Region Transition & Safe Level Spawner Hook
   if (!game._regionCleanupHookInstalled && game.loadRegion) {
     game._regionCleanupHookInstalled = true;
@@ -9182,11 +9236,15 @@ function updateSpaceLoop() {
         }
       }
 
+      // Automatically align all characters, animals, items and easels to ground height
+      alignAllObjectsToGround(this);
+
       // Ensure player and camera spawn safely inside the map
       ensureSafeLevelSpawn(this, regionId, false);
 
       setTimeout(() => {
         if (this.currentRegion === regionId) {
+          alignAllObjectsToGround(this);
           ensureSafeLevelSpawn(this, regionId, true);
         }
       }, 60);
@@ -12099,9 +12157,11 @@ function updateSpaceLoop() {
       }
       if (game.playerPos) {
         const dist = game.playerPos.distanceTo(cat.position);
-        if (dist < 8.5) {
+        if (dist < 10.0) {
+          window.__superBearNearCatMerchant = true;
           window.dispatchEvent(new CustomEvent('superbear:cat-merchant-proximity', { detail: { isNear: true, dist } }));
         } else {
+          window.__superBearNearCatMerchant = false;
           window.dispatchEvent(new CustomEvent('superbear:cat-merchant-proximity', { detail: { isNear: false } }));
         }
       }
@@ -12941,8 +13001,11 @@ function updateSpaceLoop() {
       }
     }
   }
-
-  requestAnimationFrame(updateSpaceLoop);
+  } catch (err) {
+    console.warn("Game enhancer loop tick error:", err);
+  } finally {
+    requestAnimationFrame(updateSpaceLoop);
+  }
 }
 
 
@@ -14520,9 +14583,9 @@ function create3DWaterDragon(game, pos) {
 }
 
 function populateWaterCave(game) {
-  // Level Exit Portal to Next Region (Bypasses bee_desert which is coming in an update)
+  // Level Exit Portal to Next Region (14. Bee Desert)
   if (window.createCaveExitPortal) {
-    window.createCaveExitPortal(game, 0, 31.5, -815, 'hub', '1. BÖLÜM: AYI VE KEDİ KÖYÜ (DÖNÜŞ)', '🏡');
+    window.createCaveExitPortal(game, 0, 31.5, -815, 'bee_desert', '14. BÖLÜM: ARI ÇÖLÜ & ANTİK PİRAMİT', '🏜️');
   }
 
   if (game && game.currentLevel) ensureLevelArrays(game.currentLevel);
@@ -15231,8 +15294,8 @@ function populateWaterCave(game) {
   caveGroup.add(dragonBoss.mesh);
   game.currentLevel.waterDragonBoss = dragonBoss;
 
-  // Grand Illuminated Exit Portal at the end of Water Cave (Transitions to 1. Ayı Köyü - Şampiyon Dönüşü)
-  if (window.createCaveExitPortal) { window.window.createCaveExitPortal(game, 0, 31.5, -815, 'hub', '1. BÖLÜM: AYI VE KEDİ KÖYÜ (DÖNÜŞ)', '🏡');
+  // Grand Illuminated Exit Portal at the end of Water Cave (Transitions to 14. Bee Desert)
+  if (window.createCaveExitPortal) { window.createCaveExitPortal(game, 0, 31.5, -815, 'bee_desert', '14. BÖLÜM: ARI ÇÖLÜ & ANTİK PİRAMİT', '🏜️');
   }
 
   // Başlangıçta Boss Can Barını Gizle (Yalnızca bölüm sonundaki arenaya yaklaşıldığında açılacak)
@@ -15545,9 +15608,9 @@ function create3DCrocodileBoss(game, pos) {
 }
 
 function populateBeeDesert(game) {
-  // Level Exit Portal to Next Region
+  // Level Exit Portal to Next Region (15. Space Dimensions)
   if (window.createCaveExitPortal) {
-    window.createCaveExitPortal(game, 0, 5, -750, 'hub', '1. BÖLÜM: AYI VE KEDİ KÖYÜ (ŞAMPİYON DÖNÜŞÜ)', '🏡');
+    window.createCaveExitPortal(game, 0, 5, -750, 'space_1_stardust', '15. BÖLÜM: KOZMİK UZAY BOYUTLARI', '🌌');
   }
 
   if (game && game.currentLevel) ensureLevelArrays(game.currentLevel);
@@ -16176,11 +16239,14 @@ function enhanceGame() {
       pelican_plains: { next: 'snow_desert', name: '5. BÖLÜM: KAR VADİSİ', icon: '❄️' },
       snow_desert: { next: 'volcano_cave', name: '6. BÖLÜM: VOLKANİK EJDERHA MAĞARASI', icon: '🌋' },
       volcano_cave: { next: 'underwater_palace', name: '7. BÖLÜM: ANTİK SU ALTI KRİSTAL SARAYI', icon: '🌊' },
-      underwater_palace: { next: 'dinosaur_world', name: '9. BÖLÜM: DİNOZOR DÜNYASI', icon: '🦖' },
+      underwater_palace: { next: 'golden_sanctuary', name: '8. BÖLÜM: EFSANEVİ ALTIN CENNETİ', icon: '🌟' },
+      golden_sanctuary: { next: 'dinosaur_world', name: '9. BÖLÜM: DİNOZOR DÜNYASI', icon: '🦖' },
       dinosaur_world: { next: 'sugar_world', name: '10. BÖLÜM: ŞEKER DÜNYASI', icon: '🍬' },
       sugar_world: { next: 'jokerooms', name: '11. BÖLÜM: JOKEROOMS', icon: '🚪' },
-      jokerooms: { next: 'water_cave', name: '13. BÖLÜM: KARANLIK SU MAĞARASI', icon: '💧' },
-      water_cave: { next: 'hub', name: '1. BÖLÜM: AYI VE KEDİ KÖYÜ (ŞAMPİYON DÖNÜŞÜ)', icon: '🏡' }
+      jokerooms: { next: 'ruin_village', name: '12. BÖLÜM: YIKILMIŞ KÖY HARABELERİ', icon: '🏚️' },
+      ruin_village: { next: 'water_cave', name: '13. BÖLÜM: KARANLIK SU MAĞARASI', icon: '💧' },
+      water_cave: { next: 'bee_desert', name: '14. BÖLÜM: ARI ÇÖLÜ & ANTİK PİRAMİT', icon: '🏜️' },
+      bee_desert: { next: 'space_1_stardust', name: '15. BÖLÜM: KOZMİK UZAY BOYUTLARI', icon: '🌌' }
     };
 
     const target = BOSS_FORWARD_MAP[reg] || { next: 'hub', name: 'Ayı Köyü', icon: '🏡' };
@@ -17570,11 +17636,14 @@ window.__ensureLevelExitPortalExists = function(game) {
     pelican_plains:    { next: 'snow_desert',        name: '5. BÖLÜM: KAR VADİSİ', icon: '❄️', pos: { x: 0, y: 2.0, z: -190 } },
     snow_desert:       { next: 'volcano_cave',       name: '6. BÖLÜM: VOLKANİK EJDERHA MAĞARASI', icon: '🌋', pos: { x: 0, y: 2.0, z: -200 } },
     volcano_cave:      { next: 'underwater_palace',  name: '7. BÖLÜM: ANTİK SU ALTI KRİSTAL SARAYI', icon: '🌊', pos: { x: 0, y: 41.0, z: -188 } },
-    underwater_palace: { next: 'dinosaur_world',     name: '9. BÖLÜM: DİNOZOR DÜNYASI', icon: '🦖', pos: { x: 0, y: 30.0, z: -550 } },
+    underwater_palace: { next: 'golden_sanctuary',   name: '8. BÖLÜM: EFSANEVİ ALTIN CENNETİ', icon: '🌟', pos: { x: 0, y: 30.0, z: -550 } },
+    golden_sanctuary:  { next: 'dinosaur_world',     name: '9. BÖLÜM: DİNOZOR DÜNYASI', icon: '🦖', pos: { x: 0, y: 5.0, z: -220 } },
     dinosaur_world:    { next: 'sugar_world',        name: '10. BÖLÜM: ŞEKER DÜNYASI', icon: '🍬', pos: { x: 0, y: 2.0, z: -180 } },
     sugar_world:       { next: 'jokerooms',           name: '11. BÖLÜM: JOKEROOMS', icon: '🚪', pos: { x: 0, y: 11.5, z: -300 } },
-    jokerooms:         { next: 'water_cave',         name: '13. BÖLÜM: KARANLIK SU MAĞARASI', icon: '💧', pos: { x: 0, y: 1.2, z: -450 } },
-    water_cave:        { next: 'hub',                name: '1. BÖLÜM: AYI VE KEDİ KÖYÜ (ŞAMPİYON DÖNÜŞÜ)', icon: '🏡', pos: { x: 0, y: 31.5, z: -815 } }
+    jokerooms:         { next: 'ruin_village',       name: '12. BÖLÜM: YIKILMIŞ KÖY HARABELERİ', icon: '🏚️', pos: { x: 0, y: 1.2, z: -450 } },
+    ruin_village:      { next: 'water_cave',         name: '13. BÖLÜM: KARANLIK SU MAĞARASI', icon: '💧', pos: { x: 0, y: 4.0, z: -520 } },
+    water_cave:        { next: 'bee_desert',         name: '14. BÖLÜM: ARI ÇÖLÜ & ANTİK PİRAMİT', icon: '🏜️', pos: { x: 0, y: 31.5, z: -815 } },
+    bee_desert:        { next: 'space_1_stardust',   name: '15. BÖLÜM: KOZMİK UZAY BOYUTLARI', icon: '🌌', pos: { x: 0, y: 5.0, z: -750 } }
   };
 
   const portalInfo = LEVEL_EXIT_MAP[reg];

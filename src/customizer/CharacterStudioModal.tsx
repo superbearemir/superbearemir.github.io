@@ -587,7 +587,29 @@ export const CharacterStudioModal: React.FC<CharacterStudioModalProps> = ({
           </div>
 
           {/* Quick Actions & Close */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <button
+              onClick={() => {
+                onClose();
+                window.dispatchEvent(new CustomEvent('superbear:open-map-selector'));
+              }}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-sky-900/60 hover:bg-sky-800 text-sky-200 border border-sky-700 text-xs font-bold transition cursor-pointer"
+              title="Bölümler Haritasına Geç"
+            >
+              <span>🗺️</span>
+              <span className="hidden sm:inline">Bölümler</span>
+            </button>
+            <button
+              onClick={() => {
+                onClose();
+                window.dispatchEvent(new CustomEvent('superbear:open-master-menu'));
+              }}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-purple-900/60 hover:bg-purple-800 text-purple-200 border border-purple-700 text-xs font-bold transition cursor-pointer"
+              title="Ayı Menüsüne Geç"
+            >
+              <span>🐻</span>
+              <span className="hidden sm:inline">Ayı Menü</span>
+            </button>
             <button
               onClick={handleSaveCurrentPreset}
               className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition-all cursor-pointer"
@@ -597,16 +619,18 @@ export const CharacterStudioModal: React.FC<CharacterStudioModalProps> = ({
             </button>
             <button
               onClick={handleDownloadCard}
-              className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition-all cursor-pointer"
+              className="hidden md:flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition-all cursor-pointer"
             >
               <Download className="w-3.5 h-3.5 text-sky-400" />
               Fotoğraf Kartı
             </button>
             <button
               onClick={onClose}
-              className="w-8 h-8 rounded-full bg-slate-800 hover:bg-rose-500 text-slate-400 hover:text-white flex items-center justify-center transition-all cursor-pointer"
+              className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-black text-xs flex items-center gap-1 transition-all cursor-pointer shadow-md active:scale-95 border border-rose-400"
+              title="Kapat ve Oyuna Dön"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4 stroke-[3]" />
+              <span>Oyuna Dön</span>
             </button>
           </div>
         </div>
@@ -614,8 +638,8 @@ export const CharacterStudioModal: React.FC<CharacterStudioModalProps> = ({
         {/* --- Main Workspace (Left: 3D Stage, Right: Customizer Tabs) --- */}
         <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 min-h-0 overflow-hidden">
           
-          {/* --- LEFT: 3D Viewport (5 Columns) --- */}
-          <div className="lg:col-span-5 relative bg-gradient-to-b from-slate-950 to-slate-900 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-800 overflow-hidden">
+          {/* --- LEFT: 3D Viewport (5 Columns on Desktop, Fixed height on Tablet/Mobile) --- */}
+          <div className="h-52 sm:h-64 lg:h-auto lg:col-span-5 relative bg-gradient-to-b from-slate-950 to-slate-900 flex flex-col border-b lg:border-b-0 lg:border-r border-slate-800 overflow-hidden shrink-0 lg:shrink">
             {/* 3D Canvas Area */}
             <div
               ref={canvasContainerRef}
@@ -1404,41 +1428,47 @@ export const CharacterStudioModal: React.FC<CharacterStudioModalProps> = ({
                 </div>
               )}
             </div>
+          </div>
+        </div>
 
-            {/* --- Bottom Action & Apply Bar --- */}
-            <div className="px-4 sm:px-6 py-3.5 border-t border-slate-800 bg-slate-950/90 flex items-center justify-between gap-3 shrink-0">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    const def = createDefaultDesign();
-                    setDesign(def);
-                    showToast('🔄 Varsayılana sıfırlandı.');
-                  }}
-                  className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold cursor-pointer transition-all flex items-center gap-1"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  Sıfırla
-                </button>
-              </div>
+        {/* --- Pinned Bottom Action & Apply Bar (Permanently visible on Tablets, Phones and PCs) --- */}
+        <div className="px-3 sm:px-6 py-2.5 sm:py-3.5 border-t border-slate-800 bg-slate-950/95 backdrop-blur-md flex items-center justify-between gap-2 sm:gap-3 shrink-0 z-30">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <button
+              onClick={() => {
+                const def = createDefaultDesign();
+                setDesign(def);
+                showToast('🔄 Varsayılana sıfırlandı.');
+              }}
+              className="px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold cursor-pointer transition-all flex items-center gap-1"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Sıfırla</span>
+            </button>
+            <button
+              onClick={handleSaveCurrentPreset}
+              className="hidden xs:flex items-center gap-1 px-2.5 sm:px-3 py-1.5 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition-all cursor-pointer"
+            >
+              <Save className="w-3.5 h-3.5 text-amber-400" />
+              <span>Taslağı Kaydet</span>
+            </button>
+          </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={onClose}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold cursor-pointer transition-all"
-                >
-                  Kapat
-                </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onClose}
+              className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold cursor-pointer transition-all"
+            >
+              Kapat
+            </button>
 
-                <button
-                  onClick={handleApplyToGame}
-                  className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black text-sm shadow-xl shadow-amber-500/25 transition-all transform active:scale-95 cursor-pointer"
-                >
-                  <Check className="w-4 h-4 stroke-[3]" />
-                  🎮 Oyuna Uygula & Başla
-                </button>
-              </div>
-            </div>
-
+            <button
+              onClick={handleApplyToGame}
+              className="flex items-center gap-1.5 sm:gap-2 px-3.5 sm:px-6 py-1.5 sm:py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/25 transition-all transform active:scale-95 cursor-pointer"
+            >
+              <Check className="w-4 h-4 stroke-[3]" />
+              <span>🎮 Oyuna Uygula & Başla</span>
+            </button>
           </div>
         </div>
 

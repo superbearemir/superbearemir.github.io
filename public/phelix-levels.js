@@ -2281,9 +2281,11 @@
   function updatePhelixLoop() {
     requestAnimationFrame(updatePhelixLoop);
 
-    const game = window.__superBearGame;
-    if (!game || !game.playerPos) return;
-    const pPos = game.playerPos;
+    try {
+      const game = window.__superBearGame;
+      if (!game || !game.playerPos) return;
+      if (!game.currentRegion || !PHELIX_LEVEL_MAP[game.currentRegion]) return;
+      const pPos = game.playerPos;
 
     if (isPhelixCutscenePlaying) {
       if (game.inputs) {
@@ -2491,7 +2493,10 @@
         }
       }
     }
+  } catch (err) {
+    console.warn("Phelix loop tick error:", err);
   }
+}
 
   // --- HOOKS ---
   window.__superBearPhelixLevels = {

@@ -70,6 +70,7 @@
     
     // 5. Quests & Activities
     quests: [],
+    dailyChallenges: null,
     arcadeHighScores: {}
   };
 
