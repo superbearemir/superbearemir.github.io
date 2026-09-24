@@ -2408,9 +2408,9 @@ function buildExpandedKediKoyu(scene) {
     mesh: foxMesh,
     pos: foxMesh.position,
     dialogue: [
-      "Selamün aleyküm genç kahraman ayı! Kedi Köyü'ne hoş geldin!",
-      "Burası sadece kedilerin değil, biz tilki, tavşan ve zürafaların da neşeyle yaşadığı harika bir yer!",
-      "Kedi Köyü nehrinde ve göletlerde nefis balıklar yüzüyor. Oltanı kap ve balık tutma görevlerini tamamla miyav!"
+      "Selamün aleyküm cesur kahraman ayı! Köyümüze hoş geldin!",
+      "Köy halkı olarak sadece şu an açık olan macera diyarlarını konuşuyoruz. Kilitli kapılar henüz mühürlü!",
+      "Açık olan bölgelere adım atıp oradaki canavarları ve bossları devirerek köyümüzü koru ve yeni beceriler kazan!"
     ]
   });
 
@@ -2428,9 +2428,9 @@ function buildExpandedKediKoyu(scene) {
     mesh: bunnyMesh,
     pos: bunnyMesh.position,
     dialogue: [
-      "Zıp zıp zıp! Voleybol sahasına hoş geldin cesur ayı!",
-      "Işıltılı voleybol topuna kafa veya ayak vurarak zıplatmayı denedin mi?",
-      "Kedi dostlarımla her gün voleybol turnuvası düzenliyoruz, sen de katıl!"
+      "Zıp zıp zıp! Voleybol sahasına ve neşeli köyümüze hoş geldin cesur ayı!",
+      "Sadece şu an açık olan macera kapılarından geçebilirsin, kilitli diyarlar zamanı gelince açılacak!",
+      "Açık dünyalardaki gizli altın petekleri ve bal kristallerini toplayarak seviyeni yükselt!"
     ]
   });
 
@@ -2448,9 +2448,9 @@ function buildExpandedKediKoyu(scene) {
     mesh: giraffeMesh,
     pos: giraffeMesh.position,
     dialogue: [
-      "Yukarıdan merhaba cesur ayı! Uzun boyum sayesinde nehrin tüm balıklarını görebiliyorum!",
-      "Nehrin berrak sularında yüzen Altın Nehir Balıklarını ve Dev Koi Balıklarını kaçırma!",
-      "Oltanı nehre fırlat ve en büyük balığı yakala!"
+      "Yukarıdan merhaba cesur ayı! Uzun boyum sayesinde tüm köyü ve açık macera kapılarını görebiliyorum!",
+      "Şu an açık olan bölgeler senin gibi güçlü bir kahramanın yardımını bekliyor!",
+      "Açık dünyalardaki zorlu parkurları tamamla, canavarları temizle ve köyümüze zaferle dön!"
     ]
   });
 
@@ -3851,9 +3851,9 @@ function buildBeginnerTrainingGround(THREE, villageGroup) {
     pos: coachCat.position,
     dialogue: [
       "Miyav! Hoş geldin cesur ayı! Tonton Fırıncı'nın sıcacık fırın evinin yanındaki bu parkur senin alıştırma alanın!",
-      "Saman kuklama sol tık ile pençe at, kütüklere çift zıpla, yay tahtasıyla havalan!",
-      "Kırmızı-beyaz hedef tahtasının üstündeyken havadayken yere sertçe çarp!",
-      "Tonton Fırıncı'dan lezzetli bal ekmeğini kap ve antrenmanını tamamlayıp maceralara atıl!"
+      "Şu an açık olan macera kapılarına (Orman Tapınağı ve açık dünyalar) girmeden önce burada güç topla!",
+      "Saman kuklama pençe at, kütüklere çift zıpla, yay tahtasıyla havalan ve dövüş reflekslerini geliştir!",
+      "Açık olan bölgelerdeki canavarlar seni bekliyor, antrenmanını tamamlayıp maceraya atıl!"
     ]
   });
 }

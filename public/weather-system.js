@@ -188,7 +188,7 @@
       this.currentWeather = 'clear';
       this.currentRegion = 'hub';
       this.isAutoCycleEnabled = true;
-      this.cycleIntervalSeconds = 75; // Auto weather shift every 75s
+      this.cycleIntervalSeconds = 900; // Auto weather shift every 15 minutes (900s)
       this.lastCycleTime = Date.now();
       
       this.weatherGroup = null;
