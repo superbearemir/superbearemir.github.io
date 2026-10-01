@@ -5530,7 +5530,7 @@ if (this.currentLevel && this.currentLevel.checkpoints) {
   });
 }
 if(this.currentLevel&&this.currentLevel.nextPortal){const p=this.currentLevel.nextPortal;p.vortexMesh&&(p.vortexMesh.rotation.z+=e*2.5),p.orbMesh&&(p.orbMesh.rotation.y+=e*3.5),p.ringMesh&&(p.ringMesh.rotation.y+=e*1.2);const pDist=this.playerPos.distanceTo(p.pos);const isBossAlive=this.currentRegion!=="hub"&&((this.currentLevel.enemies||[]).some(m=>m&&m.hp>0&&m.state!=="dead"&&(m.isBoss||(m.name&&(m.name.toLowerCase().includes("boss")||m.name.toLowerCase().includes("lord")||m.name.toLowerCase().includes("kral")))||(m.type&&m.type.toLowerCase().includes("boss"))))||(typeof window!=="undefined"&&((window.foxBossInstance&&!window.foxBossInstance.isDead&&window.foxBossInstance.hp>0)||(window.fusionBossInstance&&!window.fusionBossInstance.isDead&&window.fusionBossInstance.hp>0))));if(isBossAlive){if(pDist<4.2){const now=Date.now();if(!p.__lastBossNoticeTimer||now-p.__lastBossNoticeTimer>2500){p.__lastBossNoticeTimer=now;this.callbacks&&this.callbacks.onShowNotice&&this.callbacks.onShowNotice("⚠️ Portaldan geçmek için önce Bölüm Boss'unu mağlup etmelisin! ⚔️","warning");}}}else{pDist<2.5?p.triggered||(p.triggered=!0,this.spawnSparkleParticles(p.pos,35,3718648),window.St&&window.St.playGoalFanfare&&window.St.playGoalFanfare(),this.callbacks.onShowNotice("🌀 " + p.regionName + " Bölgesine Geçiliyor...","success"),setTimeout(()=>{this.loadRegion(p.targetRegion)},300)):pDist<5&&!p.promptShown&&(p.promptShown=!0,this.callbacks.onShowNotice("✨ " + p.regionName + " Portalı Yanındasın! İçine Yürü veya [E] Tuşuna Bas!","info"))}}
-(this.currentLevel.jumpPads || []).forEach(v=>{const dH=Math.hypot(this.playerPos.x-v.pos.x,this.playerPos.z-v.pos.z);const dV=Math.abs(this.playerPos.y-v.pos.y);if(dH<1.85&&(dV<2.0||(this.playerPos.y>=v.pos.y-0.8&&this.playerPos.y<=v.pos.y+2.5))){this.playerVel.y=Math.max(v.boostForce||16,16);this.isGrounded=!1;this.jumpCount=0;St.playJump();this.spawnDustParticles(v.pos,10);this.spawnSparkleParticles(v.pos,10,3718648);}}),(this.currentLevel.collectibles || []).forEach(v=>{if(v.collected)return;v.mesh.rotation.y+=e*2.5;const U=v.pos.distanceTo(this.playerPos);if(this.stats.hasMagnet&&U<6){const N=this.playerPos.clone().sub(v.pos).normalize().multiplyScalar(e*7);v.pos.add(N),v.mesh.position.copy(v.pos)}U<1.3&&(v.collected=!0,this.scene.remove(v.mesh),v.type==="coin"?(this.stats.coins+=v.value,St.playCoin(),this.callbacks.onQuestProgress("collect_coin",1)):v.type==="honey_gem"&&(this.stats.honeyGems+=1,this.stats.coins+=v.value,St.playHoneyGem(),this.callbacks.onQuestProgress("collect_honey_gem",1)),this.spawnSparkleParticles(v.pos,8,16498468),this.callbacks.onStatsUpdate(this.stats))});if(this.currentLevel.soccerBall){const v=this.currentLevel.soccerBall;if(v.velocity.y-=18*e,v.pos.add(v.velocity.clone().multiplyScalar(e)),v.pos.y<=v.radius+.1&&(v.pos.y=v.radius+.1,v.velocity.y=-v.velocity.y*.65,v.velocity.x*=.92,v.velocity.z*=.92),v.pos.distanceTo(this.playerPos)<v.radius+_){const N=v.pos.clone().sub(this.playerPos).normalize();N.y=.3,v.velocity.add(N.multiplyScalar(8)),St.playBallKick()}if(v.mesh.position.copy(v.pos),this.currentLevel.goalArea){const N=this.currentLevel.goalArea;v.pos.x>=N.min.x&&v.pos.x<=N.max.x&&v.pos.y>=N.min.y&&v.pos.y<=N.max.y&&v.pos.z>=N.min.z&&v.pos.z<=N.max.z&&(St.playGoalFanfare(),vh({particleCount:80,spread:60,origin:{y:.5}}),this.callbacks.onGoalScored(),this.callbacks.onQuestProgress("soccer_goal",1),this.callbacks.onShowNotice("⚽ GOOOOL! Harika bir şut! (+50 Para & XP)","success"),this.stats.coins+=50,this.stats.xp+=50,this.checkLevelUp(),this.callbacks.onStatsUpdate(this.stats),v.pos.set(-14,1.5,-12),v.velocity.set(0,0,0))}}(this.currentLevel.enemies || []).forEach(v=>{if(v.hp<=0)return;v.animTimer+=e;const U=v.pos.distanceTo(this.playerPos);if(v.type==="corrupted_bear_boss"){
+(this.currentLevel.jumpPads || []).forEach(v=>{const dH=Math.hypot(this.playerPos.x-v.pos.x,this.playerPos.z-v.pos.z);const dV=Math.abs(this.playerPos.y-v.pos.y);if(dH<1.85&&(dV<2.0||(this.playerPos.y>=v.pos.y-0.8&&this.playerPos.y<=v.pos.y+2.5))){this.playerVel.y=Math.max(v.boostForce||16,16);this.isGrounded=!1;this.jumpCount=0;St.playJump();this.spawnDustParticles(v.pos,10);this.spawnSparkleParticles(v.pos,10,3718648);}}),(this.currentLevel.collectibles || []).forEach(v=>{if(!v)return;if(v.collected){if(v.mesh){v.mesh.visible=!1;if(v.mesh.parent)v.mesh.parent.remove(v.mesh);}return;}if(v.mesh)v.mesh.rotation.y+=e*2.5;const U=v.pos.distanceTo(this.playerPos);if(this.stats.hasMagnet&&U<6){const N=this.playerPos.clone().sub(v.pos).normalize().multiplyScalar(e*7);v.pos.add(N);if(v.mesh)v.mesh.position.copy(v.pos);}if(U<1.7){v.collected=!0;if(v.mesh){v.mesh.visible=!1;if(v.mesh.parent)v.mesh.parent.remove(v.mesh);}this.scene.remove(v.mesh);if(v.isFood){const healAmt=v.heal||30;this.stats.currentHp=Math.min(this.stats.maxHp||100,this.stats.currentHp+healAmt);const coinBonus=v.value||15;this.stats.coins+=coinBonus;this.stats.xp=(this.stats.xp||0)+coinBonus*2;St.playPowerup();this.callbacks.onShowNotice(`😋 ${v.name||'Yemek'} Tüketildi! (+${healAmt} Can, +${coinBonus} Altın)`,"success");}else if(v.type==="coin"){this.stats.coins+=(v.value||25);this.stats.xp=(this.stats.xp||0)+20;St.playCoin();this.callbacks.onQuestProgress("collect_coin",1);this.callbacks.onShowNotice(`🪙 Parlak Altın Sikke Alındı! (+${v.value||25} Altın)`,"info");}else if(v.type==="honey_gem"){this.stats.honeyGems=(this.stats.honeyGems||0)+1;this.stats.coins+=(v.value||50);this.stats.xp=(this.stats.xp||0)+50;St.playHoneyGem();this.callbacks.onQuestProgress("collect_honey_gem",1);this.callbacks.onShowNotice(`💎 Kutsal Bal Kristali Toplandı! (+1 Bal Kristali, +${v.value||50} Altın)`,"success");}this.checkLevelUp();this.spawnSparkleParticles(v.pos,14,v.isFood?0x4ade80:0xfacc15);this.callbacks.onStatsUpdate(this.stats);}});if(this.currentLevel.soccerBall){const v=this.currentLevel.soccerBall;if(v.velocity.y-=18*e,v.pos.add(v.velocity.clone().multiplyScalar(e)),v.pos.y<=v.radius+.1&&(v.pos.y=v.radius+.1,v.velocity.y=-v.velocity.y*.65,v.velocity.x*=.92,v.velocity.z*=.92),v.pos.distanceTo(this.playerPos)<v.radius+_){const N=v.pos.clone().sub(this.playerPos).normalize();N.y=.3,v.velocity.add(N.multiplyScalar(8)),St.playBallKick()}if(v.mesh.position.copy(v.pos),this.currentLevel.goalArea){const N=this.currentLevel.goalArea;v.pos.x>=N.min.x&&v.pos.x<=N.max.x&&v.pos.y>=N.min.y&&v.pos.y<=N.max.y&&v.pos.z>=N.min.z&&v.pos.z<=N.max.z&&(St.playGoalFanfare(),vh({particleCount:80,spread:60,origin:{y:.5}}),this.callbacks.onGoalScored(),this.callbacks.onQuestProgress("soccer_goal",1),this.callbacks.onShowNotice("⚽ GOOOOL! Harika bir şut! (+50 Para & XP)","success"),this.stats.coins+=50,this.stats.xp+=50,this.checkLevelUp(),this.callbacks.onStatsUpdate(this.stats),v.pos.set(-14,1.5,-12),v.velocity.set(0,0,0))}}(this.currentLevel.enemies || []).forEach(v=>{if(v.hp<=0)return;v.animTimer+=e;const U=v.pos.distanceTo(this.playerPos);if(v.type==="corrupted_bear_boss"){
   v.mesh.rotation.y = Math.atan2(this.playerPos.x - v.pos.x, this.playerPos.z - v.pos.z);
   const armSwing = Math.sin(v.animTimer * 7) * 0.55;
   const bLeftArm = v.mesh.getObjectByName("boss_left_arm");
@@ -6706,7 +6706,8 @@ const Zw = [
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */const HA=[["path",{d:"M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z",key:"1xq2db"}]],no=$t("zap",HA),VA=({stats:r,currentRegion:e,storyCrystals:stCrystals=[],onOpenStoryBook:onStoryClick,activeNotice:n,proximityPrompt:a,activeBoss:o,onOpenSkillTree:c,onOpenInventory:u,onOpenMap:h,onOpenDrawings:m,onOpenControls:p,onOpenCharacterStudio:g,onActionTrigger:_,isMuted:x,onToggleMute:y,onSelectMusicTheme:T})=>{
-  const [R,b]=rt.useState(!1), [z,v]=rt.useState(!1), [curTrack,setCurTrack]=rt.useState("hub"), [isStatsCollapsed,setIsStatsCollapsed]=rt.useState(!0);
+  const [R,b]=rt.useState(!1), [z,v]=rt.useState(!1), [curTrack,setCurTrack]=rt.useState("hub"), [isStatsCollapsed,setIsStatsCollapsed]=rt.useState(()=>{try{return localStorage.getItem("superbear_stats_collapsed")!=="false"}catch(e){return!0}});
+  const toggleStats=(val)=>{setIsStatsCollapsed(val);try{localStorage.setItem("superbear_stats_collapsed",String(val))}catch(e){}};
   const A=[
     {id:"hub",title:"Sakin Doğa & Huzurlu Ayı Köyü 🍃",genre:"Dingin Akustik, Rahatlatıcı Lofi (Ana Köy)"},
     {id:"boncuk_cat",title:"Boncuk'un Kedi Dansı 🐱",genre:"Zıp Zıp Sevimli Kedi Teması"},
@@ -6729,7 +6730,7 @@ const Zw = [
     // Single Unified Sleek Top Bar (Collapsible to save mobile screen space)
     isStatsCollapsed ? (
       E.jsxs("button",{
-        onClick:()=>setIsStatsCollapsed(!1),
+        onClick:()=>toggleStats(!1),
         className:"pointer-events-auto mx-auto px-3.5 py-1.5 bg-slate-950/95 hover:bg-slate-900 border-2 border-amber-500/60 rounded-full shadow-2xl backdrop-blur-md flex items-center gap-2.5 text-xs font-black text-amber-300 transition transform active:scale-95 cursor-pointer hover:border-amber-400 ring-2 ring-amber-500/20 animate-fade-in",
         title:"Sağlık, Para ve Durum Menüsünü Genişlet",
         children:[
@@ -6738,41 +6739,48 @@ const Zw = [
           E.jsx("span",{className:"text-slate-600",children:"•"}),
           E.jsxs("span",{className:"text-amber-300 flex items-center gap-1 font-mono",children:[E.jsx(hl,{className:"w-3.5 h-3.5 fill-amber-400 text-amber-500"}),r.coins]}),
           r.skillPoints>0&&E.jsxs("span",{className:"text-emerald-400 text-[10px] bg-emerald-950/80 px-1.5 py-0.5 rounded-full border border-emerald-500/40",children:["+",r.skillPoints]}),
-          E.jsx("span",{className:"text-[10px] text-amber-400 font-mono ml-0.5",children:"▼"})
+          E.jsx("span",{className:"text-[10px] text-amber-400 font-mono ml-0.5",children:"▼ Menü"})
         ]
       })
     ) : (
-      E.jsxs("div",{className:"pointer-events-auto flex items-center justify-between w-full max-w-4xl mx-auto gap-2 px-3 py-1.5 bg-slate-950/95 backdrop-blur-md border border-amber-500/50 rounded-full shadow-2xl animate-fade-in",children:[
-        // Left: Player Stats
-        E.jsxs("div",{className:"flex items-center gap-2 sm:gap-3",children:[
-          E.jsx("div",{className:"w-7 h-7 rounded-full bg-gradient-to-tr from-amber-400 to-amber-600 font-black text-slate-950 text-xs flex items-center justify-center shadow-md",title:"Seviye "+r.level,children:r.level}),
-          E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-health-shop"));},className:"px-2 py-1 rounded-full bg-rose-950/40 border border-rose-800/40 flex items-center gap-1 font-mono text-xs font-black text-rose-400 hover:bg-rose-900/60 cursor-pointer transition active:scale-95 shadow-sm",title:"Can Durumu (HP) - Tıkla Menüyü Aç",children:[
-            E.jsx(hp,{className:"w-3.5 h-3.5 fill-rose-500 text-rose-500"}),
-            E.jsxs("span",{children:[r.currentHp,"/",r.maxHp]})
+      E.jsxs("div",{className:"pointer-events-auto flex flex-col gap-2 w-full max-w-xl mx-auto p-2.5 sm:p-3 bg-slate-950/95 backdrop-blur-xl border-2 border-amber-500/70 rounded-2xl shadow-2xl animate-fade-in text-xs",children:[
+        E.jsxs("div",{className:"flex items-center justify-between border-b border-slate-800/80 pb-1.5 px-0.5",children:[
+          E.jsxs("div",{className:"flex items-center gap-2 font-black text-amber-300",children:[
+            E.jsx("span",{className:"text-sm",children:"❤️"}),
+            E.jsx("span",{children:"Sağlık, Para & Hızlı Durum"}),
+            E.jsx("span",{className:"text-[10px] text-slate-400 font-mono",children:`(Seviye ${r.level})`})
           ]}),
-          E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-treasure-inventory"));},className:"px-2 py-1 rounded-full bg-amber-950/40 border border-amber-800/40 flex items-center gap-1 font-mono text-xs font-black text-amber-300 hover:bg-amber-900/60 cursor-pointer transition active:scale-95 shadow-sm",title:"Altın / Para - Tıkla Kedi Dükkanını Aç",children:[
-            E.jsx(hl,{className:"w-3.5 h-3.5 fill-amber-400 text-amber-500"}),
-            E.jsx("span",{children:r.coins})
-          ]}),
-          r.skillPoints>0&&E.jsxs("button",{onClick:c,className:"animate-pulse bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full shadow flex items-center gap-1 cursor-pointer",children:[
-            E.jsx(bl,{className:"w-3 h-3"}),"+",r.skillPoints
+          E.jsxs("button",{onClick:()=>toggleStats(!0),className:"px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-amber-300 hover:text-white border border-amber-500/40 text-xs font-black flex items-center gap-1 cursor-pointer transition active:scale-95 shadow",title:"Menüyü Kapat / Gizle",children:[
+            E.jsx("span",{children:"Kapat"}),
+            E.jsx("span",{className:"text-[10px]",children:"▲"})
           ]})
         ]}),
-
-        // Center: Region Badge
-        E.jsxs("button",{onClick:(evt)=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-map-selector"));},className:"flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/90 border border-slate-700 hover:border-sky-400 text-slate-200 text-xs font-extrabold cursor-pointer transition active:scale-95 shadow",children:[
-          E.jsx("span",{className:"text-sm",children:e.icon}),
-          E.jsx("span",{className:"text-white max-w-[140px] truncate",children:e.titleTr}),
-          E.jsx("span",{className:"text-[9px] text-sky-300 bg-sky-950/80 px-1.5 py-0.2 rounded font-mono",children:"🗺️ Harita"})
-        ]}),
-
-        // Right: Separated Menu, Bear Studio, and Music Actions side by side + Collapse button
-        E.jsxs("div",{className:"flex items-center gap-1 sm:gap-1.5",children:[
-          E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-master-menu"));},className:"px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs flex items-center gap-1 border border-purple-300 shadow-md cursor-pointer transition active:scale-95",title:"Süper Ayı Macera ve Kontrol Menüsü",children:[          E.jsx(CA,{className:"w-3.5 h-3.5 text-yellow-300"}),          E.jsx("span",{children:"🐻 Ayı Menü"})        ]}),
-          E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-customizer"));},className:"px-2.5 py-1 rounded-full bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-700 hover:from-teal-500 hover:to-emerald-500 text-white font-black text-xs flex items-center gap-1 border border-teal-300 shadow-md cursor-pointer transition active:scale-95",title:"Ayı Özelleştirme Stüdyosu",children:[          E.jsx("span",{children:"🎨"}),          E.jsx("span",{children:"Ayı Stüdyosu"})        ]}),
-          E.jsxs("button",{onClick:()=>b(!0),className:"px-2.5 py-1 rounded-full bg-pink-950/70 hover:bg-pink-900/80 text-pink-200 border border-pink-500/50 text-xs font-black flex items-center gap-1 shadow cursor-pointer transition active:scale-95",title:"Dinamik Müzik Çalar",children:[          E.jsx(DA,{className:"w-3.5 h-3.5 text-pink-400"}),          E.jsx("span",{className:"hidden md:inline",children:"Müzik"})        ]}),
-          E.jsx("button",{onClick:y,className:"p-1.5 rounded-full bg-slate-900/80 text-slate-300 hover:text-white border border-slate-700 cursor-pointer shadow",title:x?"Sesi Aç":"Sesi Kapat",children:          x?E.jsx(Gv,{className:"w-3.5 h-3.5 text-rose-400"}):E.jsx(Fv,{className:"w-3.5 h-3.5 text-emerald-400"})        }),
-          E.jsxs("button",{onClick:()=>setIsStatsCollapsed(!0),className:"px-2 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 text-[10px] font-bold flex items-center gap-1 shadow cursor-pointer transition active:scale-95",title:"Üst Menüyü Küçült / Gizle",children:[E.jsx("span",{children:"Gizle"}),E.jsx("span",{className:"text-[9px]",children:"▲"})]})
+        E.jsxs("div",{className:"flex flex-wrap items-center justify-between gap-1.5 sm:gap-2",children:[
+          E.jsxs("div",{className:"flex items-center gap-1.5 sm:gap-2",children:[
+            E.jsx("div",{className:"w-6 h-6 rounded-full bg-gradient-to-tr from-amber-400 to-amber-600 font-black text-slate-950 text-xs flex items-center justify-center shadow-md",title:"Seviye "+r.level,children:r.level}),
+            E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-health-shop"));},className:"px-2 py-1 rounded-xl bg-rose-950/50 border border-rose-800/50 flex items-center gap-1 font-mono text-xs font-black text-rose-400 hover:bg-rose-900/60 cursor-pointer transition active:scale-95 shadow-sm",title:"Can Durumu (HP) - Tıkla Menüyü Aç",children:[
+              E.jsx(hp,{className:"w-3.5 h-3.5 fill-rose-500 text-rose-500"}),
+              E.jsxs("span",{children:[r.currentHp,"/",r.maxHp]})
+            ]}),
+            E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-treasure-inventory"));},className:"px-2 py-1 rounded-xl bg-amber-950/50 border border-amber-800/50 flex items-center gap-1 font-mono text-xs font-black text-amber-300 hover:bg-amber-900/60 cursor-pointer transition active:scale-95 shadow-sm",title:"Altın / Para - Tıkla Kedi Dükkanını Aç",children:[
+              E.jsx(hl,{className:"w-3.5 h-3.5 fill-amber-400 text-amber-500"}),
+              E.jsx("span",{children:r.coins})
+            ]}),
+            r.skillPoints>0&&E.jsxs("button",{onClick:c,className:"animate-pulse bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full shadow flex items-center gap-1 cursor-pointer",children:[
+              E.jsx(bl,{className:"w-3 h-3"}),"+",r.skillPoints
+            ]})
+          ]}),
+          E.jsxs("div",{className:"flex items-center gap-1 sm:gap-1.5 flex-wrap",children:[
+            E.jsxs("button",{onClick:(evt)=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-map-selector"));},className:"flex items-center gap-1 px-2 py-1 rounded-xl bg-slate-900 border border-slate-700 hover:border-sky-400 text-slate-200 text-xs font-extrabold cursor-pointer transition active:scale-95 shadow",children:[
+              E.jsx("span",{className:"text-xs",children:e.icon}),
+              E.jsx("span",{className:"text-white max-w-[90px] truncate",children:e.titleTr}),
+              E.jsx("span",{className:"text-[9px] text-sky-300 bg-sky-950/80 px-1 py-0.2 rounded font-mono",children:"Harita"})
+            ]}),
+            E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-master-menu"));},className:"px-2 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 text-white font-black text-xs flex items-center gap-1 border border-purple-300 shadow cursor-pointer transition active:scale-95",title:"Süper Ayı Macera ve Kontrol Menüsü",children:[E.jsx(CA,{className:"w-3 h-3 text-yellow-300"}),E.jsx("span",{children:"Ayı Menü"})]}),
+            E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-customizer"));},className:"px-2 py-1 rounded-xl bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 text-white font-black text-xs flex items-center gap-1 border border-teal-300 shadow cursor-pointer transition active:scale-95",title:"Ayı Özelleştirme Stüdyosu",children:[E.jsx("span",{children:"🎨"}),E.jsx("span",{children:"Stüdyo"})]}),
+            E.jsxs("button",{onClick:()=>b(!0),className:"px-2 py-1 rounded-xl bg-pink-950/70 hover:bg-pink-900/80 text-pink-200 border border-pink-500/50 text-xs font-black flex items-center gap-1 shadow cursor-pointer transition active:scale-95",title:"Dinamik Müzik Çalar",children:[E.jsx(DA,{className:"w-3 h-3 text-pink-400"}),E.jsx("span",{children:"Müzik"})]}),
+            E.jsx("button",{onClick:y,className:"p-1 rounded-xl bg-slate-900/80 text-slate-300 hover:text-white border border-slate-700 cursor-pointer shadow",title:x?"Sesi Aç":"Sesi Kapat",children:x?E.jsx(Gv,{className:"w-3.5 h-3.5 text-rose-400"}):E.jsx(Fv,{className:"w-3.5 h-3.5 text-emerald-400"})})
+          ]})
         ]})
       ]})
     ),    // Responsive Centered Dynamic Music Modal (Guaranteed safe bounds, never overflows)

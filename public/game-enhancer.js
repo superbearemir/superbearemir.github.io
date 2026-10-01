@@ -1,6 +1,15 @@
 var grandWaterfallGroup = null;
 var grandWaterfallBuilt = false;
 
+// Global fallback for create3DGoldCoin
+if (typeof window !== 'undefined' && !window.create3DGoldCoin) {
+  window.create3DGoldCoin = function(x, y, z, val = 25) {
+    if (typeof window.createSleekRoundGoldCoin === 'function') {
+      return window.createSleekRoundGoldCoin(x, y, z, val);
+    }
+  };
+}
+
 // ============================================================
 // GLOBAL GRAND CAVE EXIT PORTAL HELPER WITH BOSS-GATED ACCESS
 // ============================================================
@@ -3256,23 +3265,44 @@ function buildMorisSecretDenAndMountains(THREE, villageGroup) {
     });
   }
 
-  // Helper: 3D Spinning Golden Coin Mesh
-  function create3DGoldCoin(x, y, z, val = 20) {
-    const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.08, 14), goldMetalMat);
-    coin.position.set(x, y, z);
-    coin.rotation.x = Math.PI / 2;
-    villageGroup.add(coin);
+  // Helper: 3D Sleek Round Golden Coin Mesh (Yuvarlak, kabartmalı ve parıltılı)
+  function create3DGoldCoin(x, y, z, val = 25) {
+    const coinGrp = new THREE.Group();
+    coinGrp.position.set(x, y, z);
+
+    // Beveled cylindrical core
+    const core = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.08, 24), goldMetalMat);
+    core.rotation.x = Math.PI / 2;
+    coinGrp.add(core);
+
+    // High polish outer torus rim
+    const rim = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.04, 8, 24), goldMetalMat);
+    coinGrp.add(rim);
+
+    // Center embossed emblem (both sides)
+    [-0.045, 0.045].forEach(sz => {
+      const star = new THREE.Mesh(
+        new THREE.SphereGeometry(0.11, 6, 6),
+        new THREE.MeshStandardMaterial({ color: 0xfffbeb, metalness: 0.95, roughness: 0.1, emissive: 0xf59e0b, emissiveIntensity: 0.45 })
+      );
+      star.scale.set(1.0, 1.0, 0.2);
+      star.position.set(0, 0, sz);
+      coinGrp.add(star);
+    });
+
+    villageGroup.add(coinGrp);
 
     window.__secretCaveCollectibles.push({
       id: `gold_coin_${x}_${z}`,
       type: 'coin',
-      name: '💰 Parlayan Mağara Altını',
+      name: '🪙 Parlayan Yuvarlak Altın',
       val: val,
       pos: new THREE.Vector3(x, y, z),
-      mesh: coin,
+      mesh: coinGrp,
       collected: false
     });
   }
+  window.create3DGoldCoin = create3DGoldCoin;
 
   // Helper: 3D Floating Gem Mesh
   function create3DFloatingGem(x, y, z, colorHex = 0xa855f7, val = 75) {
@@ -13136,6 +13166,28 @@ function updateSpaceLoop() {
             }
           }
         });
+      }
+    }
+
+    // Universal Collected Collectibles Cleanup Enforcer (guarantee 100% disappearance of collected coins/gems/food)
+    if (game && game.currentLevel && game.currentLevel.collectibles) {
+      for (let ci = 0; ci < game.currentLevel.collectibles.length; ci++) {
+        const col = game.currentLevel.collectibles[ci];
+        if (col && col.collected && col.mesh) {
+          col.mesh.visible = false;
+          if (col.mesh.parent) col.mesh.parent.remove(col.mesh);
+          if (game.scene) game.scene.remove(col.mesh);
+        }
+      }
+    }
+    if (window.__secretCaveCollectibles) {
+      for (let ci = 0; ci < window.__secretCaveCollectibles.length; ci++) {
+        const col = window.__secretCaveCollectibles[ci];
+        if (col && col.collected && col.mesh) {
+          col.mesh.visible = false;
+          if (col.mesh.parent) col.mesh.parent.remove(col.mesh);
+          if (game.scene) game.scene.remove(col.mesh);
+        }
       }
     }
   }

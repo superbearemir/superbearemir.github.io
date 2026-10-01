@@ -30,7 +30,17 @@
   let animatedAnimals = [];
   let friendlyCreatures = [];
   let animatedStructures = [];
+  let islandCollectibles = [];
   let isHubActive = false;
+
+  // Global safe fallback for create3DGoldCoin so it can never throw ReferenceError
+  if (typeof window !== 'undefined' && !window.create3DGoldCoin) {
+    window.create3DGoldCoin = function(x, y, z, val = 25) {
+      if (typeof window.createSleekRoundGoldCoin === 'function') {
+        return window.createSleekRoundGoldCoin(x, y, z, val);
+      }
+    };
+  }
 
   // Helper: Retrieve only the currently unlocked/open regions (NO space references!)
   function getOpenRegionsList() {
@@ -122,6 +132,7 @@
     animatedAnimals = [];
     friendlyCreatures = [];
     animatedStructures = [];
+    islandCollectibles = [];
 
     // Check region
     const currentRegion = (game && game.currentRegion) || 'hub';
@@ -320,59 +331,399 @@
     // ========================================================================
 
     // ------------------------------------------------------------------------
-    // YAPI 1: 26 METRE DEV SPİRAL DENİZ FENERİ & SEYİR BALKONU (LIGHTHOUSE)
+    // YAPI 1: 26 METRE DEV SPİRAL DENİZ FENERİ, İÇ MERDİVENLER VE SEYİR BALKONU (LIGHTHOUSE)
     // Konum: x: 0, z: 220 (Adanın en yüksek güney burun noktası)
+    // Oyuncu fenerin giriş merdivenlerinden doğrudan içeri girip, iç spiral merdivenlerle
+    // 4 kat boyunca dışarı pencerelerden bakabilir, en tepeye (26m) çıkıp 360° panoramik
+    // seyir terasından dürbünle tüm adayı ve denizi izleyebilir!
     // ------------------------------------------------------------------------
-    console.log("🗼 Building 26m Grand Spiral Coastal Lighthouse with Rotating Light...");
+    console.log("🗼 Building 26m Grand Enterable Spiral Coastal Lighthouse & Summit Observatory...");
     const lighthouseGrp = new THREE.Group();
     lighthouseGrp.position.set(0, 1.6, 220);
 
-    // Octagonal Stone Base (Height 6m)
-    const lhBase = new THREE.Mesh(new THREE.CylinderGeometry(5.2, 6.4, 6.0, 8), stoneBrickMat);
-    lhBase.position.y = 3.0;
-    lighthouseGrp.add(lhBase);
-    addSolidBox(-5.5, 1.6, 214.5, 5.5, 7.6, 225.5);
+    // 1. GRAND ENTRANCE STAIRCASE (Kusursuz kademeli giriş merdivenleri)
+    // Starts at island path (Z: 207.2, Y: 1.65) and ascends smoothly up to the Lighthouse Entrance Arch (Z: 214.5, Y: 3.15)
+    for (let st = 0; st < 8; st++) {
+      const sZ = 207.2 + st * 0.95;
+      const sY = 1.65 + st * 0.22;
+      const stepMesh = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.28, 1.1), stoneBrickMat);
+      stepMesh.position.set(0, sY - 1.6, sZ - 220);
+      lighthouseGrp.add(stepMesh);
 
-    // Tapered Cylindrical Tower with Red/White Bands (Height 16m)
-    for (let band = 0; band < 4; band++) {
-      const bandMat = band % 2 === 0 ? lighthouseWhite : lighthouseRed;
-      const bMesh = new THREE.Mesh(new THREE.CylinderGeometry(4.2 - band * 0.35, 4.6 - band * 0.35, 4.0, 16), bandMat);
-      bMesh.position.y = 8.0 + band * 4.0;
-      lighthouseGrp.add(bMesh);
-      addSolidBox(-4.0, 7.6 + band * 4.0, 216, 4.0, 11.6 + band * 4.0, 224);
+      // Gold-trimmed stair step nosing
+      const nosing = new THREE.Mesh(new THREE.BoxGeometry(4.62, 0.08, 0.08), goldMat);
+      nosing.position.set(0, sY - 1.6 + 0.12, sZ - 220 - 0.52);
+      lighthouseGrp.add(nosing);
+
+      // Solid Step Physical Collider
+      addSolidBox(-2.3, sY - 0.15, sZ - 0.55, 2.3, sY + 0.28, sZ + 0.55);
     }
 
-    // Walkable Upper Balcony Platform (Y = 22m, Radius 5m)
-    const lhBalcony = new THREE.Mesh(new THREE.CylinderGeometry(5.2, 4.8, 0.8, 16), darkStoneMat);
-    lhBalcony.position.y = 22.4;
-    lighthouseGrp.add(lhBalcony);
-    addSolidBox(-4.8, 23.6, 215.2, 4.8, 24.4, 224.8);
+    // Polished Brass Handrails on both sides of entrance stairs
+    [-2.35, 2.35].forEach(hx => {
+      const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 7.8, 8), goldMat);
+      rail.position.set(hx, 1.35, -9.2);
+      rail.rotation.x = Math.PI / 11;
+      lighthouseGrp.add(rail);
 
-    // Glass Lantern Room (Height 4m)
-    const lhLanternRoom = new THREE.Mesh(new THREE.CylinderGeometry(3.2, 3.2, 3.8, 16), glassDomeMat);
-    lhLanternRoom.position.y = 24.8;
+      // Support posts for handrail
+      for (let hp = 0; hp < 4; hp++) {
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.95, 6), darkBeamMat);
+        post.position.set(hx, 0.55 + hp * 0.42, -12.4 + hp * 2.3);
+        lighthouseGrp.add(post);
+      }
+    });
+
+    // Welcoming Grand Nautical Entrance Lampposts at the foot of stairs (Z = 206.8)
+    [-2.45, 2.45].forEach(px => {
+      const plinth = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.8, 0.7), darkStoneMat);
+      plinth.position.set(px, 0.4, -13.2);
+      lighthouseGrp.add(plinth);
+
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 2.6, 8), darkBeamMat);
+      post.position.set(px, 1.7, -13.2);
+      lighthouseGrp.add(post);
+
+      const lantern = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), lanternGlowMat);
+      lantern.position.set(px, 3.1, -13.2);
+      lighthouseGrp.add(lantern);
+    });
+
+    // 2. GRAND ARCHED ENTRANCE DOORWAY (Z: 214.8 / local Z: -5.2)
+    // Left & Right Carved Stone Pillars (Aralık 3.8m: Oyuncu tamamen engelsiz girer)
+    [-2.0, 2.0].forEach(px => {
+      const pillar = new THREE.Mesh(new THREE.BoxGeometry(0.8, 4.4, 0.9), darkStoneMat);
+      pillar.position.set(px, 3.4, -5.2);
+      lighthouseGrp.add(pillar);
+
+      const pCap = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.25, 1.05), goldMat);
+      pCap.position.set(px, 5.65, -5.2);
+      lighthouseGrp.add(pCap);
+
+      const wLantern = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 8), lanternGlowMat);
+      wLantern.position.set(px, 4.2, -4.6);
+      lighthouseGrp.add(wLantern);
+    });
+
+    // Archway Top Beam / Lintel spanning across
+    const archLintel = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.85, 1.0), darkStoneMat);
+    archLintel.position.set(0, 5.6, -5.2);
+    lighthouseGrp.add(archLintel);
+
+    // Carved Signboard above the entrance
+    const signBoard = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.65, 0.15), woodPlankMat);
+    signBoard.position.set(0, 5.6, -4.65);
+    lighthouseGrp.add(signBoard);
+
+    // Doorway Ceiling Arch
+    const doorArch = new THREE.Mesh(new THREE.CylinderGeometry(1.9, 1.9, 0.9, 16, 1, false, 0, Math.PI), darkStoneMat);
+    doorArch.rotation.z = Math.PI / 2;
+    doorArch.position.set(0, 5.15, -5.2);
+    lighthouseGrp.add(doorArch);
+
+    // Two Carved Oak Door Leaves swung wide OPEN into the interior walls
+    [-1.75, 1.75].forEach((dx, dIdx) => {
+      const doorLeaf = new THREE.Mesh(new THREE.BoxGeometry(0.12, 3.4, 1.6), woodMat);
+      doorLeaf.position.set(dx, 3.1, -4.3);
+      doorLeaf.rotation.y = dIdx === 0 ? 0.35 : -0.35;
+      lighthouseGrp.add(doorLeaf);
+
+      const dHandle = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), goldMat);
+      dHandle.position.set(dx + (dIdx === 0 ? 0.1 : -0.1), 3.1, -4.3);
+      lighthouseGrp.add(dHandle);
+    });
+
+    // Ornate Welcoming Red & Gold Runner leading straight through the door
+    const runner = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.04, 7.5), new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.8 }));
+    runner.position.set(0, 1.48, -4.0);
+    lighthouseGrp.add(runner);
+
+    // 3. CONTINUOUS THRESHOLD AND INTERIOR FLOOR (SIFIR BOŞLUK - KESİNTİSİZ TABAN!)
+    // Doorway threshold platform (Z: 214.0 to 216.5, Y = 3.15)
+    addSolidBox(-2.3, 1.6, 214.0, 2.3, 3.15, 216.5);
+    // Interior Ground Floor (Z: 216.0 to 224.8, Y = 3.15)
+    addSolidBox(-4.6, 1.6, 216.0, 4.6, 3.15, 224.8);
+
+    // Interior visual stone floor
+    const lhFloor = new THREE.Mesh(new THREE.CylinderGeometry(5.0, 5.0, 0.4, 24), darkStoneMat);
+    lhFloor.position.y = 1.35;
+    lighthouseGrp.add(lhFloor);
+
+    // Decorative Compass Rose Inlay in floor center
+    const compassRose = new THREE.Mesh(new THREE.CircleGeometry(2.0, 8), goldMat);
+    compassRose.rotation.x = -Math.PI / 2;
+    compassRose.position.set(0, 1.56, 0);
+    lighthouseGrp.add(compassRose);
+
+    // 4. HOLLOW OCTAGONAL BASE WALLS (KAPININ ÖNÜ AÇIK, YANLAR VE ARKA SAĞLAM TAŞ DUVAR!)
+    // We construct 7 distinct stone wall panels leaving the NORTH entrance side completely OPEN!
+    const octRadius = 5.6;
+    for (let ow = 1; ow < 8; ow++) {
+      const wAngle = (ow / 8) * Math.PI * 2 + Math.PI / 8;
+      // Skip North door opening
+      const panelX = Math.sin(wAngle) * octRadius;
+      const panelZ = Math.cos(wAngle) * octRadius;
+
+      const wallPanel = new THREE.Mesh(new THREE.BoxGeometry(4.4, 5.8, 0.85), stoneBrickMat);
+      wallPanel.position.set(panelX, 4.3, panelZ);
+      wallPanel.rotation.y = wAngle + Math.PI / 2;
+      lighthouseGrp.add(wallPanel);
+    }
+
+    // Exterior decorative stone plinth base rim
+    for (let ow = 1; ow < 8; ow++) {
+      const wAngle = (ow / 8) * Math.PI * 2 + Math.PI / 8;
+      const rimX = Math.sin(wAngle) * (octRadius + 0.35);
+      const rimZ = Math.cos(wAngle) * (octRadius + 0.35);
+
+      const rimPanel = new THREE.Mesh(new THREE.BoxGeometry(4.6, 1.2, 0.6), darkStoneMat);
+      rimPanel.position.set(rimX, 1.8, rimZ);
+      rimPanel.rotation.y = wAngle + Math.PI / 2;
+      lighthouseGrp.add(rimPanel);
+    }
+
+    // Base Physical Wall Colliders (Doorway between X: -1.9 and +1.9 is 100% CLEAR!)
+    addSolidBox(-5.6, 1.6, 214.2, -1.9, 7.6, 216.5); // Front left
+    addSolidBox(1.9, 1.6, 214.2, 5.6, 7.6, 216.5);  // Front right
+    addSolidBox(-1.9, 5.2, 214.2, 1.9, 7.6, 216.5);  // Above door lintel
+    addSolidBox(-5.8, 1.6, 216.0, -3.8, 7.6, 224.5); // West wall
+    addSolidBox(3.8, 1.6, 216.0, 5.8, 7.6, 224.5);  // East wall
+    addSolidBox(-4.8, 1.6, 223.5, 4.8, 7.6, 225.8); // South back wall
+
+    // Interior Warm Lanterns & Torch Sconces inside the Ground Floor
+    [-2.8, 2.8].forEach(wx => {
+      const wallTorch = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), lanternGlowMat);
+      wallTorch.position.set(wx, 3.4, 0);
+      lighthouseGrp.add(wallTorch);
+    });
+
+    // Fener İçi Yaylı Zıplama Pedi (Fast jump pad inside ground floor)
+    const jumpPadRing = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.1, 0.22, 16), goldMat);
+    jumpPadRing.position.set(1.6, 1.58, -2.0);
+    lighthouseGrp.add(jumpPadRing);
+
+    const jumpPadCenter = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 0.25, 16), new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.8 }));
+    jumpPadCenter.position.set(1.6, 1.62, -2.0);
+    lighthouseGrp.add(jumpPadCenter);
+
+    if (game && game.currentLevel && game.currentLevel.jumpPads && isHubActive) {
+      game.currentLevel.jumpPads.push({
+        pos: new THREE.Vector3(1.6, 3.2, 218.0),
+        boostForce: 24,
+        label: "Fener İç Asansör Hava Akımı"
+      });
+    }
+
+    // Signpost at the foot of the spiral staircase
+    const stairSign = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.8, 0.1), woodPlankMat);
+    stairSign.position.set(-1.8, 2.8, -2.5);
+    stairSign.rotation.y = 0.5;
+    lighthouseGrp.add(stairSign);
+
+    // 5. HOLLOW TAPERED TOWER SHAFT (Y = 7.6 to Y = 23.6) WITH LARGE OBSERVATION WINDOWS
+    for (let band = 0; band < 4; band++) {
+      const bandMat = band % 2 === 0 ? lighthouseWhite : lighthouseRed;
+      const bOuterR = 4.4 - band * 0.28;
+      const bMesh = new THREE.Mesh(new THREE.CylinderGeometry(bOuterR - 0.25, bOuterR, 4.0, 24, 1, true), bandMat);
+      bMesh.material.side = THREE.DoubleSide;
+      bMesh.position.y = 8.0 + band * 4.0;
+      lighthouseGrp.add(bMesh);
+
+      // Hollow Wall Colliders for each band (Interior remains completely walkable!)
+      const bMinY = 7.6 + band * 4.0;
+      const bMaxY = 11.6 + band * 4.0;
+      addSolidBox(-4.4, bMinY, 216.2, -3.2, bMaxY, 223.8); // West
+      addSolidBox(3.2, bMinY, 216.2, 4.4, bMaxY, 223.8);  // East
+      addSolidBox(-3.5, bMinY, 215.5, 3.5, bMaxY, 216.8); // North
+      addSolidBox(-3.5, bMinY, 223.2, 3.5, bMaxY, 224.5); // South
+    }
+
+    // 4 LARGE ARCHED OBSERVATION WINDOWS & VIEWING BALCONIES (DIŞARI BAKMA PENCERELERİ)
+    // Her katta dışarıyı, denizi ve köyü seyretmek için geniş kemerli pencereler!
+    const observationWindows = [
+      { y: 9.0, dir: 'north', pos: [0, 9.0 - 1.6, -4.2], rotY: 0, label: 'Köy & Ulu Köprü Manzarası' },
+      { y: 13.0, dir: 'east', pos: [4.0, 13.0 - 1.6, 0], rotY: -Math.PI / 2, label: 'Balıkçı İskelesi & Doğu Denizi' },
+      { y: 17.5, dir: 'south', pos: [0, 17.5 - 1.6, 3.8], rotY: Math.PI, label: 'Derin Açık Okyanus & Ufuk' },
+      { y: 21.0, dir: 'west', pos: [-3.6, 21.0 - 1.6, 0], rotY: Math.PI / 2, label: 'Ada Malikanesi & Çiçekli Tepeler' }
+    ];
+
+    observationWindows.forEach(win => {
+      const winGrp = new THREE.Group();
+      winGrp.position.set(win.pos[0], win.pos[1], win.pos[2]);
+      winGrp.rotation.y = win.rotY;
+
+      // Stone window frame & sill
+      const sill = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.28, 0.8), darkStoneMat);
+      sill.position.y = -0.9;
+      winGrp.add(sill);
+
+      // Brass Guard Rail to safely look outside
+      const guardRail = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 2.2, 8), goldMat);
+      guardRail.rotation.z = Math.PI / 2;
+      guardRail.position.set(0, -0.35, 0.2);
+      winGrp.add(guardRail);
+
+      // Window Arch Frame
+      const wArch = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.28, 0.8), darkStoneMat);
+      wArch.position.y = 1.0;
+      winGrp.add(wArch);
+
+      // Hanging Warm Lantern at window
+      const wLamp = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), lanternGlowMat);
+      wLamp.position.set(0, 0.8, -0.2);
+      winGrp.add(wLamp);
+
+      lighthouseGrp.add(winGrp);
+    });
+
+    // 6. CENTRAL PILLAR & WINDING SPIRAL STAIRCASE (Spiraling smoothly all the way up to 26m Summit!)
+    const lhPillar = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 21.5, 16), darkStoneMat);
+    lhPillar.position.y = 12.0;
+    lighthouseGrp.add(lhPillar);
+    addSolidBox(-0.65, 2.5, 219.35, 0.65, 23.6, 220.65);
+
+    // Pillar Brass Rings every 4 meters
+    for (let pr = 0; pr < 5; pr++) {
+      const ringMesh = new THREE.Mesh(new THREE.TorusGeometry(0.68, 0.05, 8, 20), goldMat);
+      ringMesh.rotation.x = Math.PI / 2;
+      ringMesh.position.y = 3.5 + pr * 4.2;
+      lighthouseGrp.add(ringMesh);
+    }
+
+    // 52 GENTLE SPIRAL STEPS (Her basamak ~0.39m yükselir - çok rahat tırmanılır!)
+    const numSpiralSteps = 52;
+    const spiralRevs = 2.7;
+    for (let s = 0; s < numSpiralSteps; s++) {
+      const frac = s / (numSpiralSteps - 1);
+      const ang = frac * Math.PI * 2 * spiralRevs;
+      const curY = 3.15 + frac * 20.45; // Smooth ascent from Y: 3.15 to Y: 23.6
+      const rad = 2.0;
+      const sx = Math.sin(ang) * rad;
+      const sz = Math.cos(ang) * rad;
+
+      // Wooden spiral step plank with brass trim
+      const stepMesh = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.22, 1.15), woodPlankMat);
+      stepMesh.position.set(sx, curY - 1.6, sz);
+      stepMesh.rotation.y = ang + Math.PI / 2;
+      lighthouseGrp.add(stepMesh);
+
+      // Gold step nosing
+      const sNosing = new THREE.Mesh(new THREE.BoxGeometry(2.12, 0.06, 0.08), goldMat);
+      sNosing.position.set(sx, curY - 1.6 + 0.09, sz);
+      sNosing.rotation.y = ang + Math.PI / 2;
+      lighthouseGrp.add(sNosing);
+
+      // Solid Step Physical Collider (Çok kademeli, oyuncuyu asla geriye itmez)
+      addSolidBox(
+        sx - 0.95, curY - 0.08, 220 + sz - 0.95,
+        sx + 0.95, curY + 0.28, 220 + sz + 0.95
+      );
+
+      // Glowing Wall Torch Lantern every 4 steps along the spiral
+      if (s % 4 === 0) {
+        const wallAng = ang + 0.35;
+        const lx = Math.sin(wallAng) * 3.4;
+        const lz = Math.cos(wallAng) * 3.4;
+        const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 8), lanternGlowMat);
+        lamp.position.set(lx, curY - 1.6 + 1.1, lz);
+        lighthouseGrp.add(lamp);
+      }
+    }
+
+    // 7. WALKABLE 360° PANORAMIC OBSERVATION BALCONY (Y = 23.6m, Radius 5.5m)
+    // Walkable floor platform (Merdiven çıkışı hariç tüm çevre yürünebilir!)
+    const lhBalcony = new THREE.Mesh(new THREE.CylinderGeometry(5.5, 5.1, 0.5, 24), darkStoneMat);
+    lhBalcony.position.y = 22.0;
+    lighthouseGrp.add(lhBalcony);
+
+    // Balcony Colliders arranged in 4 perimeter quadrants (MERDİVEN ÇIKIŞINDA KAFANIN ÇARPMAMASI İÇİN AÇIKLIK!)
+    addSolidBox(-5.4, 23.2, 214.6, 5.4, 23.7, 217.5); // North deck
+    addSolidBox(2.2, 23.2, 217.5, 5.4, 23.7, 223.5);  // East deck
+    addSolidBox(-5.4, 23.2, 222.5, 5.4, 23.7, 225.4); // South deck
+    addSolidBox(-5.4, 23.2, 217.5, -1.8, 23.7, 223.5); // West deck
+
+    // Ornate Safety Perimeter Railings (Height 1.4m, keeps player safe while observing!)
+    addSolidBox(-5.4, 23.7, 214.5, 5.4, 25.2, 215.3); // North railing
+    addSolidBox(-5.4, 23.7, 224.7, 5.4, 25.2, 225.5); // South railing
+    addSolidBox(4.8, 23.7, 214.8, 5.5, 25.2, 225.2);  // East railing
+    addSolidBox(-5.5, 23.7, 214.8, -4.8, 25.2, 225.2); // West railing
+
+    // Visual Railing Posts and Rings
+    for (let rp = 0; rp < 18; rp++) {
+      const rAng = (rp / 18) * Math.PI * 2;
+      const rx = Math.sin(rAng) * 5.2;
+      const rz = Math.cos(rAng) * 5.2;
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 1.4, 6), darkBeamMat);
+      post.position.set(rx, 23.0, rz);
+      lighthouseGrp.add(post);
+
+      const finial = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 6), goldMat);
+      finial.position.set(rx, 23.75, rz);
+      lighthouseGrp.add(finial);
+    }
+    const railRing = new THREE.Mesh(new THREE.TorusGeometry(5.2, 0.06, 8, 28), goldMat);
+    railRing.rotation.x = Math.PI / 2;
+    railRing.position.y = 23.7;
+    lighthouseGrp.add(railRing);
+
+    // 8. 4 PANORAMIC VIEWING TELESCOPES (🔭 4 Yöne Bakan Seyir Dürbünleri)
+    const telescopeDirections = [
+      { x: 0, z: -4.5, rotY: 0, label: "Kedi Köyü & Ulu Köprü Manzarası" },
+      { x: 4.5, z: 0, rotY: -Math.PI / 2, label: "Doğu Limanı & Sonsuz Deniz" },
+      { x: 0, z: 4.5, rotY: Math.PI, label: "Güney Okyanus Ufku" },
+      { x: -4.5, z: 0, rotY: Math.PI / 2, label: "Ada Malikanesi & Çiçekli Yamaçlar" }
+    ];
+
+    telescopeDirections.forEach(td => {
+      const telGrp = new THREE.Group();
+      telGrp.position.set(td.x, 22.2, td.z);
+      telGrp.rotation.y = td.rotY;
+
+      const tTripod = new THREE.Mesh(new THREE.ConeGeometry(0.45, 1.3, 4), darkBeamMat);
+      tTripod.position.y = 0.65;
+      telGrp.add(tTripod);
+
+      const tBarrel = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 1.4, 8), goldMat);
+      tBarrel.rotation.x = Math.PI / 3.2;
+      tBarrel.position.set(0, 1.35, 0.2);
+      telGrp.add(tBarrel);
+
+      const tLens = new THREE.Mesh(new THREE.CircleGeometry(0.15, 12), new THREE.MeshStandardMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.6 }));
+      tLens.position.set(0, 1.95, -0.15);
+      telGrp.add(tLens);
+
+      lighthouseGrp.add(telGrp);
+    });
+
+    // 9. GLASS LANTERN ROOM & ROTATING BEACON (Y = 24.2 to 28.5)
+    const lhLanternRoom = new THREE.Mesh(new THREE.CylinderGeometry(3.0, 3.0, 3.6, 16), glassDomeMat);
+    lhLanternRoom.position.y = 24.1;
     lighthouseGrp.add(lhLanternRoom);
 
-    // Rotating Glowing Light Beacon inside Lantern Room
+    // Rotating Glowing Light Beacon
     const lhBeacon = new THREE.Mesh(new THREE.BoxGeometry(2.8, 1.2, 0.8), lanternGlowMat);
-    lhBeacon.position.y = 24.8;
+    lhBeacon.position.y = 24.1;
     lighthouseGrp.add(lhBeacon);
     animatedStructures.push({ type: 'lighthouse_beam', mesh: lhBeacon });
 
-    // Conical Copper Cupola Roof & Spire Peak (Y = 26 to 30m)
-    const lhRoof = new THREE.Mesh(new THREE.ConeGeometry(3.6, 3.5, 16), tealRoofMat);
-    lhRoof.position.y = 28.5;
+    // Conical Teal Copper Roof with Weather Vane and Nautical Pennant (Y = 26 to 32m)
+    const lhRoof = new THREE.Mesh(new THREE.ConeGeometry(3.5, 3.4, 16), tealRoofMat);
+    lhRoof.position.y = 27.6;
     lighthouseGrp.add(lhRoof);
 
-    // External Stone Stairs winding to Level 1 terrace (Y=1.6 to Y=7.6)
-    for (let st = 0; st < 9; st++) {
-      const sY = 1.6 + st * 0.65;
-      const sZ = 214 - st * 0.8;
-      const step = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.6, 1.1), stoneBrickMat);
-      step.position.set(5.5, sY - 1.6, sZ - 220);
-      lighthouseGrp.add(step);
-      addSolidBox(4.3, sY - 0.3, sZ - 0.6, 6.7, sY + 0.35, sZ + 0.6);
-    }
+    const spire = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 3.0, 8), goldMat);
+    spire.position.y = 29.9;
+    lighthouseGrp.add(spire);
+
+    const vane = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.35, 0.08), goldMat);
+    vane.position.y = 31.1;
+    lighthouseGrp.add(vane);
+
+    // Nautical Pennant Flag flapping at the summit
+    const pennantFlag = new THREE.Mesh(new THREE.ConeGeometry(0.6, 1.8, 3), new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4 }));
+    pennantFlag.rotation.z = Math.PI / 2;
+    pennantFlag.position.set(0.9, 31.5, 0);
+    lighthouseGrp.add(pennantFlag);
 
     villageExpansionGroup.add(lighthouseGrp);
 
@@ -618,6 +969,213 @@
         `Göletimizdeki asil kuğuları ve çayırlardaki geyikleri rahatsız etmeden adanın tadını çıkar miyav!`
       ]
     });
+
+    // ========================================================================
+    // 5. YEPYENİ ŞIK VE PARLAK YUVARLAK ALTINLAR & LEZZETLİ YEMEKLER
+    // (SLEEK ROUND GOLD COINS & INTERACTIVE FOOD SPREAD ACROSS THE ISLAND)
+    // Yuvarlak, ışıl ışıl parlayan kabartmalı altın sikkeler, taze dağ elmaları,
+    // çıtır köy ekmekleri, ızgara balıklar, kremalı pastalar ve saf bal kavanozları!
+    // ========================================================================
+    console.log("🪙 Scattering Sleek Round Gold Coins & Fresh Island Food Items...");
+
+    function createSleekRoundGoldCoin(x, y, z, val = 25, label = '🪙 Parlak Altın Sikke') {
+      const coinGroup = new THREE.Group();
+      coinGroup.position.set(x, y, z);
+
+      // Sleek Round Gold Cylinder Core with Beveled Chamfer
+      const coreMesh = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.38, 0.38, 0.08, 24),
+        goldMat
+      );
+      coreMesh.rotation.x = Math.PI / 2;
+      coinGroup.add(coreMesh);
+
+      // Outer Torus Rim for high-polish round coin look
+      const rimMesh = new THREE.Mesh(
+        new THREE.TorusGeometry(0.36, 0.045, 10, 24),
+        goldMat
+      );
+      coinGroup.add(rimMesh);
+
+      // Embossed Star / Paw relief in center (on both faces)
+      [-0.046, 0.046].forEach(sideZ => {
+        const star = new THREE.Mesh(
+          new THREE.SphereGeometry(0.12, 6, 6),
+          new THREE.MeshStandardMaterial({
+            color: 0xfffbeb,
+            metalness: 0.95,
+            roughness: 0.15,
+            emissive: 0xf59e0b,
+            emissiveIntensity: 0.45
+          })
+        );
+        star.scale.set(1.0, 1.0, 0.22);
+        star.position.set(0, 0, sideZ);
+        coinGroup.add(star);
+      });
+
+      villageExpansionGroup.add(coinGroup);
+
+      const colItem = {
+        id: `island_coin_${x}_${z}`,
+        type: 'coin',
+        name: label,
+        val: val,
+        pos: new THREE.Vector3(x, y, z),
+        mesh: coinGroup,
+        collected: false,
+        baseY: y
+      };
+      islandCollectibles.push(colItem);
+
+      if (game && game.currentLevel && game.currentLevel.collectibles && isHubActive) {
+        game.currentLevel.collectibles.push({
+          type: 'coin',
+          value: val,
+          pos: new THREE.Vector3(x, y, z),
+          mesh: coinGroup,
+          collected: false
+        });
+      }
+    }
+    window.createSleekRoundGoldCoin = createSleekRoundGoldCoin;
+    window.create3DGoldCoin = createSleekRoundGoldCoin;
+
+    function createInteractiveFoodItem(type, x, y, z) {
+      const foodGroup = new THREE.Group();
+      foodGroup.position.set(x, y, z);
+      let name = '🍎 Taze Köy Elması';
+      let heal = 25;
+      let val = 15;
+
+      if (type === 'apple') {
+        name = '🍎 Kırmızı Yayla Elması';
+        heal = 25;
+        val = 15;
+        const body = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 12), new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.35 }));
+        foodGroup.add(body);
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, 0.15, 6), darkBeamMat);
+        stem.position.set(0, 0.24, 0);
+        foodGroup.add(stem);
+        const leaf = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.02, 0.08), new THREE.MeshStandardMaterial({ color: 0x16a34a }));
+        leaf.position.set(0.08, 0.26, 0);
+        foodGroup.add(leaf);
+      } else if (type === 'bread') {
+        name = '🍞 Taze Köy Fırın Ekmeği';
+        heal = 30;
+        val = 20;
+        const loaf = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.6, 12), new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.7 }));
+        loaf.rotation.z = Math.PI / 2;
+        foodGroup.add(loaf);
+      } else if (type === 'fish') {
+        name = '🐟 Taze Izgara Göl Balığı';
+        heal = 35;
+        val = 25;
+        const spit = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.85, 6), woodPlankMat);
+        spit.rotation.z = Math.PI / 3;
+        foodGroup.add(spit);
+        const body = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.55, 8), new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.4, metalness: 0.6 }));
+        body.rotation.z = -Math.PI / 6;
+        foodGroup.add(body);
+      } else if (type === 'cake') {
+        name = '🍰 Çilekli Kremalı Pasta';
+        heal = 45;
+        val = 35;
+        const wedge = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.28, 0.45), new THREE.MeshStandardMaterial({ color: 0xfdf4ff, roughness: 0.5 }));
+        foodGroup.add(wedge);
+        const icing = new THREE.Mesh(new THREE.BoxGeometry(0.47, 0.08, 0.47), new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.3 }));
+        icing.position.y = 0.16;
+        foodGroup.add(icing);
+        const berry = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), new THREE.MeshStandardMaterial({ color: 0xbe123c }));
+        berry.position.y = 0.25;
+        foodGroup.add(berry);
+      } else if (type === 'honey_jar') {
+        name = '🍯 Saf Yayla Balı Kavanozu';
+        heal = 60;
+        val = 50;
+        const jar = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.24, 0.4, 12), new THREE.MeshStandardMaterial({ color: 0xf59e0b, transparent: true, opacity: 0.85, roughness: 0.2 }));
+        foodGroup.add(jar);
+        const lid = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.08, 12), darkBeamMat);
+        lid.position.y = 0.22;
+        foodGroup.add(lid);
+      }
+
+      villageExpansionGroup.add(foodGroup);
+
+      const colItem = {
+        id: `island_food_${type}_${x}_${z}`,
+        type: 'food',
+        name: name,
+        heal: heal,
+        val: val,
+        isFood: true,
+        pos: new THREE.Vector3(x, y, z),
+        mesh: foodGroup,
+        collected: false,
+        baseY: y
+      };
+      islandCollectibles.push(colItem);
+
+      if (game && game.currentLevel && game.currentLevel.collectibles && isHubActive) {
+        game.currentLevel.collectibles.push({
+          type: 'coin',
+          isFood: true,
+          name: name,
+          heal: heal,
+          value: val,
+          pos: new THREE.Vector3(x, y, z),
+          mesh: foodGroup,
+          collected: false
+        });
+      }
+    }
+
+    // A) DENİZ FENERİ ETRAFI, GİRİŞİ, İÇİ VE 26M SEYİR ZİRVESİ 🗼
+    createSleekRoundGoldCoin(0, 2.0, 208.5, 25, '🪙 Fener Giriş Basamak Altını');
+    createSleekRoundGoldCoin(0, 3.4, 215.0, 30, '🪙 Fener Ana Kapı Altını');
+    createSleekRoundGoldCoin(1.8, 13.5, 220, 35, '🪙 Fener İçi Spiral Merdiven Altını');
+    createInteractiveFoodItem('apple', -1.8, 13.5, 220); // Merdiven ortası mola elması
+    createSleekRoundGoldCoin(-3.0, 24.2, 220, 50, '👑 Fener Zirvesi Seyir Altını');
+    createSleekRoundGoldCoin(3.0, 24.2, 220, 50, '👑 Fener Zirvesi Seyir Altını');
+    createSleekRoundGoldCoin(0, 24.2, 224.0, 50, '👑 Fener Zirvesi Seyir Altını');
+    createInteractiveFoodItem('honey_jar', 2.0, 24.2, 216.5); // Zirve bal ödülü!
+    createInteractiveFoodItem('cake', -2.0, 24.2, 216.5); // Zirve pasta ödülü!
+
+    // B) ADA DAĞ MALİKANESİ & TERASLAR 🏡
+    createSleekRoundGoldCoin(-42, 6.5, 155, 35, '🏡 Dağ Evi Teras Altını');
+    createSleekRoundGoldCoin(-35, 1.8, 150, 25, '🏡 Bahçe Yolu Altını');
+    createInteractiveFoodItem('bread', -40, 6.5, 158);
+    createInteractiveFoodItem('apple', -46, 1.8, 152);
+
+    // C) KIZIL GEYİK VE CEYLAN HUZUR ÇAYIRI 🦌
+    createSleekRoundGoldCoin(-18, 1.8, 142, 30, '🦌 Asil Geyik Çayır Altını');
+    createInteractiveFoodItem('apple', -14, 1.8, 135);
+    createInteractiveFoodItem('cake', -22, 1.8, 145);
+
+    // D) KUĞU VE ÖRDEK BÜYÜLÜ GÖLETİ 🦆
+    createSleekRoundGoldCoin(35, 1.8, 145, 30, '🦆 Kuğu Göleti Altını');
+    createInteractiveFoodItem('bread', 30, 1.8, 140);
+    createInteractiveFoodItem('honey_jar', 40, 1.8, 150);
+
+    // E) GÜNEY BALIKÇI İSKELESİ & KUM SAHİL 🏖️
+    createSleekRoundGoldCoin(38, 3.6, 210, 35, '⚓ Balıkçı İskelesi Altını');
+    createInteractiveFoodItem('fish', 42, 3.6, 208);
+    createSleekRoundGoldCoin(-30, 0.8, 105, 30, '🏖️ Kum Sahil Altını');
+    createInteractiveFoodItem('fish', -25, 0.8, 108);
+
+    // F) ULU ASMA KÖPRÜ BOYUNCA 🌉
+    createSleekRoundGoldCoin(0, 1.8, 55, 25, '🌉 Ulu Köprü Altını');
+    createSleekRoundGoldCoin(0, 1.8, 70, 25, '🌉 Ulu Köprü Altını');
+    createSleekRoundGoldCoin(0, 1.8, 85, 25, '🌉 Ulu Köprü Altını');
+    createInteractiveFoodItem('bread', 2.0, 1.8, 70);
+
+    // G) VOLEYBOL & TENİS KORTU TERASI 🏐
+    createSleekRoundGoldCoin(20, 2.4, -24, 25, '🏐 Kort Kenarı Altını');
+    createSleekRoundGoldCoin(36, 2.4, -24, 25, '🏐 Kort Kenarı Altını');
+    createSleekRoundGoldCoin(20, 2.4, -6, 25, '🏐 Kort Kenarı Altını');
+    createSleekRoundGoldCoin(36, 2.4, -6, 25, '🏐 Kort Kenarı Altını');
+    createInteractiveFoodItem('apple', 28, 2.4, -26);
+    createInteractiveFoodItem('cake', 37, 2.4, -15);
 
     console.log(`✅ Grand Safari Island Expansion v4.0 loaded! Colliders active: ${expansionColliders.length}`);
   }
@@ -1161,6 +1719,96 @@
         if (d < 4.8 && Math.abs(pPos.y - npc.pos.y) < 2.5) {
           if (game.callbacks && game.callbacks.onShowNotice && now % 3500 < 50) {
             game.callbacks.onShowNotice(`💬 ${npc.name}: '${npc.dialogue[0]}'`, "info");
+          }
+        }
+      });
+
+      // 5. Lighthouse Summit Observation Check & Telescopes (26m Observation Deck at x: 0, z: 220, y >= 23.0)
+      const dSummit = Math.hypot(pPos.x - 0, pPos.z - 220);
+      if (dSummit < 5.6 && pPos.y >= 23.0) {
+        if (!window.__lighthouseSummitVisited) {
+          window.__lighthouseSummitVisited = true;
+          if (game.callbacks && game.callbacks.onShowNotice) {
+            game.callbacks.onShowNotice("🗼 TEBRİKLER! Deniz Feneri Zirvesine Çıktın! (26 Metre Seyir Terasından Tüm Ada ve Okyanus Görünüyor!) 🔭", "success");
+          }
+          if (typeof St !== 'undefined' && St.playGoalFanfare) St.playGoalFanfare();
+        }
+
+        // Telescopes Proximity Notice
+        const telescopePoints = [
+          { x: 0, z: 215.5, label: "🔭 Panoramik Dürbün: Kedi Köyü, Ulu Köprü ve Yüce Dağlar Manzarası!" },
+          { x: 4.5, z: 220.0, label: "🔭 Doğu Dürbünü: Balıkçı İskelesi, Gemiler ve Sonsuz Okyanus!" },
+          { x: 0, z: 224.5, label: "🔭 Ufuk Dürbünü: Masmavi Güney Açık Deniz Ufku!" },
+          { x: -4.5, z: 220.0, label: "🔭 Ada Dürbünü: Kademeli Ahşap Malikane ve Çiçekli Tepeler!" }
+        ];
+
+        telescopePoints.forEach(tp => {
+          const dt = Math.hypot(pPos.x - tp.x, pPos.z - tp.z);
+          if (dt < 2.0 && now % 4000 < 60) {
+            if (game.callbacks && game.callbacks.onShowNotice) {
+              game.callbacks.onShowNotice(tp.label, "info");
+            }
+          }
+        });
+      }
+
+      // Lighthouse Entrance Notice
+      const dEntrance = Math.hypot(pPos.x - 0, pPos.z - 215.0);
+      if (dEntrance < 2.4 && pPos.y >= 2.6 && pPos.y <= 4.5) {
+        if (!window.__lighthouseEnteredNotice) {
+          window.__lighthouseEnteredNotice = true;
+          if (game.callbacks && game.callbacks.onShowNotice) {
+            game.callbacks.onShowNotice("🗼 Akdeniz Deniz Feneri'ne Girdin! İç döner merdivenle zirveye tırmanabilirsin! ⬆️", "info");
+          }
+        }
+      }
+
+      // 6. Island Collectibles Animation & Proximity Pickup (Sleek Round Coins & Food Items)
+      islandCollectibles.forEach((col, idx) => {
+        if (col.collected) {
+          if (col.mesh) {
+            col.mesh.visible = false;
+            if (col.mesh.parent) col.mesh.parent.remove(col.mesh);
+          }
+          return;
+        }
+        if (!col.mesh) return;
+
+        // Smooth rotation and floating hover sine wave
+        col.mesh.rotation.y += 0.04;
+        col.mesh.position.y = (col.baseY || 1.8) + Math.sin(time * 3.2 + idx * 0.75) * 0.12;
+
+        const dCol = pPos.distanceTo(col.pos);
+        if (dCol < 1.7) {
+          col.collected = true;
+          col.mesh.visible = false;
+          if (col.mesh.parent) col.mesh.parent.remove(col.mesh);
+          if (game.scene) game.scene.remove(col.mesh);
+
+          if (col.isFood) {
+            if (game.stats) {
+              game.stats.currentHp = Math.min(game.stats.maxHp || 100, (game.stats.currentHp || 100) + col.heal);
+              game.stats.coins = (game.stats.coins || 0) + col.val;
+              game.stats.xp = (game.stats.xp || 0) + col.val * 2;
+            }
+            if (typeof St !== 'undefined' && St.playPowerup) St.playPowerup();
+            if (game.spawnSparkleParticles) game.spawnSparkleParticles(col.pos, 16, 0x4ade80);
+            if (game.callbacks && game.callbacks.onShowNotice) {
+              game.callbacks.onShowNotice(`😋 ${col.name} Tüketildi! (+${col.heal} Can, +${col.val} Altın)`, "success");
+            }
+          } else {
+            if (game.stats) {
+              game.stats.coins = (game.stats.coins || 0) + col.val;
+              game.stats.xp = (game.stats.xp || 0) + 25;
+            }
+            if (typeof St !== 'undefined' && St.playCoin) St.playCoin();
+            if (game.spawnSparkleParticles) game.spawnSparkleParticles(col.pos, 16, 0xfacc15);
+            if (game.callbacks && game.callbacks.onShowNotice) {
+              game.callbacks.onShowNotice(`${col.name} Alındı! (+${col.val} Altın)`, "info");
+            }
+          }
+          if (game.callbacks && game.callbacks.onStatsUpdate) {
+            game.callbacks.onStatsUpdate(game.stats);
           }
         }
       });
