@@ -511,30 +511,30 @@
 
     // A) ASİL KIZIL GEYİK (REALISTIC RED DEER STAG WITH BRANCHING ANTLERS) 🦌
     const stag = createRealisticStag(THREE);
-    stag.position.set(-18, 1.6, 138);
+    stag.position.set(-18, 1.68, 138);
     stag.rotation.y = 0.6;
     villageExpansionGroup.add(stag);
-    animatedAnimals.push({ type: 'deer', mesh: stag, baseY: 1.6, speed: 1.4 });
+    animatedAnimals.push({ type: 'deer', mesh: stag, baseY: 1.68, speed: 1.4 });
 
     // B) ZARİF DAĞ CEYLANI (REALISTIC GAZELLE / DOE) 🦌
     const gazelle = createRealisticGazelle(THREE);
-    gazelle.position.set(-14, 1.6, 144);
+    gazelle.position.set(-14, 1.68, 144);
     gazelle.rotation.y = -0.4;
     villageExpansionGroup.add(gazelle);
-    animatedAnimals.push({ type: 'gazelle', mesh: gazelle, baseY: 1.6, speed: 1.6 });
+    animatedAnimals.push({ type: 'gazelle', mesh: gazelle, baseY: 1.68, speed: 1.6 });
 
     // C) KIZIL TİLKİ & YAVRUSU (REALISTIC RED FOX WITH BUSHY WHITE-TIPPED TAIL) 🦊
     const fox = createRealisticFox(THREE);
-    fox.position.set(20, 1.6, 140);
+    fox.position.set(20, 1.68, 140);
     fox.rotation.y = -0.8;
     villageExpansionGroup.add(fox);
-    animatedAnimals.push({ type: 'fox', mesh: fox, baseY: 1.6, speed: 2.2 });
+    animatedAnimals.push({ type: 'fox', mesh: fox, baseY: 1.68, speed: 2.2 });
 
     const babyFox = createRealisticFox(THREE, 0.65);
-    babyFox.position.set(23, 1.6, 142);
+    babyFox.position.set(23, 1.68, 142);
     babyFox.rotation.y = -0.5;
     villageExpansionGroup.add(babyFox);
-    animatedAnimals.push({ type: 'fox', mesh: babyFox, baseY: 1.6, speed: 2.5 });
+    animatedAnimals.push({ type: 'fox', mesh: babyFox, baseY: 1.68, speed: 2.5 });
 
     // D) YABAN TAVŞANLARI (REALISTIC WILD HARES / COTTONTAIL RABBITS) 🐇
     [
@@ -543,10 +543,10 @@
       { x: 18, z: 185 }
     ].forEach((rp, idx) => {
       const hare = createRealisticHare(THREE);
-      hare.position.set(rp.x, 1.6, rp.z);
+      hare.position.set(rp.x, 1.68, rp.z);
       hare.rotation.y = Math.random() * Math.PI * 2;
       villageExpansionGroup.add(hare);
-      animatedAnimals.push({ type: 'hare', mesh: hare, baseY: 1.6, animOffset: idx * 1.5 });
+      animatedAnimals.push({ type: 'hare', mesh: hare, baseY: 1.68, animOffset: idx * 1.5 });
     });
 
     // E) KRALİYET BEYAZ KUĞULARI (REALISTIC SWANS GLIDING IN LAGOON) 🦢
@@ -555,7 +555,7 @@
       { x: 4, z: 146, rot: -0.4 }
     ].forEach((sp, sIdx) => {
       const swan = createRealisticSwan(THREE);
-      swan.position.set(sp.x, 1.45, sp.z);
+      swan.position.set(sp.x, 1.76, sp.z);
       swan.rotation.y = sp.rot;
       villageExpansionGroup.add(swan);
       animatedAnimals.push({ type: 'swan', mesh: swan, centerX: sp.x, centerZ: sp.z, radius: 4.5, sIdx: sIdx });
@@ -570,7 +570,7 @@
 
     // G) SU SAMURLARI (REALISTIC OTTERS PLAYING IN WATER) 🦦
     const otter = createRealisticOtter(THREE);
-    otter.position.set(0, 1.4, 150);
+    otter.position.set(0, 1.72, 150);
     villageExpansionGroup.add(otter);
     animatedAnimals.push({ type: 'otter', mesh: otter });
 
@@ -582,7 +582,7 @@
 
     // A) Baş Korucu Doğa Ayısı Barni 🌲🐻 (Ada Girişinde, x: 5, z: 102)
     const rangerMesh = createBearCitizenMesh(THREE, 0x78350f);
-    rangerMesh.position.set(5, 1.6, 102);
+    rangerMesh.position.set(5, 1.68, 102);
     rangerMesh.rotation.y = Math.PI - 0.2;
     villageExpansionGroup.add(rangerMesh);
     friendlyCreatures.push({
@@ -602,7 +602,7 @@
 
     // B) Denizci Kedi Kaptan Miço ⚓🐱 (Deniz Feneri Girişinde, x: 5, z: 215)
     const captainCat = createKittenCitizenMesh(THREE, 0x38bdf8);
-    captainCat.position.set(5, 1.6, 215);
+    captainCat.position.set(5, 1.68, 215);
     captainCat.rotation.y = -Math.PI / 2;
     villageExpansionGroup.add(captainCat);
     friendlyCreatures.push({
@@ -1108,16 +1108,16 @@
           head.rotation.y = Math.sin(time * 1.8) * 0.2; // Sniffing side to side
         }
       } else if (anim.type === 'hare') {
-        // Hopping motion
+        // Hopping motion - always landing cleanly on the grassy surface
         const hopCycle = Math.abs(Math.sin((time + anim.animOffset) * 4.0));
-        anim.mesh.position.y = anim.baseY + hopCycle * 0.25;
+        anim.mesh.position.y = (anim.baseY || 1.68) + hopCycle * 0.35;
       } else if (anim.type === 'swan') {
-        // Smooth gliding in the lagoon
+        // Smooth gliding on lagoon water surface
         const ang = time * 0.4 + anim.sIdx * Math.PI;
         anim.mesh.position.x = anim.centerX + Math.cos(ang) * anim.radius;
         anim.mesh.position.z = anim.centerZ + Math.sin(ang) * anim.radius;
         anim.mesh.rotation.y = -ang + Math.PI / 2;
-        anim.mesh.position.y = 1.45 + Math.sin(time * 2.0) * 0.03; // Floating bob
+        anim.mesh.position.y = 1.76 + Math.sin(time * 2.0) * 0.03; // Floating bob on top of water
       } else if (anim.type === 'eagle') {
         const head = anim.mesh.getObjectByName('eagle_head');
         if (head) {
@@ -1127,6 +1127,7 @@
         const ang = time * 0.9;
         anim.mesh.position.x = Math.sin(ang) * 5.0;
         anim.mesh.position.z = 145 + Math.cos(ang) * 5.0;
+        anim.mesh.position.y = 1.72 + Math.sin(time * 3.0) * 0.04; // Swimming on water surface
         anim.mesh.rotation.y = ang;
       }
     });

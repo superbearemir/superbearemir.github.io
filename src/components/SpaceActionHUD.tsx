@@ -80,6 +80,7 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
   const [isNearInteractable, setIsNearInteractable] = useState(false);
   const [isNearCatMerchant, setIsNearCatMerchant] = useState(false);
   const [isNearArcade, setIsNearArcade] = useState(false);
+  const [isTopMenuCollapsed, setIsTopMenuCollapsed] = useState(true);
   const [currentWeather, setCurrentWeather] = useState<{ id: string; nameTr: string; icon: string }>({ id: 'clear', nameTr: 'Güneşli & Berrak', icon: '☀️' });
   const [isWeatherMenuOpen, setIsWeatherMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'powers' | 'emotes' | 'shop' | 'settings'>('powers');
@@ -747,199 +748,249 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
 
   return (
     <>
-      {/* Top Left Performance, Map & Device Quick Controls (Positioned at top-12/16 to NEVER overlap game stats bar in portrait mode) */}
+      {/* Top Left Performance, Map & Device Quick Controls (Collapsible on Mobile & Desktop to preserve gameplay screen space) */}
       {!isMenuOpen && !isModalActive && (
-        <div className="fixed top-12 sm:top-16 left-3 sm:left-4 z-[40] flex items-center gap-1.5 sm:gap-2 pointer-events-none select-none">
-          
-          {/* Quick Map Selector Button */}
-          <button
-            onClick={() => {
-              if (onOpenMapModal) onOpenMapModal();
-              else window.dispatchEvent(new CustomEvent('superbear:open-map-selector'));
-            }}
-            title={t('map')}
-            className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-sky-600 to-teal-600 text-white border border-sky-300 shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-sky-500 hover:to-teal-500"
-          >
-            <span className="text-xs">🗺️</span>
-            <span>{t('map')}</span>
-          </button>
-
-          {/* Quick Village Lore Scrolls & Mystery Codex Button */}
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('superbear:open-lore-codex'))}
-            title="Ayı Kedi Köyü Hikaye Parşömenleri ve Köyün Gizemi"
-            className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-600 via-orange-600 to-yellow-600 text-white border border-amber-300 shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:brightness-110"
-          >
-            <span className="text-xs">📜</span>
-            <span>Parşömenler</span>
-          </button>
-
-          {/* Quick Opening Story Cinematic Button */}
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('superbear:open-intro-cinematic'))}
-            title="Giriş Hikayesi Filmini İzle"
-            className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 to-red-500 text-slate-950 border border-amber-200 shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-amber-400 hover:to-red-400"
-          >
-            <span className="text-xs">🎬</span>
-            <span>Film</span>
-          </button>
-
-          {/* Quick Retro Arcade Games Button (Prominently visible on Mobile and PC) */}
-          <button
-            onClick={() => {
-              if (onOpenArcade) onOpenArcade();
-              else window.dispatchEvent(new CustomEvent('superbear:open-arcade-games'));
-            }}
-            title={t('arcade')}
-            className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 text-white border border-purple-300 shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-purple-500 hover:to-pink-500"
-          >
-            <span className="text-xs">🕹️</span>
-            <span>{t('arcade')}</span>
-          </button>
-
-          {/* Dynamic Atmospheric Weather Controller */}
-          <div className="relative pointer-events-auto">
+        <div className="fixed top-12 sm:top-14 left-3 sm:left-4 z-[40] pointer-events-none select-none">
+          {isTopMenuCollapsed ? (
+            /* Collapsed Single Pill Button - 100% Free Screen on Phone */
             <button
-              onClick={() => setIsWeatherMenuOpen((prev) => !prev)}
-              title="Dinamik Hava Durumu (Yağmur, Kar, Sis, Güneş, Fırtına)"
-              className="px-2.5 py-1 rounded-full bg-gradient-to-r from-sky-700 via-indigo-700 to-purple-800 text-white border border-sky-300 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:brightness-110"
+              onClick={() => setIsTopMenuCollapsed(false)}
+              title="Hızlı Oyun Menüsü & Araçları Aç"
+              className="pointer-events-auto px-3 py-1.5 rounded-full bg-slate-950/95 hover:bg-slate-900 text-amber-300 border-2 border-amber-400/80 shadow-2xl backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:border-amber-300 ring-2 ring-amber-500/20 hover:scale-105"
             >
-              <span className="text-xs">{currentWeather.icon}</span>
-              <span className="hidden md:inline">{currentWeather.nameTr}</span>
+              <span className="text-sm">⚡</span>
+              <span>Hızlı Menü</span>
+              <span className="text-[10px] text-amber-400">▼</span>
             </button>
+          ) : (
+            /* Expanded Drawer / Menu Card */
+            <div className="pointer-events-auto p-2.5 sm:p-3 rounded-2xl bg-slate-950/95 border-2 border-amber-400/90 shadow-2xl backdrop-blur-xl max-w-[92vw] sm:max-w-xl text-xs animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-800 text-amber-300 font-black">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm">⚡</span>
+                  <span>Hızlı Oyun Menüsü & Araçlar</span>
+                </div>
+                <button
+                  onClick={() => setIsTopMenuCollapsed(true)}
+                  className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold text-xs flex items-center gap-1 cursor-pointer transition active:scale-95"
+                  title="Menüyü Kapat"
+                >
+                  <span>Kapat</span>
+                  <span className="text-[10px]">▲</span>
+                </button>
+              </div>
 
-            {isWeatherMenuOpen && (
-              <div className="absolute top-full mt-2 left-0 z-50 w-56 p-2 rounded-2xl bg-slate-950/95 border-2 border-sky-400/80 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 text-xs">
-                <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-800 px-1 font-black text-sky-300">
-                  <span>🌦️ Hava Durumu</span>
+              {/* Tools Flow Container */}
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 max-h-[60vh] overflow-y-auto pr-1 overscroll-contain">
+                {/* Quick Map Selector Button */}
+                <button
+                  onClick={() => {
+                    setIsTopMenuCollapsed(true);
+                    if (onOpenMapModal) onOpenMapModal();
+                    else window.dispatchEvent(new CustomEvent('superbear:open-map-selector'));
+                  }}
+                  title={t('map')}
+                  className="px-2.5 py-1 rounded-full bg-gradient-to-r from-sky-600 to-teal-600 text-white border border-sky-300 shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-sky-500 hover:to-teal-500"
+                >
+                  <span className="text-xs">🗺️</span>
+                  <span>{t('map')}</span>
+                </button>
+
+                {/* Quick Village Lore Scrolls & Mystery Codex Button */}
+                <button
+                  onClick={() => {
+                    setIsTopMenuCollapsed(true);
+                    window.dispatchEvent(new CustomEvent('superbear:open-lore-codex'));
+                  }}
+                  title="Ayı Kedi Köyü Hikaye Parşömenleri ve Köyün Gizemi"
+                  className="px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-600 via-orange-600 to-yellow-600 text-white border border-amber-300 shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:brightness-110"
+                >
+                  <span className="text-xs">📜</span>
+                  <span>Parşömenler</span>
+                </button>
+
+                {/* Quick Opening Story Cinematic Button */}
+                <button
+                  onClick={() => {
+                    setIsTopMenuCollapsed(true);
+                    window.dispatchEvent(new CustomEvent('superbear:open-intro-cinematic'));
+                  }}
+                  title="Giriş Hikayesi Filmini İzle"
+                  className="px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 to-red-500 text-slate-950 border border-amber-200 shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-amber-400 hover:to-red-400"
+                >
+                  <span className="text-xs">🎬</span>
+                  <span>Film</span>
+                </button>
+
+                {/* Quick Retro Arcade Games Button (Prominently visible on Mobile and PC) */}
+                <button
+                  onClick={() => {
+                    setIsTopMenuCollapsed(true);
+                    if (onOpenArcade) onOpenArcade();
+                    else window.dispatchEvent(new CustomEvent('superbear:open-arcade-games'));
+                  }}
+                  title={t('arcade')}
+                  className="px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 text-white border border-purple-300 shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-purple-500 hover:to-pink-500"
+                >
+                  <span className="text-xs">🕹️</span>
+                  <span>{t('arcade')}</span>
+                </button>
+
+                {/* Dynamic Atmospheric Weather Controller */}
+                <div className="relative">
+                  <button
+                    onClick={() => setIsWeatherMenuOpen((prev) => !prev)}
+                    title="Dinamik Hava Durumu (Yağmur, Kar, Sis, Güneş, Fırtına)"
+                    className="px-2.5 py-1 rounded-full bg-gradient-to-r from-sky-700 via-indigo-700 to-purple-800 text-white border border-sky-300 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:brightness-110"
+                  >
+                    <span className="text-xs">{currentWeather.icon}</span>
+                    <span>{currentWeather.nameTr}</span>
+                  </button>
+
+                  {isWeatherMenuOpen && (
+                    <div className="absolute top-full mt-2 left-0 z-50 w-56 p-2 rounded-2xl bg-slate-950/95 border-2 border-sky-400/80 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 text-xs">
+                      <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-800 px-1 font-black text-sky-300">
+                        <span>🌦️ Hava Durumu</span>
+                        <button
+                          onClick={() => {
+                            const ws = (window as any).__superBearWeatherSystem;
+                            if (ws) ws.toggleAutoCycle();
+                            setIsWeatherMenuOpen(false);
+                          }}
+                          className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
+                        >
+                          🔄 Otomatik
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[
+                          { id: 'clear', name: 'Güneşli', icon: '☀️' },
+                          { id: 'rain', name: 'Yağmur', icon: '🌧️' },
+                          { id: 'snow', name: 'Kar', icon: '❄️' },
+                          { id: 'fog', name: 'Yoğun Sis', icon: '🌫️' },
+                          { id: 'storm', name: 'Fırtına', icon: '⚡' },
+                          { id: 'mystic', name: 'Büyülü', icon: '✨' },
+                        ].map((w) => (
+                          <button
+                            key={w.id}
+                            onClick={() => {
+                              const ws = (window as any).__superBearWeatherSystem;
+                              if (ws) ws.setWeather(w.id);
+                              setIsWeatherMenuOpen(false);
+                            }}
+                            className={`px-2 py-1.5 rounded-xl flex items-center gap-1.5 font-bold transition ${
+                              currentWeather.id === w.id
+                                ? 'bg-sky-600 text-white font-black border border-sky-300 shadow'
+                                : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800 hover:text-white'
+                            }`}
+                          >
+                            <span className="text-sm">{w.icon}</span>
+                            <span className="text-[11px] truncate">{w.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Quick Country & Language Selector Button */}
+                <button
+                  onClick={() => {
+                    setIsTopMenuCollapsed(true);
+                    window.dispatchEvent(new CustomEvent('superbear:open-language-modal'));
+                  }}
+                  title={t('languageSelect')}
+                  className="px-2.5 py-1 rounded-full bg-gradient-to-r from-emerald-600 to-teal-700 text-white border border-emerald-300 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-emerald-500 hover:to-teal-600"
+                >
+                  <span className="text-xs">🌍</span>
+                  <span>{language.toUpperCase()}</span>
+                </button>
+
+                {/* Loot Boxes Quick Button */}
+                <button
+                  onClick={() => {
+                    setIsTopMenuCollapsed(true);
+                    window.dispatchEvent(new CustomEvent('superbear:open-lootboxes'));
+                  }}
+                  title={t('boxes')}
+                  className="px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-500 text-slate-950 border border-amber-300 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:brightness-110 animate-pulse"
+                >
+                  <span className="text-xs">🎁</span>
+                  <span>{t('boxes')}</span>
+                </button>
+
+                {/* Anti-Lag / 60 FPS Toggle Button */}
+                <button
+                  onClick={togglePerformanceProfile}
+                  title="Performans ve FPS Modunu Değiştir"
+                  className="px-2.5 py-1 rounded-full bg-slate-900/90 text-white border border-slate-700 hover:border-amber-400 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:bg-slate-800"
+                >
+                  <Zap className={`w-3.5 h-3.5 ${perfProfile === 'smooth60' ? 'text-amber-400 animate-pulse' : perfProfile === 'batterySaver' ? 'text-emerald-400 animate-pulse' : perfProfile === 'ultra' ? 'text-cyan-400' : 'text-slate-300'}`} />
+                  <span>
+                    {perfProfile === 'smooth60' ? '⚡ 60 FPS' : perfProfile === 'batterySaver' ? '🚀 Max Hız' : perfProfile === 'ultra' ? '💎 Ultra' : '⚖️ Dengeli'}
+                  </span>
+                </button>
+
+                {/* Device Mode Quick Switcher */}
+                {onOpenDeviceSelector && (
                   <button
                     onClick={() => {
-                      const ws = (window as any).__superBearWeatherSystem;
-                      if (ws) ws.toggleAutoCycle();
-                      setIsWeatherMenuOpen(false);
+                      setIsTopMenuCollapsed(true);
+                      onOpenDeviceSelector();
                     }}
-                    className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300"
+                    className="px-2.5 py-1 rounded-full bg-slate-900/90 text-slate-100 border border-slate-700 hover:border-amber-400 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:bg-slate-800"
+                    title="Cihaz ve Kontrol Modunu Değiştir (Mobil / PC)"
                   >
-                    🔄 Otomatik
+                    {controlMode === 'touch' ? (
+                      <>
+                        <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Mobil</span>
+                      </>
+                    ) : (
+                      <>
+                        <Monitor className="w-3.5 h-3.5 text-indigo-400" />
+                        <span>PC</span>
+                      </>
+                    )}
                   </button>
-                </div>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {[
-                    { id: 'clear', name: 'Güneşli', icon: '☀️' },
-                    { id: 'rain', name: 'Yağmur', icon: '🌧️' },
-                    { id: 'snow', name: 'Kar', icon: '❄️' },
-                    { id: 'fog', name: 'Yoğun Sis', icon: '🌫️' },
-                    { id: 'storm', name: 'Fırtına', icon: '⚡' },
-                    { id: 'mystic', name: 'Büyülü', icon: '✨' },
-                  ].map((w) => (
-                    <button
-                      key={w.id}
-                      onClick={() => {
-                        const ws = (window as any).__superBearWeatherSystem;
-                        if (ws) ws.setWeather(w.id);
-                        setIsWeatherMenuOpen(false);
-                      }}
-                      className={`px-2 py-1.5 rounded-xl flex items-center gap-1.5 font-bold transition ${
-                        currentWeather.id === w.id
-                          ? 'bg-sky-600 text-white font-black border border-sky-300 shadow'
-                          : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800 hover:text-white'
-                      }`}
-                    >
-                      <span className="text-sm">{w.icon}</span>
-                      <span className="text-[11px] truncate">{w.name}</span>
-                    </button>
-                  ))}
-                </div>
+                )}
+
+                {/* Immersive Fullscreen Toggle Button */}
+                <button
+                  onClick={() => toggleImmersiveFullscreen()}
+                  title={isFullscreen ? 'Tam Ekrandan Çık' : 'Tam Ekran Modu (Bildirim ve Tuş Çubuğunu Gizle)'}
+                  className="px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-700 to-indigo-800 text-white border border-purple-400/80 hover:border-amber-300 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-purple-600 hover:to-indigo-700"
+                >
+                  {isFullscreen ? (
+                    <>
+                      <Minimize className="w-3.5 h-3.5 text-amber-300" />
+                      <span>Pencere</span>
+                    </>
+                  ) : (
+                    <>
+                      <Maximize className="w-3.5 h-3.5 text-amber-300" />
+                      <span>Tam Ekran</span>
+                    </>
+                  )}
+                </button>
+
+                {/* Quick Save & Progress Manager Button */}
+                <button
+                  onClick={handleQuickSave}
+                  title="Oyun İlerlemesini ve Altınları Kaydet (Yerel Hafıza)"
+                  className={`px-2.5 py-1 rounded-full text-white border shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition-all transform active:scale-95 cursor-pointer ${
+                    saveFlash
+                      ? 'bg-emerald-500 border-emerald-200 text-slate-950 scale-105 shadow-emerald-500/50'
+                      : 'bg-gradient-to-r from-emerald-600 to-teal-700 border-emerald-400/80 hover:from-emerald-500 hover:to-teal-600'
+                  }`}
+                >
+                  <Save className={`w-3.5 h-3.5 ${saveFlash ? 'animate-spin text-slate-950' : 'text-emerald-200'}`} />
+                  <span>{saveFlash ? 'Kaydedildi!' : 'Kaydet'}</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse"></span>
+                </button>
               </div>
-            )}
-          </div>
-
-          {/* Quick Country & Language Selector Button */}
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('superbear:open-language-modal'))}
-            title={t('languageSelect')}
-            className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-emerald-600 to-teal-700 text-white border border-emerald-300 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-emerald-500 hover:to-teal-600"
-          >
-            <span className="text-xs">🌍</span>
-            <span>{language.toUpperCase()}</span>
-          </button>
-
-          {/* Loot Boxes Quick Button */}
-          <button
-            onClick={() => window.dispatchEvent(new CustomEvent('superbear:open-lootboxes'))}
-            title={t('boxes')}
-            className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 via-yellow-400 to-orange-500 text-slate-950 border border-amber-300 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:brightness-110 animate-pulse"
-          >
-            <span className="text-xs">🎁</span>
-            <span>{t('boxes')}</span>
-          </button>
-
-          {/* Anti-Lag / 60 FPS Toggle Button */}
-          <button
-            onClick={togglePerformanceProfile}
-            title="Performans ve FPS Modunu Değiştir"
-            className="pointer-events-auto px-2.5 py-1 rounded-full bg-slate-900/90 text-white border border-slate-700 hover:border-amber-400 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:bg-slate-800"
-          >
-            <Zap className={`w-3.5 h-3.5 ${perfProfile === 'smooth60' ? 'text-amber-400 animate-pulse' : perfProfile === 'batterySaver' ? 'text-emerald-400 animate-pulse' : perfProfile === 'ultra' ? 'text-cyan-400' : 'text-slate-300'}`} />
-            <span className="hidden sm:inline">
-              {perfProfile === 'smooth60' ? '⚡ 60 FPS' : perfProfile === 'batterySaver' ? '🚀 Max Hız' : perfProfile === 'ultra' ? '💎 Ultra' : '⚖️ Dengeli'}
-            </span>
-          </button>
-
-          {/* Device Mode Quick Switcher */}
-          {onOpenDeviceSelector && (
-            <button
-              onClick={onOpenDeviceSelector}
-              className="pointer-events-auto px-2.5 py-1 rounded-full bg-slate-900/90 text-slate-100 border border-slate-700 hover:border-amber-400 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:bg-slate-800"
-              title="Cihaz ve Kontrol Modunu Değiştir (Mobil / PC)"
-            >
-              {controlMode === 'touch' ? (
-                <>
-                  <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
-                  <span className="hidden sm:inline">Mobil</span>
-                </>
-              ) : (
-                <>
-                  <Monitor className="w-3.5 h-3.5 text-indigo-400" />
-                  <span className="hidden sm:inline">PC</span>
-                </>
-              )}
-            </button>
+            </div>
           )}
-
-          {/* Immersive Fullscreen Toggle Button */}
-          <button
-            onClick={() => toggleImmersiveFullscreen()}
-            title={isFullscreen ? 'Tam Ekrandan Çık' : 'Tam Ekran Modu (Bildirim ve Tuş Çubuğunu Gizle)'}
-            className="pointer-events-auto px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-700 to-indigo-800 text-white border border-purple-400/80 hover:border-amber-300 shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-purple-600 hover:to-indigo-700"
-          >
-            {isFullscreen ? (
-              <>
-                <Minimize className="w-3.5 h-3.5 text-amber-300" />
-                <span className="hidden sm:inline">Pencere</span>
-              </>
-            ) : (
-              <>
-                <Maximize className="w-3.5 h-3.5 text-amber-300" />
-                <span className="hidden sm:inline">Tam Ekran</span>
-              </>
-            )}
-          </button>
-
-          {/* Quick Save & Progress Manager Button */}
-          <button
-            onClick={handleQuickSave}
-            title="Oyun İlerlemesini ve Altınları Kaydet (Yerel Hafıza)"
-            className={`pointer-events-auto px-2.5 py-1 rounded-full text-white border shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition-all transform active:scale-95 cursor-pointer ${
-              saveFlash
-                ? 'bg-emerald-500 border-emerald-200 text-slate-950 scale-105 shadow-emerald-500/50'
-                : 'bg-gradient-to-r from-emerald-600 to-teal-700 border-emerald-400/80 hover:from-emerald-500 hover:to-teal-600'
-            }`}
-          >
-            <Save className={`w-3.5 h-3.5 ${saveFlash ? 'animate-spin text-slate-950' : 'text-emerald-200'}`} />
-            <span>{saveFlash ? 'Kaydedildi!' : 'Kaydet'}</span>
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse"></span>
-          </button>
         </div>
       )}
 

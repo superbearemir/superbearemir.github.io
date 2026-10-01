@@ -2194,7 +2194,7 @@ function buildSpaceGalaxyWorld(scene) {
 
   // Tatlış Pelikan Piko (Standing Pelican NPC near pond in Ayı Köyü)
   const pelikanPiko = createCutePelicanMesh(window.THREE, false);
-  pelikanPiko.position.set(-14, 0.6, 6); // Positioned cleanly on meadow near pond bank
+  pelikanPiko.position.set(-14, 0.02, 6); // Positioned cleanly on ground near pond bank
   pelikanPiko.rotation.y = 0.6; // Facing towards spawn area
   pelikanPiko.name = 'npc_pelican_piko';
   scene.add(pelikanPiko);
@@ -2259,13 +2259,61 @@ function buildExpandedKediKoyu(scene) {
   const woodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 });
   const grassHillMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.8 });
 
-  // 1. VOLEYBOL SAHASI (Volleyball Court on East Hill at y: 2.08)
+  // 1. VOLEYBOL & TENİS SAHASI (Volleyball & Tennis Court on East Hill with solid stone foundation)
   const COURT_Y = 2.08;
+  const COURT_TOP = 2.18;
+
+  // Solid Stone Foundation / Podium beneath the entire court (X: 18.2..37.8, Z: -28.8..-1.2, Y: -1.0..2.08)
+  // This permanently eliminates any floating edge or void hole so the player never falls through the northern half of the court!
+  const courtBaseGeo = new THREE.BoxGeometry(19.2, 3.2, 27.2);
+  const courtBaseMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85 });
+  const courtBaseMesh = new THREE.Mesh(courtBaseGeo, courtBaseMat);
+  courtBaseMesh.position.set(28, 0.48, -15);
+  courtBaseMesh.receiveShadow = true;
+  villageGroup.add(courtBaseMesh);
+
+  // Decorative stone curb around the court
+  const curbGeo = new THREE.BoxGeometry(18.6, 0.25, 26.6);
+  const curbMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.8 });
+  const curbMesh = new THREE.Mesh(curbGeo, curbMat);
+  curbMesh.position.set(28, COURT_Y + 0.05, -15);
+  villageGroup.add(curbMesh);
+
+  // Access steps / ramps on South, West and North edges
+  const stepMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.8 });
+  [
+    { w: 6.0, h: 0.5, d: 1.4, x: 28, y: 1.0, z: -1.2 },
+    { w: 6.0, h: 0.5, d: 1.4, x: 28, y: 1.55, z: -2.0 },
+    { w: 1.4, h: 0.5, d: 6.0, x: 18.0, y: 1.0, z: -15 },
+    { w: 1.4, h: 0.5, d: 6.0, x: 18.7, y: 1.55, z: -15 },
+    { w: 6.0, h: 0.5, d: 1.4, x: 28, y: 1.0, z: -28.8 },
+    { w: 6.0, h: 0.5, d: 1.4, x: 28, y: 1.55, z: -28.0 }
+  ].forEach(st => {
+    const stepMesh = new THREE.Mesh(new THREE.BoxGeometry(st.w, st.h, st.d), stepMat);
+    stepMesh.position.set(st.x, st.y, st.z);
+    stepMesh.receiveShadow = true;
+    villageGroup.add(stepMesh);
+  });
+
   const courtGeo = new THREE.BoxGeometry(18, 0.2, 26);
   const courtMesh = new THREE.Mesh(courtGeo, sandMat);
   courtMesh.position.set(28, COURT_Y, -15);
   courtMesh.receiveShadow = true;
+  courtMesh.name = 'village_tennis_court_mesh';
   villageGroup.add(courtMesh);
+
+  // Register Solid Physical Collider covering the ENTIRE court & foundation
+  const activeGameInstance = window.__superBearGame;
+  if (activeGameInstance && activeGameInstance.currentLevel) {
+    if (!activeGameInstance.currentLevel.colliders) activeGameInstance.currentLevel.colliders = [];
+    activeGameInstance.currentLevel.colliders.push({
+      min: new THREE.Vector3(18.2, -1.0, -28.8),
+      max: new THREE.Vector3(37.8, COURT_TOP, -1.2),
+      isCourtCollider: true,
+      isToxic: false,
+      isIce: false
+    });
+  }
 
   // Court Border Lines (White)
   const lineMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
@@ -2396,7 +2444,7 @@ function buildExpandedKediKoyu(scene) {
 
   // A) Tilki Kurnaz Rüstem 🦊
   const foxMesh = createFoxMesh(THREE);
-  foxMesh.position.set(-18, 0.65, 10);
+  foxMesh.position.set(-18, 0.02, 10);
   foxMesh.rotation.y = 0.8;
   foxMesh.name = 'npc_fox_rustem';
   villageGroup.add(foxMesh);
@@ -2414,21 +2462,21 @@ function buildExpandedKediKoyu(scene) {
     ]
   });
 
-  // B) Tavşan Zıpzıp Pamuk 🐰 (Stands on East hill by the Volleyball court)
+  // B) Tavşan Zıpzıp Pamuk 🐰 (Stands on East hill by the Volleyball/Tennis court terrace)
   const bunnyMesh = createBunnyMesh(THREE);
-  bunnyMesh.position.set(22, 2.9, -12);
+  bunnyMesh.position.set(22, 2.08, -12);
   bunnyMesh.rotation.y = -0.6;
   bunnyMesh.name = 'npc_bunny_pamuk';
   villageGroup.add(bunnyMesh);
   villageNpcsList.push({
     id: 'npc_bunny_pamuk',
     name: 'Tavşan Zıpzıp Pamuk 🐰',
-    role: 'Voleybol Şampiyonu',
+    role: 'Voleybol & Tenis Şampiyonu',
     avatarIcon: '🐰',
     mesh: bunnyMesh,
     pos: bunnyMesh.position,
     dialogue: [
-      "Zıp zıp zıp! Voleybol sahasına ve neşeli köyümüze hoş geldin cesur ayı!",
+      "Zıp zıp zıp! Voleybol ve tenis sahasına, neşeli köyümüze hoş geldin cesur ayı!",
       "Sadece şu an açık olan macera kapılarından geçebilirsin, kilitli diyarlar zamanı gelince açılacak!",
       "Açık dünyalardaki gizli altın petekleri ve bal kristallerini toplayarak seviyeni yükselt!"
     ]
@@ -2436,7 +2484,7 @@ function buildExpandedKediKoyu(scene) {
 
   // C) Zürafa Uzunboy Zeki 🦒
   const giraffeMesh = createGiraffeMesh(THREE);
-  giraffeMesh.position.set(12, 0.75, 30);
+  giraffeMesh.position.set(12, 0.02, 30);
   giraffeMesh.rotation.y = 2.8;
   giraffeMesh.name = 'npc_giraffe_zeki';
   villageGroup.add(giraffeMesh);
@@ -9142,15 +9190,38 @@ function updateSpaceLoop() {
   function alignAllObjectsToGround(game) {
     if (!game || !game.currentLevel) return;
     const level = game.currentLevel;
-    const colliders = level.colliders || [];
-    if (colliders.length === 0) return;
+    const colliders = [
+      ...(level.colliders || []),
+      ...(level.collisionBounds || [])
+    ];
+    const isHub = (game.currentRegion === 'hub' || !game.currentRegion);
 
     function getGroundYAt(x, z) {
-      let highestY = -999;
+      let highestY = isHub ? 0.0 : -999;
+      // In hub, check known solid architectural plateaus
+      if (isHub) {
+        // 1. Volleyball & Tennis Court (x: 18.2..37.8, z: -28.8..-1.2)
+        if (x >= 18.2 && x <= 37.8 && z >= -28.8 && z <= -1.2) {
+          if (2.18 > highestY) highestY = 2.18;
+        }
+        // 2. East Hill around court (x: 19.5..64.5, z: -20..20)
+        else if (x >= 19.5 && x <= 64.5 && z >= -20 && z <= 20) {
+          if (2.0 > highestY) highestY = 2.0;
+        }
+        // 3. Grand Bridge to Island (x: -8..8, z: 25..105)
+        if (x >= -8.0 && x <= 8.0 && z >= 25.0 && z <= 105.0) {
+          if (1.85 > highestY) highestY = 1.85;
+        }
+        // 4. Safari Island Plateau (x: -77..77, z: 104..240)
+        if (x >= -77.0 && x <= 77.0 && z >= 104.0 && z <= 240.0) {
+          if (1.66 > highestY) highestY = 1.66;
+        }
+      }
+
       for (let i = 0; i < colliders.length; i++) {
         const c = colliders[i];
         if (!c || !c.min || !c.max || c.isToxic) continue;
-        if (x >= c.min.x - 0.25 && x <= c.max.x + 0.25 && z >= c.min.z - 0.25 && z <= c.max.z + 0.25) {
+        if (x >= c.min.x - 0.35 && x <= c.max.x + 0.35 && z >= c.min.z - 0.35 && z <= c.max.z + 0.35) {
           if (c.max.y > highestY) {
             highestY = c.max.y;
           }
@@ -9159,46 +9230,66 @@ function updateSpaceLoop() {
       return highestY;
     }
 
-    if (level.npcs) {
-      level.npcs.forEach(npc => {
-        if (!npc || !npc.mesh || !npc.pos) return;
-        const groundY = getGroundYAt(npc.pos.x, npc.pos.z);
-        if (groundY > -500 && npc.mesh.position.y < groundY) {
-          npc.mesh.position.y = groundY;
-          npc.pos.y = groundY;
+    // Helper: Precision Snap Object to Ground using exact Box3 base calculation
+    function snapObjectBase(mesh, groundY, floatOffset = 0.02) {
+      if (!mesh || !window.THREE) return;
+      const THREE = window.THREE;
+      const box = new THREE.Box3().setFromObject(mesh);
+      if (!box || !isFinite(box.min.y)) return;
+      const diff = (groundY + floatOffset) - box.min.y;
+      // If object's bottom is below ground (buried/sunken) or floating unnaturally (>0.35m above ground)
+      if (diff > 0.005 || diff < -0.35) {
+        mesh.position.y += diff;
+      }
+    }
+
+    // 1. Level NPCs & Village Animal NPCs
+    const allNpcsToGround = [
+      ...(level.npcs || []),
+      ...(typeof villageNpcsList !== 'undefined' && Array.isArray(villageNpcsList) ? villageNpcsList : [])
+    ];
+    allNpcsToGround.forEach(npc => {
+      if (!npc || !npc.mesh || !npc.pos) return;
+      const groundY = getGroundYAt(npc.pos.x, npc.pos.z);
+      if (groundY > -500) {
+        snapObjectBase(npc.mesh, groundY, 0.02);
+        npc.pos.y = npc.mesh.position.y;
+      }
+    });
+
+    // 2. Standalone named animals in scene (Pelican Piko, Frog, Fox, etc.)
+    if (game.scene) {
+      ['npc_pelican_piko', 'npc_fox_rustem', 'npc_bunny_pamuk', 'npc_giraffe_zeki', 'waterfall_frog_npc_group'].forEach(name => {
+        const obj = game.scene.getObjectByName(name);
+        if (obj) {
+          const groundY = getGroundYAt(obj.position.x, obj.position.z);
+          if (groundY > -500) {
+            snapObjectBase(obj, groundY, 0.02);
+          }
         }
       });
     }
 
-    if (typeof villageNpcsList !== 'undefined' && Array.isArray(villageNpcsList)) {
-      villageNpcsList.forEach(npc => {
-        if (!npc || !npc.mesh || !npc.pos) return;
-        const groundY = getGroundYAt(npc.pos.x, npc.pos.z);
-        if (groundY > -500 && npc.mesh.position.y < groundY) {
-          npc.mesh.position.y = groundY;
-          npc.pos.y = groundY;
-        }
-      });
-    }
-
+    // 3. Collectibles (Coins & Honey Gems) - Kept cleanly floating above ground
     if (level.collectibles) {
       level.collectibles.forEach(col => {
         if (!col || !col.mesh || !col.pos) return;
         const groundY = getGroundYAt(col.pos.x, col.pos.z);
-        if (groundY > -500 && col.mesh.position.y < groundY) {
-          col.mesh.position.y = groundY + 0.3;
-          col.pos.y = groundY + 0.3;
+        if (groundY > -500 && col.mesh.position.y < groundY + 0.3) {
+          col.mesh.position.y = groundY + 0.45;
+          col.pos.y = groundY + 0.45;
         }
       });
     }
 
+    // 4. Art Easels & Display Paintings
     if (level.artEasels) {
       level.artEasels.forEach(e => {
         if (!e || !e.mesh || !e.pos) return;
         const groundY = getGroundYAt(e.pos.x, e.pos.z);
-        if (groundY > -500 && e.mesh.position.y < groundY) {
-          e.mesh.position.y = groundY;
-          e.pos.y = groundY;
+        if (groundY > -500) {
+          snapObjectBase(e.mesh, groundY, 0.02);
+          e.pos.y = e.mesh.position.y;
         }
       });
     }
@@ -12455,6 +12546,25 @@ function updateSpaceLoop() {
       const pVel = game.playerVel;
       const playerRadius = 0.60;
       const now = Date.now();
+
+      // 0. Tennis & Volleyball Court Floor Guarantee (x: 18.2..37.8, z: -28.8..-1.2, surface = 2.18)
+      // Completely prevents player from sinking or dropping into the court on ANY half or section!
+      if (isHub && pPos.x >= 18.2 && pPos.x <= 37.8 && pPos.z >= -28.8 && pPos.z <= -1.2) {
+        const courtTopY = 2.18;
+        if (pPos.y < courtTopY && pPos.y >= -1.0) {
+          pPos.y = courtTopY;
+          if (pVel && pVel.y < 0) pVel.y = 0;
+          game.isGrounded = true;
+          game.jumpCount = 0;
+        }
+      }
+
+      // Continuous Anti-Sinking Ground Alignment for all animals, NPCs and objects
+      if (!game._lastGroundAlignCounter) game._lastGroundAlignCounter = 0;
+      game._lastGroundAlignCounter++;
+      if (game._lastGroundAlignCounter % 20 === 0) {
+        alignAllObjectsToGround(game);
+      }
 
       // 1. Universal House, Wall & Static Collider Boundary Enforcement (Anti-Clipping)
       const allColliders = [

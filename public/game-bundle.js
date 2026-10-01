@@ -6706,7 +6706,7 @@ const Zw = [
  * This source code is licensed under the ISC license.
  * See the LICENSE file in the root directory of this source tree.
  */const HA=[["path",{d:"M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z",key:"1xq2db"}]],no=$t("zap",HA),VA=({stats:r,currentRegion:e,storyCrystals:stCrystals=[],onOpenStoryBook:onStoryClick,activeNotice:n,proximityPrompt:a,activeBoss:o,onOpenSkillTree:c,onOpenInventory:u,onOpenMap:h,onOpenDrawings:m,onOpenControls:p,onOpenCharacterStudio:g,onActionTrigger:_,isMuted:x,onToggleMute:y,onSelectMusicTheme:T})=>{
-  const [R,b]=rt.useState(!1), [z,v]=rt.useState(!1), [curTrack,setCurTrack]=rt.useState("hub");
+  const [R,b]=rt.useState(!1), [z,v]=rt.useState(!1), [curTrack,setCurTrack]=rt.useState("hub"), [isStatsCollapsed,setIsStatsCollapsed]=rt.useState(!0);
   const A=[
     {id:"hub",title:"Sakin Doğa & Huzurlu Ayı Köyü 🍃",genre:"Dingin Akustik, Rahatlatıcı Lofi (Ana Köy)"},
     {id:"boncuk_cat",title:"Boncuk'un Kedi Dansı 🐱",genre:"Zıp Zıp Sevimli Kedi Teması"},
@@ -6726,39 +6726,56 @@ const Zw = [
   ];
 
   return E.jsxs("div",{className:"absolute inset-0 pointer-events-none flex flex-col justify-between p-2 sm:p-3 select-none z-10 overflow-hidden",children:[
-    // Single Unified Sleek Top Bar
-    E.jsxs("div",{className:"pointer-events-auto flex items-center justify-between w-full max-w-4xl mx-auto gap-2 px-3 py-1.5 bg-slate-950/90 backdrop-blur-md border border-amber-500/40 rounded-full shadow-2xl animate-fade-in",children:[
-      // Left: Player Stats
-      E.jsxs("div",{className:"flex items-center gap-2 sm:gap-3",children:[
-        E.jsx("div",{className:"w-7 h-7 rounded-full bg-gradient-to-tr from-amber-400 to-amber-600 font-black text-slate-950 text-xs flex items-center justify-center shadow-md",title:"Seviye "+r.level,children:r.level}),
-        E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-health-shop"));},className:"px-2 py-1 rounded-full bg-rose-950/40 border border-rose-800/40 flex items-center gap-1 font-mono text-xs font-black text-rose-400 hover:bg-rose-900/60 cursor-pointer transition active:scale-95 shadow-sm",title:"Can Durumu (HP) - Tıkla Menüyü Aç",children:[
-          E.jsx(hp,{className:"w-3.5 h-3.5 fill-rose-500 text-rose-500"}),
-          E.jsxs("span",{children:[r.currentHp,"/",r.maxHp]})
+    // Single Unified Sleek Top Bar (Collapsible to save mobile screen space)
+    isStatsCollapsed ? (
+      E.jsxs("button",{
+        onClick:()=>setIsStatsCollapsed(!1),
+        className:"pointer-events-auto mx-auto px-3.5 py-1.5 bg-slate-950/95 hover:bg-slate-900 border-2 border-amber-500/60 rounded-full shadow-2xl backdrop-blur-md flex items-center gap-2.5 text-xs font-black text-amber-300 transition transform active:scale-95 cursor-pointer hover:border-amber-400 ring-2 ring-amber-500/20 animate-fade-in",
+        title:"Sağlık, Para ve Durum Menüsünü Genişlet",
+        children:[
+          E.jsx("div",{className:"w-5 h-5 rounded-full bg-gradient-to-tr from-amber-400 to-amber-600 font-black text-slate-950 text-[10px] flex items-center justify-center shadow",children:r.level}),
+          E.jsxs("span",{className:"text-rose-400 flex items-center gap-1 font-mono",children:[E.jsx(hp,{className:"w-3.5 h-3.5 fill-rose-500 text-rose-500"}),r.currentHp]}),
+          E.jsx("span",{className:"text-slate-600",children:"•"}),
+          E.jsxs("span",{className:"text-amber-300 flex items-center gap-1 font-mono",children:[E.jsx(hl,{className:"w-3.5 h-3.5 fill-amber-400 text-amber-500"}),r.coins]}),
+          r.skillPoints>0&&E.jsxs("span",{className:"text-emerald-400 text-[10px] bg-emerald-950/80 px-1.5 py-0.5 rounded-full border border-emerald-500/40",children:["+",r.skillPoints]}),
+          E.jsx("span",{className:"text-[10px] text-amber-400 font-mono ml-0.5",children:"▼"})
+        ]
+      })
+    ) : (
+      E.jsxs("div",{className:"pointer-events-auto flex items-center justify-between w-full max-w-4xl mx-auto gap-2 px-3 py-1.5 bg-slate-950/95 backdrop-blur-md border border-amber-500/50 rounded-full shadow-2xl animate-fade-in",children:[
+        // Left: Player Stats
+        E.jsxs("div",{className:"flex items-center gap-2 sm:gap-3",children:[
+          E.jsx("div",{className:"w-7 h-7 rounded-full bg-gradient-to-tr from-amber-400 to-amber-600 font-black text-slate-950 text-xs flex items-center justify-center shadow-md",title:"Seviye "+r.level,children:r.level}),
+          E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-health-shop"));},className:"px-2 py-1 rounded-full bg-rose-950/40 border border-rose-800/40 flex items-center gap-1 font-mono text-xs font-black text-rose-400 hover:bg-rose-900/60 cursor-pointer transition active:scale-95 shadow-sm",title:"Can Durumu (HP) - Tıkla Menüyü Aç",children:[
+            E.jsx(hp,{className:"w-3.5 h-3.5 fill-rose-500 text-rose-500"}),
+            E.jsxs("span",{children:[r.currentHp,"/",r.maxHp]})
+          ]}),
+          E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-treasure-inventory"));},className:"px-2 py-1 rounded-full bg-amber-950/40 border border-amber-800/40 flex items-center gap-1 font-mono text-xs font-black text-amber-300 hover:bg-amber-900/60 cursor-pointer transition active:scale-95 shadow-sm",title:"Altın / Para - Tıkla Kedi Dükkanını Aç",children:[
+            E.jsx(hl,{className:"w-3.5 h-3.5 fill-amber-400 text-amber-500"}),
+            E.jsx("span",{children:r.coins})
+          ]}),
+          r.skillPoints>0&&E.jsxs("button",{onClick:c,className:"animate-pulse bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full shadow flex items-center gap-1 cursor-pointer",children:[
+            E.jsx(bl,{className:"w-3 h-3"}),"+",r.skillPoints
+          ]})
         ]}),
-        E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-treasure-inventory"));},className:"px-2 py-1 rounded-full bg-amber-950/40 border border-amber-800/40 flex items-center gap-1 font-mono text-xs font-black text-amber-300 hover:bg-amber-900/60 cursor-pointer transition active:scale-95 shadow-sm",title:"Altın / Para - Tıkla Kedi Dükkanını Aç",children:[
-          E.jsx(hl,{className:"w-3.5 h-3.5 fill-amber-400 text-amber-500"}),
-          E.jsx("span",{children:r.coins})
+
+        // Center: Region Badge
+        E.jsxs("button",{onClick:(evt)=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-map-selector"));},className:"flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/90 border border-slate-700 hover:border-sky-400 text-slate-200 text-xs font-extrabold cursor-pointer transition active:scale-95 shadow",children:[
+          E.jsx("span",{className:"text-sm",children:e.icon}),
+          E.jsx("span",{className:"text-white max-w-[140px] truncate",children:e.titleTr}),
+          E.jsx("span",{className:"text-[9px] text-sky-300 bg-sky-950/80 px-1.5 py-0.2 rounded font-mono",children:"🗺️ Harita"})
         ]}),
-        r.skillPoints>0&&E.jsxs("button",{onClick:c,className:"animate-pulse bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[10px] font-black px-2 py-0.5 rounded-full shadow flex items-center gap-1 cursor-pointer",children:[
-          E.jsx(bl,{className:"w-3 h-3"}),"+",r.skillPoints
+
+        // Right: Separated Menu, Bear Studio, and Music Actions side by side + Collapse button
+        E.jsxs("div",{className:"flex items-center gap-1 sm:gap-1.5",children:[
+          E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-master-menu"));},className:"px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs flex items-center gap-1 border border-purple-300 shadow-md cursor-pointer transition active:scale-95",title:"Süper Ayı Macera ve Kontrol Menüsü",children:[          E.jsx(CA,{className:"w-3.5 h-3.5 text-yellow-300"}),          E.jsx("span",{children:"🐻 Ayı Menü"})        ]}),
+          E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-customizer"));},className:"px-2.5 py-1 rounded-full bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-700 hover:from-teal-500 hover:to-emerald-500 text-white font-black text-xs flex items-center gap-1 border border-teal-300 shadow-md cursor-pointer transition active:scale-95",title:"Ayı Özelleştirme Stüdyosu",children:[          E.jsx("span",{children:"🎨"}),          E.jsx("span",{children:"Ayı Stüdyosu"})        ]}),
+          E.jsxs("button",{onClick:()=>b(!0),className:"px-2.5 py-1 rounded-full bg-pink-950/70 hover:bg-pink-900/80 text-pink-200 border border-pink-500/50 text-xs font-black flex items-center gap-1 shadow cursor-pointer transition active:scale-95",title:"Dinamik Müzik Çalar",children:[          E.jsx(DA,{className:"w-3.5 h-3.5 text-pink-400"}),          E.jsx("span",{className:"hidden md:inline",children:"Müzik"})        ]}),
+          E.jsx("button",{onClick:y,className:"p-1.5 rounded-full bg-slate-900/80 text-slate-300 hover:text-white border border-slate-700 cursor-pointer shadow",title:x?"Sesi Aç":"Sesi Kapat",children:          x?E.jsx(Gv,{className:"w-3.5 h-3.5 text-rose-400"}):E.jsx(Fv,{className:"w-3.5 h-3.5 text-emerald-400"})        }),
+          E.jsxs("button",{onClick:()=>setIsStatsCollapsed(!0),className:"px-2 py-1 rounded-full bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/40 text-[10px] font-bold flex items-center gap-1 shadow cursor-pointer transition active:scale-95",title:"Üst Menüyü Küçült / Gizle",children:[E.jsx("span",{children:"Gizle"}),E.jsx("span",{className:"text-[9px]",children:"▲"})]})
         ]})
-      ]}),
-
-      // Center: Region Badge
-      E.jsxs("button",{onClick:(evt)=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-map-selector"));},className:"flex items-center gap-1 sm:gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/90 border border-slate-700 hover:border-sky-400 text-slate-200 text-xs font-extrabold cursor-pointer transition active:scale-95 shadow",children:[
-        E.jsx("span",{className:"text-sm",children:e.icon}),
-        E.jsx("span",{className:"text-white max-w-[140px] truncate",children:e.titleTr}),
-        E.jsx("span",{className:"text-[9px] text-sky-300 bg-sky-950/80 px-1.5 py-0.2 rounded font-mono",children:"🗺️ Harita"})
-      ]}),
-
-      // Right: Separated Menu, Bear Studio, and Music Actions side by side
-      E.jsxs("div",{className:"flex items-center gap-1 sm:gap-1.5",children:[
-        E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-master-menu"));},className:"px-2.5 py-1 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs flex items-center gap-1 border border-purple-300 shadow-md cursor-pointer transition active:scale-95",title:"Süper Ayı Macera ve Kontrol Menüsü",children:[          E.jsx(CA,{className:"w-3.5 h-3.5 text-yellow-300"}),          E.jsx("span",{children:"🐻 Ayı Menü"})        ]}),
-        E.jsxs("button",{onClick:()=>{if(typeof window!=="undefined")window.dispatchEvent(new CustomEvent("superbear:open-customizer"));},className:"px-2.5 py-1 rounded-full bg-gradient-to-r from-teal-600 via-emerald-600 to-teal-700 hover:from-teal-500 hover:to-emerald-500 text-white font-black text-xs flex items-center gap-1 border border-teal-300 shadow-md cursor-pointer transition active:scale-95",title:"Ayı Özelleştirme Stüdyosu",children:[          E.jsx("span",{children:"🎨"}),          E.jsx("span",{children:"Ayı Stüdyosu"})        ]}),
-        E.jsxs("button",{onClick:()=>b(!0),className:"px-2.5 py-1 rounded-full bg-pink-950/70 hover:bg-pink-900/80 text-pink-200 border border-pink-500/50 text-xs font-black flex items-center gap-1 shadow cursor-pointer transition active:scale-95",title:"Dinamik Müzik Çalar",children:[          E.jsx(DA,{className:"w-3.5 h-3.5 text-pink-400"}),          E.jsx("span",{className:"hidden md:inline",children:"Müzik"})        ]}),
-        E.jsx("button",{onClick:y,className:"p-1.5 rounded-full bg-slate-900/80 text-slate-300 hover:text-white border border-slate-700 cursor-pointer shadow",title:x?"Sesi Aç":"Sesi Kapat",children:          x?E.jsx(Gv,{className:"w-3.5 h-3.5 text-rose-400"}):E.jsx(Fv,{className:"w-3.5 h-3.5 text-emerald-400"})        })
       ]})
-    ]}),    // Responsive Centered Dynamic Music Modal (Guaranteed safe bounds, never overflows)
+    ),    // Responsive Centered Dynamic Music Modal (Guaranteed safe bounds, never overflows)
     R&&E.jsx("div",{className:"fixed inset-0 z-[99999] bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 pointer-events-auto select-none",onClick:D=>{if(D.target===D.currentTarget)b(!1)},children:
       E.jsxs("div",{className:"bg-slate-900 border-2 border-pink-500/50 rounded-3xl p-4 sm:p-5 w-full max-w-md max-h-[85vh] shadow-2xl flex flex-col gap-3 text-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-150",children:[
         E.jsxs("div",{className:"flex items-center justify-between border-b border-slate-800 pb-2.5",children:[
