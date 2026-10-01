@@ -2243,6 +2243,7 @@ function buildSpaceGalaxyWorld(scene) {
 let villageVolleyball = null;
 let villageVolleyballVel = { x: 0, y: 0, z: 0 };
 let villageFishList = [];
+let villageDucksList = [];
 let villageNpcsList = [];
 let trainingDummy = null;
 let trainingDummyWobble = 0;
@@ -2447,6 +2448,33 @@ function buildExpandedKediKoyu(scene) {
       phase: i * 3.14
     });
   }
+
+  // 3D SWIMMING DUCKS & DUCKLINGS IN VILLAGE PONDS 🦆
+  villageDucksList = [];
+  const duckConfigs = [
+    { x: 32, z: 26, radius: 3.5, speed: 0.012, isMallard: true, scale: 0.9, phase: 0 },
+    { x: 32, z: 26, radius: 2.2, speed: 0.014, isMallard: false, scale: 0.48, phase: 0.4 },
+    { x: 32, z: 26, radius: 2.6, speed: 0.014, isMallard: false, scale: 0.45, phase: 0.7 },
+    { x: -10, z: 38, radius: 3.8, speed: 0.011, isMallard: true, scale: 0.95, phase: 1.5 },
+    { x: -10, z: 38, radius: 2.5, speed: 0.013, isMallard: false, scale: 0.5, phase: 1.9 },
+    { x: -14, z: 6, radius: 3.0, speed: 0.012, isMallard: true, scale: 0.85, phase: 3.14 }
+  ];
+
+  duckConfigs.forEach((dc, dIdx) => {
+    const duckMesh = createCuteVillageDuck(THREE, dc.isMallard, dc.scale);
+    duckMesh.position.set(dc.x + Math.cos(dc.phase) * dc.radius, 0.12, dc.z + Math.sin(dc.phase) * dc.radius);
+    duckMesh.name = `village_duck_${dIdx}`;
+    villageGroup.add(duckMesh);
+    villageDucksList.push({
+      mesh: duckMesh,
+      baseX: dc.x,
+      baseZ: dc.z,
+      radius: dc.radius,
+      speed: dc.speed,
+      phase: dc.phase,
+      dIdx: dIdx
+    });
+  });
 
   // 3. ANIMAL NPCS (FOX, BUNNY, GIRAFFE) - Positioned with clear ground heights
   villageNpcsList = [];
@@ -3671,6 +3699,7 @@ function buildBeginnerTrainingGround(THREE, villageGroup) {
   const sandMat = new THREE.MeshStandardMaterial({ color: 0xfde68a, roughness: 0.9 });
   const woodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.7 });
   const darkWoodMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.8 });
+  const darkStoneMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9 });
   const strawMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.85 });
   const clothRedMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.6 });
   const clothWhiteMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.6 });
@@ -3877,13 +3906,22 @@ function buildBeginnerTrainingGround(THREE, villageGroup) {
   villageGroup.add(targetGroup);
   trainingBullseye = targetGroup;
 
-  // 7. Interactive Tutorial Signs
+  // 7. Interactive Tutorial Signs (Firmly grounded at BASE_Y with stone plinths & twin legs)
   function createTutSign(x, z, textTitle, textDesc) {
     const sGroup = new THREE.Group();
-    sGroup.position.set(x, 0, z);
-    const p = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.0, 6), darkWoodMat);
-    p.position.y = 1.0;
-    sGroup.add(p);
+    sGroup.position.set(x, BASE_Y, z);
+
+    // Twin sturdy grounded posts with stone foundation plinths at ground level
+    [-0.8, 0.8].forEach(px => {
+      const plinth = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.2, 0.35), darkStoneMat);
+      plinth.position.set(px, 0.1, 0);
+      sGroup.add(plinth);
+
+      const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.09, 1.8, 8), darkWoodMat);
+      leg.position.set(px, 0.9, 0);
+      sGroup.add(leg);
+    });
+
     const b = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.1, 0.15), darkWoodMat);
     b.position.set(0, 1.8, 0);
     sGroup.add(b);
@@ -3895,6 +3933,9 @@ function buildBeginnerTrainingGround(THREE, villageGroup) {
     if (ctx) {
       ctx.fillStyle = '#78350f';
       ctx.fillRect(0, 0, 256, 120);
+      ctx.strokeStyle = '#fde047';
+      ctx.lineWidth = 6;
+      ctx.strokeRect(4, 4, 248, 112);
       ctx.fillStyle = '#fde047';
       ctx.font = 'bold 20px sans-serif';
       ctx.textAlign = 'center';
@@ -4290,6 +4331,67 @@ function createFishMesh(THREE, colorHex = 0xf97316) {
   group.add(fin);
 
   return group;
+}
+
+// --- 3D DUCK MESH CREATOR (VILLAGE PONDS & LAKES) 🦆 ---
+function createCuteVillageDuck(THREE, isMallard = true, scale = 1.0) {
+  const duckGrp = new THREE.Group();
+  
+  const bodyMat = new THREE.MeshStandardMaterial({ color: isMallard ? 0x78350f : 0xfef08a, roughness: 0.7 });
+  const headMat = new THREE.MeshStandardMaterial({ color: isMallard ? 0x15803d : 0xfacc15, roughness: 0.4, metalness: 0.1 });
+  const beakMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.5 });
+  const chestMat = new THREE.MeshStandardMaterial({ color: isMallard ? 0x9a3412 : 0xfef08a, roughness: 0.7 });
+  const eyeMat = new THREE.MeshBasicMaterial({ color: 0x020617 });
+  const collarMat = new THREE.MeshBasicMaterial({ color: 0xf8fafc });
+
+  // Body
+  const bodyGeo = new THREE.SphereGeometry(0.38, 12, 10);
+  bodyGeo.scale(0.8, 0.65, 1.25);
+  const bodyMesh = new THREE.Mesh(bodyGeo, bodyMat);
+  bodyMesh.position.y = 0.22;
+  duckGrp.add(bodyMesh);
+
+  // Chest
+  const chestMesh = new THREE.Mesh(new THREE.SphereGeometry(0.32, 10, 10), chestMat);
+  chestMesh.position.set(0, 0.24, 0.22);
+  chestMesh.scale.set(0.75, 0.65, 0.7);
+  duckGrp.add(chestMesh);
+
+  // Tail Tip
+  const tailMesh = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.45, 6), bodyMat);
+  tailMesh.position.set(0, 0.28, -0.42);
+  tailMesh.rotation.x = -0.55;
+  duckGrp.add(tailMesh);
+
+  // Neck & Head
+  const neckMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.16, 0.35, 8), headMat);
+  neckMesh.position.set(0, 0.42, 0.26);
+  duckGrp.add(neckMesh);
+
+  if (isMallard) {
+    const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.05, 8), collarMat);
+    collar.position.set(0, 0.36, 0.26);
+    duckGrp.add(collar);
+  }
+
+  const headMesh = new THREE.Mesh(new THREE.SphereGeometry(0.2, 10, 10), headMat);
+  headMesh.position.set(0, 0.56, 0.28);
+  duckGrp.add(headMesh);
+
+  // Beak (Flat Bill)
+  const beakMesh = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.05, 0.22), beakMat);
+  beakMesh.position.set(0, 0.53, 0.44);
+  duckGrp.add(beakMesh);
+
+  // Eyes
+  [-0.14, 0.14].forEach(ex => {
+    const eye = new THREE.Mesh(new THREE.SphereGeometry(0.035, 6, 6), eyeMat);
+    eye.position.set(ex, 0.58, 0.35);
+    duckGrp.add(eye);
+  });
+
+  duckGrp.scale.set(scale, scale, scale);
+  return duckGrp;
 }
 
 // --- FISHING MECHANIC (3D FISHING ROD & ANIMATION) ---
@@ -8024,7 +8126,7 @@ function updateSpaceLoop() {
   window.__isBossAliveInCurrentRegion = isBossAliveInCurrentRegion;
 
   // Authentic Grand Cave Exit Portal Helper with Boss-Gated Access
-  window.createCaveExitPortal = function(game, px, py, pz, targetRegion, targetName, targetIcon) {
+  function createCaveExitPortal(game, px, py, pz, targetRegion, targetName, targetIcon) {
     if (!game || !game.scene || !window.THREE) return;
     const THREE = window.THREE;
     const portalGroup = new THREE.Group();
@@ -12520,6 +12622,21 @@ function updateSpaceLoop() {
         });
       }
 
+      // 2B. 3D Swimming Ducks & Ducklings Bobbing Animation 🦆
+      if (villageDucksList.length > 0) {
+        const tDuck = Date.now() * 0.0025;
+        (villageDucksList || []).forEach(duck => {
+          duck.phase += duck.speed;
+          duck.mesh.position.x = duck.baseX + Math.cos(duck.phase) * duck.radius;
+          duck.mesh.position.z = duck.baseZ + Math.sin(duck.phase) * duck.radius;
+          duck.mesh.rotation.y = -duck.phase + Math.PI / 2;
+          // Natural water bobbing sine wave
+          duck.mesh.position.y = 0.12 + Math.sin(tDuck * 2.0 + duck.dIdx * 0.8) * 0.035;
+          duck.mesh.rotation.z = Math.sin(tDuck * 1.5 + duck.dIdx) * 0.04;
+          duck.mesh.rotation.x = Math.sin(tDuck * 1.8 + duck.dIdx) * 0.03;
+        });
+      }
+
       // 3. Animal NPCs Proximity & Talk Check (Fox, Bunny, Giraffe)
       if (villageNpcsList.length > 0) {
         (villageNpcsList || []).forEach(npc => {
@@ -12609,6 +12726,11 @@ function updateSpaceLoop() {
         const minZ = c.min.z, maxZ = c.max.z;
         const minY = c.min.y, maxY = c.max.y;
 
+        const szX = maxX - minX;
+        const szZ = maxZ - minZ;
+        const isFloorOrTerrain = (szX > 5.5 && szZ > 5.5) || c.isVillageExpansionCollider || c.isCourtCollider || c.isFloor || (maxY - minY < 0.45);
+        if (isFloorOrTerrain) continue;
+
         // Check if player's vertical bounding volume intersects this obstacle
         if (pPos.y + 1.5 > minY + 0.1 && pPos.y < maxY - 0.15) {
           const overlapLeft = (pPos.x + playerRadius) - minX;
@@ -12618,18 +12740,20 @@ function updateSpaceLoop() {
 
           if (overlapLeft > 0 && overlapRight > 0 && overlapFront > 0 && overlapBack > 0) {
             const minOverlap = Math.min(overlapLeft, overlapRight, overlapFront, overlapBack);
-            if (minOverlap === overlapLeft) {
-              pPos.x = minX - playerRadius;
-              if (pVel && pVel.x > 0) pVel.x = 0;
-            } else if (minOverlap === overlapRight) {
-              pPos.x = maxX + playerRadius;
-              if (pVel && pVel.x < 0) pVel.x = 0;
-            } else if (minOverlap === overlapFront) {
-              pPos.z = minZ - playerRadius;
-              if (pVel && pVel.z > 0) pVel.z = 0;
-            } else {
-              pPos.z = maxZ + playerRadius;
-              if (pVel && pVel.z < 0) pVel.z = 0;
+            if (minOverlap < 0.95) {
+              if (minOverlap === overlapLeft) {
+                pPos.x = minX - playerRadius;
+                if (pVel && pVel.x > 0) pVel.x = 0;
+              } else if (minOverlap === overlapRight) {
+                pPos.x = maxX + playerRadius;
+                if (pVel && pVel.x < 0) pVel.x = 0;
+              } else if (minOverlap === overlapFront) {
+                pPos.z = minZ - playerRadius;
+                if (pVel && pVel.z > 0) pVel.z = 0;
+              } else {
+                pPos.z = maxZ + playerRadius;
+                if (pVel && pVel.z < 0) pVel.z = 0;
+              }
             }
           }
         }
