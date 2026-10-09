@@ -4475,6 +4475,230 @@ void main() {
     n.connect(a);a.connect(this.sfxGainNode);n.start(e);n.stop(e+.21);
   }
 
+  playFootstep(surfaceType = "grass", options = {}) {
+    if(this.isMuted) return;
+    this.initContext();
+    if(!this.ctx || !this.sfxGainNode) return;
+
+    try {
+      const t = this.ctx.currentTime;
+      const footIndex = options.footIndex || 0;
+      const footPitchMod = (footIndex % 2 === 0) ? 0.96 : 1.04;
+      const speedRatio = Math.max(0.65, Math.min(1.3, options.speedRatio || 1.0));
+      const rndPitch = (0.92 + Math.random() * 0.16) * footPitchMod;
+      const rndVol = (0.85 + Math.random() * 0.3) * speedRatio;
+
+      const createNoiseBuffer = (dur) => {
+        const sampleRate = this.ctx.sampleRate || 44100;
+        const bufferSize = Math.max(128, Math.floor(sampleRate * dur));
+        const buffer = this.ctx.createBuffer(1, bufferSize, sampleRate);
+        const data = buffer.getChannelData(0);
+        let lastOut = 0;
+        for (let i = 0; i < bufferSize; i++) {
+          const white = Math.random() * 2 - 1;
+          lastOut = (lastOut + 0.05 * white) / 1.05;
+          data[i] = (lastOut * 3.2 + white * 0.35) * (1 - i / bufferSize);
+        }
+        return buffer;
+      };
+
+      const sType = (surfaceType || "grass").toLowerCase();
+
+      if (sType === "grass") {
+        // 🌿 GRASS: Soft textured organic rustle with subtle low-end impact
+        const dur = 0.08 + Math.random() * 0.03;
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = createNoiseBuffer(dur);
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = "bandpass";
+        filter.frequency.setValueAtTime((850 + Math.random() * 250) * rndPitch, t);
+        filter.Q.setValueAtTime(1.9, t);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.13 * rndVol, t);
+        gain.gain.exponentialRampToValueAtTime(0.002, t + dur);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGainNode);
+        noise.start(t);
+
+        const osc = this.ctx.createOscillator();
+        const oscGain = this.ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime((80 + Math.random() * 20) * rndPitch, t);
+        osc.frequency.exponentialRampToValueAtTime(45, t + 0.05);
+        oscGain.gain.setValueAtTime(0.12 * rndVol, t);
+        oscGain.gain.exponentialRampToValueAtTime(0.002, t + 0.05);
+        osc.connect(oscGain);
+        oscGain.connect(this.sfxGainNode);
+        osc.start(t);
+        osc.stop(t + 0.06);
+
+      } else if (sType === "wood") {
+        // 🪵 WOOD: Resonant, hollow acoustic tap with pitch drop & plank warmth
+        const dur = 0.07 + Math.random() * 0.02;
+        const osc = this.ctx.createOscillator();
+        const oscGain = this.ctx.createGain();
+        osc.type = "triangle";
+        const startFreq = (300 + Math.random() * 70) * rndPitch;
+        osc.frequency.setValueAtTime(startFreq, t);
+        osc.frequency.exponentialRampToValueAtTime(startFreq * 0.52, t + dur);
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = "bandpass";
+        filter.frequency.setValueAtTime(startFreq * 1.15, t);
+        filter.Q.setValueAtTime(4.0, t);
+
+        oscGain.gain.setValueAtTime(0.22 * rndVol, t);
+        oscGain.gain.exponentialRampToValueAtTime(0.002, t + dur);
+
+        osc.connect(filter);
+        filter.connect(oscGain);
+        oscGain.connect(this.sfxGainNode);
+        osc.start(t);
+        osc.stop(t + dur + 0.01);
+
+        const click = this.ctx.createOscillator();
+        const clickGain = this.ctx.createGain();
+        click.type = "sine";
+        click.frequency.setValueAtTime(1350 * rndPitch, t);
+        clickGain.gain.setValueAtTime(0.08 * rndVol, t);
+        clickGain.gain.exponentialRampToValueAtTime(0.001, t + 0.015);
+        click.connect(clickGain);
+        clickGain.connect(this.sfxGainNode);
+        click.start(t);
+        click.stop(t + 0.02);
+
+      } else if (sType === "stone") {
+        // 🪨 STONE: Crisp tactile click transient + solid dense impact
+        const dur = 0.05 + Math.random() * 0.015;
+        const click = this.ctx.createOscillator();
+        const clickGain = this.ctx.createGain();
+        click.type = "sine";
+        click.frequency.setValueAtTime((1900 + Math.random() * 400) * rndPitch, t);
+        click.frequency.exponentialRampToValueAtTime(450, t + 0.025);
+        clickGain.gain.setValueAtTime(0.20 * rndVol, t);
+        clickGain.gain.exponentialRampToValueAtTime(0.002, t + 0.025);
+        click.connect(clickGain);
+        clickGain.connect(this.sfxGainNode);
+        click.start(t);
+        click.stop(t + 0.03);
+
+        const osc = this.ctx.createOscillator();
+        const oscGain = this.ctx.createGain();
+        osc.type = "triangle";
+        osc.frequency.setValueAtTime((240 + Math.random() * 40) * rndPitch, t);
+        osc.frequency.exponentialRampToValueAtTime(95, t + dur);
+        oscGain.gain.setValueAtTime(0.16 * rndVol, t);
+        oscGain.gain.exponentialRampToValueAtTime(0.002, t + dur);
+        osc.connect(oscGain);
+        oscGain.connect(this.sfxGainNode);
+        osc.start(t);
+        osc.stop(t + dur + 0.01);
+
+      } else if (sType === "snow" || sType === "ice") {
+        // ❄️ SNOW / ICE: High crunch / crystal friction
+        const dur = 0.08 + Math.random() * 0.025;
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = createNoiseBuffer(dur);
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = "bandpass";
+        filter.frequency.setValueAtTime((3000 + Math.random() * 600) * rndPitch, t);
+        filter.Q.setValueAtTime(1.6, t);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.16 * rndVol, t);
+        gain.gain.exponentialRampToValueAtTime(0.002, t + dur);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGainNode);
+        noise.start(t);
+
+        const osc = this.ctx.createOscillator();
+        const oscGain = this.ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime((150 + Math.random() * 30) * rndPitch, t);
+        osc.frequency.exponentialRampToValueAtTime(65, t + 0.04);
+        oscGain.gain.setValueAtTime(0.10 * rndVol, t);
+        oscGain.gain.exponentialRampToValueAtTime(0.002, t + 0.04);
+        osc.connect(oscGain);
+        oscGain.connect(this.sfxGainNode);
+        osc.start(t);
+        osc.stop(t + 0.05);
+
+      } else if (sType === "sand") {
+        // 🏜️ SAND: Granular soft slide / scuff
+        const dur = 0.09 + Math.random() * 0.03;
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = createNoiseBuffer(dur);
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = "bandpass";
+        filter.frequency.setValueAtTime((680 + Math.random() * 200) * rndPitch, t);
+        filter.Q.setValueAtTime(1.3, t);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.14 * rndVol, t);
+        gain.gain.exponentialRampToValueAtTime(0.002, t + dur);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.sfxGainNode);
+        noise.start(t);
+
+      } else if (sType === "water") {
+        // 🌊 WATER: Liquid slosh & water droplet transient
+        const dur = 0.09 + Math.random() * 0.02;
+        const osc = this.ctx.createOscillator();
+        const oscGain = this.ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime((440 + Math.random() * 80) * rndPitch, t);
+        osc.frequency.exponentialRampToValueAtTime(160, t + dur);
+
+        oscGain.gain.setValueAtTime(0.18 * rndVol, t);
+        oscGain.gain.exponentialRampToValueAtTime(0.002, t + dur);
+
+        osc.connect(oscGain);
+        oscGain.connect(this.sfxGainNode);
+        osc.start(t);
+        osc.stop(t + dur + 0.01);
+
+      } else if (sType === "metal") {
+        // ⚙️ METAL: High overtone chime & click
+        const dur = 0.065 + Math.random() * 0.02;
+        const osc = this.ctx.createOscillator();
+        const oscGain = this.ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime((1150 + Math.random() * 250) * rndPitch, t);
+        oscGain.gain.setValueAtTime(0.14 * rndVol, t);
+        oscGain.gain.exponentialRampToValueAtTime(0.002, t + dur);
+        osc.connect(oscGain);
+        oscGain.connect(this.sfxGainNode);
+        osc.start(t);
+        osc.stop(t + dur + 0.01);
+
+      } else {
+        // 🛋️ CARPET / DEFAULT: Muffled low thump
+        const dur = 0.06;
+        const osc = this.ctx.createOscillator();
+        const oscGain = this.ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(110 * rndPitch, t);
+        osc.frequency.exponentialRampToValueAtTime(50, t + dur);
+        oscGain.gain.setValueAtTime(0.12 * rndVol, t);
+        oscGain.gain.exponentialRampToValueAtTime(0.002, t + dur);
+        osc.connect(oscGain);
+        oscGain.connect(this.sfxGainNode);
+        osc.start(t);
+        osc.stop(t + dur + 0.01);
+      }
+    } catch(err) {}
+  }
+
   startMusic(e="hub", forceReset=!0){
     this.currentBgmRegion = e;
     this.isMuted = !1;
@@ -4784,7 +5008,7 @@ function Xw(r){const e=document.createElement("canvas");e.width=512,e.height=512
     }
     return cpObj;
   };
-let y={ambientColor:16777215,sunColor:16774374,fogColor:12248829,skyColor:8246268};const T=(z,v,U,N,B,A,D=0)=>{const V=jw(v,U);return V.position.set(N,B,A),V.rotation.y=D,e.add(V),u.push({id:z,mesh:V,pos:new Y(N,B,A),pageIndex:v,title:U}),n.push({min:new Y(N-.9,B,A-.9),max:new Y(N+.9,B+3.2,A+.9)}),V},R=(z,v,U,N,B,A,D,V=!1,F=!1,j=!1)=>{const te=new Rn(z,v,U),se=new Me(te,D);return se.position.set(N,B,A),se.castShadow=!0,se.receiveShadow=!0,e.add(se),n.push({min:new Y(N-z/2,B-v/2,A-U/2),max:new Y(N+z/2,B+v/2,A+U/2),isToxic:V,isClimbable:F,isIce:j}),se},b=(z,v,U,N,B=!1)=>{const A=new kt;if(B){const D=new Kr(.35,0),V=new Le({color:16096779,emissive:14251782,emissiveIntensity:.6}),F=new Me(D,V);F.castShadow=!0,A.add(F)}else{const D=new jt(.25,.25,.08,12);D.rotateX(Math.PI/2);const V=new Le({color:16498468,emissive:11817737,emissiveIntensity:.5}),F=new Me(D,V);F.castShadow=!0,A.add(F)}A.position.set(v,U,N),e.add(A),a.push({id:z,type:B?"honey_gem":"coin",mesh:A,pos:new Y(v,U,N),collected:!1,value:B?25:5})},S=(z,v,U,N=18)=>{const B=new kt;B.position.set(z,v,U);const A=new jt(1.2,1.4,.3,16),D=new Le({color:3900150}),V=new Me(A,D);B.add(V);const F=new At(.9,16,12);F.scale(1,.5,1);const j=new Le({color:15485081,emissive:12458077,emissiveIntensity:.4}),te=new Me(F,j);te.position.y=.25,B.add(te),e.add(B),h.push({mesh:B,pos:new Y(z,v,U),boostForce:N}),n.push({min:new Y(z-1.2,v-.2,U-1.2),max:new Y(z+1.2,v+.4,U+1.2),isJumpPad:!0})},k=(z,v,U,N=1)=>{const B=new kt;B.position.set(z,v,U),B.scale.set(N,N,N);const A=new jt(.3,.45,2.2,8),D=new Le({color:7877903}),V=new Me(A,D);V.position.y=1.1,V.castShadow=!0,B.add(V);const F=new Le({color:1409085});[{r:1.6,y:2.6},{r:1.2,y:3.6},{r:.8,y:4.4}].forEach(j=>{const te=new Me(new Pn(j.r,1.4,8),F);te.position.y=j.y,te.castShadow=!0,B.add(te)}),e.add(B),n.push({min:new Y(z-.4,v,U-.4),max:new Y(z+.4,v+2.2,U+.4)})};if(r==="hub"){y={ambientColor:16777215,sunColor:16707722,fogColor:11006928,skyColor:3718648},x.set(0,1.5,5);const z=new Le({color:2278750}),v=new Le({color:9741240}),U=new Le({color:16638023}),N=new Le({color:1483594}),B=new Le({color:6583435}),waterMat=new Le({color:3642340,roughness:.1,metalness:.3,transparent:!0,opacity:.85}),roofMat=new Le({color:12003882,roughness:.3,transparent:!0,opacity:.38,side:2}),woodMat=new Le({color:8078622,roughness:.7}),glassMat=new Le({color:12574443,transparent:!0,opacity:.45}),cobbleMat=new Le({color:8553090,roughness:.8}),carpetMat=new Le({color:15680580,roughness:.9}),bedMat=new Le({color:3718648,roughness:.5}),whiteMat=new Le({color:16777215}),fireMat=new Le({color:16347926,emissive:15381256,emissiveIntensity:1}),lampMat=new Le({color:16773077,emissive:16773077,emissiveIntensity:1.5});R(160,2,160,0,-1,0,z);R(200,4,140,0,1,-110,z);R(45,3,40,-42,.5,0,z);R(45,3,40,42,.5,0,z);R(35,4,30,0,1,-45,z);R(50,2,40,0,-.5,42,z);R(30,0.2,30,0,.1,0,cobbleMat);R(4,1.4,4,0,.7,0,B);b("hub_coin_well",0,2.4,0,!0);for(let angle=0;angle<Math.PI*2;angle+=Math.PI/4){const lx=Math.cos(angle)*12,lz=Math.sin(angle)*12;R(.3,2.8,.3,lx,1.4,lz,woodMat)}const createHouse=(hx,hy,hz,hColor=15124119,rColor=12003882,hName="Girilerebilir Ayı Evi")=>{const hMat=new Le({color:hColor}),rfMat=new Le({color:rColor,roughness:.3,transparent:!0,opacity:.38,side:2});R(9,4.5,.4,hx,hy+2.25,hz-4.5,hMat);R(.4,4.5,9,hx-4.5,hy+2.25,hz,hMat);R(.4,4.5,9,hx+4.5,hy+2.25,hz,hMat);R(2.8,4.5,.4,hx-3.1,hy+2.25,hz+4.5,hMat);R(2.8,4.5,.4,hx+3.1,hy+2.25,hz+4.5,hMat);R(3.4,1.2,.4,hx,hy+3.9,hz+4.5,woodMat);R(1.8,1.6,.4,hx-4.5,hy+2.5,hz,glassMat);R(1.8,1.6,.4,hx+4.5,hy+2.5,hz,glassMat);R(2.2,1.6,.4,hx,hy+2.5,hz-4.5,glassMat);R(8.6,.2,8.6,hx,hy+.1,hz,woodMat);const roof=new Me(new Kr(6.8,0),rfMat);roof.position.set(hx,hy+5.5,hz);roof.rotation.y=Math.PI/4;e.add(roof);R(4.5,.05,4.5,hx,hy+.2,hz,carpetMat);R(2.6,.6,3.2,hx-2.6,hy+.4,hz-2.4,bedMat);R(2,.3,.9,hx-2.6,hy+.75,hz-3.5,whiteMat);R(2.2,1.2,2.2,hx+2.4,hy+.7,hz-2.2,woodMat);R(1,.7,1,hx+2.4,hy+.45,hz-.6,woodMat);R(1.6,2,1.2,hx,hy+1,hz-3.6,fireMat);const lamp=new Me(new At(.45,10,10),lampMat);lamp.position.set(hx,hy+4,hz);e.add(lamp);b(`gem_house_${Math.round(hx)}_${Math.round(hz)}`,hx+2.4,hy+1.8,hz-2.2,!0);b(`coin_house_1_${Math.round(hx)}`,hx-2.6,hy+1.2,hz-2.4,!1);b(`coin_house_2_${Math.round(hx)}`,hx,hy+.6,hz,!1)};createHouse(-38,1,-12,1483594,12003882,"Fırıncı Evi");createHouse(-48,1,12,16638023,13840428,"Pamuk un Çiçek Evi");createHouse(-32,1,24,9741240,8931122,"Gölge nin Ninja Evi");createHouse(-28,1,-28,15124119,1483594,"Süper Ayı & Boncuk Evi");const A=-25,D=-25;R(22,.2,28,A,.1,D,N);const V=new Le({color:16777215});R(.2,2.5,.2,A-4,1.25,D-12,V);R(.2,2.5,.2,A+4,1.25,D-12,V);R(8.2,.2,.2,A,2.4,D-12,V);const F=new yi({color:14870768,wireframe:!0});R(8,2.4,2,A,1.2,D-13,F);p={min:new Y(A-4,0,D-13.5),max:new Y(A+4,2.5,D-11.5)};const j=new At(.55,16,16),te=new Le({color:16777215}),se=new Me(j,te);se.position.set(A,.8,D+2);se.castShadow=!0;e.add(se);m={mesh:se,pos:new Y(A,.8,D+2),velocity:new Y(0,0,0),radius:.55,type:"soccer"};R(28,.2,22,28,-.2,38,waterMat);R(4,.6,12,28,.1,38,woodMat);b("hub_lake_gem",28,1.2,38,!0);R(18,3,18,42,1.5,0,U);R(14,5,14,42,3.5,-18,z);S(42,3,0,22);S(42,6,-18,24);b("hub_parkour_gem_1",42,8,0,!0);b("hub_parkour_gem_2",42,11,-18,!0);const wmX=-48,wmZ=-42;R(6,12,6,wmX,6,wmZ,woodMat);const wmRoof=new Me(new Kr(4.8,0),roofMat);wmRoof.position.set(wmX,13.8,wmZ);e.add(wmRoof);for(let bIdx=0;bIdx<4;bIdx++){const blade=new Me(new Rn(.4,8,.1),woodMat);blade.position.set(wmX,10,wmZ+3.2);blade.rotation.z=bIdx*Math.PI/2;e.add(blade)}b("hub_windmill_gem",wmX,15,wmZ,!0);[-55,-35,-15,15,35,55].forEach(tx=>[-55,-35,35,55].forEach(tz=>k(tx,0,tz,1+Math.random()*.4)));S(-8,0,8,16);S(18,3,-15,20);for(let Se=0;Se<12;Se++)b(`hub_coin_${Se}`,-10+Se*2,1.5+Math.sin(Se*.8)*.5,14);const G=new kt;G.position.set(6,0,5);const Z=new Me(new At(.6,12,12),new Le({color:3718648}));Z.position.y=.9;G.add(Z);const pe=new Me(new Pn(.2,.9,8),new Le({color:16347926}));pe.rotateX(Math.PI/2);pe.position.set(0,.9,.5);G.add(pe);e.add(G);G.position.set(6,0.45,5);c.push({id:"npc_pelican",name:"Pelikan Dostu",role:"Pelikan Ovaları Elçisi",mesh:G,pos:new Y(6,0.45,5),avatarIcon:"🦜",dialogue:["Merhaba cesur ayı! Ben Pelikan Ovaları elçisiyim.","Neşeli Ayı Köyümüzün evleri açıldı ve tavanları şeffaflaştı! İçlerine girip yatakları, masaları ve gizli ödülleri rahatça görebilirsin!","Meydandaki fırında taze bal ekmeği bulabilir, yeni evleri ve dev spor sahasını gezebilirsin!","Arı Kovanındaki o boynuzlu Mor Ayıyı alt edebilirsen, Pelikan Ovalarına sana her kapımız açılacak!"]});const X=buildCatMesh(16096779,16020150,1096065,15680580);X.position.set(-5,0.45,4);e.add(X);c.push({id:"npc_boncuk",name:"Boncuk (Sarı Tekir Kedi 🐱)",role:"En Sadık Kedi Dostun",mesh:X,pos:new Y(-5,0.45,4),avatarIcon:"🐱",dialogue:["Miyav! Canım dostum Süper Ayı! 🐱💖","Kozmik İblis beni hedef alıyor ama senin tüm diyarları aşıp o 5 Kutsal Bal Kristali'ni toplayacağına yürekten inanıyorum miyav!","Bana bir şey olursa... Kozmik Boyuttaki o zindana gelip beni kurtaracağını biliyorum! Dualarım seninle Süper Ayı! 🌟"]});const pamukMesh=buildCatMesh(16315132,16020150,3718648,15485081);pamukMesh.position.set(-48,1.7,16);e.add(pamukMesh);c.push({id:"npc_pamuk",name:"Pamuk (Beyaz Yavru Kedi 🐱)",role:"Şifacı & Bahçıvan",mesh:pamukMesh,pos:new Y(-48,1.45,16),avatarIcon:"🤍",dialogue:["Mırrr... Çiçekli evimin bahçesine hoş geldin Süper Ayı! 🌸🐱","Zehirli kovanlar ve tapınaklar çok tehlikeli... Canın azalırsa hemen yanıma veya evimin içine gel, seni mırıltılarımla iyileştireyim miyav!","Topladığın her Kutsal Bal Kristali köyümüzdeki çiçekleri daha da güzelleştiriyor!"]});const golgeMesh=buildCatMesh(1976635,9647082,16436245,9133302);golgeMesh.position.set(-32,2.0,28);e.add(golgeMesh);c.push({id:"npc_golge",name:"Gölge (Ninja Kara Kedi 🐱‍👤)",role:"Gölge Shinobi Ustası",mesh:golgeMesh,pos:new Y(-32,1.45,28),avatarIcon:"🐾",dialogue:["Miyav... Ninja gölgeleri arasından selamlar Süper Ayı 🐾🐱‍👤","Orman Tapınağı'ndaki tüküren çiçekler ve dar kütük parkurları çok sinsidir. Zamanlamanı iyi ayarla!","Kutsal Kristalleri taşıyan Boss'ların zayıf anlarını bekle ve kedi pençeni konuştur!"]});const dedeMesh=buildCatMesh(9133302,16020150,16436245,3718648);dedeMesh.position.set(0,0.45,-6);dedeMesh.scale.set(1.3,1.3,1.3);e.add(dedeMesh);c.push({id:"npc_dede_ayi",name:"Dede Ayı (Köy Muhtarı 🧔🐻)",role:"Köyün Bilge Muhtarı",mesh:dedeMesh,pos:new Y(0,0.45,-6),avatarIcon:"🧔",dialogue:["Hoş geldin torunum Süper Ayı! Artık kedi dostlarımızın vücutları ve evlerin içi pırıl pırıl!","Orman Tapınağı'na rahatça tırmanabilmen için de harika taş basamaklar ekledik!","Kötü güçler evrene saldırdığında tüm köy halkı arkanda duracak!"]});const firinciMesh=buildCatMesh(15124119,16020150,1096065,1483594);firinciMesh.position.set(-38,1.2,-7);e.add(firinciMesh);c.push({id:"npc_firinci",name:"Tonton Fırıncı Ayı (Fırıncı 🍞🐻)",role:"Lezzetli Bal Ekmeği Ustası",mesh:firinciMesh,pos:new Y(-38,1.1,-7),avatarIcon:"🍞",dialogue:["Fırın evimin kapısından içeri gir! Sıcacık taze bal ekmekleri pırıl pırıl masada seni bekliyor!","Maceralarına çıkmadan önce karnını doyur, bal ekmekleri sana güç verecek!"]});T("hub_easel_1",0,"Çizim 1: Orman Tapınağı & Mekanikler",-7,0,16,-Math.PI/6);T("hub_easel_2",1,"Çizim 2: Arı Kovanı Hardcore & Mor Ayı",-3,0,17.5,-Math.PI/16);T("hub_easel_3",2,"Çizim 3: Pelikan Ovaları & Gök Adaları",3,0,17.5,Math.PI/16);T("hub_easel_4",3,"Çizim 4: Tüküren Çiçek & Pelikan Burnu",7,0,16,Math.PI/6);T("hub_easel_5",4,"Çizim 5: 17:00 Ultra Mega Güncelleme",11,0,14,Math.PI/4);T("hub_easel_6",5,"Çizim 6: Kozmik Boyut & Boncuk (Kedi)",-11,0,14,-Math.PI/4);const W=new Le({color:9133302});R(20,.4,.4,0,3.8,17,W);R(.4,4,.4,-10,2,17,W);R(.4,4,.4,10,2,17,W);const oe=new yl(1.4,.25,12,24),xe=new Le({color:1096065,emissive:366185,emissiveIntensity:.8});_=new Me(oe,xe);_.position.set(0,2,-45);e.add(_);R(4,.4,4,0,.2,-45,v)}else if(r==="forest_temple"){y={ambientColor:932636,sunColor:11006928,fogColor:413243,skyColor:415558};x.set(0,1.5,25);addCheckpoint("ft_cp_1","1. Tapınak Avlusu Parkuru",0,1.5,25,!0);addCheckpoint("ft_cp_2","2. Sarmaşıklı Sütunlar Vadisi",0,12.1,1);addCheckpoint("ft_cp_3","3. Zehirli Spor Vadisi Zirvesi",0,25.2,-38);addCheckpoint("ft_cp_4","4. Orman Kanyonu Dar Kütükleri",0,37.2,-95);addCheckpoint("ft_cp_5","5. Sarmaşıklı İblis Tapınağı Arenası",0,21,-132);const z=new Le({color:4137733}),v=new Le({color:3365126}),U=new Le({color:1096065,emissive:292951,emissiveIntensity:.6}),N=new Le({color:1976635}),vineMat=new Le({color:2278750,emissive:1409085,emissiveIntensity:.4}),leafMat=new Le({color:1483594}),heartMat=new Le({color:15680580,emissive:14251782,emissiveIntensity:.9});R(12,2,8,0,-1,25,z);R(4,.4,4,0,.2,25,N);T("forest_easel_1",0,"Çizim 1: Orman Tapınağı Hardcore Parkur",-3.5,0,23,.2);T("forest_easel_4",3,"Çizim 4: Tüküren Zehir Çiçekleri",3.5,0,23,-.2);R(3,.5,2.5,0,.4,23,N);R(2.5,.5,2.5,0,1.2,21,N);R(2.5,.5,2.5,-2,2,19.5,N);R(2.2,.5,2.2,-3,2.8,18,N);R(2.2,.5,2.2,-4,3.6,16,N);R(2,.5,2,-5,4.4,14,N);b("temple_coin_0",-5,5.4,14,!1);R(2,.5,2,-2.5,5.2,12.5,N);R(1.8,.5,1.8,0,6,11,N);R(2,.5,2,2.5,6.8,9.5,N);R(2,.5,2,5,7.6,8,N);b("temple_coin_1",5,8.6,8,!1);R(2,.5,2,3.5,8.4,6,N);R(2,.5,2,2,9.2,4,N);R(2.2,.5,2.2,1,10,2.5,N);R(2.5,.5,2.5,0,10.8,1.5,N);R(4,1.2,4,0,11.5,1,v);b("temple_coin_2",0,12.8,1,!0);[new Y(-5,4.4,14),new Y(5,7.6,8),new Y(2,9.2,4)].forEach((j,te)=>{const se=new kt;se.position.copy(j);const H=new Me(new jt(.12,.15,.8,8),new Le({color:1409085}));H.position.y=.4;se.add(H);const I=new Me(new At(.4,10,10),new Le({color:15680580,emissive:10033947,emissiveIntensity:.4}));I.position.y=.8;se.add(I);e.add(se);o.push({id:`flower_${te}`,type:"flower_spitter",name:"Tüküren Zehir Çiçeği",mesh:se,pos:j.clone(),velocity:new Y,hp:20,maxHp:20,attackPower:6,isBoss:!1,attackCooldown:0,state:"patrol",animTimer:te*1.5})});R(2.5,.5,2.5,0,12.2,-.8,N);R(2.2,.5,2.2,0,12.9,-2,N);R(2.5,.8,2.5,0,13.5,-3,N);R(1.5,14,1.5,0,7,-3,N,!1,!0);R(80,1,100,0,-2,-50,U,!0);R(2.2,.5,2.2,-2,14.2,-5.5,N);R(2.2,.5,2.2,-4,15,-8,N);R(2.2,.5,2.2,-2,15.8,-11,N);R(2.2,.5,2.2,0,16.6,-13.5,N);R(2.2,.5,2.2,0,17.4,-15,N);b("temple_spore_coin_0",0,18.4,-15,!1);R(2.2,.5,2.2,2,18.2,-18,N);R(2.2,.5,2.2,4,19,-21,N);R(2.2,.5,2.2,2,19.8,-24,N);R(2.2,.5,2.2,0,20.6,-27,N);b("temple_spore_coin_1",0,21.6,-27,!1);R(2.2,.5,2.2,-1.5,21.4,-30,N);R(2.2,.5,2.2,-3,22.2,-33,N);R(2.2,.5,2.2,-2,23,-35,N);R(2.5,.5,2.5,-1,23.8,-36.5,N);R(4,1.2,4,0,24.6,-38,v);b("temple_spore_coin_2",0,26,-38,!0);[new Y(-4,15,-8),new Y(4,19,-21),new Y(-3,22.2,-33)].forEach((j,te)=>{const se=new kt;se.position.copy(j);const H=new Me(new jt(.12,.15,.8,8),new Le({color:1409085}));H.position.y=.4;se.add(H);const I=new Me(new At(.4,10,10),new Le({color:15680580,emissive:10033947,emissiveIntensity:.4}));I.position.y=.8;se.add(I);e.add(se);o.push({id:`spore_flower_${te}`,type:"flower_spitter",name:"Zehirli Spor Çiçeği",mesh:se,pos:j.clone(),velocity:new Y,hp:25,maxHp:25,attackPower:7,isBoss:!1,attackCooldown:0,state:"patrol",animTimer:te*1.2})});R(2.2,.5,2.2,-2,25.4,-41,N);R(2.2,.5,2.2,-4,26.2,-44.5,N);R(2.2,.5,2.2,-6,27,-48,N);R(2.2,.5,2.2,-8,27.8,-52,N);b("temple_canyon_coin_0",-8,28.8,-52,!1);R(2.2,.5,2.2,-5.5,28.6,-56,N);R(2.2,.5,2.2,-3,29.4,-60,N);R(2.2,.5,2.2,-.5,30.2,-64,N);R(2.2,.5,2.2,2,31,-68,N);b("temple_canyon_coin_1",2,32,-68,!1);R(2.2,.5,2.2,4,31.8,-72,N);R(2.2,.5,2.2,6,32.6,-76,N);R(2.2,.5,2.2,4,33.4,-80.5,N);R(2.2,.5,2.2,2,34.2,-85,N);b("temple_canyon_coin_2",2,35.2,-85,!1);R(2.2,.5,2.2,1,35,-89,N);R(2.5,.5,2.5,.5,35.8,-92.5,N);R(4,1.2,4,0,36.6,-95,v);b("temple_canyon_coin_3",0,38,-95,!0);R(2.5,.5,2.5,0,35.8,-98.5,N);R(2.2,.5,2.2,-2,34.8,-102,N);R(2.2,.5,2.2,-3,33.6,-105.5,N);R(2.2,.5,2.2,0,31.8,-110,N);R(2.2,.5,2.2,3,30,-115,N);R(2.2,.5,2.2,1.5,28,-119.5,N);R(2.2,.5,2.2,0,26,-124,N);R(2.5,.5,2.5,0,24,-128,N);R(3,.5,3,0,22,-130.5,N);R(12,2,12,0,20,-132,z);S(0,21,-132,22);R(36,2,36,0,18,-148,z);R(38,.4,38,0,18.2,-148,N);const vineBossGroup=new kt;vineBossGroup.position.set(0,19,-138);const trunkMesh=new Me(new jt(1.2,1.8,4.2,12),z);trunkMesh.position.y=2.1;vineBossGroup.add(trunkMesh);const heartMesh=new Me(new At(.8,12,12),heartMat);heartMesh.position.set(0,2.5,.9);vineBossGroup.add(heartMesh);for(let vIdx=0;vIdx<8;vIdx++){const angle=vIdx/8*Math.PI*2,vineCoil=new Me(new yl(1.4,.18,8,20),vineMat);vineCoil.position.set(Math.cos(angle)*.3,1.2+vIdx*.35,Math.sin(angle)*.3);vineCoil.rotation.x=Math.PI/3;vineCoil.rotation.y=angle;vineBossGroup.add(vineCoil)}const headMesh=new Me(new At(1.1,12,12),z);headMesh.position.y=4.4;vineBossGroup.add(headMesh);for(let lIdx=0;lIdx<6;lIdx++){const lAngle=lIdx/6*Math.PI*2,leafMesh=new Me(new Kr(.7,0),leafMat);leafMesh.position.set(Math.cos(lAngle)*.9,5.2,Math.sin(lAngle)*.9);leafMesh.rotation.z=-.4;leafMesh.rotation.y=lAngle;vineBossGroup.add(leafMesh)}const leftArm=new Me(new jt(.35,.25,3.5,8),vineMat);leftArm.position.set(-2,3.2,.5);leftArm.rotation.z=Math.PI/4;vineBossGroup.add(leftArm);const rightArm=new Me(new jt(.35,.25,3.5,8),vineMat);rightArm.position.set(2,3.2,.5);rightArm.rotation.z=-Math.PI/4;vineBossGroup.add(rightArm);e.add(vineBossGroup);o.push({id:"boss_vine_guardian",type:"vine_boss",name:"Sarmaşıklı Orman Muhafızı (Dev Boss 🌿)",mesh:vineBossGroup,pos:new Y(0,19,-138),velocity:new Y,hp:280,maxHp:280,attackPower:14,isBoss:!0,attackCooldown:0,state:"chase",animTimer:0})}else if(r==="beehive"){
+let y={ambientColor:16777215,sunColor:16774374,fogColor:12248829,skyColor:8246268};const T=(z,v,U,N,B,A,D=0)=>{const V=jw(v,U);return V.position.set(N,B,A),V.rotation.y=D,e.add(V),u.push({id:z,mesh:V,pos:new Y(N,B,A),pageIndex:v,title:U}),n.push({min:new Y(N-.9,B,A-.9),max:new Y(N+.9,B+3.2,A+.9)}),V},R=(z,v,U,N,B,A,D,V=!1,F=!1,j=!1)=>{const te=new Rn(z,v,U),se=new Me(te,D);return se.position.set(N,B,A),se.castShadow=!0,se.receiveShadow=!0,e.add(se),n.push({min:new Y(N-z/2,B-v/2,A-U/2),max:new Y(N+z/2,B+v/2,A+U/2),isToxic:V,isClimbable:F,isIce:j}),se},b=(z,v,U,N,B=!1)=>{const A=new kt;if(B){const D=new Kr(.35,0),V=new Le({color:16096779,emissive:14251782,emissiveIntensity:.6}),F=new Me(D,V);F.castShadow=!0,A.add(F)}else{const D=new jt(.25,.25,.08,12);D.rotateX(Math.PI/2);const V=new Le({color:16498468,emissive:11817737,emissiveIntensity:.5}),F=new Me(D,V);F.castShadow=!0,A.add(F)}A.position.set(v,U,N),e.add(A),a.push({id:z,type:B?"honey_gem":"coin",mesh:A,pos:new Y(v,U,N),collected:!1,value:B?25:5})},S=(z,v,U,N=18)=>{const B=new kt;B.position.set(z,v,U);const A=new jt(1.2,1.4,.3,16),D=new Le({color:3900150}),V=new Me(A,D);B.add(V);const F=new At(.9,16,12);F.scale(1,.5,1);const j=new Le({color:15485081,emissive:12458077,emissiveIntensity:.4}),te=new Me(F,j);te.position.y=.25,B.add(te),e.add(B),h.push({mesh:B,pos:new Y(z,v,U),boostForce:N}),n.push({min:new Y(z-1.2,v-.2,U-1.2),max:new Y(z+1.2,v+.4,U+1.2),isJumpPad:!0})},k=(z,v,U,N=1)=>{const B=new kt;B.position.set(z,v,U),B.scale.set(N,N,N);const A=new jt(.3,.45,2.2,8),D=new Le({color:7877903}),V=new Me(A,D);V.position.y=1.1,V.castShadow=!0,B.add(V);const F=new Le({color:1409085});[{r:1.6,y:2.6},{r:1.2,y:3.6},{r:.8,y:4.4}].forEach(j=>{const te=new Me(new Pn(j.r,1.4,8),F);te.position.y=j.y,te.castShadow=!0,B.add(te)}),e.add(B),n.push({isCylinder:!0,isRadial:!0,center:{x:z,z:U},radius:.45*N,minY:v,maxY:v+2.2*N,min:new Y(z-.45*N,v,U-.45*N),max:new Y(z+.45*N,v+2.2*N,U+.45*N)})};if(r==="hub"){y={ambientColor:16777215,sunColor:16707722,fogColor:11006928,skyColor:3718648},x.set(0,1.5,5);const z=new Le({color:2278750}),v=new Le({color:9741240}),U=new Le({color:16638023}),N=new Le({color:1483594}),B=new Le({color:6583435}),waterMat=new Le({color:3642340,roughness:.1,metalness:.3,transparent:!0,opacity:.85}),roofMat=new Le({color:12003882,roughness:.3,transparent:!0,opacity:.38,side:2}),woodMat=new Le({color:8078622,roughness:.7}),glassMat=new Le({color:12574443,transparent:!0,opacity:.45}),cobbleMat=new Le({color:8553090,roughness:.8}),carpetMat=new Le({color:15680580,roughness:.9}),bedMat=new Le({color:3718648,roughness:.5}),whiteMat=new Le({color:16777215}),fireMat=new Le({color:16347926,emissive:15381256,emissiveIntensity:1}),lampMat=new Le({color:16773077,emissive:16773077,emissiveIntensity:1.5});R(160,2,160,0,-1,0,z);R(200,4,140,0,1,-110,z);R(45,3,40,-42,.5,0,z);R(45,3,40,42,.5,0,z);R(35,4,30,0,1,-45,z);R(50,2,40,0,-.5,42,z);R(30,0.2,30,0,.1,0,cobbleMat);const wellMesh=new Me(new Rn(4,1.4,4),B);wellMesh.position.set(0,.7,0);wellMesh.castShadow=!0;wellMesh.receiveShadow=!0;e.add(wellMesh);n.push({isCylinder:!0,isRadial:!0,center:{x:0,z:0},radius:2.0,minY:0,maxY:1.4,min:new Y(-2,0,-2),max:new Y(2,1.4,2)});b("hub_coin_well",0,2.4,0,!0);for(let angle=0;angle<Math.PI*2;angle+=Math.PI/4){const lx=Math.cos(angle)*12,lz=Math.sin(angle)*12;R(.3,2.8,.3,lx,1.4,lz,woodMat)}const createHouse=(hx,hy,hz,hColor=15124119,rColor=12003882,hName="Girilerebilir Ayı Evi")=>{const hMat=new Le({color:hColor}),rfMat=new Le({color:rColor,roughness:.3,transparent:!0,opacity:.38,side:2});R(9,4.5,.4,hx,hy+2.25,hz-4.5,hMat);R(.4,4.5,9,hx-4.5,hy+2.25,hz,hMat);R(.4,4.5,9,hx+4.5,hy+2.25,hz,hMat);R(2.8,4.5,.4,hx-3.1,hy+2.25,hz+4.5,hMat);R(2.8,4.5,.4,hx+3.1,hy+2.25,hz+4.5,hMat);R(3.4,1.2,.4,hx,hy+3.9,hz+4.5,woodMat);R(1.8,1.6,.4,hx-4.5,hy+2.5,hz,glassMat);R(1.8,1.6,.4,hx+4.5,hy+2.5,hz,glassMat);R(2.2,1.6,.4,hx,hy+2.5,hz-4.5,glassMat);R(8.6,.2,8.6,hx,hy+.1,hz,woodMat);const roof=new Me(new Kr(6.8,0),rfMat);roof.position.set(hx,hy+5.5,hz);roof.rotation.y=Math.PI/4;e.add(roof);R(4.5,.05,4.5,hx,hy+.2,hz,carpetMat);R(2.6,.6,3.2,hx-2.6,hy+.4,hz-2.4,bedMat);R(2,.3,.9,hx-2.6,hy+.75,hz-3.5,whiteMat);R(2.2,1.2,2.2,hx+2.4,hy+.7,hz-2.2,woodMat);R(1,.7,1,hx+2.4,hy+.45,hz-.6,woodMat);R(1.6,2,1.2,hx,hy+1,hz-3.6,fireMat);const lamp=new Me(new At(.45,10,10),lampMat);lamp.position.set(hx,hy+4,hz);e.add(lamp);b(`gem_house_${Math.round(hx)}_${Math.round(hz)}`,hx+2.4,hy+1.8,hz-2.2,!0);b(`coin_house_1_${Math.round(hx)}`,hx-2.6,hy+1.2,hz-2.4,!1);b(`coin_house_2_${Math.round(hx)}`,hx,hy+.6,hz,!1)};createHouse(-38,1,-12,1483594,12003882,"Fırıncı Evi");createHouse(-48,1,12,16638023,13840428,"Pamuk un Çiçek Evi");createHouse(-32,1,24,9741240,8931122,"Gölge nin Ninja Evi");createHouse(-28,1,-28,15124119,1483594,"Süper Ayı & Boncuk Evi");const A=-25,D=-25;R(22,.2,28,A,.1,D,N);const V=new Le({color:16777215});R(.2,2.5,.2,A-4,1.25,D-12,V);R(.2,2.5,.2,A+4,1.25,D-12,V);R(8.2,.2,.2,A,2.4,D-12,V);const F=new yi({color:14870768,wireframe:!0});R(8,2.4,2,A,1.2,D-13,F);p={min:new Y(A-4,0,D-13.5),max:new Y(A+4,2.5,D-11.5)};const j=new At(.55,16,16),te=new Le({color:16777215}),se=new Me(j,te);se.position.set(A,.8,D+2);se.castShadow=!0;e.add(se);m={mesh:se,pos:new Y(A,.8,D+2),velocity:new Y(0,0,0),radius:.55,type:"soccer"};R(28,.2,22,28,-.2,38,waterMat);R(4,.6,12,28,.1,38,woodMat);b("hub_lake_gem",28,1.2,38,!0);R(18,3,18,42,1.5,0,U);R(14,5,14,42,3.5,-18,z);S(42,3,0,22);S(42,6,-18,24);b("hub_parkour_gem_1",42,8,0,!0);b("hub_parkour_gem_2",42,11,-18,!0);const wmX=-48,wmZ=-42;R(6,12,6,wmX,6,wmZ,woodMat);const wmRoof=new Me(new Kr(4.8,0),roofMat);wmRoof.position.set(wmX,13.8,wmZ);e.add(wmRoof);for(let bIdx=0;bIdx<4;bIdx++){const blade=new Me(new Rn(.4,8,.1),woodMat);blade.position.set(wmX,10,wmZ+3.2);blade.rotation.z=bIdx*Math.PI/2;e.add(blade)}b("hub_windmill_gem",wmX,15,wmZ,!0);[-55,-35,-15,15,35,55].forEach(tx=>[-55,-35,35,55].forEach(tz=>k(tx,0,tz,1+Math.random()*.4)));S(-8,0,8,16);S(18,3,-15,20);for(let Se=0;Se<12;Se++)b(`hub_coin_${Se}`,-10+Se*2,1.5+Math.sin(Se*.8)*.5,14);const G=new kt;G.position.set(6,0,5);const Z=new Me(new At(.6,12,12),new Le({color:3718648}));Z.position.y=.9;G.add(Z);const pe=new Me(new Pn(.2,.9,8),new Le({color:16347926}));pe.rotateX(Math.PI/2);pe.position.set(0,.9,.5);G.add(pe);e.add(G);G.position.set(6,0.45,5);c.push({id:"npc_pelican",name:"Pelikan Dostu",role:"Pelikan Ovaları Elçisi",mesh:G,pos:new Y(6,0.45,5),avatarIcon:"🦜",dialogue:["Merhaba cesur ayı! Ben Pelikan Ovaları elçisiyim.","Neşeli Ayı Köyümüzün evleri açıldı ve tavanları şeffaflaştı! İçlerine girip yatakları, masaları ve gizli ödülleri rahatça görebilirsin!","Meydandaki fırında taze bal ekmeği bulabilir, yeni evleri ve dev spor sahasını gezebilirsin!","Arı Kovanındaki o boynuzlu Mor Ayıyı alt edebilirsen, Pelikan Ovalarına sana her kapımız açılacak!"]});const X=buildCatMesh(16096779,16020150,1096065,15680580);X.position.set(-5,0.45,4);e.add(X);c.push({id:"npc_boncuk",name:"Boncuk (Sarı Tekir Kedi 🐱)",role:"En Sadık Kedi Dostun",mesh:X,pos:new Y(-5,0.45,4),avatarIcon:"🐱",dialogue:["Miyav! Canım dostum Süper Ayı! 🐱💖","Kozmik İblis beni hedef alıyor ama senin tüm diyarları aşıp o 5 Kutsal Bal Kristali'ni toplayacağına yürekten inanıyorum miyav!","Bana bir şey olursa... Kozmik Boyuttaki o zindana gelip beni kurtaracağını biliyorum! Dualarım seninle Süper Ayı! 🌟"]});const pamukMesh=buildCatMesh(16315132,16020150,3718648,15485081);pamukMesh.position.set(-48,1.7,16);e.add(pamukMesh);c.push({id:"npc_pamuk",name:"Pamuk (Beyaz Yavru Kedi 🐱)",role:"Şifacı & Bahçıvan",mesh:pamukMesh,pos:new Y(-48,1.45,16),avatarIcon:"🤍",dialogue:["Mırrr... Çiçekli evimin bahçesine hoş geldin Süper Ayı! 🌸🐱","Zehirli kovanlar ve tapınaklar çok tehlikeli... Canın azalırsa hemen yanıma veya evimin içine gel, seni mırıltılarımla iyileştireyim miyav!","Topladığın her Kutsal Bal Kristali köyümüzdeki çiçekleri daha da güzelleştiriyor!"]});const golgeMesh=buildCatMesh(1976635,9647082,16436245,9133302);golgeMesh.position.set(-32,2.0,28);e.add(golgeMesh);c.push({id:"npc_golge",name:"Gölge (Ninja Kara Kedi 🐱‍👤)",role:"Gölge Shinobi Ustası",mesh:golgeMesh,pos:new Y(-32,1.45,28),avatarIcon:"🐾",dialogue:["Miyav... Ninja gölgeleri arasından selamlar Süper Ayı 🐾🐱‍👤","Orman Tapınağı'ndaki tüküren çiçekler ve dar kütük parkurları çok sinsidir. Zamanlamanı iyi ayarla!","Kutsal Kristalleri taşıyan Boss'ların zayıf anlarını bekle ve kedi pençeni konuştur!"]});const dedeMesh=buildCatMesh(9133302,16020150,16436245,3718648);dedeMesh.position.set(0,0.45,-6);dedeMesh.scale.set(1.3,1.3,1.3);e.add(dedeMesh);c.push({id:"npc_dede_ayi",name:"Dede Ayı (Köy Muhtarı 🧔🐻)",role:"Köyün Bilge Muhtarı",mesh:dedeMesh,pos:new Y(0,0.45,-6),avatarIcon:"🧔",dialogue:["Hoş geldin torunum Süper Ayı! Artık kedi dostlarımızın vücutları ve evlerin içi pırıl pırıl!","Orman Tapınağı'na rahatça tırmanabilmen için de harika taş basamaklar ekledik!","Kötü güçler evrene saldırdığında tüm köy halkı arkanda duracak!"]});const firinciMesh=buildCatMesh(15124119,16020150,1096065,1483594);firinciMesh.position.set(-38,1.2,-7);e.add(firinciMesh);c.push({id:"npc_firinci",name:"Tonton Fırıncı Ayı (Fırıncı 🍞🐻)",role:"Lezzetli Bal Ekmeği Ustası",mesh:firinciMesh,pos:new Y(-38,1.1,-7),avatarIcon:"🍞",dialogue:["Fırın evimin kapısından içeri gir! Sıcacık taze bal ekmekleri pırıl pırıl masada seni bekliyor!","Maceralarına çıkmadan önce karnını doyur, bal ekmekleri sana güç verecek!"]});T("hub_easel_1",0,"Çizim 1: Orman Tapınağı & Mekanikler",-7,0,16,-Math.PI/6);T("hub_easel_2",1,"Çizim 2: Arı Kovanı Hardcore & Mor Ayı",-3,0,17.5,-Math.PI/16);T("hub_easel_3",2,"Çizim 3: Pelikan Ovaları & Gök Adaları",3,0,17.5,Math.PI/16);T("hub_easel_4",3,"Çizim 4: Tüküren Çiçek & Pelikan Burnu",7,0,16,Math.PI/6);T("hub_easel_5",4,"Çizim 5: 17:00 Ultra Mega Güncelleme",11,0,14,Math.PI/4);T("hub_easel_6",5,"Çizim 6: Kozmik Boyut & Boncuk (Kedi)",-11,0,14,-Math.PI/4);const W=new Le({color:9133302});R(20,.4,.4,0,3.8,17,W);R(.4,4,.4,-10,2,17,W);R(.4,4,.4,10,2,17,W);const oe=new yl(1.4,.25,12,24),xe=new Le({color:1096065,emissive:366185,emissiveIntensity:.8});_=new Me(oe,xe);_.position.set(0,-100,0);_.visible=!1;R(4,.4,4,0,.2,-45,v)}else if(r==="forest_temple"){y={ambientColor:932636,sunColor:11006928,fogColor:413243,skyColor:415558};x.set(0,1.5,25);addCheckpoint("ft_cp_1","1. Tapınak Avlusu Parkuru",0,1.5,25,!0);addCheckpoint("ft_cp_2","2. Sarmaşıklı Sütunlar Vadisi",0,12.1,1);addCheckpoint("ft_cp_3","3. Zehirli Spor Vadisi Zirvesi",0,25.2,-38);addCheckpoint("ft_cp_4","4. Orman Kanyonu Dar Kütükleri",0,37.2,-95);addCheckpoint("ft_cp_5","5. Sarmaşıklı İblis Tapınağı Arenası",0,21,-132);const z=new Le({color:4137733}),v=new Le({color:3365126}),U=new Le({color:1096065,emissive:292951,emissiveIntensity:.6}),N=new Le({color:1976635}),vineMat=new Le({color:2278750,emissive:1409085,emissiveIntensity:.4}),leafMat=new Le({color:1483594}),heartMat=new Le({color:15680580,emissive:14251782,emissiveIntensity:.9});R(12,2,8,0,-1,25,z);R(4,.4,4,0,.2,25,N);T("forest_easel_1",0,"Çizim 1: Orman Tapınağı Hardcore Parkur",-3.5,0,23,.2);T("forest_easel_4",3,"Çizim 4: Tüküren Zehir Çiçekleri",3.5,0,23,-.2);R(3,.5,2.5,0,.4,23,N);R(2.5,.5,2.5,0,1.2,21,N);R(2.5,.5,2.5,-2,2,19.5,N);R(2.2,.5,2.2,-3,2.8,18,N);R(2.2,.5,2.2,-4,3.6,16,N);R(2,.5,2,-5,4.4,14,N);b("temple_coin_0",-5,5.4,14,!1);R(2,.5,2,-2.5,5.2,12.5,N);R(1.8,.5,1.8,0,6,11,N);R(2,.5,2,2.5,6.8,9.5,N);R(2,.5,2,5,7.6,8,N);b("temple_coin_1",5,8.6,8,!1);R(2,.5,2,3.5,8.4,6,N);R(2,.5,2,2,9.2,4,N);R(2.2,.5,2.2,1,10,2.5,N);R(2.5,.5,2.5,0,10.8,1.5,N);R(4,1.2,4,0,11.5,1,v);b("temple_coin_2",0,12.8,1,!0);[new Y(-5,4.4,14),new Y(5,7.6,8),new Y(2,9.2,4)].forEach((j,te)=>{const se=new kt;se.position.copy(j);const H=new Me(new jt(.12,.15,.8,8),new Le({color:1409085}));H.position.y=.4;se.add(H);const I=new Me(new At(.4,10,10),new Le({color:15680580,emissive:10033947,emissiveIntensity:.4}));I.position.y=.8;se.add(I);e.add(se);o.push({id:`flower_${te}`,type:"flower_spitter",name:"Tüküren Zehir Çiçeği",mesh:se,pos:j.clone(),velocity:new Y,hp:20,maxHp:20,attackPower:6,isBoss:!1,attackCooldown:0,state:"patrol",animTimer:te*1.5})});R(2.5,.5,2.5,0,12.2,-.8,N);R(2.2,.5,2.2,0,12.9,-2,N);R(2.5,.8,2.5,0,13.5,-3,N);R(1.5,14,1.5,0,7,-3,N,!1,!0);R(80,1,100,0,-2,-50,U,!0);R(2.2,.5,2.2,-2,14.2,-5.5,N);R(2.2,.5,2.2,-4,15,-8,N);R(2.2,.5,2.2,-2,15.8,-11,N);R(2.2,.5,2.2,0,16.6,-13.5,N);R(2.2,.5,2.2,0,17.4,-15,N);b("temple_spore_coin_0",0,18.4,-15,!1);R(2.2,.5,2.2,2,18.2,-18,N);R(2.2,.5,2.2,4,19,-21,N);R(2.2,.5,2.2,2,19.8,-24,N);R(2.2,.5,2.2,0,20.6,-27,N);b("temple_spore_coin_1",0,21.6,-27,!1);R(2.2,.5,2.2,-1.5,21.4,-30,N);R(2.2,.5,2.2,-3,22.2,-33,N);R(2.2,.5,2.2,-2,23,-35,N);R(2.5,.5,2.5,-1,23.8,-36.5,N);R(4,1.2,4,0,24.6,-38,v);b("temple_spore_coin_2",0,26,-38,!0);[new Y(-4,15,-8),new Y(4,19,-21),new Y(-3,22.2,-33)].forEach((j,te)=>{const se=new kt;se.position.copy(j);const H=new Me(new jt(.12,.15,.8,8),new Le({color:1409085}));H.position.y=.4;se.add(H);const I=new Me(new At(.4,10,10),new Le({color:15680580,emissive:10033947,emissiveIntensity:.4}));I.position.y=.8;se.add(I);e.add(se);o.push({id:`spore_flower_${te}`,type:"flower_spitter",name:"Zehirli Spor Çiçeği",mesh:se,pos:j.clone(),velocity:new Y,hp:25,maxHp:25,attackPower:7,isBoss:!1,attackCooldown:0,state:"patrol",animTimer:te*1.2})});R(2.2,.5,2.2,-2,25.4,-41,N);R(2.2,.5,2.2,-4,26.2,-44.5,N);R(2.2,.5,2.2,-6,27,-48,N);R(2.2,.5,2.2,-8,27.8,-52,N);b("temple_canyon_coin_0",-8,28.8,-52,!1);R(2.2,.5,2.2,-5.5,28.6,-56,N);R(2.2,.5,2.2,-3,29.4,-60,N);R(2.2,.5,2.2,-.5,30.2,-64,N);R(2.2,.5,2.2,2,31,-68,N);b("temple_canyon_coin_1",2,32,-68,!1);R(2.2,.5,2.2,4,31.8,-72,N);R(2.2,.5,2.2,6,32.6,-76,N);R(2.2,.5,2.2,4,33.4,-80.5,N);R(2.2,.5,2.2,2,34.2,-85,N);b("temple_canyon_coin_2",2,35.2,-85,!1);R(2.2,.5,2.2,1,35,-89,N);R(2.5,.5,2.5,.5,35.8,-92.5,N);R(4,1.2,4,0,36.6,-95,v);b("temple_canyon_coin_3",0,38,-95,!0);R(2.5,.5,2.5,0,35.8,-98.5,N);R(2.2,.5,2.2,-2,34.8,-102,N);R(2.2,.5,2.2,-3,33.6,-105.5,N);R(2.2,.5,2.2,0,31.8,-110,N);R(2.2,.5,2.2,3,30,-115,N);R(2.2,.5,2.2,1.5,28,-119.5,N);R(2.2,.5,2.2,0,26,-124,N);R(2.5,.5,2.5,0,24,-128,N);R(3,.5,3,0,22,-130.5,N);R(12,2,12,0,20,-132,z);S(0,21,-132,22);R(36,2,36,0,18,-148,z);R(38,.4,38,0,18.2,-148,N);const vineBossGroup=new kt;vineBossGroup.position.set(0,19,-138);const trunkMesh=new Me(new jt(1.2,1.8,4.2,12),z);trunkMesh.position.y=2.1;vineBossGroup.add(trunkMesh);const heartMesh=new Me(new At(.8,12,12),heartMat);heartMesh.position.set(0,2.5,.9);vineBossGroup.add(heartMesh);for(let vIdx=0;vIdx<8;vIdx++){const angle=vIdx/8*Math.PI*2,vineCoil=new Me(new yl(1.4,.18,8,20),vineMat);vineCoil.position.set(Math.cos(angle)*.3,1.2+vIdx*.35,Math.sin(angle)*.3);vineCoil.rotation.x=Math.PI/3;vineCoil.rotation.y=angle;vineBossGroup.add(vineCoil)}const headMesh=new Me(new At(1.1,12,12),z);headMesh.position.y=4.4;vineBossGroup.add(headMesh);for(let lIdx=0;lIdx<6;lIdx++){const lAngle=lIdx/6*Math.PI*2,leafMesh=new Me(new Kr(.7,0),leafMat);leafMesh.position.set(Math.cos(lAngle)*.9,5.2,Math.sin(lAngle)*.9);leafMesh.rotation.z=-.4;leafMesh.rotation.y=lAngle;vineBossGroup.add(leafMesh)}const leftArm=new Me(new jt(.35,.25,3.5,8),vineMat);leftArm.position.set(-2,3.2,.5);leftArm.rotation.z=Math.PI/4;vineBossGroup.add(leftArm);const rightArm=new Me(new jt(.35,.25,3.5,8),vineMat);rightArm.position.set(2,3.2,.5);rightArm.rotation.z=-Math.PI/4;vineBossGroup.add(rightArm);e.add(vineBossGroup);o.push({id:"boss_vine_guardian",type:"vine_boss",name:"Sarmaşıklı Orman Muhafızı (Dev Boss 🌿)",mesh:vineBossGroup,pos:new Y(0,19,-138),velocity:new Y,hp:280,maxHp:280,attackPower:14,isBoss:!0,attackCooldown:0,state:"chase",animTimer:0})}else if(r==="beehive"){
   y = { ambientColor: 0x854d0e, sunColor: 0xfde047, fogColor: 0x451a03, skyColor: 0x78350f };
   x.set(0, 1.5, 42);
 
@@ -5236,8 +5460,8 @@ let y={ambientColor:16777215,sunColor:16774374,fogColor:12248829,skyColor:824626
 
   return{regionId:r,sceneGroup:e,colliders:n,collectibles:a,enemies:o,npcs:c,artEasels:u,jumpPads:h,soccerBall:m,goalArea:p,cagePrison:g,portalMesh:_,spawnPoint:x,lighting:y,checkpoints:checkpoints,bounds:bounds,invisibleWallMeshes:invisibleWallMeshes}
 }function qw(){const r=new kt;r.castShadow=!0;const e=new Na({color:9132587,roughness:.6}),n=new Le({color:13808780}),a=new Le({color:15123098}),o=new Le({color:1710618}),c=new Le({color:1120295}),u=new yi({color:16777215}),h=new Le({color:13805177}),m=new Le({color:7029286}),p=new At(.55,16,16);p.scale(1,1.15,.9);const g=new Me(p,e);g.position.y=.9,g.castShadow=!0,g.receiveShadow=!0,r.add(g);const _=new At(.42,14,14);_.scale(.85,.95,.4);const x=new Me(_,n);x.position.set(0,-.05,.35),g.add(x);const y=new kt;y.position.set(0,.65,.05),g.add(y);const T=new At(.46,16,16),R=new Me(T,e);R.castShadow=!0,y.add(R);const b=new At(.24,14,14);b.scale(1.1,.8,1);const S=new Me(b,a);S.position.set(0,-.08,.32),y.add(S);const k=new At(.08,10,10);k.scale(1.2,.8,1);const z=new Me(k,o);z.position.set(0,.04,.22),S.add(z);const v=new At(.075,12,12),U=new Me(v,c);U.position.set(-.16,.08,.38),y.add(U);const N=new Me(new At(.025,8,8),u);N.position.set(-.02,.025,.055),U.add(N);const B=new Me(v,c);B.position.set(.16,.08,.38),y.add(B);const A=new Me(new At(.025,8,8),u);A.position.set(-.02,.025,.055),B.add(A);const D=new At(.16,12,12);D.scale(1,1,.6);const V=new At(.1,10,10);V.scale(1,1,.4);const F=new Me(D,e);F.position.set(-.35,.38,0),F.rotation.z=.3,y.add(F);const j=new Me(V,h);j.position.set(0,0,.06),F.add(j);const te=new Me(D,e);te.position.set(.35,.38,0),te.rotation.z=-.3,y.add(te);const se=new Me(V,h);se.position.set(0,0,.06),te.add(se);const H=new kt;H.position.set(0,.25,.2),y.add(H);const I=new jt(.12,.14,.45,10),G=new At(.16,12,12);G.scale(1,.8,1.2);const Z=new kt;Z.position.set(-.55,.2,0),g.add(Z);const pe=new Me(I,e);pe.position.y=-.2,Z.add(pe);const X=new Me(G,m);X.position.set(0,-.4,.05),Z.add(X);const C=new kt;C.position.set(.55,.2,0),g.add(C);const W=new Me(I,e);W.position.y=-.2,C.add(W);const oe=new Me(G,m);oe.position.set(0,-.4,.05),C.add(oe);const xe=new kt;xe.position.set(.1,-.4,.2),C.add(xe);const Se=new jt(.14,.16,.4,10),Q=new At(.18,12,12);Q.scale(1,.6,1.4);const ae=new kt;ae.position.set(-.25,-.45,0),g.add(ae);const le=new Me(Se,e);le.position.y=-.20,ae.add(le);const Re=new Me(Q,m);Re.position.set(0,-.38,.05),ae.add(Re);const Ce=new kt;Ce.position.set(.25,-.45,0),g.add(Ce);const Ue=new Me(Se,e);Ue.position.y=-.20,Ce.add(Ue);const ut=new Me(Q,m);ut.position.set(0,-.38,.05),Ce.add(ut);const Ye=new kt;return Ye.position.set(0,.35,-.45),g.add(Ye),{root:r,body:g,head:y,leftArm:Z,rightArm:C,leftLeg:ae,rightLeg:Ce,capeGroup:Ye,weaponAnchor:xe,headAnchor:H,furMat:e,bellyMat:n,muzzleMat:a,pawMat:m,earInnerMat:h,eyeMat:c,updateSkin:qe=>{e.color.setHex(qe.furColor),n.color.setHex(qe.bellyColor),a.color.setHex(qe.muzzleColor),m.color.setHex(qe.pawColor),h.color.setHex(qe.earInnerColor),qe.materialType==="gold"?(e.metalness=.85,e.roughness=.2,e.emissive.setHex(11817737),e.emissiveIntensity=.35):qe.materialType==="magma"?(e.metalness=.2,e.roughness=.5,e.emissive.setHex(14251782),e.emissiveIntensity=.55):qe.materialType==="cyber"?(e.metalness=.9,e.roughness=.2,e.emissive.setHex(165063),e.emissiveIntensity=.45):qe.materialType==="shiny"?(e.metalness=.5,e.roughness=.3,e.emissive.setHex(8141549),e.emissiveIntensity=.45):(e.metalness=0,e.roughness=.65,e.emissive.setHex(0),e.emissiveIntensity=0)},updateEquipVisuals:qe=>{for(;H.children.length>0;)H.remove(H.children[0]);for(;Ye.children.length>0;)Ye.remove(Ye.children[0]);for(;xe.children.length>0;)xe.remove(xe.children[0]);const at=qe.head;if(at)if(at.meshType==="beak"){const Ke=new Pn(.18,.7,8);Ke.rotateX(Math.PI/2);const st=new Le({color:16347926}),q=new Me(Ke,st);q.position.set(0,-.3,.25),H.add(q)}else if(at.meshType==="horns"){const Ke=new Pn(.1,.4,6),st=new Le({color:8141549,emissive:3018853,emissiveIntensity:.4}),q=new Me(Ke,st);q.position.set(-.25,.2,-.1),q.rotation.z=-.4,q.rotation.x=-.2,H.add(q);const et=new Me(Ke,st);et.position.set(.25,.2,-.1),et.rotation.z=.4,et.rotation.x=-.2,H.add(et)}else if(at.meshType==="crown"){const Ke=new jt(.38,.32,.22,5,1,!0),st=new Na({color:16436245,metalness:.8,roughness:.2,emissive:13273604,emissiveIntensity:.4,side:Li}),q=new Me(Ke,st);q.position.set(0,.35,0);const et=new Kr(.08),ye=new yi({color:15680580}),L=new Me(et,ye);L.position.set(0,.05,.35),q.add(L),H.add(q)}else if(at.meshType==="pirate"){const Ke=new jt(.6,.5,.12,3),st=new jt(.28,.32,.28,12),q=new Le({color:1579035}),et=new Le({color:16436245}),ye=new Me(Ke,q);ye.position.set(0,.32,0),ye.rotation.y=Math.PI/3;const L=new Me(st,q);L.position.y=.15,ye.add(L);const w=new Me(new yl(.3,.03,8,16),et);w.position.y=.05,w.rotation.x=Math.PI/2,ye.add(w),H.add(ye)}else if(at.meshType==="wizard"){const Ke=new Pn(.38,.75,12),st=new jt(.58,.58,.04,16),q=new Le({color:4405450}),et=new Me(st,q);et.position.set(0,.3,-.05);const ye=new Me(Ke,q);ye.position.set(0,.38,-.05),ye.rotation.x=-.15,et.add(ye),H.add(et)}else if(at.meshType==="viking"){const Ke=new At(.48,12,12,0,Math.PI*2,0,Math.PI*.5),st=new Na({color:6583435,metalness:.7,roughness:.3}),q=new Me(Ke,st);q.position.set(0,.1,0);const et=new Pn(.08,.45,6),ye=new Le({color:16707722}),L=new Me(et,ye);L.position.set(-.38,.15,0),L.rotation.z=-.6,q.add(L);const w=new Me(et,ye);w.position.set(.38,.15,0),w.rotation.z=.6,q.add(w),H.add(q)}else if(at.meshType==="halo"){const Ke=new yl(.38,.04,8,24),st=new yi({color:16707722}),q=new Me(Ke,st);q.position.set(0,.62,0),q.rotation.x=Math.PI/2,H.add(q)}else{const Ke=new jt(.65,.65,.05,16),st=new jt(.35,.4,.25,16),q=new Le({color:16638023}),et=new Me(Ke,q);et.position.set(0,.25,-.1);const ye=new Me(st,q);ye.position.y=.15,et.add(ye),H.add(et)}const yt=qe.cape;if(yt)if(yt.meshType==="pelican_wings"||yt.meshType==="cosmic_wings"){const Ke=new g_;Ke.moveTo(0,0),Ke.lineTo(-1.1,.4),Ke.lineTo(-1.3,-.1),Ke.lineTo(-.7,-.4),Ke.lineTo(0,-.2);const st=yt.meshType==="cosmic_wings",q=new Dp(Ke),et=new Le({color:st?11032055:3718648,side:Li,emissive:st?7020968:165063,emissiveIntensity:.5}),ye=new Me(q,et);ye.rotation.y=.2,Ye.add(ye);const L=new Me(q,et);L.scale.set(-1,1,1),L.rotation.y=-.2,Ye.add(L)}else{let Ke=15680580,st=0,q=0;yt.meshType==="honey_cape"?(Ke=16498468,st=14251782,q=.4):yt.meshType==="fire_cape"?(Ke=16347926,st=14251782,q=.6):yt.meshType==="shadow_cape"&&(Ke=1973067,st=4405450,q=.3);const et=new Ml(.7,.85,4,4),ye=new Le({color:Ke,side:Li,emissive:st,emissiveIntensity:q}),L=new Me(et,ye);L.position.set(0,-.3,-.05),L.rotation.x=.2,Ye.add(L)}const xt=qe.weapon;if(xt&&xt.meshType!=="claws"){if(xt.meshType==="hammer"){const Ke=new jt(.06,.06,1.2,8),st=new Le({color:7877903}),q=new Me(Ke,st);q.rotation.x=Math.PI/2;const et=new Rn(.5,.5,.7),ye=new Na({color:10033947,roughness:.4}),L=new Me(et,ye);L.position.y=.5,L.rotation.x=-Math.PI/2,q.add(L);const w=new Pn(.08,.25,4),K=new Le({color:16707722}),ie=new Me(w,K);ie.position.set(0,.28,.2),L.add(ie);const ue=new Me(w,K);ue.position.set(0,.28,-.2),L.add(ue),xe.add(q)}else if(xt.meshType==="mace"){const Ke=new jt(.05,.05,1,8),st=new Le({color:4674921}),q=new Me(Ke,st);q.rotation.x=Math.PI/2;const et=new Su(.26),ye=new Le({color:1096065,emissive:366185,emissiveIntensity:.6}),L=new Me(et,ye);L.position.y=.45,q.add(L),xe.add(q)}else if(xt.meshType==="sword"){const Ke=new jt(.04,.04,.35,8),st=new Le({color:7877903}),q=new Me(Ke,st);q.rotation.x=Math.PI/2;const et=new Rn(.35,.06,.08),ye=new Na({color:16436245,metalness:.8,roughness:.2}),L=new Me(et,ye);L.position.y=.18,q.add(L);const w=new Rn(.12,.85,.03),K=new Na({color:16317180,metalness:.9,roughness:.1}),ie=new Me(w,K);ie.position.y=.62,q.add(ie),xe.add(q)}else if(xt.meshType==="fire_axe"){const Ke=new jt(.05,.05,1.1,8),st=new Le({color:2696484}),q=new Me(Ke,st);q.rotation.x=Math.PI/2;const et=new Rn(.4,.35,.06),ye=new Le({color:15357964,emissive:12730636,emissiveIntensity:.6}),L=new Me(et,ye);L.position.set(.18,.45,0),q.add(L),xe.add(q)}}},setAnimationState:(qe,at,yt)=>{if(g.position.y=.88,g.rotation.set(0,0,0),y.rotation.set(0,0,0),le.rotation.set(0,0,0),Ue.rotation.set(0,0,0),qe==="roll"){g.rotation.x=at*14,g.position.y=.55,Z.rotation.set(Math.PI/2,0,.4),C.rotation.set(Math.PI/2,0,-.4),ae.rotation.set(-Math.PI/2,0,0),Ce.rotation.set(-Math.PI/2,0,0);return}if(qe==="groundPound"){g.rotation.y=at*16,g.rotation.x=.3,Z.rotation.set(-Math.PI*.8,0,0),C.rotation.set(-Math.PI*.8,0,0),ae.rotation.set(.6,0,.3),Ce.rotation.set(.6,0,-.3);return}if(qe==="attack"){const Ke=Math.sin(at*25);C.rotation.set(-1.2+Ke*1.5,.4,-.2),Z.rotation.set(.4,0,.3),g.rotation.y=Ke*.5;return}if(qe==="glide"){Z.rotation.set(0,0,1.4),C.rotation.set(0,0,-1.4),ae.rotation.set(.4,0,.2),Ce.rotation.set(.4,0,-.2),g.rotation.x=.35+Math.sin(at*3)*.05;return}if(qe==="climb"){Z.rotation.set(-1.6+Math.sin(at*8)*.4,0,.3),C.rotation.set(-1.6-Math.sin(at*8)*.4,0,-.3),ae.rotation.set(.5+Math.cos(at*8)*.3,0,0),Ce.rotation.set(.5-Math.cos(at*8)*.3,0,0);return}if(!yt||qe==="jump"){Z.rotation.set(-1.8,0,.3),C.rotation.set(-1.8,0,-.3),ae.rotation.set(.6,0,.2),Ce.rotation.set(.2,0,-.2);return}if(qe==="run"){const st=Math.sin(at*10)*.45,q=Math.cos(at*10)*.45;ae.rotation.set(st,0,0),Ce.rotation.set(-st,0,0),Z.rotation.set(-q,0,.1),C.rotation.set(q,0,-.1),g.position.y=.88+Math.abs(Math.sin(at*10))*.05,g.rotation.z=Math.sin(at*10)*.04,g.rotation.x=.10;if(st>0){le.rotation.x=-st*.45}if(-st>0){Ue.rotation.x=st*.45}return}const xt=at*2.5;g.position.y=.88+Math.sin(xt)*.02,Z.rotation.set(Math.sin(xt)*.08,0,.12),C.rotation.set(Math.sin(xt)*.08,0,-.12),ae.rotation.set(0,0,0),Ce.rotation.set(0,0,0),y.rotation.y=Math.sin(at*.8)*.15}}}class Yw{constructor(e,n,a,o){this.animFrameId=null,this.currentRegion="hub",this.currentLevel=null,this.playerPos=new Y(0,1.5,5),this.isGrounded=!0,this.playerVel=new Y(0,0,0),this.playerRotY=0,this.isGrounded=!1,this.isGliding=!1,this.isRolling=!1,this.rollTimer=0,this.isAttacking=!1,this.attackTimer=0,this.isGroundPounding=!1,this.isClimbing=!1,this.jumpCount=0,this.tookDamageInCurrentRegion=!1,this.isPaused=!1,this.inputs={forward:!1,backward:!1,left:!1,right:!1,jump:!1,attack:!1,roll:!1,glide:!1},this.joystickX=0,this.joystickY=0,this.prevJumpKey=!1,this.prevAttackKey=!1,this.prevRollKey=!1,this.buttonAHeld=!1,this.buttonBHeld=!1,this.forwardBoostTimer=0,this.camYaw=0,this.camPitch=.35,this.camDist=6.5,this.isDraggingCam=!1,this.lastMouseX=0,this.lastMouseY=0,this.touchCamId=null,this.touchLastX=0,this.touchLastY=0,this.touchStartPinchDist=0,this.resizeObserver=null,this.particles=[],this.onResize=()=>{if(!this.container)return;const h=this.container.clientWidth||window.innerWidth||(typeof document<"u"?document.documentElement.clientWidth:800),m=this.container.clientHeight||window.innerHeight||(typeof document<"u"?document.documentElement.clientHeight:600);h<=0||m<=0||(this.camera.aspect=h/m,this.camera.updateProjectionMatrix(),this.renderer.setSize(h,m,!1),this.renderer.setPixelRatio((typeof window!=="undefined"&&window.__getSuperBearDpr)?window.__getSuperBearDpr():((typeof navigator!=="undefined"&&(/android|tablet|ipad/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)||navigator.maxTouchPoints>0))?1.0:Math.min(window.devicePixelRatio||1,1.5))))},this.onKeyDown=h=>{if(h.code==="Escape"||h.key==="Escape"){if(typeof window!=="undefined"){window.dispatchEvent(new CustomEvent("superbear:toggle-pause"));}return;}if(this.isPaused||(typeof window!=="undefined"&&window.__superBearPaused))return;switch(h.code){case"KeyW":case"ArrowUp":this.inputs.forward=!0;break;case"KeyS":case"ArrowDown":this.inputs.backward=!0;break;case"KeyA":case"ArrowLeft":this.inputs.left=!0;break;case"KeyD":case"ArrowRight":this.inputs.right=!0;break;case"Space":this.inputs.jump=!0;break;case"KeyB":case"KeyJ":case"KeyX":this.inputs.attack=!0;break;case"KeyC":case"ShiftLeft":case"KeyK":this.inputs.roll=!0;break;case"KeyE":this.checkInteract();break}},this.onKeyUp=h=>{switch(h.code){case"KeyW":case"ArrowUp":this.inputs.forward=!1;break;case"KeyS":case"ArrowDown":this.inputs.backward=!1;break;case"KeyA":case"ArrowLeft":this.inputs.left=!1;break;case"KeyD":case"ArrowRight":this.inputs.right=!1;break;case"Space":this.inputs.jump=!1;break;case"KeyB":case"KeyJ":case"KeyX":this.inputs.attack=!1;break;case"KeyC":case"ShiftLeft":case"KeyK":this.inputs.roll=!1;break}},this.container=e,this.stats={...n},this.equipped={...a},this.callbacks=o;const c=e.clientWidth||window.innerWidth||800,u=e.clientHeight||window.innerHeight||600;this.scene=new Vb,this.scene.background=new Rt(3718648),this.camera=new Di(60,c/u,0.25,350);const _isMobWv=((typeof navigator!=="undefined"&&(/android|tablet|ipad|iphone|ipod|wv|appcreator24/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)||navigator.maxTouchPoints>0))||(typeof window!=="undefined"&&window.__isAppCreator24));this.renderer=new Hw({antialias:!_isMobWv,alpha:!1,powerPreference:"high-performance"});this.renderer.setSize(c,u);this.renderer.setPixelRatio((typeof window!=="undefined"&&window.__getSuperBearDpr)?window.__getSuperBearDpr():(_isMobWv?1.0:Math.min(window.devicePixelRatio||1,1.5)));this.renderer.shadowMap.enabled=!_isMobWv;this.renderer.shadowMap.type=0;this.renderer.domElement.style.position="absolute";this.renderer.domElement.style.top="0";this.renderer.domElement.style.left="0";this.renderer.domElement.style.width="100%";this.renderer.domElement.style.height="100%";this.renderer.domElement.style.display="block";this.renderer.domElement.style.touchAction="none";this.container.innerHTML="";this.container.appendChild(this.renderer.domElement);this.ambientLight=new XS(16777215,_isMobWv?1.1:.9);this.scene.add(this.ambientLight);this.sunLight=new VS(16777215,_isMobWv?1.0:1.35);this.sunLight.position.set(20,40,20);this.sunLight.castShadow=!_isMobWv;this.sunLight.shadow.mapSize.width=512;this.sunLight.shadow.mapSize.height=512;if(typeof window!=="undefined"){window.__superBearSetShadowQuality=m=>{if(!this.renderer)return;if(m==="off"){this.renderer.shadowMap.enabled=!1;if(this.sunLight)this.sunLight.castShadow=!1;}else{this.renderer.shadowMap.enabled=!0;this.renderer.shadowMap.type=0;if(this.sunLight){this.sunLight.castShadow=!0;const sz=m==="high"?1024:512;this.sunLight.shadow.mapSize.width=sz;this.sunLight.shadow.mapSize.height=sz;}}}};this.sunLight.shadow.camera.near=.5,this.sunLight.shadow.camera.far=120,this.sunLight.shadow.camera.left=-35,this.sunLight.shadow.camera.right=35,this.sunLight.shadow.camera.top=35,this.sunLight.shadow.camera.bottom=-35,this.scene.add(this.sunLight),this.playerBear=qw(),this.playerBear.updateEquipVisuals(this.equipped),this.scene.add(this.playerBear.root),this.initEventListeners(),this.loadRegion("hub"),typeof ResizeObserver<"u"&&(this.resizeObserver=new ResizeObserver(()=>{this.onResize()}),this.resizeObserver.observe(this.container)),setTimeout(()=>this.onResize(),16),setTimeout(()=>this.onResize(),100),setTimeout(()=>this.onResize(),300),this.startLoop()}pause(){this.isPaused=!0,this.inputs.forward=!1,this.inputs.backward=!1,this.inputs.left=!1,this.inputs.right=!1,this.inputs.jump=!1,this.inputs.attack=!1,this.inputs.roll=!1,this.isDraggingCam=!1}resume(){this.isPaused=!1}setAnalogJoystick(e,n){this.joystickX=e,this.joystickY=n}rotateCamera(e,n){this.camYaw-=e,this.camPitch=Math.max(.08,Math.min(1.25,this.camPitch+n))}zoomCamera(e){this.camDist=Math.max(3.5,Math.min(14,this.camDist+e))}updateStats(e){this.stats={...e}}updateSkin(e){this.playerBear.updateSkin(e)}updateEquipment(e){this.equipped={...e},this.playerBear.updateEquipVisuals(this.equipped)}
-  spawnBossPortalForCurrentRegion(bossPos){let targetRegion="hub",targetName="Ayı Köyü (Ana Merkez Vadisi)",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-10)):new Y(0,2,-10);this.currentRegion==="forest_temple"?(targetRegion="pelican_plains",targetName="Pelikan Ovaları & Gök Adaları",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-15)):new Y(0,19,-155)):this.currentRegion==="pelican_plains"?(targetRegion="snow_desert",targetName="Karlı Dağlar & Donmuş Çöl",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-12)):new Y(0,38,-192)):this.currentRegion==="snow_desert"?(targetRegion="beehive",targetName="Vızıldıyan Bal Kovanı",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-12)):new Y(0,37,-208)):this.currentRegion==="beehive"?(targetRegion="volcano_cave",targetName="Volkanik Ejderha Mağarası (Dünya Bölümleri)",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-15)):new Y(0,17,-158)):this.currentRegion==="volcano_cave"?(targetRegion="underwater_palace",targetName="Antik Su Altı Kristal Sarayı",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-18)):new Y(0,18,-145)):this.currentRegion==="underwater_palace"?(targetRegion="dinosaur_world",targetName="Dinozorlar Çağı & T-Rex Vadisi",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-18)):new Y(0,20,-150)):this.currentRegion==="dinosaur_world"?(targetRegion="sugar_world",targetName="Sonsuz Şeker Dünyası & Jelibon Krallığı",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-18)):new Y(0,18,-140)):this.currentRegion==="sugar_world"?(targetRegion="jokerooms",targetName="Jokerooms (Şaka Odaları)",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-18)):new Y(0,18,-130)):this.currentRegion==="jokerooms"?(targetRegion="water_cave",targetName="14. Bölüm: Karanlık Su Mağarası & Su Ejderhası",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-18)):new Y(0,22,-160)):this.currentRegion==="water_cave"?(targetRegion="hub",targetName="Ayı Köyü (Ana Merkez Vadisi - Tüm Maceralar Tamamlandı!)",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-18)):new Y(0,20,-150)):(this.currentRegion==="bee_desert"||this.currentRegion==="space_realm")&&(targetRegion="hub",targetName="Ayı Köyü (Ana Merkez Vadisi - Tüm Maceralar Tamamlandı!)",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-18)):new Y(0,20,-150)),this.spawnBossPortal(targetRegion,portalPos,targetName)}spawnBossPortal(targetRegion,pos,regionName){if(!this.currentLevel)return;this.currentLevel.nextPortal&&this.currentLevel.nextPortal.mesh&&this.scene.remove(this.currentLevel.nextPortal.mesh);const group=new kt;group.position.copy(pos);const baseMesh=new Me(new jt(2.6,2.9,.5,24),new Na({color:16436245,emissive:13273604,emissiveIntensity:.6,metalness:.8,roughness:.2}));baseMesh.position.y=.25,baseMesh.receiveShadow=!0,group.add(baseMesh);const ringMesh=new Me(new yl(2.4,.28,16,32),new Na({color:3718648,emissive:3718648,emissiveIntensity:.9,metalness:.9,roughness:.1}));ringMesh.position.y=2.6,group.add(ringMesh);const vortexMesh=new Me(new yl(2.1,.06,16,24),new yi({color:11032055,wireframe:!0}));vortexMesh.position.y=2.6,vortexMesh.rotation.x=Math.PI/2,group.add(vortexMesh);const orbMesh=new Me(new At(.85,8,8),new yi({color:16707722,wireframe:!0}));orbMesh.position.y=2.6,group.add(orbMesh),this.scene.add(group),this.currentLevel.nextPortal={targetRegion:targetRegion,pos:pos.clone(),mesh:group,ringMesh:ringMesh,vortexMesh:vortexMesh,orbMesh:orbMesh,regionName:regionName,promptShown:!1,triggered:!1},this.spawnSparkleParticles(pos,50,3718648),window.St&&window.St.playGoalFanfare&&window.St.playGoalFanfare(),this.callbacks.onShowNotice(`🌀 AÇILAN PORTAL: Boss mağlup edildi! Arkanda "${regionName}" Portalı Açıldı! Portala yürü!`,"success")}loadRegion(e){if(typeof window!=="undefined"&&window.__superBearPhelixLevels&&(window.__superBearPhelixLevels.PHELIX_LEVEL_MAP?.[e]||(typeof e==="string"&&e.startsWith("phelix_")))){window.__superBearPhelixLevels.loadPhelixLevel(e);return;}if(typeof window!=="undefined"&&window.__superBearPhelixLevels&&window.__superBearPhelixLevels.cleanUpPhelixRealm){window.__superBearPhelixLevels.cleanUpPhelixRealm(this);}if(typeof window!=="undefined"&&window.__superBearPoneixLevels&&(window.__superBearPoneixLevels.PONEIX_LEVEL_MAP?.[e]||(typeof e==="string"&&e.startsWith("poneix_")))){window.__superBearPoneixLevels.loadPoneixLevel(e);return;}if(typeof window!=="undefined"&&window.__superBearPoneixLevels&&window.__superBearPoneixLevels.cleanUpPoneixRealm){window.__superBearPoneixLevels.cleanUpPoneixRealm(this);}this.currentLevel&&this.scene.remove(this.currentLevel.sceneGroup),this.currentRegion=e,this.tookDamageInCurrentRegion=!1,this.currentLevel=Ww(e),this.scene.add(this.currentLevel.sceneGroup);if(typeof window!=="undefined"&&window.__superBearPerformanceManager&&typeof window.__superBearPerformanceManager.optimizeScene==="function"){window.__superBearPerformanceManager.optimizeScene();}const n=this.currentLevel.lighting;this.ambientLight.color.setHex(n.ambientColor),this.sunLight.color.setHex(n.sunColor),this.scene.background=new Rt(n.skyColor),this.scene.fog=new wp(n.fogColor,e==="space_realm"?.015:.02);if(this.currentLevel&&this.currentLevel.spawnPoint)this.playerPos.copy(this.currentLevel.spawnPoint),this.playerVel.set(0,0,0),this.playerRotY=0,this.playerBear.root.position.set(this.playerPos.x, this.playerPos.y + 0.12, this.playerPos.z);const a=new Y(Math.sin(this.camYaw)*Math.cos(this.camPitch)*this.camDist,Math.sin(this.camPitch)*this.camDist+1.2,Math.cos(this.camYaw)*Math.cos(this.camPitch)*this.camDist);this.camera.position.copy(this.playerPos.clone().add(a)),this.camera.lookAt(this.playerPos.x,this.playerPos.y+1.1,this.playerPos.z),St.startMusic(e),this.callbacks.onRegionChange(e),e==="hub"&&this.spawnBossPortal("forest_temple",new Y(-14,2.4,-10),"Arı Kovanı Tapınağı")} initEventListeners(){window.addEventListener("resize",this.onResize),window.addEventListener("keydown",this.onKeyDown),window.addEventListener("keyup",this.onKeyUp),this.container.addEventListener("mousedown",e=>{this.isDraggingCam=!0,this.lastMouseX=e.clientX,this.lastMouseY=e.clientY}),window.addEventListener("mouseup",()=>{this.isDraggingCam=!1}),window.addEventListener("mousemove",e=>{if(!this.isDraggingCam)return;const n=e.clientX-this.lastMouseX,a=e.clientY-this.lastMouseY;this.lastMouseX=e.clientX,this.lastMouseY=e.clientY,this.rotateCamera(n*.005,a*.005)}),this.container.addEventListener("wheel",e=>{e.preventDefault(),this.zoomCamera(e.deltaY*.01)},{passive:!1})}triggerAction(e){e==="jump"&&this.handleJump(),e==="attack"&&this.handleAttack(),e==="roll"&&this.handleRoll(),e==="groundPound"&&this.handleGroundPound(),e==="interact"&&this.checkInteract()}setButtonState(e,n){e==="A"?(this.buttonAHeld=n,this.inputs.jump=n):e==="B"?(this.buttonBHeld=n,this.inputs.attack=n):e==="C"&&(this.inputs.roll=n),this.buttonAHeld&&this.buttonBHeld&&(this.forwardBoostTimer=.5)}handleJump(){this.isGrounded?(this.playerVel.y=this.stats.jumpForce||10,this.isGrounded=!1,this.jumpCount=1,St.playJump(),this.spawnDustParticles(this.playerPos,5)):(this.stats.hasTripleJump&&this.jumpCount===2)?(this.playerVel.y=(this.stats.jumpForce||10)*1.08,this.jumpCount=3,St.playDoubleJump(),this.spawnSparkleParticles(this.playerPos,14,16763904),this.callbacks&&this.callbacks.onShowNotice&&this.callbacks.onShowNotice("✨ Havada 3. Zıplama (Triple Jump)!","info")):(this.stats.hasDoubleJump||this.stats.hasTripleJump)&&this.jumpCount===1&&(this.playerVel.y=(this.stats.jumpForce||10)*.95,this.jumpCount=2,St.playDoubleJump(),this.spawnSparkleParticles(this.playerPos,8,3718648))}handleAttack(){var c,u,h;if(this.isAttacking)return;this.isAttacking=!0,this.attackTimer=.35;const e=((c=this.equipped.weapon)==null?void 0:c.meshType)==="hammer"||((u=this.equipped.weapon)==null?void 0:u.id)==="weapon_hammer"||((h=this.equipped.weapon)==null?void 0:h.id)==="trex_hammer";try{e?(St.playHammerSlam&&St.playHammerSlam()):(St.playAttack&&St.playAttack())}catch(_err){}if(!this.currentLevel)return;const n=e?4.2:3,a=new Y(Math.sin(this.playerRotY),0,Math.cos(this.playerRotY)),o=this.playerPos.clone().add(a.clone().multiplyScalar(1.2));(this.currentLevel.enemies || []).forEach(m=>{if(m.hp<=0)return;const p=m.type==="bigfoot_boss"?7.8:m.isBoss?5.8:n;if(m.pos.distanceTo(o)<p){const _=this.isGrounded?1:1.6,x=Math.round(this.stats.attackPower*_);this.damageEnemy(m,x)}});if(this.currentLevel.soccerBall){const m=this.currentLevel.soccerBall;if(m.pos.distanceTo(o)<2.5){const p=a.clone().multiplyScalar(e?22:14);p.y=6,m.velocity.add(p),St.playBallKick(),this.spawnSparkleParticles(m.pos,10,16436245)}}}handleRoll(){if(this.isRolling)return;this.isRolling=!0,this.rollTimer=.45,St.playRoll();const e=new Y(Math.sin(this.playerRotY),0,Math.cos(this.playerRotY));this.playerVel.x=e.x*12,this.playerVel.z=e.z*12,this.spawnDustParticles(this.playerPos,8)}handleGroundPound(){this.isGrounded||(this.isGroundPounding=!0,this.playerVel.y=-18,this.playerVel.x=0,this.playerVel.z=0)}checkInteract(){if(!this.currentLevel)return;if(this.currentLevel.artEasels){const n=this.currentLevel.artEasels.find(a=>a.pos.distanceTo(this.playerPos)<4.2);if(n){St.playHoneyGem(),this.callbacks.onInspectDrawing&&this.callbacks.onInspectDrawing(n.pageIndex,n.title);return}}const e=(this.currentLevel.npcs||[]).find(n=>n.pos.distanceTo(this.playerPos)<3.5);if(e){St.playDialogueChirp(1.2),this.callbacks.onDialogueOpen(e);return}if(this.currentLevel&&this.currentLevel.nextPortal&&this.playerPos.distanceTo(this.currentLevel.nextPortal.pos)<4.5){const p=this.currentLevel.nextPortal;const isBossAlive=this.currentRegion!=="hub"&&((this.currentLevel.enemies||[]).some(e=>e&&e.hp>0&&e.state!=="dead"&&(e.isBoss||(e.name&&(e.name.toLowerCase().includes("boss")||e.name.toLowerCase().includes("lord")||e.name.toLowerCase().includes("kral")))||(e.type&&e.type.toLowerCase().includes("boss"))))||(typeof window!=="undefined"&&((window.foxBossInstance&&!window.foxBossInstance.isDead&&window.foxBossInstance.hp>0)||(window.fusionBossInstance&&!window.fusionBossInstance.isDead&&window.fusionBossInstance.hp>0))));if(isBossAlive){const now=Date.now();if(!p.__lastBossNoticeTimer||now-p.__lastBossNoticeTimer>2500){p.__lastBossNoticeTimer=now;this.callbacks&&this.callbacks.onShowNotice&&this.callbacks.onShowNotice("⚠️ Portaldan geçmek için önce Bölüm Boss'unu mağlup etmelisin! ⚔️","warning");}return;}this.spawnSparkleParticles(p.pos,35,3718648),this.callbacks.onShowNotice(`🌀 ${p.regionName} Bölgesine Geçiliyor...`,"success"),this.loadRegion(p.targetRegion);return}this.currentRegion==="hub"&&this.currentLevel.portalMesh&&this.currentLevel.portalMesh.position.distanceTo(this.playerPos)<3&&this.loadRegion("forest_temple")}damageEnemy(e,n){e.hp-=n,St.playDamage(),this.spawnSparkleParticles(e.pos,e.isBoss?18:12,e.isBoss?16007006:15680580),e.mesh&&(e.mesh.position.y+=.2,setTimeout(()=>{e.mesh&&e.hp>0&&(e.mesh.position.y-=.2)},100));const a=e.pos.clone().sub(this.playerPos).normalize(),o=e.isBoss?2:6;if(e.velocity.add(a.multiplyScalar(o)),e.hp<=0){e.state="dead";if(e.mesh){e.mesh.visible=!1;if(e.mesh.parent)e.mesh.parent.remove(e.mesh);this.scene.remove(e.mesh);}if(this.currentLevel&&this.currentLevel.enemies){const idx=this.currentLevel.enemies.indexOf(e);if(idx!==-1)this.currentLevel.enemies.splice(idx,1);}e.type==="bigfoot_boss"&&(this.callbacks.onQuestProgress("q_bigfoot_boss",1),this.callbacks.onQuestProgress("kill_bigfoot_boss",1)),this.callbacks.onQuestProgress("kill_"+e.type,1),this.callbacks.onQuestProgress("kill_pelican_boss",1),this.callbacks.onQuestProgress("boss_pelican_monarch",1),this.callbacks.onQuestProgress("q_pelican_boss",1);const c=e.type==="bigfoot_boss"?350:e.isBoss?250:25,u=e.type==="bigfoot_boss"?250:e.isBoss?150:10;if(this.stats.xp+=c,this.stats.coins+=u,e.isBoss)if(St.playBossRoar(),vh({particleCount:150,spread:90,origin:{y:.5}}),this.callbacks.onBossDefeated(e.id,this.currentRegion,!this.tookDamageInCurrentRegion),e.type==="bigfoot_boss"){this.callbacks.onShowNotice("🏆 Efsanevi KOCA AYAK (Bigfoot) Mağlup Edildi! (+250 Altın, +350 XP, +5 Mücevher)","success");for(let h=0;h<5;h++)this.stats.honeyGems+=1}else{this.callbacks.onShowNotice(`🏆 ${e.name} Mağlup Edildi! (+${u} Altın, +${c} XP)`,"success");for(let h=0;h<3;h++)this.stats.honeyGems+=1}this.checkLevelUp(),this.callbacks.onStatsUpdate(this.stats),this.spawnBossPortalForCurrentRegion(e.pos)}}damagePlayer(e){if(this.isRolling)return;this.tookDamageInCurrentRegion=!0;const n=Math.max(1,e-this.stats.defense*.5);this.stats.currentHp=Math.max(0,this.stats.currentHp-n);St.playDamage();this.spawnSparkleParticles(this.playerPos,10,14251782);if(this.callbacks&&this.callbacks.onStatsUpdate)this.callbacks.onStatsUpdate(this.stats);if(this.stats.currentHp<=0){this.playerDeath("💀 Yenildin! Kontrol noktasına dönülüyor...");}}
-playerDeath(reason="💀 Suya / Boşluğa Düştün! Kontrol Noktasına Dönülüyor..."){this.tookDamageInCurrentRegion=!0;this.stats.currentHp=0;St.playDamage();this.spawnSparkleParticles(this.playerPos,20,14251782);if(this.callbacks&&this.callbacks.onStatsUpdate)this.callbacks.onStatsUpdate(this.stats);if(this.callbacks&&this.callbacks.onShowNotice)this.callbacks.onShowNotice(reason,"warn");const allCps=(this.currentLevel&&this.currentLevel.checkpoints)||[];let actCp=null;for(let i=allCps.length-1;i>=0;i--){if(allCps[i]&&allCps[i].active&&allCps[i].pos){actCp=allCps[i];break;}}const tgt=actCp&&actCp.pos?actCp.pos:(this.currentLevel&&this.currentLevel.spawnPoint?this.currentLevel.spawnPoint:null);if(tgt){this.playerPos.copy(tgt);this.playerPos.y+=1.0;}this.playerVel.set(0,0,0);this.stats.currentHp=this.stats.maxHp;if(this.callbacks&&this.callbacks.onStatsUpdate)this.callbacks.onStatsUpdate(this.stats);}checkLevelUp(){this.stats.xp>=this.stats.xpToNext&&(this.stats.level+=1,this.stats.xp-=this.stats.xpToNext,this.stats.xpToNext=Math.round(this.stats.xpToNext*1.5),this.stats.skillPoints+=1,this.stats.maxHp+=10,this.stats.currentHp=this.stats.maxHp,St.playLevelUp(),vh({particleCount:60,spread:50,origin:{y:.7}}),this.callbacks.onShowNotice(`⭐ Seviye Atladın! Lv.${this.stats.level} (+1 Beceri Puanı)`,"success"))}spawnDustParticles(e,n){if(!this._dGeo){this._dGeo=new At(.12,4,4);this._dGeo._s=!0;}if(!this._dMat){this._dMat=new yi({color:13948120});this._dMat._s=!0;}const _lim=(typeof navigator!=="undefined"&&(/android|tablet|ipad/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)))?Math.min(n,3):n;for(let c=0;c<_lim;c++){const u=new Me(this._dGeo,this._dMat);u.position.set(e.x+(Math.random()-.5)*.6,e.y+.1,e.z+(Math.random()-.5)*.6),this.scene.add(u),this.particles.push({mesh:u,vel:new Y((Math.random()-.5)*3,Math.random()*2+1,(Math.random()-.5)*3),life:.35,maxLife:.35})}}spawnSparkleParticles(e,n,a){if(!this._sGeo){this._sGeo=new At(.1,4,4);this._sGeo._s=!0;}this._sMats=this._sMats||{};if(!this._sMats[a]){this._sMats[a]=new yi({color:a});this._sMats[a]._s=!0;}const _mat=this._sMats[a];const _lim=(typeof navigator!=="undefined"&&(/android|tablet|ipad/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)))?Math.min(n,4):n;for(let u=0;u<_lim;u++){const h=new Me(this._sGeo,_mat);h.position.copy(e),this.scene.add(h),this.particles.push({mesh:h,vel:new Y((Math.random()-.5)*6,Math.random()*5+2,(Math.random()-.5)*6),life:.45,maxLife:.45})}}startLoop(){let e=performance.now();let _lastTick=0;const _isMob=(typeof navigator!=="undefined"&&(/android|tablet|ipad|iphone|ipod|wv|appcreator24/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)||navigator.maxTouchPoints>0));const _targetFPS=_isMob?35:60;const _minInterval=1000/_targetFPS;const n=a=>{try{const _delta=a-_lastTick;if(_delta<_minInterval-1){this.animFrameId=requestAnimationFrame(n);return;}_lastTick=a;const o=Math.min((a-e)/1e3,.1);e=a;const isMOpen=typeof window!=="undefined"&&(window.__superBearPaused||window.__superBearModalOpen);const isDocHidden=typeof document!=="undefined"&&document.hidden;if(!this.isPaused&&!isMOpen&&!isDocHidden){this.update(o,a/1e3);this.renderer.render(this.scene,this.camera)}}catch(o){console.error("Game tick/render error:",o)}this.animFrameId=requestAnimationFrame(n)};this.animFrameId=requestAnimationFrame(n)}update(e,n){var b,S,k,z;if(!this.currentLevel||!this.playerPos||!this.playerVel||!this.camera)return;this.inputs.jump&&!this.prevJumpKey&&this.handleJump(),this.prevJumpKey=this.inputs.jump,this.inputs.attack&&!this.prevAttackKey&&this.handleAttack(),this.prevAttackKey=this.inputs.attack,this.inputs.roll&&!this.prevRollKey&&(!this.isGrounded&&this.inputs.attack&&this.stats.hasGroundPound?this.handleGroundPound():this.handleRoll()),this.prevRollKey=this.inputs.roll,this.isGliding=!this.isGrounded&&this.inputs.jump&&this.stats.hasGlide&&this.playerVel.y<0,this.rollTimer>0&&(this.rollTimer-=e,this.rollTimer<=0&&(this.isRolling=!1)),this.attackTimer>0&&(this.attackTimer-=e,this.attackTimer<=0&&(this.isAttacking=!1)),this.forwardBoostTimer>0&&(this.forwardBoostTimer-=e);const a=this.currentRegion==="space_realm"?-12:this.isGliding?-4:-24;this.isGrounded||(this.playerVel.y+=a*e);const o=this.inputs.jump&&this.inputs.attack||this.buttonAHeld&&this.buttonBHeld||this.forwardBoostTimer>0;let c=(this.inputs.right?1:0)-(this.inputs.left?1:0)+this.joystickX,u=(this.inputs.forward?1:0)-(this.inputs.backward?1:0)-this.joystickY;o&&(u=1);const h=Math.sqrt(c*c+u*u),m=h>.05;if(m&&!this.isRolling&&!this.isGroundPounding){const v=Math.min(1,h),U=c/h,N=u/h,B=Math.sin(this.camYaw),A=Math.cos(this.camYaw),D=U*A-N*B,V=-U*B-N*A,F=(this.stats.moveSpeed||7)*v;this.playerVel.x=D*F,this.playerVel.z=V*F;let te=Math.atan2(D,V)-this.playerRotY;for(;te<-Math.PI;)te+=Math.PI*2;for(;te>Math.PI;)te-=Math.PI*2;this.playerRotY+=te*Math.min(1,e*16)}else this.isRolling||(this.playerVel.x*=.8,this.playerVel.z*=.8);const p=this.playerPos.clone();this.playerPos.x+=this.playerVel.x*e,this.playerPos.y+=this.playerVel.y*e,this.playerPos.z+=this.playerVel.z*e;
+  spawnBossPortalForCurrentRegion(bossPos){let targetRegion="hub",targetName="Ayı Köyü (Ana Merkez Vadisi)",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-10)):new Y(0,2,-10);this.currentRegion==="forest_temple"?(targetRegion="pelican_plains",targetName="Pelikan Ovaları & Gök Adaları",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-15)):new Y(0,19,-155)):this.currentRegion==="pelican_plains"?(targetRegion="snow_desert",targetName="Karlı Dağlar & Donmuş Çöl",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-12)):new Y(0,38,-192)):this.currentRegion==="snow_desert"?(targetRegion="beehive",targetName="Vızıldıyan Bal Kovanı",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-12)):new Y(0,37,-208)):this.currentRegion==="beehive"?(targetRegion="volcano_cave",targetName="Volkanik Ejderha Mağarası (Dünya Bölümleri)",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-15)):new Y(0,17,-158)):this.currentRegion==="volcano_cave"?(targetRegion="underwater_palace",targetName="Antik Su Altı Kristal Sarayı",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-18)):new Y(0,18,-145)):this.currentRegion==="underwater_palace"?(targetRegion="dinosaur_world",targetName="Dinozorlar Çağı & T-Rex Vadisi",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-18)):new Y(0,20,-150)):this.currentRegion==="dinosaur_world"?(targetRegion="sugar_world",targetName="Sonsuz Şeker Dünyası & Jelibon Krallığı",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-18)):new Y(0,18,-140)):this.currentRegion==="sugar_world"?(targetRegion="jokerooms",targetName="Jokerooms (Şaka Odaları)",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-18)):new Y(0,18,-130)):this.currentRegion==="jokerooms"?(targetRegion="water_cave",targetName="14. Bölüm: Karanlık Su Mağarası & Su Ejderhası",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-18)):new Y(0,22,-160)):this.currentRegion==="water_cave"?(targetRegion="hub",targetName="Ayı Köyü (Ana Merkez Vadisi - Tüm Maceralar Tamamlandı!)",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-18)):new Y(0,20,-150)):(this.currentRegion==="bee_desert"||this.currentRegion==="space_realm")&&(targetRegion="hub",targetName="Ayı Köyü (Ana Merkez Vadisi - Tüm Maceralar Tamamlandı!)",portalPos=bossPos?bossPos.clone().add(new Y(0,0,-18)):new Y(0,20,-150)),this.spawnBossPortal(targetRegion,portalPos,targetName)}spawnBossPortal(targetRegion,pos,regionName){if(!this.currentLevel)return;this.currentLevel.nextPortal&&this.currentLevel.nextPortal.mesh&&this.scene.remove(this.currentLevel.nextPortal.mesh);const group=new kt;group.position.copy(pos);const baseMesh=new Me(new jt(2.6,2.9,.5,24),new Na({color:16436245,emissive:13273604,emissiveIntensity:.6,metalness:.8,roughness:.2}));baseMesh.position.y=.25,baseMesh.receiveShadow=!0,group.add(baseMesh);const ringMesh=new Me(new yl(2.4,.28,16,32),new Na({color:3718648,emissive:3718648,emissiveIntensity:.9,metalness:.9,roughness:.1}));ringMesh.position.y=2.6,group.add(ringMesh);const vortexMesh=new Me(new yl(2.1,.06,16,24),new yi({color:11032055,wireframe:!0}));vortexMesh.position.y=2.6,vortexMesh.rotation.x=Math.PI/2,group.add(vortexMesh);const orbMesh=new Me(new At(.85,8,8),new yi({color:16707722,wireframe:!0}));orbMesh.position.y=2.6,group.add(orbMesh),this.scene.add(group),this.currentLevel.nextPortal={targetRegion:targetRegion,pos:pos.clone(),mesh:group,ringMesh:ringMesh,vortexMesh:vortexMesh,orbMesh:orbMesh,regionName:regionName,promptShown:!1,triggered:!1},this.spawnSparkleParticles(pos,50,3718648),window.St&&window.St.playGoalFanfare&&window.St.playGoalFanfare(),this.callbacks.onShowNotice(`🌀 AÇILAN PORTAL: Boss mağlup edildi! Arkanda "${regionName}" Portalı Açıldı! Portala yürü!`,"success")}loadRegion(e){if(typeof window!=="undefined"&&window.__superBearPhelixLevels&&(window.__superBearPhelixLevels.PHELIX_LEVEL_MAP?.[e]||(typeof e==="string"&&e.startsWith("phelix_")))){window.__superBearPhelixLevels.loadPhelixLevel(e);return;}if(typeof window!=="undefined"&&window.__superBearPhelixLevels&&window.__superBearPhelixLevels.cleanUpPhelixRealm){window.__superBearPhelixLevels.cleanUpPhelixRealm(this);}if(typeof window!=="undefined"&&window.__superBearPoneixLevels&&(window.__superBearPoneixLevels.PONEIX_LEVEL_MAP?.[e]||(typeof e==="string"&&e.startsWith("poneix_")))){window.__superBearPoneixLevels.loadPoneixLevel(e);return;}if(typeof window!=="undefined"&&window.__superBearPoneixLevels&&window.__superBearPoneixLevels.cleanUpPoneixRealm){window.__superBearPoneixLevels.cleanUpPoneixRealm(this);}this.currentLevel&&this.scene.remove(this.currentLevel.sceneGroup),this.currentRegion=e,this.tookDamageInCurrentRegion=!1,this.currentLevel=Ww(e),this.scene.add(this.currentLevel.sceneGroup);if(typeof window!=="undefined"&&window.__superBearPerformanceManager&&typeof window.__superBearPerformanceManager.optimizeScene==="function"){window.__superBearPerformanceManager.optimizeScene();}const n=this.currentLevel.lighting;this.ambientLight.color.setHex(n.ambientColor),this.sunLight.color.setHex(n.sunColor),this.scene.background=new Rt(n.skyColor),this.scene.fog=new wp(n.fogColor,e==="space_realm"?.015:.02);if(this.currentLevel&&this.currentLevel.spawnPoint)this.playerPos.copy(this.currentLevel.spawnPoint),this.playerVel.set(0,0,0),this.playerRotY=0,this.playerBear.root.position.set(this.playerPos.x, this.playerPos.y + 0.12, this.playerPos.z);const a=new Y(Math.sin(this.camYaw)*Math.cos(this.camPitch)*this.camDist,Math.sin(this.camPitch)*this.camDist+1.2,Math.cos(this.camYaw)*Math.cos(this.camPitch)*this.camDist);this.camera.position.copy(this.playerPos.clone().add(a)),this.camera.lookAt(this.playerPos.x,this.playerPos.y+1.1,this.playerPos.z),St.startMusic(e),this.callbacks.onRegionChange(e)} initEventListeners(){window.addEventListener("resize",this.onResize),window.addEventListener("keydown",this.onKeyDown),window.addEventListener("keyup",this.onKeyUp),this.container.addEventListener("mousedown",e=>{this.isDraggingCam=!0,this.lastMouseX=e.clientX,this.lastMouseY=e.clientY}),window.addEventListener("mouseup",()=>{this.isDraggingCam=!1}),window.addEventListener("mousemove",e=>{if(!this.isDraggingCam)return;const n=e.clientX-this.lastMouseX,a=e.clientY-this.lastMouseY;this.lastMouseX=e.clientX,this.lastMouseY=e.clientY,this.rotateCamera(n*.005,a*.005)}),this.container.addEventListener("wheel",e=>{e.preventDefault(),this.zoomCamera(e.deltaY*.01)},{passive:!1})}triggerAction(e){e==="jump"&&this.handleJump(),e==="attack"&&this.handleAttack(),e==="roll"&&this.handleRoll(),e==="groundPound"&&this.handleGroundPound(),e==="interact"&&this.checkInteract()}setButtonState(e,n){e==="A"?(this.buttonAHeld=n,this.inputs.jump=n):e==="B"?(this.buttonBHeld=n,this.inputs.attack=n):e==="C"&&(this.inputs.roll=n),this.buttonAHeld&&this.buttonBHeld&&(this.forwardBoostTimer=.5)}handleJump(){this.isGrounded?(this.playerVel.y=this.stats.jumpForce||10,this.isGrounded=!1,this.jumpCount=1,St.playJump(),this.spawnDustParticles(this.playerPos,5)):(this.stats.hasTripleJump&&this.jumpCount===2)?(this.playerVel.y=(this.stats.jumpForce||10)*1.08,this.jumpCount=3,St.playDoubleJump(),this.spawnSparkleParticles(this.playerPos,14,16763904),this.callbacks&&this.callbacks.onShowNotice&&this.callbacks.onShowNotice("✨ Havada 3. Zıplama (Triple Jump)!","info")):(this.stats.hasDoubleJump||this.stats.hasTripleJump)&&this.jumpCount===1&&(this.playerVel.y=(this.stats.jumpForce||10)*.95,this.jumpCount=2,St.playDoubleJump(),this.spawnSparkleParticles(this.playerPos,8,3718648))}handleAttack(){var c,u,h;if(this.isAttacking)return;this.isAttacking=!0,this.attackTimer=.35;const e=((c=this.equipped.weapon)==null?void 0:c.meshType)==="hammer"||((u=this.equipped.weapon)==null?void 0:u.id)==="weapon_hammer"||((h=this.equipped.weapon)==null?void 0:h.id)==="trex_hammer";try{e?(St.playHammerSlam&&St.playHammerSlam()):(St.playAttack&&St.playAttack())}catch(_err){}if(!this.currentLevel)return;const n=e?4.2:3,a=new Y(Math.sin(this.playerRotY),0,Math.cos(this.playerRotY)),o=this.playerPos.clone().add(a.clone().multiplyScalar(1.2));(this.currentLevel.enemies || []).forEach(m=>{if(m.hp<=0)return;const p=m.type==="bigfoot_boss"?7.8:m.isBoss?5.8:n;if(m.pos.distanceTo(o)<p){const _=this.isGrounded?1:1.6,x=Math.round(this.stats.attackPower*_);this.damageEnemy(m,x)}});if(this.currentLevel.soccerBall){const m=this.currentLevel.soccerBall;if(m.pos.distanceTo(o)<2.5){const p=a.clone().multiplyScalar(e?22:14);p.y=6,m.velocity.add(p),St.playBallKick(),this.spawnSparkleParticles(m.pos,10,16436245)}}}handleRoll(){if(this.isRolling)return;this.isRolling=!0,this.rollTimer=.45,St.playRoll();const e=new Y(Math.sin(this.playerRotY),0,Math.cos(this.playerRotY));this.playerVel.x=e.x*12,this.playerVel.z=e.z*12,this.spawnDustParticles(this.playerPos,8)}handleGroundPound(){this.isGrounded||(this.isGroundPounding=!0,this.playerVel.y=-18,this.playerVel.x=0,this.playerVel.z=0)}checkInteract(){if(!this.currentLevel)return;if(this.currentLevel.artEasels){const n=this.currentLevel.artEasels.find(a=>a.pos.distanceTo(this.playerPos)<4.2);if(n){St.playHoneyGem(),this.callbacks.onInspectDrawing&&this.callbacks.onInspectDrawing(n.pageIndex,n.title);return}}const e=(this.currentLevel.npcs||[]).find(n=>n.pos.distanceTo(this.playerPos)<3.5);if(e){St.playDialogueChirp(1.2),this.callbacks.onDialogueOpen(e);return}if(this.currentLevel&&this.currentLevel.nextPortal&&this.playerPos.distanceTo(this.currentLevel.nextPortal.pos)<4.5){const p=this.currentLevel.nextPortal;const isBossAlive=this.currentRegion!=="hub"&&((this.currentLevel.enemies||[]).some(e=>e&&e.hp>0&&e.state!=="dead"&&(e.isBoss||(e.name&&(e.name.toLowerCase().includes("boss")||e.name.toLowerCase().includes("lord")||e.name.toLowerCase().includes("kral")))||(e.type&&e.type.toLowerCase().includes("boss"))))||(typeof window!=="undefined"&&((window.foxBossInstance&&!window.foxBossInstance.isDead&&window.foxBossInstance.hp>0)||(window.fusionBossInstance&&!window.fusionBossInstance.isDead&&window.fusionBossInstance.hp>0))));if(isBossAlive){const now=Date.now();if(!p.__lastBossNoticeTimer||now-p.__lastBossNoticeTimer>2500){p.__lastBossNoticeTimer=now;this.callbacks&&this.callbacks.onShowNotice&&this.callbacks.onShowNotice("⚠️ Portaldan geçmek için önce Bölüm Boss'unu mağlup etmelisin! ⚔️","warning");}return;}this.spawnSparkleParticles(p.pos,35,3718648),this.callbacks.onShowNotice(`🌀 ${p.regionName} Bölgesine Geçiliyor...`,"success"),this.loadRegion(p.targetRegion);return}this.currentRegion==="hub"&&this.currentLevel.portalMesh&&this.currentLevel.portalMesh.position.distanceTo(this.playerPos)<3&&this.loadRegion("forest_temple")}damageEnemy(e,n){e.hp-=n,St.playDamage(),this.spawnSparkleParticles(e.pos,e.isBoss?18:12,e.isBoss?16007006:15680580),e.mesh&&(e.mesh.position.y+=.2,setTimeout(()=>{e.mesh&&e.hp>0&&(e.mesh.position.y-=.2)},100));const a=e.pos.clone().sub(this.playerPos).normalize(),o=e.isBoss?2:6;if(e.velocity.add(a.multiplyScalar(o)),e.hp<=0){e.state="dead";if(e.mesh){e.mesh.visible=!1;if(e.mesh.parent)e.mesh.parent.remove(e.mesh);this.scene.remove(e.mesh);}if(this.currentLevel&&this.currentLevel.enemies){const idx=this.currentLevel.enemies.indexOf(e);if(idx!==-1)this.currentLevel.enemies.splice(idx,1);}e.type==="bigfoot_boss"&&(this.callbacks.onQuestProgress("q_bigfoot_boss",1),this.callbacks.onQuestProgress("kill_bigfoot_boss",1)),this.callbacks.onQuestProgress("kill_"+e.type,1),this.callbacks.onQuestProgress("kill_pelican_boss",1),this.callbacks.onQuestProgress("boss_pelican_monarch",1),this.callbacks.onQuestProgress("q_pelican_boss",1);const c=e.type==="bigfoot_boss"?350:e.isBoss?250:25,u=e.type==="bigfoot_boss"?250:e.isBoss?150:10;if(this.stats.xp+=c,this.stats.coins+=u,e.isBoss)if(St.playBossRoar(),vh({particleCount:150,spread:90,origin:{y:.5}}),this.callbacks.onBossDefeated(e.id,this.currentRegion,!this.tookDamageInCurrentRegion),e.type==="bigfoot_boss"){this.callbacks.onShowNotice("🏆 Efsanevi KOCA AYAK (Bigfoot) Mağlup Edildi! (+250 Altın, +350 XP, +5 Mücevher)","success");for(let h=0;h<5;h++)this.stats.honeyGems+=1}else{this.callbacks.onShowNotice(`🏆 ${e.name} Mağlup Edildi! (+${u} Altın, +${c} XP)`,"success");for(let h=0;h<3;h++)this.stats.honeyGems+=1}this.checkLevelUp(),this.callbacks.onStatsUpdate(this.stats),this.spawnBossPortalForCurrentRegion(e.pos)}}damagePlayer(e){if(this.isRolling)return;this.tookDamageInCurrentRegion=!0;const n=Math.max(1,e-this.stats.defense*.5);this.stats.currentHp=Math.max(0,this.stats.currentHp-n);St.playDamage();this.spawnSparkleParticles(this.playerPos,10,14251782);if(this.callbacks&&this.callbacks.onStatsUpdate)this.callbacks.onStatsUpdate(this.stats);if(this.stats.currentHp<=0){this.playerDeath("💀 Yenildin! Kontrol noktasına dönülüyor...");}}
+playerDeath(reason="💀 Suya / Boşluğa Düştün! Kontrol Noktasına Dönülüyor..."){this.tookDamageInCurrentRegion=!0;this.stats.currentHp=0;St.playDamage();this.spawnSparkleParticles(this.playerPos,20,14251782);if(this.callbacks&&this.callbacks.onStatsUpdate)this.callbacks.onStatsUpdate(this.stats);if(this.callbacks&&this.callbacks.onShowNotice)this.callbacks.onShowNotice(reason,"warn");const allCps=(this.currentLevel&&this.currentLevel.checkpoints)||[];let actCp=null;for(let i=allCps.length-1;i>=0;i--){if(allCps[i]&&allCps[i].active&&allCps[i].pos){actCp=allCps[i];break;}}const tgt=actCp&&actCp.pos?actCp.pos:(this.currentLevel&&this.currentLevel.spawnPoint?this.currentLevel.spawnPoint:null);if(tgt){this.playerPos.copy(tgt);this.playerPos.y+=1.0;}this.playerVel.set(0,0,0);this.stats.currentHp=this.stats.maxHp;if(this.callbacks&&this.callbacks.onStatsUpdate)this.callbacks.onStatsUpdate(this.stats);}checkLevelUp(){this.stats.xp>=this.stats.xpToNext&&(this.stats.level+=1,this.stats.xp-=this.stats.xpToNext,this.stats.xpToNext=Math.round(this.stats.xpToNext*1.5),this.stats.skillPoints+=1,this.stats.maxHp+=10,this.stats.currentHp=this.stats.maxHp,St.playLevelUp(),vh({particleCount:60,spread:50,origin:{y:.7}}),this.callbacks.onShowNotice(`⭐ Seviye Atladın! Lv.${this.stats.level} (+1 Beceri Puanı)`,"success"))}spawnDustParticles(e,n){if(!this._dGeo){this._dGeo=new At(.12,4,4);this._dGeo._s=!0;}if(!this._dMat){this._dMat=new yi({color:13948120});this._dMat._s=!0;}const _lim=(typeof navigator!=="undefined"&&(/android|tablet|ipad/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)))?Math.min(n,3):n;for(let c=0;c<_lim;c++){const u=new Me(this._dGeo,this._dMat);u.position.set(e.x+(Math.random()-.5)*.6,e.y+.1,e.z+(Math.random()-.5)*.6),this.scene.add(u),this.particles.push({mesh:u,vel:new Y((Math.random()-.5)*3,Math.random()*2+1,(Math.random()-.5)*3),life:.35,maxLife:.35})}}spawnSparkleParticles(e,n,a){if(!this._sGeo){this._sGeo=new At(.1,4,4);this._sGeo._s=!0;}this._sMats=this._sMats||{};if(!this._sMats[a]){this._sMats[a]=new yi({color:a});this._sMats[a]._s=!0;}const _mat=this._sMats[a];const _lim=(typeof navigator!=="undefined"&&(/android|tablet|ipad/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)))?Math.min(n,4):n;for(let u=0;u<_lim;u++){const h=new Me(this._sGeo,_mat);h.position.copy(e),this.scene.add(h),this.particles.push({mesh:h,vel:new Y((Math.random()-.5)*6,Math.random()*5+2,(Math.random()-.5)*6),life:.45,maxLife:.45})}}startLoop(){let e=performance.now();let _lastTick=0;const _isMob=(typeof navigator!=="undefined"&&(/android|tablet|ipad|iphone|ipod|wv|appcreator24/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)||navigator.maxTouchPoints>0));const _targetFPS=_isMob?35:60;const _minInterval=1000/_targetFPS;const n=a=>{try{const _delta=a-_lastTick;if(_delta<_minInterval-1){this.animFrameId=requestAnimationFrame(n);return;}_lastTick=a;const o=Math.min((a-e)/1e3,.1);e=a;const isMOpen=typeof window!=="undefined"&&(window.__superBearPaused||window.__superBearModalOpen);const isDocHidden=typeof document!=="undefined"&&document.hidden;if(!this.isPaused&&!isMOpen&&!isDocHidden){if(this.scene&&this.scene.children){for(let ci=this.scene.children.length-1;ci>=0;ci--){if(!this.scene.children[ci]){this.scene.children.splice(ci,1);}}}this.update(o,a/1e3);if(this.renderer&&this.scene&&this.camera){this.renderer.render(this.scene,this.camera);}}}catch(o){console.error("Game tick/render error:",o)}this.animFrameId=requestAnimationFrame(n)};this.animFrameId=requestAnimationFrame(n)}update(e,n){var b,S,k,z;if(!this.currentLevel||!this.playerPos||!this.playerVel||!this.camera)return;this.inputs.jump&&!this.prevJumpKey&&this.handleJump(),this.prevJumpKey=this.inputs.jump,this.inputs.attack&&!this.prevAttackKey&&this.handleAttack(),this.prevAttackKey=this.inputs.attack,this.inputs.roll&&!this.prevRollKey&&(!this.isGrounded&&this.inputs.attack&&this.stats.hasGroundPound?this.handleGroundPound():this.handleRoll()),this.prevRollKey=this.inputs.roll,this.isGliding=!this.isGrounded&&this.inputs.jump&&this.stats.hasGlide&&this.playerVel.y<0,this.rollTimer>0&&(this.rollTimer-=e,this.rollTimer<=0&&(this.isRolling=!1)),this.attackTimer>0&&(this.attackTimer-=e,this.attackTimer<=0&&(this.isAttacking=!1)),this.forwardBoostTimer>0&&(this.forwardBoostTimer-=e);const a=this.currentRegion==="space_realm"?-12:this.isGliding?-4:-24;this.isGrounded||(this.playerVel.y+=a*e);const o=this.inputs.jump&&this.inputs.attack||this.buttonAHeld&&this.buttonBHeld||this.forwardBoostTimer>0;let c=(this.inputs.right?1:0)-(this.inputs.left?1:0)+this.joystickX,u=(this.inputs.forward?1:0)-(this.inputs.backward?1:0)-this.joystickY;o&&(u=1);const h=Math.sqrt(c*c+u*u),m=h>.05;if(m&&!this.isRolling&&!this.isGroundPounding){const v=Math.min(1,h),U=c/h,N=u/h,B=Math.sin(this.camYaw),A=Math.cos(this.camYaw),D=U*A-N*B,V=-U*B-N*A,F=(this.stats.moveSpeed||7)*v;this.playerVel.x=D*F,this.playerVel.z=V*F;let te=Math.atan2(D,V)-this.playerRotY;for(;te<-Math.PI;)te+=Math.PI*2;for(;te>Math.PI;)te-=Math.PI*2;this.playerRotY+=te*Math.min(1,e*16)}else this.isRolling||(this.playerVel.x*=.8,this.playerVel.z*=.8);const p=this.playerPos.clone();this.playerPos.x+=this.playerVel.x*e,this.playerPos.y+=this.playerVel.y*e,this.playerPos.z+=this.playerVel.z*e;
 if (this.currentLevel && this.currentLevel.bounds) {
   const b = this.currentLevel.bounds;
   const margin = 0.5;
@@ -5303,17 +5527,29 @@ const playerHalfHeight = 0.8;
 const FOOT_SURFACE_OFFSET = 0.00;
 const BEAR_MODEL_Y_OFFSET = 0.00;
 
-// Auto Box3 Collider Scanner for scene objects (crates, boxes, trees, logs, rocks, cottages)
+// Auto Collider Scanner for scene objects (Models objects according to their true geometric shape - Radial/Cylinder vs Box!)
 if (this.currentLevel && !this.currentLevel._box3CollidersInitialized && window.THREE && this.scene) {
   this.currentLevel._box3CollidersInitialized = true;
   if (!this.currentLevel.colliders) this.currentLevel.colliders = [];
   const THREE = window.THREE;
-  const solidKeywords = ["box", "crate", "barrel", "chest", "tree", "log", "stump", "rock", "pillar", "stone", "cottage", "house", "table", "bench", "monolith", "tower_base", "wood", "bed"];
+  const solidKeywords = ["box", "crate", "barrel", "chest", "tree", "log", "stump", "rock", "pillar", "column", "stone", "cottage", "house", "table", "bench", "monolith", "tower_base", "wood", "bed", "post", "pole", "well"];
+  const roundKeywords = ["barrel", "tree", "log", "stump", "pillar", "column", "post", "pole", "well", "round_rock", "target", "cylinder", "pot", "vase", "lantern", "fountain"];
+
   this.scene.traverse((obj) => {
-    if (obj.isMesh && obj.geometry && obj !== this.playerBear.root && !obj.name.includes("water") && !obj.name.includes("particle") && !obj.name.includes("sky")) {
+    let isPlayerOrCam = false;
+    let pNode = obj;
+    while (pNode) {
+      if (pNode === this.playerBear?.root || pNode.isPlayer || pNode === this.camera) {
+        isPlayerOrCam = true;
+        break;
+      }
+      pNode = pNode.parent;
+    }
+    if (isPlayerOrCam) return;
+    if (obj.isMesh && obj.geometry && !obj.name.includes("water") && !obj.name.includes("particle") && !obj.name.includes("sky")) {
       const objName = (obj.name || "").toLowerCase();
       const parentName = (obj.parent && obj.parent.name ? obj.parent.name : "").toLowerCase();
-      const isTarget = solidKeywords.some(kw => objName.includes(kw) || parentName.includes(kw)) || (obj.userData && (obj.userData.isSolidObstacle || obj.userData.hasBox3Collider));
+      const isTarget = !!(obj.userData && (obj.userData.isSolidObstacle || obj.userData.hasBox3Collider));
       if (isTarget && !obj.userData.__hasBox3Registered) {
         obj.userData.__hasBox3Registered = true;
         obj.updateMatrixWorld(true);
@@ -5322,12 +5558,36 @@ if (this.currentLevel && !this.currentLevel._box3CollidersInitialized && window.
         const szY = bbox.max.y - bbox.min.y;
         const szZ = bbox.max.z - bbox.min.z;
         if (szX > 0.25 && szY > 0.25 && szZ > 0.25 && szX < 200 && szZ < 200) {
-          this.currentLevel.colliders.push({
-            min: bbox.min.clone(),
-            max: bbox.max.clone(),
-            isBox3Obstacle: true,
-            sourceMesh: obj
-          });
+          const geoType = obj.geometry ? obj.geometry.type : "";
+          const isRoundGeo = geoType === "CylinderGeometry" || geoType === "SphereGeometry" || geoType === "ConeGeometry" || geoType === "TorusGeometry";
+          const isRoundNamed = roundKeywords.some(kw => objName.includes(kw) || parentName.includes(kw));
+          const isSymmetric = Math.abs(szX - szZ) < Math.max(szX, szZ) * 0.45;
+          const isRound = isRoundGeo || (isRoundNamed && isSymmetric) || (obj.userData && obj.userData.isRound);
+
+          if (isRound) {
+            const cx = (bbox.min.x + bbox.max.x) / 2;
+            const cz = (bbox.min.z + bbox.max.z) / 2;
+            const rad = Math.max(0.15, (szX + szZ) * 0.25);
+            this.currentLevel.colliders.push({
+              isCylinder: true,
+              isRadial: true,
+              center: new THREE.Vector2(cx, cz),
+              radius: rad,
+              minY: bbox.min.y,
+              maxY: bbox.max.y,
+              min: bbox.min.clone(),
+              max: bbox.max.clone(),
+              isBox3Obstacle: true,
+              sourceMesh: obj
+            });
+          } else {
+            this.currentLevel.colliders.push({
+              min: bbox.min.clone(),
+              max: bbox.max.clone(),
+              isBox3Obstacle: true,
+              sourceMesh: obj
+            });
+          }
         }
       }
     }
@@ -5343,7 +5603,57 @@ const allLevelColliders = [
 ];
 
 allLevelColliders.forEach(v => {
-  if (!v || !v.min || !v.max) return;
+  if (!v) return;
+
+  // A) Cylindrical / Radial Collider Handling (Smooth circular physics - No square corners!)
+  if (v.isCylinder || v.isRadial || (v.radius && v.center)) {
+    const cx = (v.center && v.center.x !== undefined) ? v.center.x : (v.min && v.max ? (v.min.x + v.max.x) / 2 : 0);
+    const cz = (v.center && (v.center.z !== undefined ? v.center.z : v.center.y)) !== undefined ? (v.center.z !== undefined ? v.center.z : v.center.y) : (v.min && v.max ? (v.min.z + v.max.z) / 2 : 0);
+    const r = v.radius || (v.min && v.max ? (v.max.x - v.min.x) / 2 : 0.5);
+    const minY = (v.min && v.min.y !== undefined) ? v.min.y : (v.minY !== undefined ? v.minY : -10);
+    const maxY = (v.max && v.max.y !== undefined) ? v.max.y : (v.maxY !== undefined ? v.maxY : 10);
+
+    const dx = this.playerPos.x - cx;
+    const dz = this.playerPos.z - cz;
+    const dist = Math.hypot(dx, dz);
+
+    // 1. Landing on top of round cylinder (Jump logs, barrels, stumps, well rim)
+    if (dist <= r + playerRadius * 0.45) {
+      const isFalling = (this.playerVel.y <= 0.8);
+      const wasAbove = (p.y >= maxY - 0.35);
+      const canLand = isFalling && (wasAbove || this.playerPos.y >= maxY - 0.75) && (this.playerPos.y <= maxY + 0.85);
+      if (canLand && maxY > bestLandingY) {
+        bestLandingY = maxY;
+        isLandingFound = true;
+      }
+      if (this.playerVel.y > 0 && this.playerPos.y + playerHeight >= minY && p.y + playerHeight <= minY + 0.6) {
+        this.playerVel.y = -1.0;
+        this.playerPos.y = minY - playerHeight;
+        return;
+      }
+    }
+
+    // 2. Smooth Radial Push-out (Circles stay circles - Player slides smoothly around the curve!)
+    const isVertOverlapping = (this.playerPos.y + playerHeight > minY + 0.15 && this.playerPos.y < maxY - 0.2);
+    const solidDist = r + playerRadius;
+    if (isVertOverlapping && dist < solidDist && dist > 0.0001) {
+      const pushX = dx / dist;
+      const pushZ = dz / dist;
+      this.playerPos.x = cx + pushX * (solidDist + 0.002);
+      this.playerPos.z = cz + pushZ * (solidDist + 0.002);
+      if (this.playerVel) {
+        const vDot = this.playerVel.x * pushX + this.playerVel.z * pushZ;
+        if (vDot < 0) {
+          this.playerVel.x -= vDot * pushX;
+          this.playerVel.z -= vDot * pushZ;
+        }
+      }
+    }
+    return;
+  }
+
+  // B) Box / AABB Collider Handling
+  if (!v.min || !v.max) return;
   const minX = v.min.x, maxX = v.max.x, minZ = v.min.z, maxZ = v.max.z, minY = v.min.y, maxY = v.max.y;
 
   // Check horizontal overlap with player radius
@@ -5368,25 +5678,27 @@ allLevelColliders.forEach(v => {
     // 3. Platform Landing / Solid Floor (Raycast + Box3 Landing)
     const isFalling = (this.playerVel.y <= 0.8);
     const wasAbove = (p.y >= maxY - 0.35);
-    const canLand = isFalling && (wasAbove || this.playerPos.y >= maxY - 0.75) && (this.playerPos.y <= maxY + 0.85);
+    // If player is inside a large green island lawn or plateau, NEVER allow them to walk underneath it!
+    const isInsideGroundLawn = (v.isIslandLawn || v.isGroundPlateau) && (this.playerPos.y < maxY && this.playerPos.y >= minY - 0.5);
+    const canLand = isInsideGroundLawn || (isFalling && (wasAbove || this.playerPos.y >= maxY - 0.75) && (this.playerPos.y <= maxY + 0.85));
     if (canLand) {
       if (maxY > bestLandingY) {
         bestLandingY = maxY;
         isLandingFound = true;
       }
     }
-    // 4. Ceiling Collision (Head Bump from below)
-    if (this.playerVel.y > 0 && this.playerPos.y + playerHeight >= minY && p.y + playerHeight <= minY + 0.6) {
+    // 4. Ceiling Collision (Head Bump from below) - Never trigger on walkable ground platforms!
+    if (!v.isIslandLawn && !v.isGroundPlateau && this.playerVel.y > 0 && this.playerPos.y + playerHeight >= minY && p.y + playerHeight <= minY + 0.6) {
       this.playerVel.y = -1.0;
       this.playerPos.y = minY - playerHeight;
       return;
     }
   }
 
-  // 5. Solid Horizontal Wall / Box3 Obstacle Push-out (Obstacles, Walls & Pillars only - Never massive terrain/floor slabs!)
+  // 5. Solid Horizontal Wall / Box3 Obstacle Push-out (Shallow penetration only - prevents jittering and teleporting!)
   const szX = maxX - minX;
   const szZ = maxZ - minZ;
-  const isFloorOrTerrain = (szX > 5.5 && szZ > 5.5) || v.isVillageExpansionCollider || v.isCourtCollider || v.isFloor || (maxY - minY < 0.45);
+  const isFloorOrTerrain = (szX > 5.0 && szZ > 5.0) || v.isVillageExpansionCollider || v.isCourtCollider || v.isFloor || v.isIslandLawn || v.isGroundPlateau || (maxY - minY < 0.45);
   if (!isFloorOrTerrain && !v.isToxic && !v.isClimbable && !v.isJumpPad) {
     const isVertOverlapping = (this.playerPos.y + playerHeight > minY + 0.15 && this.playerPos.y < maxY - 0.2);
     if (isVertOverlapping) {
@@ -5396,18 +5708,19 @@ allLevelColliders.forEach(v => {
       const overlapBack = maxZ - (this.playerPos.z - playerRadius);
       if (overlapLeft > 0 && overlapRight > 0 && overlapFront > 0 && overlapBack > 0) {
         const minOverlap = Math.min(overlapLeft, overlapRight, overlapFront, overlapBack);
-        if (minOverlap < 0.95) {
+        // Only push if shallow penetration (touching wall edge from outside) - NEVER teleport across large distances!
+        if (minOverlap > 0 && minOverlap <= playerRadius + 0.25) {
           if (minOverlap === overlapLeft) {
-            this.playerPos.x = minX - playerRadius;
+            this.playerPos.x = minX - playerRadius - 0.002;
             if (this.playerVel.x > 0) this.playerVel.x = 0;
           } else if (minOverlap === overlapRight) {
-            this.playerPos.x = maxX + playerRadius;
+            this.playerPos.x = maxX + playerRadius + 0.002;
             if (this.playerVel.x < 0) this.playerVel.x = 0;
           } else if (minOverlap === overlapFront) {
-            this.playerPos.z = minZ - playerRadius;
+            this.playerPos.z = minZ - playerRadius - 0.002;
             if (this.playerVel.z > 0) this.playerVel.z = 0;
           } else {
-            this.playerPos.z = maxZ + playerRadius;
+            this.playerPos.z = maxZ + playerRadius + 0.002;
             if (this.playerVel.z < 0) this.playerVel.z = 0;
           }
         }
@@ -5422,15 +5735,21 @@ if (window.THREE && this.scene && this.playerVel.y <= 0.8) {
     this._downRaycaster = new window.THREE.Raycaster();
     this._downRaycaster.ray.direction.set(0, -1, 0);
   }
+  if (this.camera) this._downRaycaster.camera = this.camera;
   const rayOriginY = Math.max(p.y, this.playerPos.y) + playerHalfHeight;
   this._downRaycaster.ray.origin.set(this.playerPos.x, rayOriginY, this.playerPos.z);
   this._downRaycaster.far = (rayOriginY - this.playerPos.y) + 1.2;
   if (this._raycastCollidables && this._raycastCollidables.length > 0) {
-    const hits = this._downRaycaster.intersectObjects(this._raycastCollidables, false);
-    if (hits && hits.length > 0 && hits[0].point && hits[0].point.y > bestLandingY) {
-      bestLandingY = hits[0].point.y;
-      isLandingFound = true;
-    }
+    try {
+      const validCollidables = this._raycastCollidables.filter(c => c && c.isObject3D && !c.isSprite && c.visible !== false);
+      if (validCollidables.length > 0) {
+        const hits = this._downRaycaster.intersectObjects(validCollidables, false);
+        if (hits && hits.length > 0 && hits[0].point && hits[0].point.y > bestLandingY) {
+          bestLandingY = hits[0].point.y;
+          isLandingFound = true;
+        }
+      }
+    } catch (_rcErr) {}
   }
 }
 
@@ -5573,7 +5892,184 @@ if (x) {
   (S=(b=this.callbacks).onActiveBossChange)==null||S.call(b,{name:x.name,hp:x.hp,maxHp:x.maxHp,type:x.type});
 } else {
   (z=(k=this.callbacks).onActiveBossChange)==null||z.call(k,null);
-}for(let v=this.particles.length-1;v>=0;v--){const U=this.particles[v];U.life-=e,U.mesh.position.add(U.vel.clone().multiplyScalar(e)),U.mesh.scale.setScalar(U.life/U.maxLife),U.life<=0&&(this.scene.remove(U.mesh),(!U.mesh.geometry||!U.mesh.geometry._s)&&U.mesh.geometry&&U.mesh.geometry.dispose(),(!U.mesh.material||!U.mesh.material._s)&&U.mesh.material&&U.mesh.material.dispose(),this.particles.splice(v,1))}if(this.particles.length>28){const _o=this.particles.shift();if(_o){this.scene.remove(_o.mesh);(!_o.mesh.geometry||!_o.mesh.geometry._s)&&_o.mesh.geometry&&_o.mesh.geometry.dispose();(!_o.mesh.material||!_o.mesh.material._s)&&_o.mesh.material&&_o.mesh.material.dispose();}}this.playerBear.root.position.set(this.playerPos.x, this.playerPos.y, this.playerPos.z),this.playerBear.root.rotation.y=this.playerRotY;let y="idle";this.isRolling?y="roll":this.isGroundPounding?y="groundPound":this.isAttacking?y="attack":this.isGliding?y="glide":this.isGrounded?m&&(y="run"):y="jump",this.playerBear.setAnimationState(y,n,this.isGrounded);const T=new Y(Math.sin(this.camYaw)*Math.cos(this.camPitch)*this.camDist,Math.sin(this.camPitch)*this.camDist+1.2,Math.cos(this.camYaw)*Math.cos(this.camPitch)*this.camDist);let R=this.playerPos.clone().add(T);R.y=Math.max(R.y,this.playerPos.y+0.45,0.7);const cBoxes=[...(this.currentLevel.colliders||[]),...(this.currentLevel.collisionBounds||[])];for(let ci=0;ci<cBoxes.length;ci++){const cb=cBoxes[ci];if(!cb||!cb.min||!cb.max||cb.isToxic||cb.isClimbable)continue;if(R.x>=cb.min.x-0.15&&R.x<=cb.max.x+0.15&&R.z>=cb.min.z-0.15&&R.z<=cb.max.z+0.15&&R.y>=cb.min.y-0.15&&R.y<=cb.max.y+0.15){const pullDist=Math.max(1.6,this.camDist*0.5);R=this.playerPos.clone().add(new Y(Math.sin(this.camYaw)*Math.cos(this.camPitch)*pullDist,Math.sin(this.camPitch)*pullDist+1.1,Math.cos(this.camYaw)*Math.cos(this.camPitch)*pullDist));R.y=Math.max(R.y,this.playerPos.y+0.45,0.7);break;}}this.camera.position.lerp(R,.18),this.camera.lookAt(this.playerPos.x,this.playerPos.y+1.1,this.playerPos.z)}destroy(){this.animFrameId!==null&&(cancelAnimationFrame(this.animFrameId),this.animFrameId=null),this.resizeObserver&&(this.resizeObserver.disconnect(),this.resizeObserver=null),St.stopMusic(),window.removeEventListener("resize",this.onResize),window.removeEventListener("keydown",this.onKeyDown),window.removeEventListener("keyup",this.onKeyUp),this.renderer&&this.renderer.domElement&&this.renderer.domElement.parentNode&&this.renderer.domElement.parentNode.removeChild(this.renderer.domElement),this.renderer.dispose()}}const Kw=[
+}for(let v=this.particles.length-1;v>=0;v--){const U=this.particles[v];U.life-=e,U.mesh.position.add(U.vel.clone().multiplyScalar(e)),U.mesh.scale.setScalar(U.life/U.maxLife),U.life<=0&&(this.scene.remove(U.mesh),(!U.mesh.geometry||!U.mesh.geometry._s)&&U.mesh.geometry&&U.mesh.geometry.dispose(),(!U.mesh.material||!U.mesh.material._s)&&U.mesh.material&&U.mesh.material.dispose(),this.particles.splice(v,1))}if(this.particles.length>28){const _o=this.particles.shift();if(_o){this.scene.remove(_o.mesh);(!_o.mesh.geometry||!_o.mesh.geometry._s)&&_o.mesh.geometry&&_o.mesh.geometry.dispose();(!_o.mesh.material||!_o.mesh.material._s)&&_o.mesh.material&&_o.mesh.material.dispose();}}this.playerBear.root.position.set(this.playerPos.x, this.playerPos.y, this.playerPos.z),this.playerBear.root.rotation.y=this.playerRotY;let y="idle";this.isRolling?y="roll":this.isGroundPounding?y="groundPound":this.isAttacking?y="attack":this.isGliding?y="glide":this.isGrounded?m&&(y="run"):y="jump",this.playerBear.setAnimationState(y,n,this.isGrounded);
+
+// --- FOOTSTEP SOUND ENGINE (Raycaster Surface Detection & Randomized Footstep Samples) ---
+if (y === "run" && this.isGrounded && !this.isRolling && !this.isGroundPounding && !this.isAttacking && !this.isGliding) {
+  if (this._stepTimer === undefined) this._stepTimer = 0;
+  if (this._footIndex === undefined) this._footIndex = 0;
+  this._stepTimer += e;
+
+  const hSpeed = Math.hypot(this.playerVel.x, this.playerVel.z);
+  const stepInterval = Math.max(0.24, Math.min(0.36, 2.2 / Math.max(2.5, hSpeed)));
+
+  if (this._stepTimer >= stepInterval) {
+    this._stepTimer = 0;
+    this._footIndex++;
+
+    let surface = "grass";
+
+    if (window.THREE && this.scene) {
+      if (!this._surfaceRaycaster) {
+        this._surfaceRaycaster = new window.THREE.Raycaster();
+        this._surfaceRaycaster.ray.direction.set(0, -1, 0);
+      }
+      if (this.camera) this._surfaceRaycaster.camera = this.camera;
+      this._surfaceRaycaster.ray.origin.set(this.playerPos.x, this.playerPos.y + 0.6, this.playerPos.z);
+      this._surfaceRaycaster.far = 1.6;
+
+      const targetGroup = (this.currentLevel && this.currentLevel.sceneGroup) || this.scene;
+      let hits = [];
+      try {
+        const validChildren = targetGroup && targetGroup.children
+          ? targetGroup.children.filter(c => c && c.isObject3D && !c.isSprite && c.visible !== false)
+          : [];
+        if (validChildren.length > 0) {
+          hits = this._surfaceRaycaster.intersectObjects(validChildren, true);
+        }
+      } catch (_sErr) {}
+
+      if (hits && hits.length > 0) {
+        for (let hi = 0; hi < hits.length; hi++) {
+          const hitObj = hits[hi].object;
+          if (!hitObj || hitObj.isPlayer || hitObj === this.playerBear?.root) continue;
+          let pNode = hitObj;
+          let isBear = false;
+          while (pNode) {
+            if (pNode === this.playerBear?.root || pNode.isPlayer) { isBear = true; break; }
+            pNode = pNode.parent;
+          }
+          if (isBear) continue;
+          if (hitObj.name && (hitObj.name.includes("particle") || hitObj.name.includes("coin") || hitObj.name.includes("gem") || hitObj.name.includes("sky"))) continue;
+
+          surface = this.identifySurfaceFromMesh(hitObj);
+          break;
+        }
+      } else {
+        surface = this.identifySurfaceFromMesh(null);
+      }
+    }
+
+    if (typeof St !== "undefined" && typeof St.playFootstep === "function") {
+      St.playFootstep(surface, {
+        footIndex: this._footIndex,
+        speedRatio: Math.min(1.25, hSpeed / 7)
+      });
+    }
+  }
+} else {
+  this._stepTimer = 0.22;
+}
+
+const T=new Y(Math.sin(this.camYaw)*Math.cos(this.camPitch)*this.camDist,Math.sin(this.camPitch)*this.camDist+1.2,Math.cos(this.camYaw)*Math.cos(this.camPitch)*this.camDist);let R=this.playerPos.clone().add(T);R.y=Math.max(R.y,this.playerPos.y+0.45,0.7);const cBoxes=[...(this.currentLevel.colliders||[]),...(this.currentLevel.collisionBounds||[])];for(let ci=0;ci<cBoxes.length;ci++){const cb=cBoxes[ci];if(!cb||!cb.min||!cb.max||cb.isToxic||cb.isClimbable)continue;if(R.x>=cb.min.x-0.15&&R.x<=cb.max.x+0.15&&R.z>=cb.min.z-0.15&&R.z<=cb.max.z+0.15&&R.y>=cb.min.y-0.15&&R.y<=cb.max.y+0.15){const pullDist=Math.max(1.6,this.camDist*0.5);R=this.playerPos.clone().add(new Y(Math.sin(this.camYaw)*Math.cos(this.camPitch)*pullDist,Math.sin(this.camPitch)*pullDist+1.1,Math.cos(this.camYaw)*Math.cos(this.camPitch)*pullDist));R.y=Math.max(R.y,this.playerPos.y+0.45,0.7);break;}}this.camera.position.lerp(R,.18),this.camera.lookAt(this.playerPos.x,this.playerPos.y+1.1,this.playerPos.z)}
+
+identifySurfaceFromMesh(obj) {
+  if (!obj) {
+    if (this.currentRegion === "snow_desert") return "snow";
+    if (this.currentRegion === "space_realm") return "metal";
+    if (this.currentRegion === "beehive") return "wood";
+    if (this.currentRegion === "bee_desert") return "sand";
+    if (this.currentRegion === "underwater_palace" || this.currentRegion === "water_cave") return "water";
+    if (this.currentRegion === "ruin_village" || this.currentRegion === "volcano_cave") return "stone";
+    return "grass";
+  }
+
+  const name = (obj.name || "").toLowerCase();
+  const parentName = (obj.parent && obj.parent.name ? obj.parent.name : "").toLowerCase();
+  const combined = name + " " + parentName;
+
+  // 1. Water
+  if (combined.includes("water") || combined.includes("lake") || combined.includes("sea") || combined.includes("ocean") || combined.includes("river") || combined.includes("dere") || combined.includes("havuz") || combined.includes("göl")) {
+    return "water";
+  }
+
+  // 2. Wood / Bridges / Planks / Docks / Stairs
+  if (combined.includes("wood") || combined.includes("bridge") || combined.includes("plank") || combined.includes("pier") || combined.includes("dock") || combined.includes("deck") || combined.includes("stair") || combined.includes("table") || combined.includes("bench") || combined.includes("fence") || combined.includes("log") || combined.includes("timber") || combined.includes("ahsap") || combined.includes("iskele") || combined.includes("kopru") || combined.includes("kutuk")) {
+    return "wood";
+  }
+
+  // 3. Snow & Ice
+  if (combined.includes("snow") || combined.includes("ice") || combined.includes("frost") || combined.includes("glacier") || combined.includes("kar") || combined.includes("buz")) {
+    return "snow";
+  }
+
+  // 4. Sand / Desert
+  if (combined.includes("sand") || combined.includes("desert") || combined.includes("dune") || combined.includes("kum") || combined.includes("col")) {
+    return "sand";
+  }
+
+  // 5. Stone / Cobblestone / Rock / Walls / Monolith
+  if (combined.includes("stone") || combined.includes("rock") || combined.includes("cobble") || combined.includes("cliff") || combined.includes("wall") || combined.includes("brick") || combined.includes("monolith") || combined.includes("temple") || combined.includes("pillar") || combined.includes("column") || combined.includes("floor") || combined.includes("castle") || combined.includes("tas") || combined.includes("kaya") || combined.includes("duvar")) {
+    return "stone";
+  }
+
+  // 6. Grass / Lawn / Field
+  if (combined.includes("grass") || combined.includes("lawn") || combined.includes("meadow") || combined.includes("field") || combined.includes("cim") || combined.includes("ada") || combined.includes("green") || combined.includes("park")) {
+    return "grass";
+  }
+
+  // 7. Metal
+  if (combined.includes("metal") || combined.includes("iron") || combined.includes("steel") || combined.includes("cage") || combined.includes("cyber") || combined.includes("gold") || combined.includes("demir") || combined.includes("kafes")) {
+    return "metal";
+  }
+
+  // 8. Carpet
+  if (combined.includes("carpet") || combined.includes("rug") || combined.includes("bed") || combined.includes("hali")) {
+    return "carpet";
+  }
+
+  // Material inspection
+  const mat = Array.isArray(obj.material) ? obj.material[0] : obj.material;
+  if (mat) {
+    const matName = (mat.name || "").toLowerCase();
+    if (matName.includes("wood")) return "wood";
+    if (matName.includes("stone") || matName.includes("cobble")) return "stone";
+    if (matName.includes("grass")) return "grass";
+    if (matName.includes("snow") || matName.includes("ice")) return "snow";
+    if (matName.includes("sand")) return "sand";
+    if (matName.includes("water")) return "water";
+    if (matName.includes("metal")) return "metal";
+
+    if (mat.color) {
+      const r = mat.color.r !== undefined ? mat.color.r : 0.5;
+      const g = mat.color.g !== undefined ? mat.color.g : 0.5;
+      const b = mat.color.b !== undefined ? mat.color.b : 0.5;
+
+      // Green grass hues
+      if (g > 0.25 && g > r * 1.15 && g > b * 1.15) {
+        return "grass";
+      }
+      // Wood hues (warm brown/orange with low blue)
+      if (r > 0.35 && g > 0.2 && b < 0.25 && r > b * 1.6) {
+        return (r > 0.6 && g > 0.45) ? "sand" : "wood";
+      }
+      // Snow / Ice
+      if (r > 0.75 && g > 0.75 && b > 0.75) {
+        return "snow";
+      }
+      // Water
+      if (b > r * 1.3 && b > g * 1.1) {
+        return "water";
+      }
+      // Stone
+      if (Math.abs(r - g) < 0.1 && Math.abs(g - b) < 0.1) {
+        return "stone";
+      }
+    }
+  }
+
+  // Region fallback
+  if (this.currentRegion === "snow_desert") return "snow";
+  if (this.currentRegion === "space_realm") return "metal";
+  if (this.currentRegion === "beehive") return "wood";
+  if (this.currentRegion === "bee_desert") return "sand";
+  if (this.currentRegion === "underwater_palace" || this.currentRegion === "water_cave") return "water";
+  if (this.currentRegion === "ruin_village" || this.currentRegion === "volcano_cave") return "stone";
+
+  return "grass";
+}
+
+destroy(){this.animFrameId!==null&&(cancelAnimationFrame(this.animFrameId),this.animFrameId=null),this.resizeObserver&&(this.resizeObserver.disconnect(),this.resizeObserver=null),St.stopMusic(),window.removeEventListener("resize",this.onResize),window.removeEventListener("keydown",this.onKeyDown),window.removeEventListener("keyup",this.onKeyUp),this.renderer&&this.renderer.domElement&&this.renderer.domElement.parentNode&&this.renderer.domElement.parentNode.removeChild(this.renderer.domElement),this.renderer.dispose()}}const Kw=[
   {id:"skin_classic",name:"Klasik Bozayı (Grizzly)",description:"Doğanın neşeli kahramanı. Standart sevimli kahverengi kürk.",icon:"🐻",rarity:"common",furColor:9132587,bellyColor:13808780,muzzleColor:15123098,pawColor:7029286,earInnerColor:13805177,materialType:"standard",levelReq:1,coinPrice:0,unlocked:!0},
   {id:"skin_boncuk",name:"Boncuk (Sarı Tekir Kedi)",description:"Sevimli, çevik ve neşeli sarı kedi dostumuz! Hızlı pati vuruşları.",icon:"🐱",rarity:"rare",furColor:16096779,bellyColor:16773580,muzzleColor:16777215,pawColor:14457630,earInnerColor:16353980,materialType:"standard",levelReq:1,coinPrice:25,unlocked:!0},
   {id:"skin_pamuk",name:"Pamuk (Kar Kedisi)",description:"Bembeyaz yumuşacık kürk ve mavi gözlü sevimli yavru kedi.",icon:"🤍",rarity:"rare",furColor:16448250,bellyColor:16777215,muzzleColor:16777215,pawColor:15790320,earInnerColor:16757960,materialType:"standard",levelReq:2,coinPrice:50,unlocked:!1},

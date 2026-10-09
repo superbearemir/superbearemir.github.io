@@ -31,6 +31,8 @@
   let friendlyCreatures = [];
   let animatedStructures = [];
   let islandCollectibles = [];
+  let villageLoreScrolls3D = [];
+  let ancientLockData = null;
   let isHubActive = false;
 
   // Global safe fallback for create3DGoldCoin so it can never throw ReferenceError
@@ -107,6 +109,34 @@
     return col;
   }
 
+  // Register physical collision cylinder for round objects (Trees, poles, barrels, pillars)
+  function addSolidCylinder(cx, cz, radius, minY, maxY, isClimbable = false) {
+    const THREE = window.THREE;
+    if (!THREE) return null;
+
+    const col = {
+      isCylinder: true,
+      isRadial: true,
+      center: new THREE.Vector2(cx, cz),
+      radius: radius,
+      minY: minY,
+      maxY: maxY,
+      min: new THREE.Vector3(cx - radius, minY, cz - radius),
+      max: new THREE.Vector3(cx + radius, maxY, cz + radius),
+      isToxic: false,
+      isIce: false,
+      isClimbable: isClimbable,
+      isVillageExpansionCollider: true
+    };
+    expansionColliders.push(col);
+
+    const game = window.__superBearGame;
+    if (game && game.currentLevel && game.currentLevel.colliders && isHubActive) {
+      game.currentLevel.colliders.push(col);
+    }
+    return col;
+  }
+
   // --------------------------------------------------------------------------
   // MASTER BUILD FUNCTION
   // --------------------------------------------------------------------------
@@ -114,7 +144,7 @@
     const THREE = window.THREE;
     if (!THREE || !scene) return;
 
-    // Clean previous group completely
+    // Clean previous group completely from scene
     if (villageExpansionGroup) {
       try {
         if (villageExpansionGroup.parent) {
@@ -122,6 +152,13 @@
         }
       } catch (e) {}
       villageExpansionGroup = null;
+    }
+    // Deep search to purge ANY duplicate/orphaned expansion objects in scene
+    for (let i = scene.children.length - 1; i >= 0; i--) {
+      const child = scene.children[i];
+      if (child && (child.name === 'village_safari_island_expansion' || child.name === 'grand_island_terrain')) {
+        try { scene.remove(child); } catch(e) {}
+      }
     }
 
     const game = window.__superBearGame;
@@ -133,6 +170,8 @@
     friendlyCreatures = [];
     animatedStructures = [];
     islandCollectibles = [];
+    villageLoreScrolls3D = [];
+    ancientLockData = null;
 
     // Check region
     const currentRegion = (game && game.currentRegion) || 'hub';
@@ -160,62 +199,127 @@
     const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.8, roughness: 0.25 });
     const lighthouseRed = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.5 });
     const lighthouseWhite = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.5 });
-    const islandGrassMat = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.85 });
-    const islandSandMat = new THREE.MeshStandardMaterial({ color: 0xfde047, roughness: 0.9 });
+    const islandGrassMat = new THREE.MeshStandardMaterial({
+      color: 0x22c55e, // Tek ve Kusursuz Doğal Zümrüt Yeşili (Ana köy ile birebir uyumlu)
+      roughness: 0.90,
+      metalness: 0.0
+    });
+    const islandSandMat = islandGrassMat; // Tamamen yeşil yer kabuğu
     const waterDeepMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.1, transparent: true, opacity: 0.88, metalness: 0.2 });
+    const lakeWaterMavisMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8, // Işıl Işıl Berrak Maviş Su (Canlı Gökyüzü Mavisi)
+      emissive: 0x0284c7,
+      emissiveIntensity: 0.35,
+      roughness: 0.06,
+      metalness: 0.15,
+      transparent: true,
+      opacity: 0.92,
+      depthWrite: true
+    });
     const lanternGlowMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xf59e0b, emissiveIntensity: 1.0 });
     const glassDomeMat = new THREE.MeshStandardMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.6, roughness: 0.1 });
     const ropeMat = new THREE.MeshStandardMaterial({ color: 0xca8a04, roughness: 0.9 });
 
     // ========================================================================
     // 1. GÜNEY SU KANALI VE ULU ASMA KÖPRÜ (SOUTH WATERWAY & HIGHWAY BRIDGE)
-    // Starts at village shore (Z: 44) and stretches across the water to Island (Z: 96)
-    // Length: 52 meters! Width: 7.5 meters!
+    // Starts at village shore (Z: 22 ramp, Z: 44 bridge) and stretches to Island (Z: 95)
+    // Length: 51 meters bridge + 22m gentle entrance ramp! Width: 8.4 meters!
+    // KÖPRÜ GEÇEN YERİ TAMAMEN AÇIK VE KUSURSUZ AKICI!
     // ========================================================================
-    console.log("🌉 Building Grand South Highway Bridge across the water (Z: 44 to 96)...");
+    console.log("🌉 Building Grand South Highway Bridge & Smooth Approach Ramp (Z: 22 to 95)...");
 
     const bridgeGrp = new THREE.Group();
     bridgeGrp.name = 'south_highway_bridge';
 
-    // Massive Water Basin under the bridge (Z: 44 to 96, X: -60 to 60)
-    const bridgeWater = new THREE.Mesh(new THREE.BoxGeometry(140, 0.4, 60), waterDeepMat);
-    bridgeWater.position.set(0, -0.4, 70);
+    // A) KÖY MEYDANINDAN KÖPRÜYE BAĞLANAN GENİŞ VE YUMUŞAK TAŞ GİRİŞ RAMPASI (Z: 22 to 44)
+    // Köy zemini Y: 0.5'ten köprü seviyesi Y: 1.65'e tereyağı gibi yumuşacık ve engelsiz yükselir!
+    const rampLength = 22;
+    const rampGeo = new THREE.BoxGeometry(8.6, 0.4, rampLength);
+    const bridgeRampMesh = new THREE.Mesh(rampGeo, stoneBrickMat);
+    bridgeRampMesh.position.set(0, 1.05, 33);
+    bridgeRampMesh.rotation.x = 0.052; // Yumuşak meyilli taş rampa
+    bridgeRampMesh.receiveShadow = false;
+    bridgeGrp.add(bridgeRampMesh);
+
+    // Rampa boyunca basamaklı akıcı fizik zeminleri (Asla zıplama gerektirmez, doğrudan yürünür!)
+    const r1 = addSolidBox(-4.3, 0.3, 22, 4.3, 0.78, 28);
+    const r2 = addSolidBox(-4.3, 0.5, 28, 4.3, 1.08, 34);
+    const r3 = addSolidBox(-4.3, 0.8, 34, 4.3, 1.38, 40);
+    const r4 = addSolidBox(-4.3, 1.1, 40, 4.3, 1.65, 44);
+    [r1, r2, r3, r4].forEach(rCol => {
+      if (rCol) {
+        rCol.isFloor = true;
+        rCol.isIslandLawn = true;
+        rCol.isVillageExpansionCollider = true;
+      }
+    });
+
+    // Rampa yan ahşap korkulukları ve fenerleri
+    [-4.3, 4.3].forEach(rx => {
+      const rampRail = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.1, rampLength), darkBeamMat);
+      rampRail.position.set(rx, 1.75, 33);
+      rampRail.rotation.x = 0.052;
+      bridgeGrp.add(rampRail);
+      addSolidBox(rx - 0.25, 0.8, 22, rx + 0.25, 2.4, 44);
+
+      [24, 34].forEach(lz => {
+        const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 2.2, 8), darkBeamMat);
+        post.position.set(rx, 2.1, lz);
+        bridgeGrp.add(post);
+        const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), lanternGlowMat);
+        lamp.position.set(rx, 3.2, lz);
+        bridgeGrp.add(lamp);
+      });
+    });
+
+    // Massive Water Basin under the bridge (Z: 44 to 94, X: -60 to 60)
+    const bridgeWater = new THREE.Mesh(new THREE.BoxGeometry(140, 0.4, 50), waterDeepMat);
+    bridgeWater.position.set(0, -0.4, 69);
     bridgeGrp.add(bridgeWater);
 
-    // Stone Portal Gate on Village Shore (Z: 44)
+    // Stone Portal Gate on Village Shore (Z: 44) - GENİŞ VE FERAH KAPI (Ortası 8m tamamen açık)
     const gateNorth = createArchGate(THREE, stoneBrickMat, darkStoneMat, goldMat, lanternGlowMat);
     gateNorth.position.set(0, 0, 44);
     bridgeGrp.add(gateNorth);
-    addSolidBox(-5.5, 0, 42.5, -3.5, 7.5, 45.5);
-    addSolidBox(3.5, 0, 42.5, 5.5, 7.5, 45.5);
-    addSolidBox(-5.0, 6.0, 42.5, 5.0, 7.8, 45.5);
+    addSolidBox(-5.8, 0, 42.5, -4.2, 7.5, 45.5);
+    addSolidBox(4.2, 0, 42.5, 5.8, 7.5, 45.5);
+    addSolidBox(-5.5, 6.0, 42.5, 5.5, 7.8, 45.5);
 
-    // Stone Portal Gate on Island Shore (Z: 96)
+    // Stone Portal Gate on Island Shore (Z: 95) - GENİŞ VE FERAH KAPI
     const gateSouth = createArchGate(THREE, stoneBrickMat, darkStoneMat, goldMat, lanternGlowMat);
-    gateSouth.position.set(0, 0.8, 96);
+    gateSouth.position.set(0, 0.8, 95);
     bridgeGrp.add(gateSouth);
-    addSolidBox(-5.5, 0.8, 94.5, -3.5, 8.3, 97.5);
-    addSolidBox(3.5, 0.8, 94.5, 5.5, 8.3, 97.5);
-    addSolidBox(-5.0, 6.8, 94.5, 5.0, 8.6, 97.5);
+    addSolidBox(-5.8, 0.8, 93.5, -4.2, 8.3, 96.5);
+    addSolidBox(4.2, 0.8, 93.5, 5.8, 8.3, 96.5);
+    addSolidBox(-5.5, 6.8, 93.5, 5.5, 8.6, 96.5);
 
-    // Main Bridge Deck (Length 52m, Width 7.4m, Elevation Y: 1.4 to 1.8)
-    const deckMesh = new THREE.Mesh(new THREE.BoxGeometry(7.4, 0.5, 52), woodPlankMat);
-    deckMesh.position.set(0, 1.4, 70);
-    deckMesh.receiveShadow = true;
+    // Main Bridge Deck (Length 51m, Width 8.4m, Elevation Y: 1.45, Top: 1.65m)
+    // Cleanly spans Z: 44 to 95 and flushes directly with flat island at Y: 1.65!
+    const deckMesh = new THREE.Mesh(new THREE.BoxGeometry(8.4, 0.4, 51), woodPlankMat);
+    deckMesh.position.set(0, 1.45, 69.5);
+    deckMesh.receiveShadow = false;
+    deckMesh.castShadow = false;
     bridgeGrp.add(deckMesh);
-    addSolidBox(-3.7, 0, 44, 3.7, 1.7, 96);
+
+    const bridgeDeckCol = addSolidBox(-4.2, 0.5, 44, 4.2, 1.65, 95);
+    if (bridgeDeckCol) {
+      bridgeDeckCol.isFloor = true;
+      bridgeDeckCol.isIslandLawn = true;
+      bridgeDeckCol.isVillageExpansionCollider = true;
+    }
 
     // Safety Side Parapets / Railings
-    [-3.6, 3.6].forEach(rx => {
-      const railMesh = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.2, 52), darkBeamMat);
-      railMesh.position.set(rx, 2.1, 70);
+    [-4.3, 4.3].forEach(rx => {
+      const railMesh = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.2, 51), darkBeamMat);
+      railMesh.position.set(rx, 2.1, 69.5);
+      railMesh.receiveShadow = false;
       bridgeGrp.add(railMesh);
-      addSolidBox(rx - 0.25, 1.5, 44, rx + 0.25, 2.8, 96);
+      addSolidBox(rx - 0.25, 1.5, 44, rx + 0.25, 2.8, 95);
     });
 
     // Lantern Lamp Posts every 10 meters
     for (let lz = 50; lz <= 90; lz += 10) {
-      [-3.7, 3.7].forEach(lx => {
+      [-4.3, 4.3].forEach(lx => {
         const post = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.15, 2.6, 8), darkBeamMat);
         post.position.set(lx, 2.6, lz);
         bridgeGrp.add(post);
@@ -234,9 +338,9 @@
     });
 
     // Suspension Catenary Cables
-    [-3.7, 3.7].forEach(cx => {
-      const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 52, 6), ropeMat);
-      cable.position.set(cx, 3.8, 70);
+    [-4.3, 4.3].forEach(cx => {
+      const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 51, 6), ropeMat);
+      cable.position.set(cx, 3.8, 69.5);
       cable.rotation.x = Math.PI / 2;
       bridgeGrp.add(cable);
     });
@@ -244,132 +348,171 @@
     villageExpansionGroup.add(bridgeGrp);
 
     // ========================================================================
-    // 2. YEPYENİ BÜYÜKLÜKTE DOĞA ADASI (GRAND SAFARI ISLAND TERRAIN)
-    // Z: 95 to 260, X: -88 to +88 (Devasa Yeşil Ada, Kumlu Sahil & Lagün)
+    // 2. YEPYENİ BÜYÜKLÜKTE DÜZ DOĞA ADASI (100% FLAT SEAMLESS EMERALD ISLAND)
+    // Z: 95 to 310, X: -100 to +100 (KUSURSUZ TEK PARÇA DÜZ ZÜMRÜT YEŞİLİ YER KABUĞU)
+    // Tamamen düz, pürüzsüz, köprüyle aynı yükseklikte (Y = 1.65)! Sıfır görünmez duvar!
     // ========================================================================
-    console.log("🏝️ Sculpting Gigantic Safari Island Landmass (Z: 95 to 260)...");
+    console.log("🏝️ Sculpting Pure Seamless Flat Green Island Landmass (Z: 95 to 310, Y = 1.65)...");
 
     const islandTerrainGrp = new THREE.Group();
     islandTerrainGrp.name = 'grand_island_terrain';
 
-    // A) Global Ocean Floor & Sea Basin Bed (Prevents any void falling across entire hub!)
-    addSolidBox(-350, -10.0, -150, 350, 0.4, 400);
+    // TEK VE KUSURSUZ ZÜMRÜT YEŞİLİ DÜZ ADA YER KABUĞU (100% PURE FLAT LAWN)
+    // Y: 1.65 zirvesi, kalın 4m taban gövdesi, Z: 95'ten 310'a kadar kesintisiz uzanır!
+    const islandLength = 215; // Z: 95 to 310
+    const islandCenterZ = 202.5;
+    const mainIslandLawn = new THREE.Mesh(new THREE.BoxGeometry(200, 4.0, islandLength), islandGrassMat);
+    mainIslandLawn.position.set(0, -0.35, islandCenterZ);
+    mainIslandLawn.receiveShadow = false;
+    mainIslandLawn.castShadow = false;
+    islandTerrainGrp.add(mainIslandLawn);
 
-    // B) Golden Sand Coastal Beach Rim (Low border surrounding the island)
-    const sandBeach = new THREE.Mesh(new THREE.BoxGeometry(205, 1.6, 195), islandSandMat);
-    sandBeach.position.set(0, -0.1, 175);
-    sandBeach.receiveShadow = true;
-    islandTerrainGrp.add(sandBeach);
-    addSolidBox(-105, -3.0, 75, 105, 0.7, 285);
+    const lawnCol = addSolidBox(-100, -3.0, 95, 100, 1.65, 310);
+    if (lawnCol) {
+      lawnCol.isIslandLawn = true;
+      lawnCol.isGroundPlateau = true;
+      lawnCol.isFloor = true;
+    }
 
-    // C) Main Lush Green Island Plateau (Y = 1.65, Split into 3 sections with clean borders to eliminate mesh overlapping/flickering)
-    // West Lawn (Left of Promenade Path, X: -94 to -4.8)
-    const westLawn = new THREE.Mesh(new THREE.BoxGeometry(89.2, 2.0, 175), islandGrassMat);
-    westLawn.position.set(-49.4, 0.65, 175);
-    westLawn.receiveShadow = true;
-    islandTerrainGrp.add(westLawn);
+    // Düz Ada Dış Çevre Koruma Çitleri ve Taş Bordürler (Doğu, Batı ve Güney Uç)
+    // Oyuncuların adanın kenarından düşmesini önleyen şık sahil çitleri
+    const fenceMat = darkBeamMat;
+    // Doğu ve Batı Sahil Çitleri
+    [-99.5, 99.5].forEach(fx => {
+      const sideCurb = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.4, islandLength), stoneBrickMat);
+      sideCurb.position.set(fx, 1.85, islandCenterZ);
+      islandTerrainGrp.add(sideCurb);
 
-    // East North Lawn (North of Lake, X: +4.8 to 88, Z: 87.5 to 132.5)
-    const eastNorthLawn = new THREE.Mesh(new THREE.BoxGeometry(83.2, 2.0, 45), islandGrassMat);
-    eastNorthLawn.position.set(46.4, 0.65, 110.0);
-    eastNorthLawn.receiveShadow = true;
-    islandTerrainGrp.add(eastNorthLawn);
+      const sideFence = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.1, islandLength), fenceMat);
+      sideFence.position.set(fx, 2.4, islandCenterZ);
+      islandTerrainGrp.add(sideFence);
 
-    // East South Lawn (South of Lake, X: +4.8 to 88, Z: 167.5 to 262.5)
-    const eastSouthLawn = new THREE.Mesh(new THREE.BoxGeometry(83.2, 2.0, 95), islandGrassMat);
-    eastSouthLawn.position.set(46.4, 0.65, 215.0);
-    eastSouthLawn.receiveShadow = true;
-    islandTerrainGrp.add(eastSouthLawn);
+      addSolidBox(fx - 0.5, 1.4, 95, fx + 0.5, 3.2, 310);
+    });
 
-    // East Far Lawn (East of Lake, X: 52 to 88, Z: 132.5 to 167.5)
-    const eastFarLawn = new THREE.Mesh(new THREE.BoxGeometry(36, 2.0, 35), islandGrassMat);
-    eastFarLawn.position.set(70.0, 0.65, 150.0);
-    eastFarLawn.receiveShadow = true;
-    islandTerrainGrp.add(eastFarLawn);
+    // Güney Açık Deniz Sahil Çiti (Z: 309.5)
+    const southCurb = new THREE.Mesh(new THREE.BoxGeometry(200, 0.4, 0.8), stoneBrickMat);
+    southCurb.position.set(0, 1.85, 309.5);
+    islandTerrainGrp.add(southCurb);
 
-    addSolidBox(-94, -2.0, 85, 94, 1.65, 268);
+    const southFence = new THREE.Mesh(new THREE.BoxGeometry(200, 1.1, 0.3), fenceMat);
+    southFence.position.set(0, 2.4, 309.5);
+    islandTerrainGrp.add(southFence);
+    addSolidBox(-100, 1.4, 309.0, 100, 3.2, 310.5);
 
-    // D) Paved Stone Promenade leading from the bridge into the island center and lighthouse (Clean, wide & elevated at Y = 1.66)
-    const stonePath = new THREE.Mesh(new THREE.BoxGeometry(9.0, 0.32, 120), stoneBrickMat);
-    stonePath.position.set(0, 1.50, 160);
-    stonePath.receiveShadow = true;
-    islandTerrainGrp.add(stonePath);
-    addSolidBox(-4.8, 1.0, 95, 4.8, 1.66, 215);
+    // ========================================================================
+    // 2.B KÖY ÇEVRE VE DOĞUŞ YERİ KAPALI GÜVENLİK ÇİTLERİ (VILLAGE SPAWN PROTECTION)
+    // İlk doğduğumuz köyün kenarlarını kapatır, oyuncunun havada/boşlukta yürümesini engeller!
+    // ========================================================================
+    console.log("🏡 Building Village Perimeter Safety Fences & Stone Walls...");
+    const villageFenceGrp = new THREE.Group();
+    villageFenceGrp.name = 'village_perimeter_fences';
 
-    // D2) Branching Paved Walkway leading to the Royal Swan & Lily Lake (X: 4.5 to 22, Z: 150)
-    const lakePath = new THREE.Mesh(new THREE.BoxGeometry(16.0, 0.32, 4.2), stoneBrickMat);
-    lakePath.position.set(12.5, 1.50, 150);
-    lakePath.receiveShadow = true;
-    islandTerrainGrp.add(lakePath);
-    addSolidBox(4.5, 1.0, 147.8, 20.5, 1.66, 152.2);
+    // 1. Batı Köy Sınırı Çiti (X = -75, Z: -75 to 35)
+    const westFenceMesh = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.6, 110), darkBeamMat);
+    westFenceMesh.position.set(-75, 1.2, -20);
+    villageFenceGrp.add(westFenceMesh);
+    addSolidBox(-76.5, 0, -75, -74.0, 4.0, 36);
+
+    // 2. Doğu Köy Sınırı Çiti (X = +75, Z: -75 to 35)
+    const eastFenceMesh = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.6, 110), darkBeamMat);
+    eastFenceMesh.position.set(75, 1.2, -20);
+    villageFenceGrp.add(eastFenceMesh);
+    addSolidBox(74.0, 0, -75, 76.5, 4.0, 36);
+
+    // 3. Kuzey Köy Sınırı Çiti (Z = -75, X: -75 to 75, Orman Tapınağı patikası X: -6 to 6 hariç)
+    const northFenceL = new THREE.Mesh(new THREE.BoxGeometry(69, 1.6, 0.5), darkBeamMat);
+    northFenceL.position.set(-40.5, 1.2, -75);
+    villageFenceGrp.add(northFenceL);
+    addSolidBox(-75, 0, -76.5, -6, 4.0, -73.5);
+
+    const northFenceR = new THREE.Mesh(new THREE.BoxGeometry(69, 1.6, 0.5), darkBeamMat);
+    northFenceR.position.set(40.5, 1.2, -75);
+    villageFenceGrp.add(northFenceR);
+    addSolidBox(6, 0, -76.5, 75, 4.0, -73.5);
+
+    // 4. Güney Nehir Boyu Koruma Çitleri (Z = 35 to 40, X: -75 to -4.5 ve X: 4.5 to 75)
+    // Sadece köprüye giden X: -4.2..+4.2 açık bırakılır!
+    const southRiverFenceL = new THREE.Mesh(new THREE.BoxGeometry(70.5, 1.4, 0.5), darkBeamMat);
+    southRiverFenceL.position.set(-39.75, 1.1, 35);
+    villageFenceGrp.add(southRiverFenceL);
+    addSolidBox(-75, 0, 34.0, -4.5, 3.5, 36.5);
+
+    const southRiverFenceR = new THREE.Mesh(new THREE.BoxGeometry(70.5, 1.4, 0.5), darkBeamMat);
+    southRiverFenceR.position.set(39.75, 1.1, 35);
+    villageFenceGrp.add(southRiverFenceR);
+    addSolidBox(4.5, 0, 34.0, 75, 3.5, 36.5);
+
+    villageExpansionGroup.add(villageFenceGrp);
 
     // E) KRALİYET KUĞU VE NİLÜFER CENNET GÖLETİ (ROYAL SWAN & WATER LILY LAKE GARDEN)
-    // Konum: x: 36, z: 150 (Oyulmuş açık gölet havzası, pürüzsüz berrak su ve göl üzerinde yüzen kuğular)
+    // Konum: x: 36, z: 150 (Yükseltilmiş temiz doğal havza, pürüzsüz berrak maviş su, sıfır z-fighting!)
     console.log("🦢 Sculpting Picturesque Royal Swan Lake Garden & Wooden Viewing Pier (x: 36, z: 150)...");
     const lakeGroup = new THREE.Group();
     lakeGroup.position.set(36, 0, 150);
 
-    // 1. Sandy Shoreline Basin Rim
-    const lakeSandRim = new THREE.Mesh(new THREE.CylinderGeometry(15.5, 16.5, 0.3, 32), islandSandMat);
-    lakeSandRim.position.y = 1.35;
-    lakeSandRim.receiveShadow = true;
-    lakeGroup.add(lakeSandRim);
+    // 1. Doğal Yeşil Çim Setli Havza Tabanı (Ada zemininden yukarıya doğru yumuşak yeşil set)
+    const lakeGrassMound = new THREE.Mesh(new THREE.CylinderGeometry(16.5, 17.5, 0.45, 36), islandGrassMat);
+    lakeGrassMound.position.y = 1.70; // Üst yüzey = 1.925m
+    lakeGrassMound.receiveShadow = false;
+    lakeGroup.add(lakeGrassMound);
 
-    // 2. Sparkling Crystal Blue Lake Water Surface (Y = 1.65, Depth = 0.40m)
+    // 2. Taş Kıyı Seti (Lake Stone Curb Rim)
+    const lakeStoneCurb = new THREE.Mesh(new THREE.CylinderGeometry(15.2, 15.6, 0.35, 36), stoneBrickMat);
+    lakeStoneCurb.position.y = 1.95; // Üst yüzey = 2.125m
+    lakeStoneCurb.receiveShadow = false;
+    lakeGroup.add(lakeStoneCurb);
+
+    // 3. Işıl Işıl Kristal MAVİŞ Göl Su Yüzeyi (Top Y = 2.12m - Yeşil çimden temiz 47cm yukarıda, SIFIR ÇARPIŞMA!)
     const lakeWaterSurface = new THREE.Mesh(
-      new THREE.CylinderGeometry(14.2, 14.8, 0.40, 32),
-      waterDeepMat
+      new THREE.CylinderGeometry(14.8, 14.8, 0.20, 36),
+      lakeWaterMavisMat
     );
-    lakeWaterSurface.position.y = 1.45; // top face = 1.65m
-    lakeWaterSurface.receiveShadow = true;
+    lakeWaterSurface.position.y = 2.02; // Üst su yüzeyi = 2.12m
+    lakeWaterSurface.receiveShadow = false;
     lakeGroup.add(lakeWaterSurface);
-    addSolidBox(21.0, 0.8, 134.0, 52.0, 1.65, 166.0);
+    animatedStructures.push({ type: 'lake_ripple', mesh: lakeWaterSurface });
+    addSolidBox(21.0, 1.0, 134.0, 52.0, 2.12, 166.0);
 
-    // 3. Natural River Pebble & Cobblestone Lake Embankment
-    for (let rk = 0; rk < 24; rk++) {
-      const rkAngle = (rk / 24) * Math.PI * 2;
-      const rkDist = 14.6 + (Math.sin(rk * 3) * 0.8);
-      const rkX = Math.cos(rkAngle) * rkDist;
-      const rkZ = Math.sin(rkAngle) * rkDist;
-      const rkScale = 0.6 + (Math.abs(Math.sin(rk * 2)) * 0.7);
-
-      const pebble = new THREE.Mesh(new THREE.DodecahedronGeometry(rkScale, 1), darkStoneMat);
-      pebble.position.set(rkX, 1.55, rkZ);
-      pebble.rotation.set(rk * 0.4, rk * 0.7, rk * 0.2);
-      lakeGroup.add(pebble);
-    }
-
-    // 4. Wooden Scenic Viewing Pier & Benches (X: -16 to -6 local -> X: 20 to 30 world)
-    const pierDeck = new THREE.Mesh(new THREE.BoxGeometry(10.0, 0.30, 4.6), woodPlankMat);
-    pierDeck.position.set(-11.0, 1.50, 0); // top face = 1.65m
-    pierDeck.receiveShadow = true;
+    // 4. Ahşap Seyir İskelesi & Banklar (Y: 2.18m - Maviş gölet üzerinde ferah seyir terası)
+    const pierDeck = new THREE.Mesh(new THREE.BoxGeometry(10.0, 0.25, 4.6), woodPlankMat);
+    pierDeck.position.set(-11.0, 2.08, 0); // Üst yüzey = 2.205m
+    pierDeck.receiveShadow = false;
     lakeGroup.add(pierDeck);
-    addSolidBox(20.0, 1.0, 147.5, 30.5, 1.65, 152.5);
 
-    // Pier Support Pilings in water
+    // Çimden iskeleye bağlanan yumuşak ahşap geçiş rampası (Y = 1.65'ten Y = 2.18'e)
+    const pierRamp = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.25, 4.2), woodPlankMat);
+    pierRamp.position.set(-17.2, 1.92, 0);
+    pierRamp.rotation.z = -0.12;
+    pierRamp.receiveShadow = false;
+    lakeGroup.add(pierRamp);
+
+    addSolidBox(19.0, 1.2, 147.5, 30.5, 2.20, 152.5);
+
+    // İskele Destek Kazıkları
     [[-15, -2.0], [-15, 2.0], [-11, -2.0], [-11, 2.0], [-7, -2.0], [-7, 2.0]].forEach(([px, pz]) => {
-      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 1.8, 8), darkBeamMat);
-      pole.position.set(px, 0.8, pz);
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.2, 2.2, 8), darkBeamMat);
+      pole.position.set(px, 1.0, pz);
       lakeGroup.add(pole);
     });
 
-    // Twin Brass Lanterns at the Pier Tip
+    // İskele Ucunda Pirinç Fenerler
     [[-6.8, -2.0], [-6.8, 2.0]].forEach(([lx, lz]) => {
       const post = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.1, 2.2, 6), darkBeamMat);
-      post.position.set(lx, 2.5, lz);
+      post.position.set(lx, 2.85, lz);
       lakeGroup.add(post);
 
       const lamp = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 8), lanternGlowMat);
-      lamp.position.set(lx, 3.5, lz);
+      lamp.position.set(lx, 3.85, lz);
       lakeGroup.add(lamp);
     });
 
-    // Wooden Lakeview Bench on the pier
+    // İskele Göl Manzaralı Ahşap Bank
     const lakeBench = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.4, 0.6), woodPlankMat);
-    lakeBench.position.set(-10.0, 1.95, -1.6);
+    lakeBench.position.set(-10.0, 2.40, -1.6);
     lakeGroup.add(lakeBench);
 
-    // 5. Blooming Lotus Flowers & Lily Pads (Floating on water surface)
+    // 5. Maviş Su Üzerinde Yüzen Nilüferler ve Pembe/Beyaz Çiçekler (Y = 2.03m)
     const lilyFlowerMat = new THREE.MeshStandardMaterial({ color: 0xf472b6, roughness: 0.4 });
     const lilyWhiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.4 });
     const lilyPadMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.7 });
@@ -386,22 +529,22 @@
 
     lilypadLocations.forEach(lp => {
       const pad = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.1, 0.04, 10), lilyPadMat);
-      pad.position.set(lp.x, 1.50, lp.z);
+      pad.position.set(lp.x, 2.03, lp.z);
       lakeGroup.add(pad);
 
       // Lotus Flower
       const petalMat = lp.isPink ? lilyFlowerMat : lilyWhiteMat;
       const flower = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.45, 6), petalMat);
-      flower.position.set(lp.x, 1.65, lp.z);
+      flower.position.set(lp.x, 2.18, lp.z);
       flower.rotation.x = Math.PI;
       lakeGroup.add(flower);
 
       const core = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 6), goldMat);
-      core.position.set(lp.x, 1.58, lp.z);
+      core.position.set(lp.x, 2.11, lp.z);
       lakeGroup.add(core);
     });
 
-    // 6. Lakeshore Reeds & Bulrushes (Sazlıklar ve Kamışlar)
+    // 6. Kıyı Sazlıkları ve Kamışlar (Y = 2.02m)
     const reedStemMat = new THREE.MeshStandardMaterial({ color: 0x4ade80, roughness: 0.6 });
     const reedCattailMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8 });
 
@@ -416,23 +559,23 @@
         const stemH = 1.6 + Math.random() * 0.8;
 
         const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, stemH, 4), reedStemMat);
-        stem.position.set(rx, 1.5 + stemH / 2, rz);
+        stem.position.set(rx, 2.02 + stemH / 2, rz);
         stem.rotation.z = (Math.random() - 0.5) * 0.15;
         lakeGroup.add(stem);
 
         const cattail = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.4, 6), reedCattailMat);
-        cattail.position.set(rx, 1.5 + stemH - 0.2, rz);
+        cattail.position.set(rx, 2.02 + stemH - 0.2, rz);
         lakeGroup.add(cattail);
       }
     });
 
-    // 7. Scenic Weeping Willow Trees by the Lake Shore
+    // 7. Gölet Kıyısındaki Zarif Salkım Söğüt Ağaçları
     [
       { x: 12, z: -10 },
       { x: 11, z: 11 }
     ].forEach(wt => {
       const willow = new THREE.Group();
-      willow.position.set(wt.x, 1.6, wt.z);
+      willow.position.set(wt.x, 1.95, wt.z);
 
       const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.6, 4.5, 8), darkBeamMat);
       trunk.position.y = 2.25;
@@ -455,6 +598,7 @@
       }
 
       lakeGroup.add(willow);
+      addSolidCylinder(wt.x, wt.z, 0.5, 1.95, 5.0);
     });
 
     islandTerrainGrp.add(lakeGroup);
@@ -469,10 +613,11 @@
     ];
 
     hillConfigs.forEach(h => {
-      const hill = new THREE.Mesh(new THREE.ConeGeometry(h.r, h.h, 12), darkStoneMat);
+      const hill = new THREE.Mesh(new THREE.ConeGeometry(h.r, h.h, 12), islandGrassMat);
       hill.position.set(h.x, h.h / 2 + 1.0, h.z);
       islandTerrainGrp.add(hill);
-      addSolidBox(h.x - h.r * 0.5, 1.0, h.z - h.r * 0.5, h.x + h.r * 0.5, h.h * 0.75 + 1.0, h.z + h.r * 0.5);
+      // True circular/cylindrical radial collider matching the cone base shape
+      addSolidCylinder(h.x, h.z, h.r * 0.5, 1.0, h.h * 0.75 + 1.0);
 
       // Lush foliage on hilltops
       const bush = new THREE.Mesh(new THREE.SphereGeometry(h.r * 0.45, 8, 8), islandGrassMat);
@@ -480,7 +625,7 @@
       islandTerrainGrp.add(bush);
     });
 
-    // Flowering Shade Trees on Island Meadow
+    // Flowering Shade Trees on Island Meadow (True circular cylinder trunks - no square corners!)
     const treeLocs = [
       [-32, 125], [-24, 168], [28, 125], [26, 172],
       [-24, 215], [24, 215], [42, 160], [-40, 160]
@@ -490,7 +635,7 @@
       const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.5, 4.0, 8), darkBeamMat);
       trunk.position.y = 2.0;
       tree.add(trunk);
-      addSolidBox(tx - 0.5, 1.6, tz - 0.5, tx + 0.5, 5.0, tz + 0.5);
+      addSolidCylinder(tx, tz, 0.45, 1.6, 5.0);
 
       const crown = new THREE.Mesh(new THREE.SphereGeometry(2.8, 10, 10), new THREE.MeshStandardMaterial({ color: 0x22c55e, roughness: 0.7 }));
       crown.position.y = 5.2;
@@ -498,6 +643,14 @@
 
       tree.position.set(tx, 1.6, tz);
       islandTerrainGrp.add(tree);
+    });
+
+    // Kusursuz yeşil yer kabuğu performansı: Gölge titremesi, çift yer kabuğu ve moire lekelenmesini tamamen engelle!
+    islandTerrainGrp.traverse((obj) => {
+      if (obj && obj.isMesh) {
+        obj.receiveShadow = false;
+        obj.castShadow = false;
+      }
     });
 
     villageExpansionGroup.add(islandTerrainGrp);
@@ -528,10 +681,10 @@
     plinthCurb.position.y = 0.3;
     lighthouseGrp.add(plinthCurb);
 
-    // Foundation Base Colliders (South/East/West back support)
-    addSolidBox(-4.8, 1.4, 218.5, 4.8, 4.8, 224.8);
-    addSolidBox(-4.8, 1.4, 216.0, -3.2, 4.8, 224.0);
-    addSolidBox(3.2, 1.4, 216.0, 4.8, 4.8, 224.0);
+    // Foundation Base Colliders (Only physical perimeter walls of the lighthouse, leaving all corridors wide open!)
+    addSolidBox(-3.8, 1.4, 223.8, 3.8, 4.8, 224.8); // South back wall
+    addSolidBox(-4.8, 1.4, 218.0, -3.8, 4.8, 224.0); // West wall
+    addSolidBox(3.8, 1.4, 218.0, 4.8, 4.8, 224.0);  // East wall
 
     // 2. OPEN GROUND-FLOOR MARITIME LODGE (Açık, Ferah ve Asla Takılma Olmayan Zemin Salonu)
     // Solid interior floor at ground level
@@ -588,21 +741,21 @@
     // Step -2: Ground Approach Promenade Pad (Y = 1.65 to 1.70)
     const padMesh1 = new THREE.Mesh(new THREE.BoxGeometry(6.5, 0.2, 3.5), stoneBrickMat);
     padMesh1.position.set(0, 0.1, -9.0);
-    padMesh1.receiveShadow = true;
+    padMesh1.receiveShadow = false;
     lighthouseGrp.add(padMesh1);
     addSolidBox(-3.4, 1.4, 209.2, 3.4, 1.75, 212.4);
 
     // Step -1: Middle Stone Step (Y = 1.95)
     const padMesh2 = new THREE.Mesh(new THREE.BoxGeometry(5.5, 0.3, 2.2), stoneBrickMat);
     padMesh2.position.set(0, 0.3, -6.8);
-    padMesh2.receiveShadow = true;
+    padMesh2.receiveShadow = false;
     lighthouseGrp.add(padMesh2);
     addSolidBox(-2.8, 1.4, 212.0, 2.8, 2.00, 214.2);
 
     // Step 0: Spiral Start Landing Platform (Y = 2.25)
     const padMesh3 = new THREE.Mesh(new THREE.BoxGeometry(4.5, 0.3, 2.0), stoneBrickMat);
     padMesh3.position.set(0, 0.6, -5.0);
-    padMesh3.receiveShadow = true;
+    padMesh3.receiveShadow = false;
     lighthouseGrp.add(padMesh3);
     addSolidBox(-2.4, 1.4, 213.8, 2.4, 2.30, 215.8);
 
@@ -997,13 +1150,13 @@
     });
 
     // E) KRALİYET BEYAZ KUĞULARI VE RENKLİ YABAN ÖRDEKLERİ (REALISTIC SWANS & DUCKS IN LAKE GARDEN) 🦢🦆
-    // Swims gracefully inside the Royal Swan Lake (Center: X: 36, Z: 150)
+    // Swims gracefully inside the Royal Swan Lake (Center: X: 36, Z: 150, Y: 2.02m maviş göl)
     [
       { x: 33, z: 147, rot: 0.2, radius: 5.8 },
       { x: 39, z: 153, rot: -0.4, radius: 6.4 }
     ].forEach((sp, sIdx) => {
       const swan = createRealisticSwan(THREE);
-      swan.position.set(sp.x, 1.56, sp.z);
+      swan.position.set(sp.x, 2.03, sp.z);
       swan.rotation.y = sp.rot;
       villageExpansionGroup.add(swan);
       animatedAnimals.push({ type: 'swan', mesh: swan, centerX: 36, centerZ: 150, radius: sp.radius, sIdx: sIdx });
@@ -1019,7 +1172,7 @@
       { x: 38.6, z: 149.5, isMallard: false, scale: 0.42, speed: 0.55, radius: 4.1, offset: Math.PI + 0.5 }
     ].forEach((dp, dIdx) => {
       const duck = createRealisticDuck(THREE, dp.isMallard, dp.scale);
-      duck.position.set(dp.x, 1.54, dp.z);
+      duck.position.set(dp.x, 2.02, dp.z);
       villageExpansionGroup.add(duck);
       animatedAnimals.push({
         type: 'duck',
@@ -1042,7 +1195,7 @@
 
     // G) SU SAMURLARI (REALISTIC OTTERS PLAYING IN WATER) 🦦
     const otter = createRealisticOtter(THREE);
-    otter.position.set(36, 1.52, 150);
+    otter.position.set(36, 2.02, 150);
     villageExpansionGroup.add(otter);
     animatedAnimals.push({ type: 'otter', mesh: otter, centerX: 36, centerZ: 150 });
 
@@ -1281,8 +1434,8 @@
     // E) GÜNEY BALIKÇI İSKELESİ & KUM SAHİL 🏖️
     createSleekRoundGoldCoin(38, 3.6, 210, 35, '⚓ Balıkçı İskelesi Altını');
     createInteractiveFoodItem('fish', 42, 3.6, 208);
-    createSleekRoundGoldCoin(-30, 0.8, 105, 30, '🏖️ Kum Sahil Altını');
-    createInteractiveFoodItem('fish', -25, 0.8, 108);
+    createSleekRoundGoldCoin(-30, 1.8, 105, 30, '🌿 Ada Kıyı Çayır Altını');
+    createInteractiveFoodItem('fish', -25, 1.8, 108);
 
     // F) ULU ASMA KÖPRÜ BOYUNCA 🌉
     createSleekRoundGoldCoin(0, 1.8, 55, 25, '🌉 Ulu Köprü Altını');
@@ -1298,7 +1451,678 @@
     createInteractiveFoodItem('apple', 28, 2.4, -26);
     createInteractiveFoodItem('cake', 37, 2.4, -15);
 
+    // H) 6 GİZLİ HİKAYE PARŞÖMENİ VE KADİM HAZİNE KİLİDİ 📜🔓
+    buildLoreScrollsAndAncientLock(THREE, villageExpansionGroup);
+
     console.log(`✅ Grand Safari Island Expansion v4.0 loaded! Colliders active: ${expansionColliders.length}`);
+  }
+
+  // ==========================================================================
+  // 6 GİZLİ PARŞÖMEN & KADİM HAZİNE KİLİDİ (ANCIENT LORE SCROLLS & GRAND VAULT LOCK)
+  // ==========================================================================
+  const VILLAGE_LORE_SCROLLS_CONFIG = [
+    {
+      id: 'scroll_expansion_mystery',
+      num: 1,
+      title: "Genişleyen Toprakların Sırrı",
+      locationName: "Kadim Köy Meydanı Monoliti",
+      pos: { x: 0, y: 1.85, z: 12 },
+      color: 0xf59e0b,
+      icon: "🏛️",
+      rewardCoins: 75,
+      rewardXp: 180,
+      isStarter: true
+    },
+    {
+      id: 'scroll_ancient_pact',
+      num: 2,
+      title: "Ayı ve Kedi Kadim Paktı",
+      locationName: "Antik Su Kemeri Kemer Yolu",
+      pos: { x: 42, y: 9.6, z: 155.0 }, // Su kemeri üst köprüsünde
+      altY: 1.65, // Zemin altından da yaklaşınca algılanabilir
+      color: 0x10b981,
+      icon: "🌾",
+      rewardCoins: 80,
+      rewardXp: 200,
+      isStarter: false
+    },
+    {
+      id: 'scroll_dimensional_tether',
+      num: 3,
+      title: "Büyük Deniz Feneri Kadim Parşömeni",
+      locationName: "Büyük Deniz Feneri Giriş Meydanı & Seyir Terası",
+      pos: { x: 0, y: 2.25, z: 214.0 }, // Kullanıcının istediği gibi doğrudan Büyük Deniz Feneri'nde!
+      altY: 17.5, // Kule seyir balkonundan da algılama
+      color: 0x38bdf8,
+      icon: "🗼",
+      rewardCoins: 90,
+      rewardXp: 220,
+      isStarter: false
+    },
+    {
+      id: 'scroll_celestial_tree',
+      num: 4,
+      title: "Ada Malikanesi Balkon Terası",
+      locationName: "3 Katlı Ahşap Malikane Seyir Terası",
+      pos: { x: -42, y: 6.6, z: 155.0 }, // 1. Kat Ahşap Terasında (merdivenle çıkılır)
+      altY: 1.65,
+      color: 0xa855f7,
+      icon: "☁️",
+      rewardCoins: 100,
+      rewardXp: 250,
+      isStarter: false
+    },
+    {
+      id: 'scroll_healing_springs',
+      num: 5,
+      title: "Kuğu Nilüfer Göleti Seyir İskelesi",
+      locationName: "Maviş Gölet Ahşap Seyir İskelesi",
+      pos: { x: 25, y: 2.35, z: 150.0 }, // Maviş gölet üzerindeki ahşap iskele ucunda!
+      altY: 2.1,
+      color: 0xf43f5e,
+      icon: "🌸",
+      rewardCoins: 85,
+      rewardXp: 210,
+      isStarter: false
+    },
+    {
+      id: 'scroll_underground_prophecy',
+      num: 6,
+      title: "Moris'in Gizli Dağ Arşivi",
+      locationName: "Moris'in Kuzey Dağ İni & Arşivi",
+      pos: { x: 5.5, y: 3.6, z: -82.0 },
+      color: 0xe11d48,
+      icon: "⛰️",
+      rewardCoins: 120,
+      rewardXp: 300,
+      isStarter: false
+    }
+  ];
+
+  function createOverheadBillboard(THREE, text, color = '#f59e0b', width = 320, height = 72) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.minFilter = THREE.LinearFilter;
+
+    function redraw(newText, newColor) {
+      ctx.clearRect(0, 0, width, height);
+      // Pill container background
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+      ctx.strokeStyle = newColor || color;
+      ctx.lineWidth = 4;
+      const r = height / 2;
+      ctx.beginPath();
+      ctx.moveTo(r, 2);
+      ctx.lineTo(width - r, 2);
+      ctx.arc(width - r, r, r - 2, -Math.PI / 2, Math.PI / 2);
+      ctx.lineTo(r, height - 2);
+      ctx.arc(r, r, r - 2, Math.PI / 2, -Math.PI / 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Bold text
+      ctx.font = 'bold 24px system-ui, sans-serif';
+      ctx.fillStyle = '#ffffff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(newText || text, width / 2, height / 2);
+      texture.needsUpdate = true;
+    }
+
+    redraw(text, color);
+
+    const spriteMat = new THREE.SpriteMaterial({
+      map: texture,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false
+    });
+    const sprite = new THREE.Sprite(spriteMat);
+    sprite.scale.set(2.8, 0.65, 1.0);
+    sprite.redraw = redraw;
+    return sprite;
+  }
+
+  function buildLoreScrollsAndAncientLock(THREE, parentGroup) {
+    villageLoreScrolls3D = [];
+    ancientLockData = null;
+
+    // Load currently discovered scrolls from localStorage
+    let discList = ['scroll_expansion_mystery'];
+    try {
+      const raw = localStorage.getItem('superbear_discovered_scrolls');
+      if (raw) discList = JSON.parse(raw);
+    } catch(e) {}
+
+    // A) 6 TANE FİZİKSEL 3D GİZLİ PARŞÖMEN MODELİ OLUŞTUR
+    const scrollParchmentMat = new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.65 });
+    const scrollRibbonMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.4 });
+    const scrollWaxMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.3, metalness: 0.7 });
+    const scrollStoneMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85 });
+    const scrollGoldTrim = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8, roughness: 0.25 });
+
+    VILLAGE_LORE_SCROLLS_CONFIG.forEach((conf) => {
+      const scrollGrp = new THREE.Group();
+      scrollGrp.position.set(conf.pos.x, conf.pos.y, conf.pos.z);
+
+      // Stone Pedestal
+      const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.38, 0.48, 0.2, 8), scrollStoneMat);
+      ped.position.y = -0.22;
+      scrollGrp.add(ped);
+      const pedRing = new THREE.Mesh(new THREE.CylinderGeometry(0.40, 0.40, 0.05, 8), scrollGoldTrim);
+      pedRing.position.y = -0.11;
+      scrollGrp.add(pedRing);
+
+      // Floating dynamic group
+      const floatGrp = new THREE.Group();
+
+      // Scrolled Cylinder
+      const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.68, 16), scrollParchmentMat);
+      roll.rotation.z = Math.PI / 4;
+      floatGrp.add(roll);
+
+      // Red ribbon wrap
+      const ribbon = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.14, 16), scrollRibbonMat);
+      ribbon.rotation.z = Math.PI / 4;
+      floatGrp.add(ribbon);
+
+      // Golden wax seal
+      const wax = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.04, 10), scrollWaxMat);
+      wax.rotation.x = Math.PI / 2;
+      wax.position.set(0, 0, 0.15);
+      floatGrp.add(wax);
+
+      // Glowing Aura Ring
+      const auraColor = conf.color || 0xfacc15;
+      const auraMat = new THREE.MeshStandardMaterial({
+        color: auraColor,
+        emissive: auraColor,
+        emissiveIntensity: 0.85,
+        transparent: true,
+        opacity: 0.75,
+        roughness: 0.2
+      });
+      const auraRing = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.02, 8, 24), auraMat);
+      floatGrp.add(auraRing);
+
+      // Rotating Rune Octahedron above
+      const runeOct = new THREE.Mesh(new THREE.OctahedronGeometry(0.11), auraMat);
+      runeOct.position.set(0, 0.52, 0);
+      floatGrp.add(runeOct);
+
+      scrollGrp.add(floatGrp);
+
+      // Overhead 3D Billboard
+      const isAlreadyDisc = discList.includes(conf.id);
+      const bColor = '#' + auraColor.toString(16).padStart(6, '0');
+      const billboardText = isAlreadyDisc ? `📜 #${conf.num} ${conf.title} (Açık)` : `📜 #${conf.num} ${conf.title}`;
+      const billboard = createOverheadBillboard(THREE, billboardText, isAlreadyDisc ? '#10b981' : bColor);
+      billboard.position.set(0, 1.15, 0);
+      scrollGrp.add(billboard);
+
+      parentGroup.add(scrollGrp);
+
+      villageLoreScrolls3D.push({
+        conf: conf,
+        group: scrollGrp,
+        floatGrp: floatGrp,
+        auraRing: auraRing,
+        runeOct: runeOct,
+        billboard: billboard,
+        baseY: conf.pos.y,
+        pos: new THREE.Vector3(conf.pos.x, conf.pos.y, conf.pos.z),
+        collected: isAlreadyDisc
+      });
+    });
+
+    // B) ULU KÖPRÜ GİRİŞİNDE KADİM HAZİNE MÜHRÜ VE KİLİDİ (ANCIENT VAULT & LOCK SHRINE)
+    // Konum: Ulu Köprü kuzey kapısının sol meydanında (x: -8.0, y: 1.65, z: 38.0)
+    const lockPlazaPos = { x: -8.0, y: 1.65, z: 38.0 };
+    const lockGrp = new THREE.Group();
+    lockGrp.position.set(lockPlazaPos.x, lockPlazaPos.y, lockPlazaPos.z);
+
+    // Fiziksel çarpışma kutusu
+    addSolidBox(lockPlazaPos.x - 2.8, lockPlazaPos.y, lockPlazaPos.z - 2.8, lockPlazaPos.x + 2.8, lockPlazaPos.y + 4.5, lockPlazaPos.z + 2.8);
+
+    // 1. Üç Kademeli Sekizgen Mermer Kaide (Stepped Octagonal Dais)
+    const daisMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85 });
+    const goldPillarMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.8, roughness: 0.25 });
+    const dais1 = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 3.1, 0.25, 8), daisMat);
+    dais1.position.y = 0.12;
+    lockGrp.add(dais1);
+    const dais2 = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.7, 0.25, 8), daisMat);
+    dais2.position.y = 0.35;
+    lockGrp.add(dais2);
+    const dais3 = new THREE.Mesh(new THREE.CylinderGeometry(2.0, 2.3, 0.2, 8), daisMat);
+    dais3.position.y = 0.55;
+    lockGrp.add(dais3);
+
+    // 2. Dört Köşe Kadim Taş Sütunlar & Meşaleler
+    const pillarCoords = [
+      [-1.8, -1.8], [1.8, -1.8],
+      [-1.8, 1.8], [1.8, 1.8]
+    ];
+    pillarCoords.forEach(([px, pz]) => {
+      const pil = new THREE.Mesh(new THREE.BoxGeometry(0.35, 3.0, 0.35), daisMat);
+      pil.position.set(px, 1.5, pz);
+      lockGrp.add(pil);
+
+      const pilCap = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.15, 0.48), goldPillarMat);
+      pilCap.position.set(px, 3.05, pz);
+      lockGrp.add(pilCap);
+
+      const lanternGlow = new THREE.Mesh(
+        new THREE.SphereGeometry(0.16, 8, 8),
+        new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xf59e0b, emissiveIntensity: 1.2 })
+      );
+      lanternGlow.position.set(px, 3.25, pz);
+      lockGrp.add(lanternGlow);
+    });
+
+    // 3. Üst Kemer Tacı (Overhead Stone Lintel & Golden Sun Crest)
+    const lintel = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.35, 4.0), daisMat);
+    lintel.position.y = 3.3;
+    lockGrp.add(lintel);
+    const sunCrest = new THREE.Mesh(new THREE.OctahedronGeometry(0.4), goldPillarMat);
+    sunCrest.position.y = 3.75;
+    lockGrp.add(sunCrest);
+
+    // 4. Altı Adet Parşömen Yuvası (6 Runic Sockets in Semicircle around chest)
+    const socketGems = [];
+    for (let sIdx = 0; sIdx < 6; sIdx++) {
+      const angle = (sIdx / 5) * Math.PI - Math.PI; // -PI to 0
+      const sRadius = 1.4;
+      const sx = Math.cos(angle) * sRadius;
+      const sz = Math.sin(angle) * sRadius + 0.3;
+
+      const sockBase = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.3, 8), daisMat);
+      sockBase.position.set(sx, 0.75, sz);
+      lockGrp.add(sockBase);
+
+      const sConf = VILLAGE_LORE_SCROLLS_CONFIG[sIdx];
+      const gColor = sConf.color || 0xfacc15;
+      const gemMat = new THREE.MeshStandardMaterial({
+        color: gColor,
+        emissive: gColor,
+        emissiveIntensity: 0.9,
+        metalness: 0.2,
+        roughness: 0.2
+      });
+      const gemMesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.12), gemMat);
+      gemMesh.position.set(sx, 0.98, sz);
+      lockGrp.add(gemMesh);
+
+      socketGems.push({
+        scrollId: sConf.id,
+        gemMesh: gemMesh,
+        gemMat: gemMat,
+        baseColor: gColor
+      });
+    }
+
+    // 5. Kadim Sandık (Ancient Grand Vault Chest)
+    const chestGroup = new THREE.Group();
+    chestGroup.position.set(0, 0.65, 0);
+
+    const chestMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.75 });
+    const chestGoldMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, metalness: 0.85, roughness: 0.25 });
+    const chestBase = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.75, 0.9), chestMat);
+    chestBase.position.y = 0.38;
+    chestGroup.add(chestBase);
+
+    // Sandık Altın Köşe Bantları
+    const goldBand1 = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.1, 0.92), chestGoldMat);
+    goldBand1.position.y = 0.08;
+    chestGroup.add(goldBand1);
+    const goldBand2 = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.1, 0.92), chestGoldMat);
+    goldBand2.position.y = 0.68;
+    chestGroup.add(goldBand2);
+
+    // Sandık Açılabilir Kapağı (Lid with pivot at back)
+    const chestLidGroup = new THREE.Group();
+    chestLidGroup.position.set(0, 0.76, -0.45); // hinge at back
+    const lidMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.48, 0.48, 1.42, 12, 1, false, 0, Math.PI), chestMat);
+    lidMesh.rotation.z = Math.PI / 2;
+    lidMesh.position.set(0, 0.24, 0.45);
+    chestLidGroup.add(lidMesh);
+    const lidGold = new THREE.Mesh(new THREE.BoxGeometry(1.44, 0.08, 0.92), chestGoldMat);
+    lidGold.position.set(0, 0.04, 0.45);
+    chestLidGroup.add(lidGold);
+    chestGroup.add(chestLidGroup);
+
+    // 6. Sandığın İçindeki Efsanevi Ödül (Crown, Gold & Light Pillar)
+    const treasureInsideGrp = new THREE.Group();
+    treasureInsideGrp.position.set(0, 0.8, 0);
+
+    // Gök Işığı Sütunu (Celestial Rainbow Light Pillar)
+    const beamMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0x38bdf8,
+      emissiveIntensity: 1.5,
+      transparent: true,
+      opacity: 0.5,
+      roughness: 0.1
+    });
+    const lightBeam = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 1.2, 7.5, 16), beamMat);
+    lightBeam.position.y = 3.6;
+    treasureInsideGrp.add(lightBeam);
+
+    // Efsanevi Kadim Bilgelik Tacı (Ancient Wisdom Crown)
+    const crownGrp = new THREE.Group();
+    crownGrp.position.set(0, 0.35, 0);
+    const crownCirclet = new THREE.Mesh(new THREE.TorusGeometry(0.24, 0.045, 8, 20), chestGoldMat);
+    crownCirclet.rotation.x = Math.PI / 2;
+    crownGrp.add(crownCirclet);
+    for (let cProng = 0; cProng < 5; cProng++) {
+      const pAng = (cProng / 5) * Math.PI * 2;
+      const prong = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.18, 6), chestGoldMat);
+      prong.position.set(Math.cos(pAng) * 0.24, 0.1, Math.sin(pAng) * 0.24);
+      crownGrp.add(prong);
+
+      const rub = new THREE.Mesh(new THREE.SphereGeometry(0.03, 6, 6), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
+      rub.position.set(Math.cos(pAng) * 0.24, 0.19, Math.sin(pAng) * 0.24);
+      crownGrp.add(rub);
+    }
+    treasureInsideGrp.add(crownGrp);
+    treasureInsideGrp.visible = false;
+    chestGroup.add(treasureInsideGrp);
+
+    // 7. DEV KADİM KİLİT VE DEMİR ZİNCİRLER (THE GIANT PADLOCK & CHAINS)
+    const lockMechanismGrp = new THREE.Group();
+    lockMechanismGrp.position.set(0, 0.55, 0.52);
+
+    // Asma Kilit Gövdesi (Padlock Body)
+    const padlockBodyMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.85, roughness: 0.3 });
+    const padlockBody = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.45, 0.22), padlockBodyMat);
+    lockMechanismGrp.add(padlockBody);
+
+    // Kilit Anahtar Deliği / Kadim Mühür Glifi
+    const keyhole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.24, 8), new THREE.MeshBasicMaterial({ color: 0x09090b }));
+    keyhole.rotation.x = Math.PI / 2;
+    keyhole.position.set(0, 0, 0.02);
+    lockMechanismGrp.add(keyhole);
+
+    // Asma Kilit Halkası / Kulbu (Shackle Pivot & Arch)
+    const shacklePivot = new THREE.Group();
+    shacklePivot.position.set(0, 0.22, 0);
+    const shackleMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.9, roughness: 0.2 });
+    const shackleMesh = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.045, 10, 16, Math.PI), shackleMat);
+    shacklePivot.add(shackleMesh);
+    lockMechanismGrp.add(shacklePivot);
+
+    chestGroup.add(lockMechanismGrp);
+
+    // Sandığı Saran Büyülü Zincirler (Mystic Chains)
+    const chainsGrp = new THREE.Group();
+    const chainMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.7, roughness: 0.4 });
+    const chainX1 = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.04, 8, 24), chainMat);
+    chainX1.position.set(0, 0.42, 0);
+    chainX1.rotation.y = Math.PI / 4;
+    chainsGrp.add(chainX1);
+    const chainX2 = new THREE.Mesh(new THREE.TorusGeometry(0.78, 0.04, 8, 24), chainMat);
+    chainX2.position.set(0, 0.42, 0);
+    chainX2.rotation.y = -Math.PI / 4;
+    chainsGrp.add(chainX2);
+    chestGroup.add(chainsGrp);
+
+    // Koruyucu Büyülü Küre Kalkanı (Pulsing Forcefield Dome)
+    const domeMat = new THREE.MeshStandardMaterial({
+      color: 0xf59e0b,
+      emissive: 0xd97706,
+      emissiveIntensity: 0.6,
+      transparent: true,
+      opacity: 0.25,
+      roughness: 0.2
+    });
+    const forcefieldDome = new THREE.Mesh(new THREE.SphereGeometry(1.65, 16, 16), domeMat);
+    forcefieldDome.position.set(0, 0.6, 0);
+    chestGroup.add(forcefieldDome);
+
+    lockGrp.add(chestGroup);
+
+    // 8. KADİM KİLİT TEPESİNDE 3D BİLLBOARD BİLGİLENDİRME LEVHASI
+    const isUnlocked = discList.length >= 6;
+    const isClaimed = localStorage.getItem('superbear_ancient_lock_claimed') === 'true';
+    const lockTitleText = isUnlocked
+      ? (isClaimed ? "👑 KADİM HAZİNE AÇILDI" : "🔓 KADİM KİLİT AÇILDI! [DOKUN]")
+      : `🔒 KADİM KİLİT (${discList.length}/6 PARŞÖMEN)`;
+    const lockBillboard = createOverheadBillboard(THREE, lockTitleText, isUnlocked ? '#10b981' : '#f59e0b', 360, 76);
+    lockBillboard.position.set(0, 2.7, 0);
+    lockGrp.add(lockBillboard);
+
+    parentGroup.add(lockGrp);
+
+    ancientLockData = {
+      group: lockGrp,
+      chestGroup: chestGroup,
+      chestLidGroup: chestLidGroup,
+      lockMechanismGrp: lockMechanismGrp,
+      shacklePivot: shacklePivot,
+      chainsGrp: chainsGrp,
+      forcefieldDome: forcefieldDome,
+      treasureInsideGrp: treasureInsideGrp,
+      crownGrp: crownGrp,
+      lightBeam: lightBeam,
+      lockBillboard: lockBillboard,
+      socketGems: socketGems,
+      pos: new THREE.Vector3(lockPlazaPos.x, lockPlazaPos.y, lockPlazaPos.z)
+    };
+  }
+
+  // --------------------------------------------------------------------------
+  // PARŞÖMENLER VE KADİM KİLİT ANİMASYON & ETKİLEŞİM DÖNGÜSÜ
+  // --------------------------------------------------------------------------
+  let _lastLockNoticeTime = 0;
+  function updateLoreScrollsAndAncientLock(pPos, time, game) {
+    if (!game || !pPos) return;
+
+    // Güncel keşfedilmiş parşömen listesini al
+    let discList = ['scroll_expansion_mystery'];
+    try {
+      const raw = localStorage.getItem('superbear_discovered_scrolls');
+      if (raw) discList = JSON.parse(raw);
+    } catch(e) {}
+
+    const isUnlocked = discList.length >= 6;
+    const isClaimed = localStorage.getItem('superbear_ancient_lock_claimed') === 'true';
+
+    // 1. Parşömenlerin Animasyonu ve Yakınlık Toplaması
+    villageLoreScrolls3D.forEach((item, idx) => {
+      const isCollected = discList.includes(item.conf.id);
+
+      // Yüzen parşömen animasyonu (dönme ve süzülme)
+      if (item.floatGrp) {
+        item.floatGrp.rotation.y += 0.035;
+        item.floatGrp.position.y = Math.sin(time * 3.2 + idx * 0.8) * 0.12;
+      }
+      if (item.auraRing) {
+        item.auraRing.rotation.z += 0.03;
+        item.auraRing.rotation.x += 0.02;
+      }
+      if (item.runeOct) {
+        item.runeOct.rotation.y += 0.05;
+      }
+
+      // Parşömen durumuna göre billboard ve görünüm güncelle
+      if (isCollected) {
+        if (!item.collected) {
+          item.collected = true;
+          if (item.billboard && item.billboard.redraw) {
+            item.billboard.redraw(`📜 #${item.conf.num} ${item.conf.title} (Açık)`, '#10b981');
+          }
+        }
+        // Zaten alınmışsa hafif altın hatıra heykeli gibi durur
+        if (item.auraRing) item.auraRing.visible = false;
+        return;
+      }
+
+      // Yakınlık algılama (Deniz Feneri 3. Parşömen zirvede de algılanabilir)
+      const dX = pPos.x - item.pos.x;
+      const dZ = pPos.z - item.pos.z;
+      const distXZ = Math.sqrt(dX * dX + dZ * dZ);
+      const distY = Math.abs(pPos.y - item.pos.y);
+
+      let inRange = false;
+      if (item.conf.id === 'scroll_dimensional_tether') {
+        // Büyük Deniz Feneri: Hem sahanlıkta (z: 214) hem de kule etrafında her yükseklikte algılanır!
+        const dFener = Math.sqrt(Math.pow(pPos.x - 0, 2) + Math.pow(pPos.z - 217, 2));
+        inRange = (distXZ < 4.8 && distY < 4.5) || (dFener < 7.5 && pPos.y >= 1.0 && pPos.y <= 27.0);
+      } else {
+        inRange = (distXZ < 3.8 && distY < 3.8) || (item.conf.altY && distXZ < 4.2 && Math.abs(pPos.y - item.conf.altY) < 3.5);
+      }
+
+      if (inRange) {
+        // PARŞÖMEN TOPLANDI!
+        item.collected = true;
+        discList.push(item.conf.id);
+        try {
+          localStorage.setItem('superbear_discovered_scrolls', JSON.stringify(discList));
+        } catch(e) {}
+
+        if (item.billboard && item.billboard.redraw) {
+          item.billboard.redraw(`📜 #${item.conf.num} ${item.conf.title} (Açık)`, '#10b981');
+        }
+
+        // Ödülleri ver
+        if (game.stats) {
+          game.stats.coins = (game.stats.coins || 0) + (item.conf.rewardCoins || 80);
+          game.stats.xp = (game.stats.xp || 0) + (item.conf.rewardXp || 200);
+          if (game.checkLevelUp) game.checkLevelUp();
+          if (game.callbacks && game.callbacks.onStatsUpdate) game.callbacks.onStatsUpdate(game.stats);
+        }
+
+        if (typeof St !== 'undefined' && St.playPowerup) St.playPowerup();
+        if (game.spawnSparkleParticles) game.spawnSparkleParticles(item.pos, 35, item.conf.color || 0xfacc15);
+
+        if (game.callbacks && game.callbacks.onShowNotice) {
+          game.callbacks.onShowNotice(`📜 YENİ GİZLİ PARŞÖMEN BULUNDU: #${item.conf.num} ${item.conf.title}! (+${item.conf.rewardCoins || 80} Altın, +${item.conf.rewardXp || 200} XP)`, "success");
+        }
+
+        // React Modal'ı bilgilendir
+        window.dispatchEvent(new CustomEvent('superbear:open-lore-scroll', { detail: { scrollId: item.conf.id } }));
+
+        // Eğer 6/6 tamamlandıysa Kadim Kilit Açılır!
+        if (discList.length >= 6) {
+          try {
+            localStorage.setItem('superbear_ancient_lock_unlocked', 'true');
+          } catch(e) {}
+          if (typeof St !== 'undefined' && St.playFanfare) St.playFanfare();
+          if (game.callbacks && game.callbacks.onShowNotice) {
+            game.callbacks.onShowNotice("🔓 BÜYÜK MÜJDE! TÜM 6 GİZLİ PARŞÖMEN BULUNDU! KÖPRÜ GİRİŞİNDEKİ KADİM KİLİT AÇILDI! 🏆", "success");
+          }
+          window.dispatchEvent(new CustomEvent('superbear:ancient-lock-unlocked', { detail: { scrollCount: 6 } }));
+        }
+      }
+    });
+
+    // 2. Kadim Kilit ve Sandık Mekanizması Güncellemesi
+    if (ancientLockData) {
+      const lockData = ancientLockData;
+
+      // 6 Yuvanın parıltı durumlarını güncelle
+      if (lockData.socketGems) {
+        lockData.socketGems.forEach(sock => {
+          const has = discList.includes(sock.scrollId);
+          if (sock.gemMesh) {
+            sock.gemMesh.scale.setScalar(has ? 1.25 : 0.7);
+            if (has) {
+              sock.gemMesh.rotation.y += 0.04;
+            }
+          }
+        });
+      }
+
+      const distLock = pPos.distanceTo(lockData.pos);
+
+      if (!isUnlocked) {
+        // --- KİLİTLİ DURUM ---
+        if (lockData.chainsGrp) lockData.chainsGrp.visible = true;
+        if (lockData.forcefieldDome) {
+          lockData.forcefieldDome.visible = true;
+          lockData.forcefieldDome.material.opacity = 0.2 + Math.sin(time * 4.0) * 0.1;
+        }
+        if (lockData.shacklePivot) lockData.shacklePivot.rotation.z = 0; // kapalı
+        if (lockData.chestLidGroup) lockData.chestLidGroup.rotation.x = 0; // kapalı
+        if (lockData.treasureInsideGrp) lockData.treasureInsideGrp.visible = false;
+
+        if (distLock < 3.2 && Date.now() - _lastLockNoticeTime > 6000) {
+          _lastLockNoticeTime = Date.now();
+          if (game.callbacks && game.callbacks.onShowNotice) {
+            game.callbacks.onShowNotice(`🔒 Kadim Kilit Kapalı! (${discList.length}/6 Parşömen Bulundu) 💡 3. Parşömen Büyük Deniz Feneri'nde!`, "info");
+          }
+        }
+      } else {
+        // --- KİLİT AÇILDI DURUMU (6/6 PARŞÖMEN) ---
+        if (lockData.chainsGrp) lockData.chainsGrp.visible = false; // Zincirler kırıldı!
+        if (lockData.forcefieldDome) lockData.forcefieldDome.visible = false; // Kalkan yok oldu!
+
+        // Asma Kilit açık konumda (+45 derece açık)
+        if (lockData.shacklePivot) {
+          lockData.shacklePivot.rotation.z = -Math.PI / 4;
+          lockData.shacklePivot.position.y = 0.28;
+        }
+
+        // Sandık Kapağı sonuna kadar açılır (-75 derece)
+        if (lockData.chestLidGroup) {
+          lockData.chestLidGroup.rotation.x = -Math.PI * 0.42;
+        }
+
+        // Sandığın içindeki ışık sütunu ve taç belirir
+        if (lockData.treasureInsideGrp) {
+          lockData.treasureInsideGrp.visible = true;
+        }
+        if (lockData.lightBeam) {
+          lockData.lightBeam.rotation.y += 0.03;
+        }
+        if (lockData.crownGrp) {
+          lockData.crownGrp.rotation.y += 0.04;
+          lockData.crownGrp.position.y = 0.35 + Math.sin(time * 3.5) * 0.08;
+        }
+
+        if (!isClaimed) {
+          if (lockData.lockBillboard && lockData.lockBillboard.redraw) {
+            lockData.lockBillboard.redraw("🔓 KADİM KİLİT AÇILDI! [DOKUN: BÜYÜK HAZİNE]", "#10b981");
+          }
+
+          // Oyuncu yaklaştığında büyük ödülü al!
+          if (distLock < 2.8) {
+            try {
+              localStorage.setItem('superbear_ancient_lock_claimed', 'true');
+            } catch(e) {}
+
+            if (game.stats) {
+              game.stats.coins = (game.stats.coins || 0) + 1000;
+              game.stats.xp = (game.stats.xp || 0) + 500;
+              game.stats.honeyGems = (game.stats.honeyGems || 0) + 100;
+              if (game.checkLevelUp) game.checkLevelUp();
+              if (game.callbacks && game.callbacks.onStatsUpdate) game.callbacks.onStatsUpdate(game.stats);
+            }
+
+            if (typeof St !== 'undefined' && St.playFanfare) St.playFanfare();
+            if (game.spawnSparkleParticles) game.spawnSparkleParticles(lockData.pos, 60, 0xfacc15);
+
+            if (game.callbacks && game.callbacks.onShowNotice) {
+              game.callbacks.onShowNotice("🏆 TEBRİKLER! Kadim Hazine Alındı: +1000 Altın, +500 XP, +100 Bal & 👑 Kadim Bilgelik Tacı!", "success");
+            }
+
+            if (lockData.lockBillboard && lockData.lockBillboard.redraw) {
+              lockData.lockBillboard.redraw("👑 KADİM HAZİNE AÇILDI", "#10b981");
+            }
+
+            window.dispatchEvent(new CustomEvent('superbear:ancient-lock-claimed'));
+          }
+        } else {
+          if (lockData.lockBillboard && lockData.lockBillboard.redraw) {
+            lockData.lockBillboard.redraw("👑 KADİM HAZİNE AÇILDI", "#10b981");
+          }
+        }
+      }
+    }
   }
 
   // ==========================================================================
@@ -1822,10 +2646,12 @@
     const now = Date.now();
     const time = now * 0.001;
 
-    // 1. Animate structures (Lighthouse beam rotation)
+    // 1. Animate structures (Lighthouse beam rotation & Lake water ripple)
     animatedStructures.forEach(item => {
       if (item.type === 'lighthouse_beam' && item.mesh) {
         item.mesh.rotation.y += 0.03;
+      } else if (item.type === 'lake_ripple' && item.mesh) {
+        item.mesh.rotation.y += 0.001;
       }
     });
 
@@ -1855,19 +2681,19 @@
         const hopCycle = Math.abs(Math.sin((time + anim.animOffset) * 4.0));
         anim.mesh.position.y = 1.65 + hopCycle * 0.35;
       } else if (anim.type === 'swan') {
-        // Smooth gliding on lake water surface (Y = 1.65)
+        // Smooth gliding on lake water surface (Y = 2.02m maviş göl)
         const ang = time * 0.35 + anim.sIdx * Math.PI;
         anim.mesh.position.x = (anim.centerX || 36) + Math.cos(ang) * anim.radius;
         anim.mesh.position.z = (anim.centerZ || 150) + Math.sin(ang) * anim.radius;
         anim.mesh.rotation.y = -ang + Math.PI / 2;
-        anim.mesh.position.y = 1.66 + Math.sin(time * 2.0) * 0.025; // Floating bob on top of water
+        anim.mesh.position.y = 2.03 + Math.sin(time * 2.0) * 0.02; // Floating bob on top of water
       } else if (anim.type === 'duck') {
-        // Paddling ducks and ducklings circling the lake (Y = 1.65)
+        // Paddling ducks and ducklings circling the lake (Y = 2.02m maviş göl)
         const ang = time * (anim.speed || 0.6) + (anim.offset || 0);
         anim.mesh.position.x = (anim.centerX || 36) + Math.sin(ang) * anim.radius;
         anim.mesh.position.z = (anim.centerZ || 150) + Math.cos(ang) * anim.radius;
         anim.mesh.rotation.y = ang + Math.PI / 2;
-        anim.mesh.position.y = 1.65 + Math.sin(time * 3.0 + anim.dIdx) * 0.02; // Gentle paddling bob
+        anim.mesh.position.y = 2.02 + Math.sin(time * 3.0 + anim.dIdx) * 0.015; // Gentle paddling bob
       } else if (anim.type === 'eagle') {
         const head = anim.mesh.getObjectByName('eagle_head');
         if (head) {
@@ -1877,53 +2703,23 @@
         const ang = time * 0.8;
         anim.mesh.position.x = (anim.centerX || 36) + Math.sin(ang) * 6.5;
         anim.mesh.position.z = (anim.centerZ || 150) + Math.cos(ang) * 6.5;
-        anim.mesh.position.y = 1.64 + Math.sin(time * 3.0) * 0.03; // Swimming on water surface
+        anim.mesh.position.y = 2.02 + Math.sin(time * 3.0) * 0.02; // Swimming on water surface
         anim.mesh.rotation.y = ang;
       }
     });
 
-    // 3. Footing & Collision Check (Smooth and solid landing on stairs, balconies, bridges and structures)
+    // 3. Player Environmental Safeguards (Anti-void & Area boundaries)
     if (game.playerPos) {
       const pPos = game.playerPos;
-      const pRadius = 0.65;
-      let highestGroundY = -9999;
 
-      for (let i = 0; i < expansionColliders.length; i++) {
-        const c = expansionColliders[i];
-        if (!c || !c.min || !c.max || c.isToxic || c.isClimbable) continue;
-
-        if (pPos.x >= c.min.x - pRadius && pPos.x <= c.max.x + pRadius &&
-            pPos.z >= c.min.z - pRadius && pPos.z <= c.max.z + pRadius) {
-          const wasAbove = pPos.y >= c.max.y - 0.95;
-          if (wasAbove && pPos.y <= c.max.y + 1.15) {
-            if (c.max.y > highestGroundY) {
-              highestGroundY = c.max.y;
-            }
-          }
-        }
-      }
-
-      if (highestGroundY > -9000 && (!game.playerVel || game.playerVel.y <= 0.3)) {
-        pPos.y = highestGroundY;
-        if (game.playerVel && game.playerVel.y < 0) game.playerVel.y = 0;
-        game.isGrounded = true;
-        game.jumpCount = 0;
-      }
-
-      // 3.B Anti-Void Safe Catch (Never fall into the void near the island or hub waters!)
-      if (pPos.z >= 45 && pPos.y < 0.4) {
-        pPos.y = 0.5; // Walk/swim on water surface
-        if (game.playerVel && game.playerVel.y < 0) game.playerVel.y = 0;
-        game.isGrounded = true;
-      }
-
-      // Hard safety net: If somehow pushed below -3.0, smoothly teleport to island entrance
+      // Safe water/void fall handling (Never float in mid-air! If player falls off into deep water, respawn safely)
       if (pPos.y < -3.0 && (isHubActive || (game.currentRegion === 'hub'))) {
-        pPos.set(0, 1.8, 110);
-        if (game.playerVel) game.playerVel.set(0, 0, 0);
-        game.isGrounded = true;
-        if (game.callbacks && game.callbacks.onShowNotice) {
-          game.callbacks.onShowNotice("🌊 Dalgalar seni güvenli kumsala taşıdı!", "info");
+        if (typeof game.playerDeath === 'function') {
+          game.playerDeath("🌊 Suya Düştün! Başlangıç Noktasına Güvenle Alındın.");
+        } else {
+          pPos.set(0, 1.5, 10);
+          if (game.playerVel) game.playerVel.set(0, 0, 0);
+          game.isGrounded = true;
         }
       }
 
@@ -2026,6 +2822,9 @@
           }
         }
       });
+
+      // 7. Lore Scrolls & Ancient Lock Animations & Interactions
+      updateLoreScrollsAndAncientLock(pPos, time, game);
     }
   }
 

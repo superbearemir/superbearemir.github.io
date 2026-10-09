@@ -15,10 +15,16 @@ if (typeof window !== 'undefined' && !window.create3DGoldCoin) {
 // ============================================================
 window.createCaveExitPortal = function(game, px, py, pz, targetRegion, targetName, targetIcon) {
   if (!game || !game.scene || !window.THREE) return null;
+  // Strictly prevent generic exit portals in Ayı Köyü (hub) where the 15 dedicated village portals reside
+  if (game.currentRegion === 'hub' || !game.currentRegion) return null;
 
   const THREE = window.THREE;
   const portalGroup = new THREE.Group();
   portalGroup.name = 'cave_exit_portal_' + targetRegion;
+  if (typeof getGroundYAt === 'function') {
+    const gY = getGroundYAt(px, pz);
+    if (gY > -500 && Math.abs(gY - py) > 0.5) py = gY;
+  }
   portalGroup.position.set(px, py, pz);
   portalGroup._spawnTime = Date.now() + 2000;
 
@@ -353,6 +359,12 @@ window.__superBearPurgeScene = function(game) {
     if (game._caveExitPortals) {
         game._caveExitPortals.forEach(p => { if (p && p.parent) p.parent.remove(p); });
         game._caveExitPortals = [];
+    }
+    if (typeof window.__removeVillageLevelPortals === 'function') {
+        window.__removeVillageLevelPortals(game);
+    }
+    if (typeof window.__removeLevelExtension === 'function') {
+        window.__removeLevelExtension(game);
     }
 
 
@@ -3718,6 +3730,24 @@ function buildBeginnerTrainingGround(THREE, villageGroup) {
     });
   }
 
+  function addTrainingCylinderCollider(cx, cz, radius, minY, maxY) {
+    const game = window.__superBearGame;
+    if (!game || !game.currentLevel) return;
+    if (!game.currentLevel.colliders) game.currentLevel.colliders = [];
+    game.currentLevel.colliders.push({
+      isCylinder: true,
+      isRadial: true,
+      center: new THREE.Vector2(cx, cz),
+      radius: radius,
+      minY: minY,
+      maxY: maxY,
+      min: new THREE.Vector3(cx - radius, minY, cz - radius),
+      max: new THREE.Vector3(cx + radius, maxY, cz + radius),
+      isToxic: false,
+      isIce: false
+    });
+  }
+
   // 1. Training Ground Sandy Courtyard (Located at x: -28, z: -4 right beside Tonton Fırıncı's Bakery)
   const courtMesh = new THREE.Mesh(new THREE.BoxGeometry(16, 0.15, 16), sandMat);
   courtMesh.position.set(-28, BASE_Y + 0.075, -4);
@@ -3828,8 +3858,8 @@ function buildBeginnerTrainingGround(THREE, villageGroup) {
   villageGroup.add(dummyGroup);
   trainingDummy = dummyGroup;
 
-  // Solid collider for dummy base
-  addTrainingCollider(-26.6, BASE_Y, -8.6, -25.4, BASE_Y + 3.2, -7.4);
+  // Solid cylindrical round collider for dummy base (True radial physics - no square corners)
+  addTrainingCylinderCollider(-26.0, -8.0, 0.65, BASE_Y, BASE_Y + 3.2);
 
   // 4. Multi-tier Jumping Logs (Zıplama & Çift Zıplama Kütükleri)
   const jumpLogs = [
@@ -3850,8 +3880,8 @@ function buildBeginnerTrainingGround(THREE, villageGroup) {
     topCap.position.set(log.x, BASE_Y + log.h + 0.01, log.z);
     villageGroup.add(topCap);
 
-    // Register solid box collider for each jump log
-    addTrainingCollider(log.x - log.r, BASE_Y, log.z - log.r, log.x + log.r, BASE_Y + log.h, log.z + log.r);
+    // Register true cylindrical round collider for each jump log (No square corners!)
+    addTrainingCylinderCollider(log.x, log.z, log.r, BASE_Y, BASE_Y + log.h);
 
     // Golden reward coin floating above each log
     const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.08, 14), goldMat);
@@ -8128,9 +8158,15 @@ function updateSpaceLoop() {
   // Authentic Grand Cave Exit Portal Helper with Boss-Gated Access
   function createCaveExitPortal(game, px, py, pz, targetRegion, targetName, targetIcon) {
     if (!game || !game.scene || !window.THREE) return;
+    // Strictly prevent generic exit portals in Ayı Köyü (hub) where the 15 dedicated village portals reside
+    if (game.currentRegion === 'hub' || !game.currentRegion) return;
     const THREE = window.THREE;
     const portalGroup = new THREE.Group();
     portalGroup.name = 'cave_exit_portal_' + targetRegion;
+    if (typeof getGroundYAt === 'function') {
+      const gY = getGroundYAt(px, pz);
+      if (gY > -500 && Math.abs(gY - py) > 0.5) py = gY;
+    }
     portalGroup.position.set(px, py, pz);
 
     // Grand Arch Pillars
@@ -8707,6 +8743,12 @@ function updateSpaceLoop() {
     caveBackWall.position.set(0, 5.8, 23.5);
     caveGroup.add(caveBackWall);
 
+    // Solid Mountain Plateau & Bedrock Behind Cave (Z: 62 to 86, X: -45 to -15) - Safe exploration behind waterfall
+    const backMountainTerrain = new THREE.Mesh(new THREE.BoxGeometry(32.0, 3.5, 25.0), darkRockMat);
+    backMountainTerrain.position.set(0, 0.8, 34.0);
+    backMountainTerrain.receiveShadow = true;
+    group.add(backMountainTerrain);
+
     const caveRoof = new THREE.Mesh(new THREE.BoxGeometry(14.0, 2.0, 22.0), darkRockMat);
     caveRoof.position.set(0, 9.5, 13.0);
     caveGroup.add(caveRoof);
@@ -9055,7 +9097,28 @@ function updateSpaceLoop() {
         max: new THREE.Vector3(-24, 25, 68.0)
       });
 
-      // Note: Altar platform & stepping stones are walkable floor features and intentionally NOT blocking AABB colliders so player can freely step on them and reach the chest!
+      // A) Solid Cave Grotto Floor (Guarantees safe walking inside the cave without falling through)
+      game.currentLevel.colliders.push({
+        isWaterfallCollider: true,
+        isFloor: true,
+        min: new THREE.Vector3(-36.0, -2.0, 41.5),
+        max: new THREE.Vector3(-24.0, 0.15, 65.0)
+      });
+      // Stepping Stones & Sacred Altar Floor
+      game.currentLevel.colliders.push({
+        isWaterfallCollider: true,
+        isFloor: true,
+        min: new THREE.Vector3(-33.0, -1.0, 48.0),
+        max: new THREE.Vector3(-27.0, 0.40, 62.0)
+      });
+
+      // B) Solid Mountain Bedrock Behind Cave (Z: 62 to 86, X: -45 to -15) - Safe exploration behind waterfall
+      game.currentLevel.colliders.push({
+        isWaterfallCollider: true,
+        isFloor: true,
+        min: new THREE.Vector3(-45.0, -2.0, 62.0),
+        max: new THREE.Vector3(-15.0, 1.65, 86.0)
+      });
 
       // Ahşap Balıkçılık İskelesi Tabanı
       game.currentLevel.colliders.push({
@@ -9064,14 +9127,26 @@ function updateSpaceLoop() {
         max: new THREE.Vector3(-18.7, 0.48, 35.9)
       });
 
-      // İskele Eşyaları (Varil, Fener Direği, Balık Kutusu)
+      // İskele Eşyaları (Varil, Fener Direği, Balık Kutusu - Yuvarlak eşyalar için gerçek silindirik çarpışma)
       game.currentLevel.colliders.push({
         isWaterfallCollider: true,
+        isCylinder: true,
+        isRadial: true,
+        center: new THREE.Vector2(-19.6, 32.8),
+        radius: 0.6,
+        minY: 0.3,
+        maxY: 1.6,
         min: new THREE.Vector3(-20.2, 0.3, 32.2),
         max: new THREE.Vector3(-19.0, 1.6, 33.4)
       });
       game.currentLevel.colliders.push({
         isWaterfallCollider: true,
+        isCylinder: true,
+        isRadial: true,
+        center: new THREE.Vector2(-19.2, 35.5),
+        radius: 0.35,
+        minY: 0.3,
+        maxY: 3.5,
         min: new THREE.Vector3(-19.5, 0.3, 35.2),
         max: new THREE.Vector3(-18.9, 3.5, 35.8)
       });
@@ -9098,19 +9173,37 @@ function updateSpaceLoop() {
         max: new THREE.Vector3(-26.6, 1.55, 19.3)
       });
 
-      // Sokak Lambaları (Fener Direkleri)
+      // Sokak Lambaları (Yuvarlak Fener Direkleri - Silindirik modelleme)
       game.currentLevel.colliders.push({
         isWaterfallCollider: true,
+        isCylinder: true,
+        isRadial: true,
+        center: new THREE.Vector2(-39.5, 27.5),
+        radius: 0.38,
+        minY: 0,
+        maxY: 3.6,
         min: new THREE.Vector3(-39.9, 0, 27.1),
         max: new THREE.Vector3(-39.1, 3.6, 27.9)
       });
       game.currentLevel.colliders.push({
         isWaterfallCollider: true,
+        isCylinder: true,
+        isRadial: true,
+        center: new THREE.Vector2(-15.5, 33.0),
+        radius: 0.38,
+        minY: 0,
+        maxY: 3.6,
         min: new THREE.Vector3(-15.9, 0, 32.6),
         max: new THREE.Vector3(-15.1, 3.6, 33.4)
       });
       game.currentLevel.colliders.push({
         isWaterfallCollider: true,
+        isCylinder: true,
+        isRadial: true,
+        center: new THREE.Vector2(-25.0, 17.5),
+        radius: 0.38,
+        minY: 0,
+        maxY: 3.6,
         min: new THREE.Vector3(-25.4, 0, 17.1),
         max: new THREE.Vector3(-24.6, 3.6, 17.9)
       });
@@ -12759,147 +12852,7 @@ function updateSpaceLoop() {
         }
       }
 
-      // -------------------------------------------------------------------------
-      // --- UNIVERSAL DYNAMIC SCENE MESH COLLISION SCANNER (Trees, Houses, Rocks, Walls) ---
-      // -------------------------------------------------------------------------
-      if (!game._lastCollisionScanTime || now - game._lastCollisionScanTime > 1200) {
-        game._lastCollisionScanTime = now;
-        game._scannedRadialObstacles = [];
-        game._scannedBoxObstacles = [];
 
-        if (game.scene && window.THREE) {
-          const THREE = window.THREE;
-          game.scene.traverse((obj) => {
-            if (!obj) return;
-            if (obj === game.playerBear?.root || obj.isPlayer) return;
-
-            const name = (obj.name || '').toLowerCase();
-            const parentName = (obj.parent && obj.parent.name || '').toLowerCase();
-            const combinedName = name + ' ' + parentName;
-
-            // Trees / Trunks / Foliage / Pines / Palms
-            if (combinedName.includes('tree') || combinedName.includes('trunk') || combinedName.includes('foliage') || combinedName.includes('pine') || combinedName.includes('ağaç') || combinedName.includes('agac')) {
-              const worldPos = new THREE.Vector3();
-              obj.getWorldPosition(worldPos);
-              if (Math.abs(worldPos.x) < 450 && Math.abs(worldPos.z) < 450) {
-                game._scannedRadialObstacles.push({
-                  cx: worldPos.x,
-                  cz: worldPos.z,
-                  minY: worldPos.y - 0.5,
-                  maxY: worldPos.y + 12.0,
-                  radius: 1.15,
-                  type: 'tree'
-                });
-              }
-            }
-            // Houses / Buildings / Walls / Fences / Huts / Cabins / Gates / Arches / Pillars / Shops
-            else if (combinedName.includes('house') || combinedName.includes('building') || combinedName.includes('wall') || combinedName.includes('hut') || combinedName.includes('cabin') || combinedName.includes('fence') || combinedName.includes('duvar') || combinedName.includes('ev') || combinedName.includes('fırın') || combinedName.includes('dukkan') || combinedName.includes('dükkan') || combinedName.includes('gate') || combinedName.includes('arch') || combinedName.includes('pillar') || combinedName.includes('ruin') || combinedName.includes('shop')) {
-              if (obj.isMesh && obj.geometry) {
-                try {
-                  obj.geometry.computeBoundingBox();
-                  const bbox = obj.geometry.boundingBox;
-                  if (bbox) {
-                    const minWorld = bbox.min.clone().applyMatrix4(obj.matrixWorld);
-                    const maxWorld = bbox.max.clone().applyMatrix4(obj.matrixWorld);
-
-                    const minX = Math.min(minWorld.x, maxWorld.x) - 0.15;
-                    const maxX = Math.max(minWorld.x, maxWorld.x) + 0.15;
-                    const minZ = Math.min(minWorld.z, maxWorld.z) - 0.15;
-                    const maxZ = Math.max(minWorld.z, maxWorld.z) + 0.15;
-                    const minY = Math.min(minWorld.y, maxWorld.y) - 0.5;
-                    const maxY = Math.max(minWorld.y, maxWorld.y) + 0.5;
-
-                    const width = maxX - minX;
-                    const depth = maxZ - minZ;
-                    const height = maxY - minY;
-
-                    if (width > 0.4 && width < 45 && depth > 0.4 && depth < 45 && height > 0.8) {
-                      game._scannedBoxObstacles.push({
-                        minX, maxX, minZ, maxZ, minY, maxY,
-                        type: 'structure'
-                      });
-                    }
-                  }
-                } catch(e) {}
-              }
-            }
-            // Rocks / Boulders / Stones / Monuments / Statues / Crates / Barrels
-            else if (combinedName.includes('rock') || combinedName.includes('boulder') || combinedName.includes('stone') || combinedName.includes('kaya') || combinedName.includes('statue') || combinedName.includes('monument') || combinedName.includes('barrel') || combinedName.includes('crate')) {
-              const worldPos = new THREE.Vector3();
-              obj.getWorldPosition(worldPos);
-              if (Math.abs(worldPos.x) < 450 && Math.abs(worldPos.z) < 450) {
-                game._scannedRadialObstacles.push({
-                  cx: worldPos.x,
-                  cz: worldPos.z,
-                  minY: worldPos.y - 0.5,
-                  maxY: worldPos.y + 6.0,
-                  radius: 1.25,
-                  type: 'rock'
-                });
-              }
-            }
-          });
-        }
-      }
-
-      // Enforce Scanned Box Obstacles (Houses, Walls, Buildings, Fences, Huts, Cabins)
-      if (game._scannedBoxObstacles && game._scannedBoxObstacles.length > 0) {
-        for (let bi = 0; bi < game._scannedBoxObstacles.length; bi++) {
-          const b = game._scannedBoxObstacles[bi];
-          if (pPos.y + 1.6 > b.minY && pPos.y < b.maxY - 0.1) {
-            if (pPos.x + playerRadius > b.minX && pPos.x - playerRadius < b.maxX &&
-                pPos.z + playerRadius > b.minZ && pPos.z - playerRadius < b.maxZ) {
-              
-              const overlapL = (pPos.x + playerRadius) - b.minX;
-              const overlapR = b.maxX - (pPos.x - playerRadius);
-              const overlapF = (pPos.z + playerRadius) - b.minZ;
-              const overlapB = b.maxZ - (pPos.z - playerRadius);
-
-              const minOverlap = Math.min(overlapL, overlapR, overlapF, overlapB);
-              if (minOverlap === overlapL) {
-                pPos.x = b.minX - playerRadius;
-                if (pVel && pVel.x > 0) pVel.x = 0;
-              } else if (minOverlap === overlapR) {
-                pPos.x = b.maxX + playerRadius;
-                if (pVel && pVel.x < 0) pVel.x = 0;
-              } else if (minOverlap === overlapF) {
-                pPos.z = b.minZ - playerRadius;
-                if (pVel && pVel.z > 0) pVel.z = 0;
-              } else {
-                pPos.z = b.maxZ + playerRadius;
-                if (pVel && pVel.z < 0) pVel.z = 0;
-              }
-            }
-          }
-        }
-      }
-
-      // Enforce Scanned Radial Obstacles (Trees, Trunks, Rocks, Boulders, Pillars)
-      if (game._scannedRadialObstacles && game._scannedRadialObstacles.length > 0) {
-        for (let ri = 0; ri < game._scannedRadialObstacles.length; ri++) {
-          const r = game._scannedRadialObstacles[ri];
-          if (pPos.y + 1.6 > r.minY && pPos.y < r.maxY - 0.1) {
-            const dx = pPos.x - r.cx;
-            const dz = pPos.z - r.cz;
-            const dist = Math.sqrt(dx * dx + dz * dz);
-            const minSolidDist = r.radius + playerRadius;
-
-            if (dist < minSolidDist && dist > 0.0001) {
-              const nx = dx / dist;
-              const nz = dz / dist;
-              pPos.x = r.cx + nx * minSolidDist;
-              pPos.z = r.cz + nz * minSolidDist;
-              if (pVel) {
-                const normalVel = pVel.x * nx + pVel.z * nz;
-                if (normalVel < 0) {
-                  pVel.x -= normalVel * nx;
-                  pVel.z -= normalVel * nz;
-                }
-              }
-            }
-          }
-        }
-      }
 
       // 1. Kaktüs Hasar Mekaniği (-4 Can) & Katı Çarpışma
       if (game.currentLevel.cacti && game.currentLevel.cacti.length > 0) {
@@ -13074,26 +13027,26 @@ function updateSpaceLoop() {
         }
       }
 
-      // 5. Ayı Köyü (Hub) - Şelale Gizli Geçidi & Çarpışma / Etkileşim Sistemi
+      // 5. Ayı Köyü (Hub) - Şelale Gizli Geçidi & Çarpışma / Etkileşim Sistemi (Işınlanma hatası tamamen giderildi)
       if (game.currentRegion === 'hub' || !game.currentRegion) {
-        const inSecretX = pPos.x >= -35.2 && pPos.x <= -24.8;
-        const isInsideCave = pPos.z >= 42.8 && inSecretX;
+        const inSecretX = pPos.x >= -36.0 && pPos.x <= -24.0;
+        const isInsideCave = pPos.z >= 42.0 && pPos.z <= 65.0 && inSecretX;
 
         if (isInsideCave) {
           // A1. Oyuncu Gizli Mağaranın İçinde: Mağaranın iç sınırlarında tut (Dışarı taşmayı engelle)
           // Arka Duvar
-          if (pPos.z > 62.0) {
-            pPos.z = 62.0;
+          if (pPos.z > 63.5) {
+            pPos.z = 63.5;
             if (pVel && pVel.z > 0) pVel.z = 0;
           }
           // Sol Mağara Duvarı
-          if (pPos.x < -34.8) {
-            pPos.x = -34.8;
+          if (pPos.x < -35.2) {
+            pPos.x = -35.2;
             if (pVel && pVel.x < 0) pVel.x = 0;
           }
           // Sağ Mağara Duvarı
-          if (pPos.x > -25.2) {
-            pPos.x = -25.2;
+          if (pPos.x > -24.8) {
+            pPos.x = -24.8;
             if (pVel && pVel.x > 0) pVel.x = 0;
           }
 
@@ -13180,16 +13133,18 @@ function updateSpaceLoop() {
           }
         } else {
           // A2. Oyuncu Dışarıda: Şelalenin Katı Duvarları (Gizli Geçit Hariç!)
-          // Gizli geçit x: -32.2 ile -27.8 arasındadır. Oyuncu buradan su perdesini yarıp geçebilir!
-          const inPassageOpening = pPos.x >= -32.2 && pPos.x <= -27.8;
+          // Gizli geçit x: -32.5 ile -27.5 arasındadır. Oyuncu buradan su perdesini yarıp mağaraya geçebilir!
+          const inPassageOpening = pPos.x >= -32.5 && pPos.x <= -27.5;
 
           if (!inPassageOpening) {
-            // Şelale su perdesi ve dağ kayalıkları (Sol ve Sağ Yanlar KATI ENGELDİR)
-            if (pPos.x >= -42.0 && pPos.x <= -18.0 && pPos.z >= 41.3 && pPos.y < 25.0) {
-              pPos.z = 41.3;
+            // Şelale su perdesi ve ön dağ kayalıkları:
+            // SADECE önden yaklaşırken (z <= 41.3) içeri girmeyi engelle!
+            // Z > 42 arkasındayken ASLA pPos.z = 41.3 yaparak ışınlama yapma!
+            if (pPos.x >= -42.0 && pPos.x <= -18.0 && pPos.z >= 41.0 && pPos.z <= 42.0 && pPos.y < 25.0) {
+              pPos.z = 41.0;
               if (pVel && pVel.z > 0) pVel.z = 0;
               if (game.spawnSparkleParticles && Math.random() < 0.1) {
-                game.spawnSparkleParticles(new THREE.Vector3(pPos.x, Math.max(pPos.y, 0.5), 41.5), 2, 0x38bdf8);
+                game.spawnSparkleParticles(new THREE.Vector3(pPos.x, Math.max(pPos.y, 0.5), 41.2), 2, 0x38bdf8);
               }
             }
           } else {
@@ -13200,96 +13155,7 @@ function updateSpaceLoop() {
           }
         }
 
-        // Sol ve Sağ Dış Dağ Çıkıntı Kayaları (Radial Pushout)
-        const leftRockDist = Math.hypot(pPos.x - (-39), pPos.z - 43);
-        const minLeftRock = 5.8 + playerRadius;
-        if (leftRockDist < minLeftRock && leftRockDist > 0.001) {
-          pPos.x = -39 + ((pPos.x - (-39)) / leftRockDist) * minLeftRock;
-          pPos.z = 43 + ((pPos.z - 43) / leftRockDist) * minLeftRock;
-        }
-        const rightRockDist = Math.hypot(pPos.x - (-21), pPos.z - 43);
-        const minRightRock = 5.5 + playerRadius;
-        if (rightRockDist < minRightRock && rightRockDist > 0.001) {
-          pPos.x = -21 + ((pPos.x - (-21)) / rightRockDist) * minRightRock;
-          pPos.z = 43 + ((pPos.z - 43) / rightRockDist) * minRightRock;
-        }
-
-        // B. Şelale Çevresindeki Ahşap Oturaklar (Park Bankları)
-        // Oturağın üstünde değilse (y < 0.72), oyuncu oturağın içinden ASLA geçemez!
-        const waterfallBenches = [
-          { x: -38.5, z: 30.0, r: 1.35, seatY: 0.75 }, // Sol Göl Kıyısı Oturağı
-          { x: -16.5, z: 31.0, r: 1.35, seatY: 0.75 }, // Sağ İskele Girişi Oturağı
-          { x: -28.0, z: 18.5, r: 1.35, seatY: 0.75 }  // Ön Manzara Patikası Oturağı
-        ];
-        waterfallBenches.forEach(b => {
-          if (pPos.y >= b.seatY - 0.05) return; // Oyuncu bankın üstündeyse engelleme
-          const d = Math.hypot(pPos.x - b.x, pPos.z - b.z);
-          const solidR = b.r + playerRadius;
-          if (d < solidR && d > 0.0001) {
-            const nx = (pPos.x - b.x) / d;
-            const nz = (pPos.z - b.z) / d;
-            pPos.x = b.x + nx * solidR;
-            pPos.z = b.z + nz * solidR;
-            if (pVel) {
-              const vDot = pVel.x * nx + pVel.z * nz;
-              if (vDot < 0) {
-                pVel.x -= vDot * nx;
-                pVel.z -= vDot * nz;
-              }
-            }
-          }
-        });
-
-        // C. Şelale Çevresindeki Sokak Lambaları (Fener Direkleri)
-        // Oyuncu fener direğinin içinden ASLA geçemez!
-        const waterfallLamps = [
-          { x: -39.5, z: 27.5, r: 0.45, h: 3.8 }, // Sol Patika Feneri
-          { x: -15.5, z: 33.0, r: 0.45, h: 3.8 }, // Sağ İskele Feneri
-          { x: -25.0, z: 17.5, r: 0.45, h: 3.8 }, // Ön Manzara Feneri
-          { x: -19.2, z: 35.5, r: 0.38, h: 3.5 }  // İskele Baş Feneri
-        ];
-        waterfallLamps.forEach(l => {
-          if (pPos.y > l.h) return;
-          const d = Math.hypot(pPos.x - l.x, pPos.z - l.z);
-          const solidR = l.r + playerRadius;
-          if (d < solidR && d > 0.0001) {
-            const nx = (pPos.x - l.x) / d;
-            const nz = (pPos.z - l.z) / d;
-            pPos.x = l.x + nx * solidR;
-            pPos.z = l.z + nz * solidR;
-            if (pVel) {
-              const vDot = pVel.x * nx + pVel.z * nz;
-              if (vDot < 0) {
-                pVel.x -= vDot * nx;
-                pVel.z -= vDot * nz;
-              }
-            }
-          }
-        });
-
-        // D. İskele Varili ve Balık Kutusu
-        const pierProps = [
-          { x: -19.6, z: 32.8, r: 0.65, h: 1.6 },
-          { x: -20.6, z: 32.7, r: 0.50, h: 1.1 }
-        ];
-        pierProps.forEach(prop => {
-          if (pPos.y > prop.h) return;
-          const d = Math.hypot(pPos.x - prop.x, pPos.z - prop.z);
-          const solidR = prop.r + playerRadius;
-          if (d < solidR && d > 0.0001) {
-            const nx = (pPos.x - prop.x) / d;
-            const nz = (pPos.z - prop.z) / d;
-            pPos.x = prop.x + nx * solidR;
-            pPos.z = prop.z + nz * solidR;
-            if (pVel) {
-              const vDot = pVel.x * nx + pVel.z * nz;
-              if (vDot < 0) {
-                pVel.x -= vDot * nx;
-                pVel.z -= vDot * nz;
-              }
-            }
-          }
-        });
+        // Sol ve Sağ Dış Dağ Çıkıntı Kayaları & Şelale Çevresi (Katı fizik game-bundle tarafından yönetilir)
       }
     }
 
@@ -17943,6 +17809,9 @@ window.__ensureLevelExitPortalExists = function(game) {
   if (!game || !game.currentRegion || !window.__createCaveExitPortal) return;
   const reg = game.currentRegion;
   
+  // In Ayı Köyü (hub), 15 dedicated village portals are active; do NOT spawn generic exit portals!
+  if (reg === 'hub') return;
+
   // Check if exit portal already exists in scene
   if (game._caveExitPortals && game._caveExitPortals.length > 0) {
     const existing = game._caveExitPortals.find(p => p && p.parent && p.name && p.name.startsWith('cave_exit_portal_'));
@@ -17950,11 +17819,10 @@ window.__ensureLevelExitPortalExists = function(game) {
   }
   
   const LEVEL_EXIT_MAP = {
-    hub:               { next: 'forest_temple',     name: '2. BÖLÜM: ORMAN TAPINAĞI', icon: '🌲', pos: { x: 0, y: 1.0, z: -160 } },
     forest_temple:     { next: 'beehive',           name: '3. BÖLÜM: VIZILDIYAN BAL KOVANI', icon: '🐝', pos: { x: 0, y: 18.0, z: -162 } },
-    beehive:           { next: 'pelican_plains',     name: '4. BÖLÜM: PELİKAN OVALARI', icon: '🪶', pos: { x: 0, y: 18.0, z: -162 } },
-    pelican_plains:    { next: 'snow_desert',        name: '5. BÖLÜM: KAR VADİSİ', icon: '❄️', pos: { x: 0, y: 2.0, z: -190 } },
-    snow_desert:       { next: 'volcano_cave',       name: '6. BÖLÜM: VOLKANİK EJDERHA MAĞARASI', icon: '🌋', pos: { x: 0, y: 2.0, z: -200 } },
+    beehive:           { next: 'pelican_plains',     name: '4. BÖLÜM: PELİKAN OVALARI', icon: '🪶', pos: { x: 0, y: 17.5, z: -162 } },
+    pelican_plains:    { next: 'snow_desert',        name: '5. BÖLÜM: KAR VADİSİ', icon: '❄️', pos: { x: 0, y: 34.0, z: -180 } },
+    snow_desert:       { next: 'volcano_cave',       name: '6. BÖLÜM: VOLKANİK EJDERHA MAĞARASI', icon: '🌋', pos: { x: 0, y: 35.5, z: -195 } },
     volcano_cave:      { next: 'underwater_palace',  name: '7. BÖLÜM: ANTİK SU ALTI KRİSTAL SARAYI', icon: '🌊', pos: { x: 0, y: 41.0, z: -188 } },
     underwater_palace: { next: 'golden_sanctuary',   name: '8. BÖLÜM: EFSANEVİ ALTIN CENNETİ', icon: '🌟', pos: { x: 0, y: 30.0, z: -550 } },
     golden_sanctuary:  { next: 'dinosaur_world',     name: '9. BÖLÜM: DİNOZOR DÜNYASI', icon: '🦖', pos: { x: 0, y: 5.0, z: -220 } },
@@ -17981,16 +17849,20 @@ window.__registerBox3Obstacle = function(meshOrGroup) {
   const game = window.__superBearGame;
   if (!game || !game.currentLevel) return;
   if (!game.currentLevel.colliders) game.currentLevel.colliders = [];
-  meshOrGroup.updateMatrixWorld(true);
-  const bbox = new window.THREE.Box3().setFromObject(meshOrGroup);
-  const col = {
-    min: bbox.min.clone(),
-    max: bbox.max.clone(),
-    isBox3Obstacle: true,
-    sourceMesh: meshOrGroup
-  };
-  game.currentLevel.colliders.push(col);
-  return col;
+  try {
+    if (typeof meshOrGroup.updateMatrixWorld === 'function') {
+      meshOrGroup.updateMatrixWorld(true);
+    }
+    const bbox = new window.THREE.Box3().setFromObject(meshOrGroup);
+    const col = {
+      min: bbox.min.clone(),
+      max: bbox.max.clone(),
+      isBox3Obstacle: true,
+      sourceMesh: meshOrGroup
+    };
+    game.currentLevel.colliders.push(col);
+    return col;
+  } catch (_boxErr) {}
 };
 
 window.__alignCreaturesToGround = function(game) {

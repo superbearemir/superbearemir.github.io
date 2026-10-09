@@ -7,7 +7,7 @@ import { CustomizerAppOverlay } from './customizer/CustomizerAppOverlay';
 import { initMobilePerformanceOptimizer } from './utils/mobilePerformanceOptimizer';
 import { LanguageProvider } from './i18n/LanguageContext';
 
-(window as unknown as { THREE: typeof THREE }).THREE = THREE;
+(window as unknown as { THREE: typeof THREE }).THREE = (window as unknown as { THREE: typeof THREE }).THREE || THREE;
 
 // Start Anti-Lag Mobile / Tablet Performance Engine
 initMobilePerformanceOptimizer();

@@ -212,6 +212,35 @@
       this.baseFogColor = 0x88bbff;
       this.baseFogDensity = 0.02;
 
+      // ======================================================================
+      // 15-DAKİKA GÜNDÜZ / 15-DAKİKA GECE DÖNGÜSÜ (15-MIN DAY / NIGHT CELESTIAL ENGINE)
+      // Gündüz: Parlayan Güneş, Mavi Gökyüzü ve Büyülü Gökkuşağı!
+      // Akşam / Gece: Hilal/Dolunay Ay, Parıldayan 1500 Yıldız ve Kayan Meteorlar!
+      // ======================================================================
+      this.dayCycleDuration = 900; // 15 dakika Gündüz (900 saniye)
+      this.nightCycleDuration = 900; // 15 dakika Akşam / Gece (900 saniye)
+      this.totalDayNightCycle = 1800; // 30 dakika toplam periyot
+      this.dayNightTime = 0; // Geçen toplam döngü süresi (saniye)
+      this.isNight = false;
+      this.dayNightCycleEnabled = true;
+
+      this.celestialGroup = null;
+      this.sunGroup = null;
+      this.moonGroup = null;
+      this.starsMesh = null;
+      this.starsMat = null;
+      this.rainbowGroup = null;
+      this.rainbowMaterials = [];
+      this.rainbowOpacity = 0.0;
+      this.rainbowActive = false;
+      this.lastRainbowNoticeTime = 0;
+      this.lastDayNightNoticePhase = '';
+
+      // Kayan Meteorlar (Shooting Stars)
+      this.meteorsGroup = null;
+      this.activeMeteors = [];
+      this.nextMeteorTime = Date.now() + 4000;
+
       this.initialized = false;
     }
 
@@ -354,6 +383,421 @@
       }
       this.fogCloudsGroup.visible = false;
       this.weatherGroup.add(this.fogCloudsGroup);
+
+      // 5. CELESTIAL SKY OBJECTS (SUN, MOON, STARS, RAINBOW, METEORS)
+      this.buildCelestialMeshes(game);
+    }
+
+    buildCelestialMeshes(game) {
+      if (!window.THREE || !game || !game.scene) return;
+      const THREE = window.THREE;
+
+      if (this.celestialGroup) {
+        try { game.scene.remove(this.celestialGroup); } catch(e) {}
+      }
+
+      this.celestialGroup = new THREE.Group();
+      this.celestialGroup.name = 'superbear_celestial_sky_system';
+      game.scene.add(this.celestialGroup);
+
+      // A) GÜNEŞ (THE RADIANT GOLDEN SUN ☀️)
+      this.sunGroup = new THREE.Group();
+      this.sunGroup.name = 'celestial_sun_group';
+
+      // 1. Core Sun Orb
+      const sunCoreGeo = new THREE.SphereGeometry(6.5, 24, 24);
+      const sunCoreMat = new THREE.MeshBasicMaterial({ color: 0xfffbeb, fog: false });
+      const sunCore = new THREE.Mesh(sunCoreGeo, sunCoreMat);
+      this.sunGroup.add(sunCore);
+
+      // 2. Glowing Solar Corona
+      const sunCoronaGeo = new THREE.SphereGeometry(11.0, 16, 16);
+      const sunCoronaMat = new THREE.MeshBasicMaterial({
+        color: 0xfbbf24,
+        transparent: true,
+        opacity: 0.65,
+        blending: THREE.AdditiveBlending,
+        side: THREE.BackSide,
+        depthWrite: false,
+        fog: false
+      });
+      const sunCorona = new THREE.Mesh(sunCoronaGeo, sunCoronaMat);
+      this.sunGroup.add(sunCorona);
+
+      // 3. Golden Sunburst Rays Ring
+      const sunRayGeo = new THREE.RingGeometry(8.0, 18.0, 24);
+      const sunRayMat = new THREE.MeshBasicMaterial({
+        color: 0xf59e0b,
+        transparent: true,
+        opacity: 0.55,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+        fog: false
+      });
+      const sunRay = new THREE.Mesh(sunRayGeo, sunRayMat);
+      this.sunGroup.add(sunRay);
+      this.celestialGroup.add(this.sunGroup);
+
+      // B) AY (THE MYSTICAL SILVER MOON 🌙)
+      this.moonGroup = new THREE.Group();
+      this.moonGroup.name = 'celestial_moon_group';
+
+      // 1. Pearl Moon Core
+      const moonCoreGeo = new THREE.SphereGeometry(5.2, 24, 24);
+      const moonCoreMat = new THREE.MeshBasicMaterial({ color: 0xf8fafc, fog: false });
+      const moonCore = new THREE.Mesh(moonCoreGeo, moonCoreMat);
+      this.moonGroup.add(moonCore);
+
+      // 2. Ethereal Cyan Moonlight Halo
+      const moonHaloGeo = new THREE.SphereGeometry(8.8, 16, 16);
+      const moonHaloMat = new THREE.MeshBasicMaterial({
+        color: 0x93c5fd,
+        transparent: true,
+        opacity: 0.55,
+        blending: THREE.AdditiveBlending,
+        side: THREE.BackSide,
+        depthWrite: false,
+        fog: false
+      });
+      const moonHalo = new THREE.Mesh(moonHaloGeo, moonHaloMat);
+      this.moonGroup.add(moonHalo);
+      this.celestialGroup.add(this.moonGroup);
+
+      // C) YILDIZLAR (1200 PARILTI DOLU GECE YILDIZI ✨)
+      const starCount = 1200;
+      const starGeo = new THREE.BufferGeometry();
+      const starPos = new Float32Array(starCount * 3);
+      const starCols = new Float32Array(starCount * 3);
+
+      for (let i = 0; i < starCount; i++) {
+        const u = Math.random();
+        const v = Math.random();
+        const theta = u * 2.0 * Math.PI;
+        const phi = Math.acos(2.0 * v - 1.0) * 0.46; // Üst yarıküre kubbesi
+        const dist = 80 + Math.random() * 30; // 80-110m (sis içinde kaybolmaz)
+
+        starPos[i * 3 + 0] = dist * Math.sin(phi) * Math.cos(theta);
+        starPos[i * 3 + 1] = Math.max(12, dist * Math.cos(phi));
+        starPos[i * 3 + 2] = dist * Math.sin(phi) * Math.sin(theta);
+
+        const hue = Math.random();
+        if (hue < 0.6) {
+          starCols[i * 3] = 1.0; starCols[i * 3 + 1] = 1.0; starCols[i * 3 + 2] = 1.0;
+        } else if (hue < 0.8) {
+          starCols[i * 3] = 0.7; starCols[i * 3 + 1] = 0.92; starCols[i * 3 + 2] = 1.0;
+        } else {
+          starCols[i * 3] = 1.0; starCols[i * 3 + 1] = 0.92; starCols[i * 3 + 0.68];
+        }
+      }
+
+      starGeo.setAttribute('position', new THREE.BufferAttribute(starPos, 3));
+      starGeo.setAttribute('color', new THREE.BufferAttribute(starCols, 3));
+      this.starsMat = new THREE.PointsMaterial({
+        size: 1.4,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.0,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        fog: false
+      });
+      this.starsMesh = new THREE.Points(starGeo, this.starsMat);
+      this.celestialGroup.add(this.starsMesh);
+
+      // D) GÖKKUŞAĞI (7 RENKLİ BÜYÜLÜ GÖKKUŞAĞI KUBBESİ 🌈 - GÜNDÜZLERİ AÇILIR)
+      this.rainbowGroup = new THREE.Group();
+      this.rainbowGroup.name = 'celestial_rainbow_group';
+      this.rainbowMaterials = [];
+
+      const rainbowColors = [
+        0xef4444, // Kırmızı
+        0xf97316, // Turuncu
+        0xfacc15, // Sarı
+        0x22c55e, // Yeşil
+        0x06b6d4, // Turkuaz
+        0x3b82f6, // Mavi
+        0xa855f7  // Mor
+      ];
+
+      rainbowColors.forEach((colorHex, idx) => {
+        const radius = 68 + idx * 1.5;
+        const torusGeo = new THREE.TorusGeometry(radius, 1.6, 10, 48, Math.PI);
+        const torusMat = new THREE.MeshBasicMaterial({
+          color: colorHex,
+          transparent: true,
+          opacity: 0.0,
+          blending: THREE.AdditiveBlending,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          fog: false // Sisten etkilenmez, gündüz pırıl pırıl parlar!
+        });
+        const band = new THREE.Mesh(torusGeo, torusMat);
+        this.rainbowMaterials.push(torusMat);
+        this.rainbowGroup.add(band);
+      });
+
+      this.rainbowGroup.position.set(0, 3, -35);
+      this.rainbowGroup.rotation.x = 0.08;
+      this.celestialGroup.add(this.rainbowGroup);
+
+      // E) METEORLAR (GECE KAYAN PARLAK YILDIZLAR & METEORLAR 💫)
+      this.meteorsGroup = new THREE.Group();
+      this.meteorsGroup.name = 'celestial_meteors_group';
+      this.celestialGroup.add(this.meteorsGroup);
+      this.activeMeteors = [];
+    }
+
+    spawnMeteor() {
+      if (!window.THREE || !this.meteorsGroup) return;
+      const THREE = window.THREE;
+
+      // Gece göğünün görünür kubbesinde, oyuncunun ön-üst hizasında kayar
+      const startX = (Math.random() - 0.5) * 80;
+      const startY = 32 + Math.random() * 20;
+      const startZ = -15 + (Math.random() - 0.5) * 60;
+
+      const dirX = (Math.random() - 0.5) * 45 + (Math.random() > 0.5 ? 20 : -20);
+      const dirY = -(20 + Math.random() * 16);
+      const dirZ = (Math.random() - 0.5) * 40;
+
+      const meteorGroup = new THREE.Group();
+      meteorGroup.position.set(startX, startY, startZ);
+
+      // 1. Parlak Ak Kor Meteor Başlığı
+      const headGeo = new THREE.SphereGeometry(1.4, 8, 8);
+      const headMat = new THREE.MeshBasicMaterial({ color: 0xffffff, fog: false });
+      const headMesh = new THREE.Mesh(headGeo, headMat);
+      meteorGroup.add(headMesh);
+
+      // 1.B Alev Halesi
+      const haloGeo = new THREE.SphereGeometry(2.4, 8, 8);
+      const haloMat = new THREE.MeshBasicMaterial({
+        color: (Math.random() > 0.5 ? 0xfbbf24 : 0x38bdf8),
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        fog: false
+      });
+      const haloMesh = new THREE.Mesh(haloGeo, haloMat);
+      meteorGroup.add(haloMesh);
+
+      // 2. Işıltılı Uzun Alev Kuyruğu
+      const tailLength = 18.0 + Math.random() * 12.0;
+      const tailGeo = new THREE.CylinderGeometry(0.18, 1.5, tailLength, 8);
+      const tailMat = new THREE.MeshBasicMaterial({
+        color: (Math.random() > 0.5 ? 0x93c5fd : 0xfde047),
+        transparent: true,
+        opacity: 0.95,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        fog: false
+      });
+      const tailMesh = new THREE.Mesh(tailGeo, tailMat);
+      tailMesh.position.y = tailLength / 2;
+      tailMesh.rotation.x = Math.PI / 2;
+      meteorGroup.add(tailMesh);
+
+      // Uçuş yörüngesine çevir
+      const vDir = new THREE.Vector3(dirX, dirY, dirZ).normalize();
+      meteorGroup.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), vDir);
+
+      this.meteorsGroup.add(meteorGroup);
+      this.activeMeteors.push({
+        group: meteorGroup,
+        vx: dirX * 1.8,
+        vy: dirY * 1.8,
+        vz: dirZ * 1.8,
+        life: 1.8 + Math.random() * 0.6,
+        maxLife: 1.8 + Math.random() * 0.6,
+        tailMat: tailMat,
+        headMat: headMat,
+        haloMat: haloMat
+      });
+    }
+
+    updateDayNight(dt, timestamp, game) {
+      if (!this.dayNightCycleEnabled) return;
+      const THREE = window.THREE;
+
+      // İlerleme: 900 saniye (15 dk) Gündüz + 900 saniye (15 dk) Gece = 1800 saniye
+      this.dayNightTime += dt;
+      const cycleSec = this.dayNightTime % this.totalDayNightCycle;
+      const isNightNow = (cycleSec >= this.dayCycleDuration);
+
+      // Gündüz / Gece Değişim Bildirimi
+      if (isNightNow !== this.isNight) {
+        this.isNight = isNightNow;
+        if (game.callbacks && game.callbacks.onShowNotice) {
+          if (isNightNow) {
+            game.callbacks.onShowNotice("🌙 Akşam Oldu! Ay, Yıldızlar ve Parlak Kayan Meteor Yağmuru Başladı! ☄️", "info");
+          } else {
+            game.callbacks.onShowNotice("☀️ Gün Ağardı! Güneş Doğdu ve Büyülü Gökkuşağı Gökyüzünde Açıldı! 🌈", "info");
+          }
+        }
+        window.dispatchEvent(new CustomEvent('superbear:daynight-cycle', {
+          detail: { isNight: isNightNow, cycleSec, total: this.totalDayNightCycle }
+        }));
+      }
+
+      // --- 1. GÜNEŞ VE AY YÖRÜNGE HESABI ---
+      const celestialRadius = 75;
+      if (!isNightNow) {
+        // GÜNDÜZ FAZI (0 to 900s)
+        const dayT = cycleSec / this.dayCycleDuration; // 0 to 1
+        const sunAngle = dayT * Math.PI;
+        const sunX = Math.cos(sunAngle) * celestialRadius;
+        const sunY = Math.max(12, Math.sin(sunAngle) * 55 + 14);
+        const sunZ = -25;
+
+        if (this.sunGroup) {
+          this.sunGroup.position.set(sunX, sunY, sunZ);
+          this.sunGroup.visible = true;
+          this.sunGroup.rotation.z += dt * 0.2; // Yavaşça dönen güneş halesi
+        }
+        if (this.moonGroup) {
+          this.moonGroup.visible = false;
+        }
+
+        // Yıldızlar gündüz sönük
+        if (this.starsMat) {
+          this.starsMat.opacity = Math.max(0.0, this.starsMat.opacity - dt * 0.25);
+        }
+
+        // GÖKKUŞAĞI FAZI (Gündüz vakti daima gökkuşağı açık ve ışıl ışıl!)
+        this.rainbowOpacity = Math.min(0.95, this.rainbowOpacity + dt * 0.35);
+        this.rainbowActive = true;
+        this.rainbowMaterials.forEach(m => { m.opacity = this.rainbowOpacity; });
+
+      } else {
+        // GECE FAZI (900 to 1800s)
+        const nightT = (cycleSec - this.dayCycleDuration) / this.nightCycleDuration; // 0 to 1
+        const moonAngle = nightT * Math.PI;
+        const moonX = Math.cos(moonAngle) * celestialRadius;
+        const moonY = Math.max(12, Math.sin(moonAngle) * 52 + 14);
+        const moonZ = 25;
+
+        if (this.moonGroup) {
+          this.moonGroup.position.set(moonX, moonY, moonZ);
+          this.moonGroup.visible = true;
+        }
+        if (this.sunGroup) {
+          this.sunGroup.visible = false;
+        }
+
+        // Yıldızlar geceleri parıldar
+        if (this.starsMat) {
+          this.starsMat.opacity = Math.min(0.95, this.starsMat.opacity + dt * 0.25);
+          this.starsMat.size = 1.3 + Math.sin(timestamp * 0.003) * 0.3; // Parıltı kıpırtısı
+        }
+
+        // Gökkuşağı geceleri tamamen kapalı
+        this.rainbowOpacity = Math.max(0.0, this.rainbowOpacity - dt * 0.35);
+        this.rainbowMaterials.forEach(m => { m.opacity = this.rainbowOpacity; });
+        this.rainbowActive = false;
+
+        // KAYAN METEOR YAĞMURU (Akşam/Gece her 0.9-1.8 saniyede bir gökten meteorlar kayar!)
+        const now = Date.now();
+        if (now > this.nextMeteorTime) {
+          this.spawnMeteor();
+          if (Math.random() > 0.4) {
+            setTimeout(() => this.spawnMeteor(), 250); // Çifte meteor!
+          }
+          if (Math.random() > 0.7) {
+            setTimeout(() => this.spawnMeteor(), 500); // 3'lü meteor seli!
+          }
+          this.nextMeteorTime = now + 900 + Math.random() * 1100;
+        }
+      }
+
+      // --- 2. AKTİF METEORLARIN HAREKETİ VE SÖNMESİ ---
+      for (let i = this.activeMeteors.length - 1; i >= 0; i--) {
+        const met = this.activeMeteors[i];
+        met.life -= dt;
+        met.group.position.x += met.vx * dt;
+        met.group.position.y += met.vy * dt;
+        met.group.position.z += met.vz * dt;
+
+        const lifeRatio = Math.max(0, met.life / met.maxLife);
+        if (met.tailMat) met.tailMat.opacity = lifeRatio * 0.95;
+        if (met.headMat) met.headMat.opacity = lifeRatio;
+        if (met.haloMat) met.haloMat.opacity = lifeRatio * 0.85;
+
+        if (met.life <= 0) {
+          if (this.meteorsGroup) this.meteorsGroup.remove(met.group);
+          this.activeMeteors.splice(i, 1);
+        }
+      }
+
+      // --- 3. GÖKYÜZÜ VE IŞIK ATMOSFERİ ENTEGRASYONU ---
+      if (this.currentRegion === 'hub' && game.scene) {
+        // Şafak (ilk 60s) ve Günbatımı (840-900s) yumuşak geçişleri
+        let dayWeight = 1.0;
+        if (cycleSec < 60) {
+          dayWeight = cycleSec / 60; // Gündoğumu
+        } else if (cycleSec < 840) {
+          dayWeight = 1.0; // Tam gündüz
+        } else if (cycleSec < 900) {
+          dayWeight = 1.0 - (cycleSec - 840) / 60; // Günbatımı
+        } else if (cycleSec < 960) {
+          dayWeight = 0.0; // Geceye geçiş
+        } else if (cycleSec < 1740) {
+          dayWeight = 0.0; // Tam gece
+        } else {
+          dayWeight = (cycleSec - 1740) / 60; // Sabaha geçiş
+        }
+
+        // Gökyüzü arka plan rengi
+        const daySky = new THREE.Color(0x38bdf8); // Parlak maviş gökyüzü
+        const sunsetSky = new THREE.Color(0xf97316); // Akşam günbatımı turuncusu
+        const nightSky = new THREE.Color(0x030712); // Derin kozmik gece laciverti
+
+        let currentSky = new THREE.Color();
+        if (dayWeight >= 0.95) {
+          currentSky.copy(daySky);
+        } else if (dayWeight <= 0.05) {
+          currentSky.copy(nightSky);
+        } else if (cycleSec >= 840 && cycleSec < 960) {
+          currentSky.copy(sunsetSky).lerp(nightSky, 1.0 - dayWeight);
+        } else {
+          currentSky.copy(nightSky).lerp(daySky, dayWeight);
+        }
+
+        if (game.scene.background && game.scene.background.isColor) {
+          game.scene.background.copy(currentSky);
+        } else {
+          game.scene.background = currentSky.clone();
+        }
+
+        // Sis rengi
+        if (game.scene.fog && game.scene.fog.color) {
+          const dayFog = new THREE.Color(0xa7f3d0);
+          const nightFog = new THREE.Color(0x0f172a);
+          game.scene.fog.color.copy(nightFog).lerp(dayFog, dayWeight);
+        }
+
+        // Güneş/Ay Işığı ve Ortam Işığı şiddeti
+        const profile = WEATHER_PROFILES[this.currentWeather] || WEATHER_PROFILES.clear;
+        const weatherAmb = profile.ambientMultiplier || 1.0;
+        const weatherSun = profile.sunMultiplier || 1.0;
+
+        if (game.ambientLight) {
+          const ambDay = 1.05 * weatherAmb;
+          const ambNight = 0.46 * weatherAmb;
+          game.ambientLight.intensity = ambNight + (ambDay - ambNight) * dayWeight;
+        }
+        if (game.sunLight) {
+          const sunDay = 1.25 * weatherSun;
+          const moonNight = 0.42 * weatherSun;
+          game.sunLight.intensity = moonNight + (sunDay - moonNight) * dayWeight;
+          if (dayWeight < 0.2) {
+            game.sunLight.color.setHex(0x93c5fd); // Ay ışığı
+          } else {
+            game.sunLight.color.setHex(0xfffbeb); // Güneş ışığı
+          }
+        }
+      }
     }
 
     onRegionChange(regionId) {
@@ -515,7 +959,13 @@
       const centerPos = game.playerPos || (game.camera && game.camera.position);
       if (centerPos) {
         this.weatherGroup.position.set(centerPos.x, centerPos.y, centerPos.z);
+        if (this.celestialGroup) {
+          this.celestialGroup.position.set(centerPos.x, 0, centerPos.z);
+        }
       }
+
+      // 15 Dakika Gündüz / 15 Dakika Gece Gökyüzü Motoru (Güneş, Ay, Yıldızlar, Gökkuşağı, Kayan Meteorlar)
+      this.updateDayNight(dt, timestamp, game);
 
       // 1. UPDATE RAIN PARTICLES
       if (this.rainMesh && this.rainMesh.visible && this.rainPositions) {
@@ -632,6 +1082,13 @@
   // Expose global instance
   const weatherEngine = new DynamicWeatherSystem();
   window.__superBearWeatherSystem = weatherEngine;
+  window.__setDayNightTime = (seconds) => { weatherEngine.dayNightTime = seconds; };
+  window.__toggleDayNight = () => {
+    weatherEngine.dayNightTime = weatherEngine.isNight ? 0 : 900;
+  };
+  window.__setDayTime = (isNight) => {
+    weatherEngine.dayNightTime = isNight ? 900 : 0;
+  };
 
   // Auto initialize on DOMContentLoaded or immediate
   if (document.readyState === 'loading') {
