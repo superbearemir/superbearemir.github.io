@@ -62,7 +62,7 @@ export const MapSelectorModal: React.FC<MapSelectorModalProps> = ({ isOpen, onCl
     { id: 'ruin_village', no: 12, name: 'Yıkılmış Köy & Sirk Harabeleri', icon: '🏚️', desc: 'Terk edilmiş sirk çadırları, asit nehri ve tehlikeli harabeler.' },
     { id: 'water_cave', no: 13, name: 'Karanlık Su Mağarası', icon: '💧', desc: 'Mavi kristal göletler, köstebekler ve Su Ejderhası arenası.' },
     { id: 'bee_desert', no: 14, name: 'Arıların Çölü & Antik Piramit', icon: '🏜️', desc: 'Sonsuz altın kumlar, çöl arıları ve Dev Timsah Sobek mabedi.' },
-    { id: 'earth_summit', no: 15, name: 'Dünya Final Zirvesi & Kırmızı Çizgi', icon: '⛰️', desc: '14 hatıra dikilitaşı, Bilge Gandor ve Kozmik Uzay Kapısı!' },
+    { id: 'earth_summit', no: 15, name: 'Dünya Final Zirvesi & Kırmızı Çizgi', icon: '⛰️', desc: 'Zorlu dikilitaşlar, dönen testereler, Mor Ayı düellosu ve Ayı Köyü Şanlı Dönüş Portalı!' },
   ];
 
   const spaceLevels = [

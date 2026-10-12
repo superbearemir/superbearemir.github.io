@@ -366,6 +366,17 @@ window.__superBearPurgeScene = function(game) {
     if (typeof window.__removeLevelExtension === 'function') {
         window.__removeLevelExtension(game);
     }
+    if (game && game.scene) {
+        const extGrp = game.scene.getObjectByName('ultra_level_extension_group');
+        if (extGrp && extGrp.parent) extGrp.parent.remove(extGrp);
+        const bGate = game.scene.getObjectByName('boss_arena_locked_barrier');
+        if (bGate && bGate.parent) bGate.parent.remove(bGate);
+    }
+    const rescueHudEl = document.getElementById('caged-rescue-hud');
+    if (rescueHudEl) rescueHudEl.remove();
+    const catBubbleEl = document.getElementById('cat-speech-bubble-ext');
+    if (catBubbleEl) catBubbleEl.remove();
+
 
 
     // 1. Clean up Space Realm if active
@@ -9315,7 +9326,8 @@ function updateSpaceLoop() {
               ruin_village: { prev: 'jokerooms', name: '11. BÖLÜM: JOKEROOMS ŞAKA ODALARI', icon: '🚪' },
               water_cave: { prev: 'ruin_village', name: '12. BÖLÜM: YIKILMIŞ KÖY HARABELERİ', icon: '🏚️' },
               bee_desert: { prev: 'water_cave', name: '13. BÖLÜM: KARANLIK SU MAĞARASI', icon: '💧' },
-              space_realm: { prev: 'bee_desert', name: '14. BÖLÜM: ARI ÇÖLÜ & ANTİK PİRAMİT', icon: '🏜️' }
+              earth_summit: { prev: 'bee_desert', name: '14. BÖLÜM: ARI ÇÖLÜ & ANTİK PİRAMİT', icon: '🏜️' },
+              space_realm: { prev: 'earth_summit', name: '15. BÖLÜM: DÜNYA FİNAL ZİRVESİ & KIRMIZI ÇİZGİ', icon: '⛰️' }
             };
 
             const target = PREVIOUS_SEQUENTIAL_REGIONS[game.currentRegion] || { prev: 'hub', name: "Ayı Köyü", icon: '🏡' };
@@ -9352,7 +9364,8 @@ function updateSpaceLoop() {
     ruin_village: { x: 0, y: 2.8, z: 80, rotY: 0, title: "12. BÖLÜM: YIKILMIŞ KÖY & SİRK HARABELERİ", sub: "Asit Nehri ve Terk Edilmiş Sirk Parkuru", icon: "🏚️" },
     water_cave: { x: 0, y: 4.8, z: 60, rotY: 0, title: "13. BÖLÜM: KARANLIK SU MAĞARASI", sub: "Mavi Göletler, Mağara Sarkıtları ve Su Ejderhası", icon: "💧" },
     bee_desert: { x: 0, y: 3.2, z: 60, rotY: 0, title: "14. BÖLÜM: ARI ÇÖLÜ & ANTİK PİRAMİT", sub: "Sonsuz Kum Tepeleri ve Antik Firavun Piramidi", icon: "🏜️" },
-    space_realm: { x: 0, y: 2.0, z: 25, rotY: 0, title: "15. BÖLÜM: KOZMİK BOYUT & BÜYÜK BOSSLAR", sub: "Yıldız Geçitleri ve Final Kozmik Savaş Arenası", icon: "🌌" },
+    earth_summit: { x: 0, y: 4.0, z: 80, rotY: 0, title: "15. BÖLÜM: DÜNYA FİNAL ZİRVESİ & KIRMIZI ÇİZGİ", sub: "Dikilitaşlar, Dönen Testereler ve Mor Ayı Düellosu", icon: "⛰️" },
+    space_realm: { x: 0, y: 2.0, z: 25, rotY: 0, title: "16. BÖLÜM: KOZMİK BOYUT & BÜYÜK BOSSLAR", sub: "Yıldız Geçitleri ve Final Kozmik Savaş Arenası", icon: "🌌" },
   };
 
   function ensureSafeLevelSpawn(game, regionId, isFollowup = false) {
@@ -9574,6 +9587,10 @@ function updateSpaceLoop() {
       } else if (regionId === 'bee_desert') {
         beeDesertPopulated = true;
         populateBeeDesert(this);
+      } else if (regionId === 'earth_summit') {
+        if (typeof window.__populateEarthSummit === 'function') {
+          window.__populateEarthSummit(this);
+        }
       } else if (regionId === 'hub') {
         if (typeof buildGrandWaterfall === 'function') {
           buildGrandWaterfall(this.scene);
@@ -10778,6 +10795,13 @@ function updateSpaceLoop() {
                   }, 600);
               }
           }
+      }
+  }
+
+  // --- 15. BÖLÜM: DÜNYA FİNAL ZİRVESİ & KIRMIZI ÇİZGİ LOOP ---
+  if (game.currentRegion === 'earth_summit') {
+      if (typeof window.__updateEarthSummit === 'function') {
+          window.__updateEarthSummit(game, 0.016);
       }
   }
 
@@ -12806,46 +12830,62 @@ function updateSpaceLoop() {
         alignAllObjectsToGround(game);
       }
 
-      // 1. Universal House, Wall & Static Collider Boundary Enforcement (Anti-Clipping)
+      // 1. Universal Solid Platform & Anti-Clipping Guard (Guarantees player never falls through or walks inside high platforms)
       const allColliders = [
         ...(game.currentLevel.colliders || []),
         ...(game.currentLevel.collisionBounds || [])
       ];
       for (let ci = 0; ci < allColliders.length; ci++) {
         const c = allColliders[ci];
-        if (!c || !c.min || !c.max || c.isToxic || c.isClimbable) continue;
+        if (!c || !c.min || !c.max || c.isToxic || c.isClimbable || c.isJumpPad) continue;
 
         const minX = c.min.x, maxX = c.max.x;
         const minZ = c.min.z, maxZ = c.max.z;
         const minY = c.min.y, maxY = c.max.y;
-
         const szX = maxX - minX;
         const szZ = maxZ - minZ;
-        const isFloorOrTerrain = (szX > 5.5 && szZ > 5.5) || c.isVillageExpansionCollider || c.isCourtCollider || c.isFloor || (maxY - minY < 0.45);
-        if (isFloorOrTerrain) continue;
 
-        // Check if player's vertical bounding volume intersects this obstacle
-        if (pPos.y + 1.5 > minY + 0.1 && pPos.y < maxY - 0.15) {
-          const overlapLeft = (pPos.x + playerRadius) - minX;
-          const overlapRight = maxX - (pPos.x - playerRadius);
-          const overlapFront = (pPos.z + playerRadius) - minZ;
-          const overlapBack = maxZ - (pPos.z - playerRadius);
+        // Check horizontal overlap with platform footprint
+        const inHoriz = (pPos.x >= minX - 0.35 && pPos.x <= maxX + 0.35 &&
+                         pPos.z >= minZ - 0.35 && pPos.z <= maxZ + 0.35);
 
-          if (overlapLeft > 0 && overlapRight > 0 && overlapFront > 0 && overlapBack > 0) {
-            const minOverlap = Math.min(overlapLeft, overlapRight, overlapFront, overlapBack);
-            if (minOverlap < 0.95) {
-              if (minOverlap === overlapLeft) {
-                pPos.x = minX - playerRadius;
-                if (pVel && pVel.x > 0) pVel.x = 0;
-              } else if (minOverlap === overlapRight) {
-                pPos.x = maxX + playerRadius;
-                if (pVel && pVel.x < 0) pVel.x = 0;
-              } else if (minOverlap === overlapFront) {
-                pPos.z = minZ - playerRadius;
-                if (pVel && pVel.z > 0) pVel.z = 0;
-              } else {
-                pPos.z = maxZ + playerRadius;
-                if (pVel && pVel.z < 0) pVel.z = 0;
+        if (inHoriz) {
+          // A) Top Surface Support (Anti-Falling & Anti-Sinking through platforms)
+          const isAtTopOrSunkInside = (pPos.y < maxY + 0.15 && pPos.y >= minY - 0.25 && (!pVel || pVel.y <= 0.85));
+          if (isAtTopOrSunkInside) {
+            pPos.y = maxY;
+            if (pVel && pVel.y < 0) pVel.y = 0;
+            if (game.isGrounded !== undefined) game.isGrounded = true;
+            if (game.jumpCount !== undefined) game.jumpCount = 0;
+          }
+        }
+
+        // B) Elevated Platform Side Wall Enforcement (Prevents walking into the sides of high platforms)
+        const isGroundBaseTerrain = (minY <= 0.5 && szX > 8.0 && szZ > 8.0) || c.isVillageExpansionCollider || c.isCourtCollider || c.isIslandLawn || c.isGroundPlateau;
+        if (!isGroundBaseTerrain) {
+          // Player is vertically alongside the vertical side faces of the platform block
+          if (pPos.y + 1.5 > minY + 0.1 && pPos.y < maxY - 0.35) {
+            const overlapLeft = (pPos.x + playerRadius) - minX;
+            const overlapRight = maxX - (pPos.x - playerRadius);
+            const overlapFront = (pPos.z + playerRadius) - minZ;
+            const overlapBack = maxZ - (pPos.z - playerRadius);
+
+            if (overlapLeft > 0 && overlapRight > 0 && overlapFront > 0 && overlapBack > 0) {
+              const minOverlap = Math.min(overlapLeft, overlapRight, overlapFront, overlapBack);
+              if (minOverlap > 0 && minOverlap <= playerRadius + 1.2) {
+                if (minOverlap === overlapLeft) {
+                  pPos.x = minX - playerRadius - 0.002;
+                  if (pVel && pVel.x > 0) pVel.x = 0;
+                } else if (minOverlap === overlapRight) {
+                  pPos.x = maxX + playerRadius + 0.002;
+                  if (pVel && pVel.x < 0) pVel.x = 0;
+                } else if (minOverlap === overlapFront) {
+                  pPos.z = minZ - playerRadius - 0.002;
+                  if (pVel && pVel.z > 0) pVel.z = 0;
+                } else {
+                  pPos.z = maxZ + playerRadius + 0.002;
+                  if (pVel && pVel.z < 0) pVel.z = 0;
+                }
               }
             }
           }
@@ -15792,9 +15832,9 @@ function create3DCrocodileBoss(game, pos) {
 }
 
 function populateBeeDesert(game) {
-  // Level Exit Portal to Next Region (15. Space Dimensions)
+  // Level Exit Portal to Next Region (15. Dünya Final Zirvesi & Kırmızı Çizgi)
   if (window.createCaveExitPortal) {
-    window.createCaveExitPortal(game, 0, 5, -750, 'space_1_stardust', '15. BÖLÜM: KOZMİK UZAY BOYUTLARI', '🌌');
+    window.createCaveExitPortal(game, 0, 5, -750, 'earth_summit', '15. BÖLÜM: DÜNYA FİNAL ZİRVESİ & KIRMIZI ÇİZGİ', '⛰️');
   }
 
   if (game && game.currentLevel) ensureLevelArrays(game.currentLevel);
@@ -16430,7 +16470,8 @@ function enhanceGame() {
       jokerooms: { next: 'ruin_village', name: '12. BÖLÜM: YIKILMIŞ KÖY HARABELERİ', icon: '🏚️' },
       ruin_village: { next: 'water_cave', name: '13. BÖLÜM: KARANLIK SU MAĞARASI', icon: '💧' },
       water_cave: { next: 'bee_desert', name: '14. BÖLÜM: ARI ÇÖLÜ & ANTİK PİRAMİT', icon: '🏜️' },
-      bee_desert: { next: 'space_1_stardust', name: '15. BÖLÜM: KOZMİK UZAY BOYUTLARI', icon: '🌌' }
+      bee_desert: { next: 'earth_summit', name: '15. BÖLÜM: DÜNYA FİNAL ZİRVESİ & KIRMIZI ÇİZGİ', icon: '⛰️' },
+      earth_summit: { next: 'hub', name: '1. BÖLÜM: AYI VE KEDİ KÖYÜ', icon: '🏡' }
     };
 
     const target = BOSS_FORWARD_MAP[reg] || { next: 'hub', name: 'Ayı Köyü', icon: '🏡' };
@@ -17831,7 +17872,8 @@ window.__ensureLevelExitPortalExists = function(game) {
     jokerooms:         { next: 'ruin_village',       name: '12. BÖLÜM: YIKILMIŞ KÖY HARABELERİ', icon: '🏚️', pos: { x: 0, y: 1.2, z: -450 } },
     ruin_village:      { next: 'water_cave',         name: '13. BÖLÜM: KARANLIK SU MAĞARASI', icon: '💧', pos: { x: 0, y: 4.0, z: -520 } },
     water_cave:        { next: 'bee_desert',         name: '14. BÖLÜM: ARI ÇÖLÜ & ANTİK PİRAMİT', icon: '🏜️', pos: { x: 0, y: 31.5, z: -815 } },
-    bee_desert:        { next: 'space_1_stardust',   name: '15. BÖLÜM: KOZMİK UZAY BOYUTLARI', icon: '🌌', pos: { x: 0, y: 5.0, z: -750 } }
+    bee_desert:        { next: 'earth_summit',       name: '15. BÖLÜM: DÜNYA FİNAL ZİRVESİ & KIRMIZI ÇİZGİ', icon: '⛰️', pos: { x: 0, y: 5.0, z: -750 } },
+    earth_summit:      { next: 'hub',                name: '1. BÖLÜM: AYI VE KEDİ KÖYÜ', icon: '🏡', pos: { x: 0, y: 34.0, z: -420 } }
   };
 
   const portalInfo = LEVEL_EXIT_MAP[reg];
