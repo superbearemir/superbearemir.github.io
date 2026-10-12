@@ -82,7 +82,6 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
   const [isNearArcade, setIsNearArcade] = useState(false);
   const [isTopMenuCollapsed, setIsTopMenuCollapsed] = useState(true);
   const [currentWeather, setCurrentWeather] = useState<{ id: string; nameTr: string; icon: string }>({ id: 'clear', nameTr: 'Güneşli & Berrak', icon: '☀️' });
-  const [isNightTime, setIsNightTime] = useState<boolean>(false);
   const [isWeatherMenuOpen, setIsWeatherMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'powers' | 'emotes' | 'shop' | 'settings'>('powers');
   const [selectedPowerId, setSelectedPowerId] = useState<'teleport' | 'laser' | 'rocket' | 'ground_pound' | 'roll' | 'fish' | 'spray' | 'companion' | 'dance' | 'triple_jump' | 'interact'>('laser');
@@ -230,12 +229,6 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
         });
       }
     };
-    const handleDayNightChanged = (e: Event) => {
-      const detail = (e as CustomEvent).detail;
-      if (detail) {
-        setIsNightTime(!!detail.isNight);
-      }
-    };
     const handleOpenPowersRack = () => {
       setIsPowersRackOpen((prev) => !prev);
     };
@@ -245,7 +238,6 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
     window.addEventListener('superbear:arcade-proximity', handleArcadeProximity);
     window.addEventListener('superbear:open-powers-rack', handleOpenPowersRack);
     window.addEventListener('superbear:weather-changed', handleWeatherChanged);
-    window.addEventListener('superbear:daynight-cycle', handleDayNightChanged);
 
     const handleResetRocket = () => {
       setRocketUsesLeft(5);
@@ -274,7 +266,6 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
       window.removeEventListener('superbear:arcade-proximity', handleArcadeProximity);
       window.removeEventListener('superbear:open-powers-rack', handleOpenPowersRack);
       window.removeEventListener('superbear:weather-changed', handleWeatherChanged);
-      window.removeEventListener('superbear:daynight-cycle', handleDayNightChanged);
       window.removeEventListener('superbear:reset-rocket', handleResetRocket);
       window.removeEventListener('superbear:region-changed', handleResetRocket);
       window.removeEventListener('superbear:level-selected', handleResetRocket);
@@ -881,8 +872,8 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
                   </button>
 
                   {isWeatherMenuOpen && (
-                    <div className="absolute top-full mt-2 left-0 z-50 w-64 p-2.5 rounded-2xl bg-slate-950/95 border-2 border-sky-400/80 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 text-xs">
-                      <div className="flex items-center justify-between pb-1.5 mb-2 border-b border-slate-800 px-1 font-black text-sky-300">
+                    <div className="absolute top-full mt-2 left-0 z-50 w-56 p-2 rounded-2xl bg-slate-950/95 border-2 border-sky-400/80 shadow-2xl backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150 text-xs">
+                      <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-slate-800 px-1 font-black text-sky-300">
                         <span>🌦️ Hava Durumu</span>
                         <button
                           onClick={() => {
@@ -895,47 +886,6 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
                           🔄 Otomatik
                         </button>
                       </div>
-
-                      {/* Day / Night Direct Switches */}
-                      <div className="flex gap-1.5 mb-2 pb-2 border-b border-slate-800">
-                        <button
-                          onClick={() => {
-                            if (typeof (window as any).__setDayTime === 'function') {
-                              (window as any).__setDayTime(false);
-                            } else if (typeof (window as any).__setDayNightTime === 'function') {
-                              (window as any).__setDayNightTime(0);
-                            }
-                            setIsNightTime(false);
-                            setIsWeatherMenuOpen(false);
-                          }}
-                          className={`flex-1 py-1.5 px-2 rounded-xl flex items-center justify-center gap-1 font-black transition text-[11px] ${
-                            !isNightTime
-                              ? 'bg-amber-500 text-amber-950 border border-amber-300 shadow'
-                              : 'bg-slate-900 text-amber-200 hover:bg-slate-850'
-                          }`}
-                        >
-                          <span>☀️ Gündüz & 🌈 Gökkuşağı</span>
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (typeof (window as any).__setDayTime === 'function') {
-                              (window as any).__setDayTime(true);
-                            } else if (typeof (window as any).__setDayNightTime === 'function') {
-                              (window as any).__setDayNightTime(900);
-                            }
-                            setIsNightTime(true);
-                            setIsWeatherMenuOpen(false);
-                          }}
-                          className={`flex-1 py-1.5 px-2 rounded-xl flex items-center justify-center gap-1 font-black transition text-[11px] ${
-                            isNightTime
-                              ? 'bg-indigo-600 text-white border border-indigo-300 shadow'
-                              : 'bg-slate-900 text-indigo-300 hover:bg-slate-850'
-                          }`}
-                        >
-                          <span>🌙 Akşam & ☄️ Meteorlar</span>
-                        </button>
-                      </div>
-
                       <div className="grid grid-cols-2 gap-1.5">
                         {[
                           { id: 'clear', name: 'Güneşli', icon: '☀️' },
@@ -966,30 +916,6 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
                     </div>
                   )}
                 </div>
-
-                {/* Day / Night Direct Switch Button */}
-                <button
-                  onClick={() => {
-                    const ws = (window as any).__superBearWeatherSystem;
-                    if (ws) {
-                      if (typeof (window as any).__toggleDayNight === 'function') {
-                        (window as any).__toggleDayNight();
-                      } else {
-                        ws.dayNightTime = ws.isNight ? 0 : 900;
-                      }
-                      setIsNightTime(!isNightTime);
-                    }
-                  }}
-                  title={isNightTime ? "Akşam/Gece Aktif (Meteor Yağmuru Gökyüzünde!) - Gündüze Geçmek İçin Tıkla" : "Gündüz Aktif (Gökkuşağı Gökyüzünde!) - Akşama Geçmek İçin Tıkla"}
-                  className={`px-2.5 py-1 rounded-full text-white border shadow-md backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:brightness-110 ${
-                    isNightTime
-                      ? 'bg-gradient-to-r from-indigo-900 via-purple-950 to-slate-900 border-purple-400 text-purple-200'
-                      : 'bg-gradient-to-r from-amber-500 via-yellow-500 to-sky-500 border-amber-300 text-amber-950'
-                  }`}
-                >
-                  <span className="text-xs">{isNightTime ? '🌙' : '☀️'}</span>
-                  <span>{isNightTime ? 'Akşam (Meteorlar ☄️)' : 'Gündüz (Gökkuşağı 🌈)'}</span>
-                </button>
 
                 {/* Quick Country & Language Selector Button */}
                 <button
