@@ -5549,7 +5549,9 @@ if (this.currentLevel && !this.currentLevel._box3CollidersInitialized && window.
     if (obj.isMesh && obj.geometry && !obj.name.includes("water") && !obj.name.includes("particle") && !obj.name.includes("sky")) {
       const objName = (obj.name || "").toLowerCase();
       const parentName = (obj.parent && obj.parent.name ? obj.parent.name : "").toLowerCase();
-      const isTarget = !!(obj.userData && (obj.userData.isSolidObstacle || obj.userData.hasBox3Collider));
+      const isSensorOrFX = objName.includes("trigger") || objName.includes("sensor") || objName.includes("checkpoint") || objName.includes("portal") || objName.includes("coin") || objName.includes("gem") || objName.includes("area") || objName.includes("boundary") || objName.includes("beam") || objName.includes("vortex") || objName.includes("orb") || objName.includes("ring");
+      const isKeywordMatch = solidKeywords.some(kw => objName.includes(kw) || parentName.includes(kw));
+      const isTarget = !isSensorOrFX && (!!(obj.userData && (obj.userData.isSolidObstacle || obj.userData.hasBox3Collider)) || isKeywordMatch);
       if (isTarget && !obj.userData.__hasBox3Registered) {
         obj.userData.__hasBox3Registered = true;
         obj.updateMatrixWorld(true);
@@ -5682,18 +5684,18 @@ allLevelColliders.forEach(v => {
       return;
     }
     // 3. Impenetrable Platform Landing & Anti-Fall-Through (Supports ALL elevated platforms in all 15 levels)
-    // Only land if player is descending / not moving upwards in jump (playerVel.y <= 0.15)
-    const isFalling = (this.playerVel.y <= 0.15);
+    // Only land if player is descending / strictly falling (playerVel.y <= 0.0)
+    const isFalling = (this.playerVel.y <= 0.0);
     const wasAbove = (p.y >= maxY - 0.25);
     // Foot position must have arrived at or slightly penetrated the surface (playerPos.y <= maxY + 0.18)
-    const reachedTopSurface = (this.playerPos.y <= maxY + 0.18 && this.playerPos.y >= maxY - 1.25);
+    const reachedTopSurface = (this.playerPos.y <= maxY + 0.18 && this.playerPos.y >= maxY - 0.65);
     // Swept vertical check (catches player if gravity dropped them past maxY in a single frame!)
     const sweptCrossedTop = (p.y >= maxY - 0.15 && this.playerPos.y <= maxY + 0.05);
-    // Anti-Sinking / Recovery: If player is horizontally inside the platform volume, and sinking while falling:
+    // Anti-Sinking / Recovery: If player is horizontally inside the platform deck, and sinking while falling:
     const insidePlatform = (this.playerPos.x >= minX - 0.15 && this.playerPos.x <= maxX + 0.15 &&
                             this.playerPos.z >= minZ - 0.15 && this.playerPos.z <= maxZ + 0.15 &&
-                            this.playerPos.y >= minY - 0.15 && this.playerPos.y <= maxY + 0.05 &&
-                            this.playerVel.y <= 0.05);
+                            this.playerPos.y >= maxY - 0.75 && this.playerPos.y <= maxY + 0.05 &&
+                            this.playerVel.y <= 0.0);
 
     const isInsideGroundLawn = (v.isIslandLawn || v.isGroundPlateau) && (this.playerPos.y < maxY && this.playerPos.y >= minY - 0.5);
     const canLand = isInsideGroundLawn || (isFalling && ((wasAbove && reachedTopSurface) || sweptCrossedTop || insidePlatform));
@@ -5725,8 +5727,8 @@ allLevelColliders.forEach(v => {
       const overlapBack = maxZ - (this.playerPos.z - playerRadius);
       if (overlapLeft > 0 && overlapRight > 0 && overlapFront > 0 && overlapBack > 0) {
         const minOverlap = Math.min(overlapLeft, overlapRight, overlapFront, overlapBack);
-        // Solidly push out of the nearest wall if touching or penetrating up to 1.8 units
-        if (minOverlap > 0 && minOverlap <= playerRadius + 1.2) {
+        // Solidly push out of the nearest wall on any overlap
+        if (minOverlap > 0) {
           if (minOverlap === overlapLeft) {
             this.playerPos.x = minX - playerRadius - 0.002;
             if (this.playerVel.x > 0) this.playerVel.x = 0;
@@ -5746,24 +5748,28 @@ allLevelColliders.forEach(v => {
   }
 });
 
-// Downward Raycast Check (Three.js Raycaster)
-if (window.THREE && this.scene && this.playerVel.y <= 0.8) {
+// Downward Raycast Check (Three.js Raycaster) - ONLY when strictly descending (playerVel.y <= 0)
+if (window.THREE && this.scene && this.playerVel.y <= 0.0) {
   if (!this._downRaycaster) {
     this._downRaycaster = new window.THREE.Raycaster();
     this._downRaycaster.ray.direction.set(0, -1, 0);
   }
   if (this.camera) this._downRaycaster.camera = this.camera;
-  const rayOriginY = Math.max(p.y, this.playerPos.y) + playerHalfHeight;
+  const rayOriginY = this.playerPos.y + 0.3;
   this._downRaycaster.ray.origin.set(this.playerPos.x, rayOriginY, this.playerPos.z);
-  this._downRaycaster.far = (rayOriginY - this.playerPos.y) + 1.2;
+  this._downRaycaster.far = 0.55;
   if (this._raycastCollidables && this._raycastCollidables.length > 0) {
     try {
       const validCollidables = this._raycastCollidables.filter(c => c && c.isObject3D && !c.isSprite && c.visible !== false);
       if (validCollidables.length > 0) {
         const hits = this._downRaycaster.intersectObjects(validCollidables, false);
-        if (hits && hits.length > 0 && hits[0].point && hits[0].point.y > bestLandingY) {
-          bestLandingY = hits[0].point.y;
-          isLandingFound = true;
+        if (hits && hits.length > 0 && hits[0].point) {
+          const hitY = hits[0].point.y;
+          // Player's feet must actually have reached within 0.22m of the surface!
+          if (this.playerPos.y <= hitY + 0.15 && this.playerPos.y >= hitY - 0.35 && hitY > bestLandingY) {
+            bestLandingY = hitY;
+            isLandingFound = true;
+          }
         }
       }
     } catch (_rcErr) {}

@@ -12828,8 +12828,8 @@ function updateSpaceLoop() {
                          pPos.z >= minZ - 0.35 && pPos.z <= maxZ + 0.35);
 
         if (inHoriz) {
-          // A) Top Surface Support (Only rescues player if descending/falling and sunk below surface level)
-          const isSunkInside = (pVel && pVel.y <= 0 && pPos.y < maxY - 0.05 && pPos.y >= minY - 0.15);
+          // A) Top Surface Support (Only rescues player if descending/falling and sunk slightly below surface level)
+          const isSunkInside = (pVel && pVel.y <= 0 && pPos.y < maxY - 0.05 && pPos.y >= maxY - 0.75);
           if (isSunkInside) {
             pPos.y = maxY;
             pVel.y = 0;
@@ -12850,7 +12850,7 @@ function updateSpaceLoop() {
 
             if (overlapLeft > 0 && overlapRight > 0 && overlapFront > 0 && overlapBack > 0) {
               const minOverlap = Math.min(overlapLeft, overlapRight, overlapFront, overlapBack);
-              if (minOverlap > 0 && minOverlap <= playerRadius + 1.2) {
+              if (minOverlap > 0) {
                 if (minOverlap === overlapLeft) {
                   pPos.x = minX - playerRadius - 0.002;
                   if (pVel && pVel.x > 0) pVel.x = 0;
@@ -16511,7 +16511,14 @@ function enhanceGame() {
                           pushDir.y = 0;
                           if (pushDir.lengthSq() > 0.001) {
                               pushDir.normalize();
-                              game.playerPos.add(pushDir.multiplyScalar((minDist - dist) * 0.25));
+                              game.playerPos.add(pushDir.multiplyScalar(minDist - dist));
+                              if (game.playerVel) {
+                                  const dot = game.playerVel.x * pushDir.x + game.playerVel.z * pushDir.z;
+                                  if (dot < 0) {
+                                      game.playerVel.x -= dot * pushDir.x;
+                                      game.playerVel.z -= dot * pushDir.z;
+                                  }
+                              }
                           }
                       }
                   }

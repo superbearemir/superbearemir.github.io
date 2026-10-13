@@ -758,16 +758,30 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
       {!isMenuOpen && !isModalActive && (
         <div className="fixed top-12 sm:top-14 left-3 sm:left-4 z-[40] pointer-events-none select-none">
           {isTopMenuCollapsed ? (
-            /* Collapsed Single Pill Button - 100% Free Screen on Phone */
-            <button
-              onClick={() => setIsTopMenuCollapsed(false)}
-              title="Hızlı Oyun Menüsü & Araçları Aç"
-              className="pointer-events-auto px-3 py-1.5 rounded-full bg-slate-950/95 hover:bg-slate-900 text-amber-300 border-2 border-amber-400/80 shadow-2xl backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:border-amber-300 ring-2 ring-amber-500/20 hover:scale-105"
-            >
-              <span className="text-sm">⚡</span>
-              <span>Hızlı Menü</span>
-              <span className="text-[10px] text-amber-400">▼</span>
-            </button>
+            /* Collapsed Single Pill Button + Prominent Direct 3D Film Button */
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsTopMenuCollapsed(false)}
+                title="Hızlı Oyun Menüsü & Araçları Aç"
+                className="pointer-events-auto px-3 py-1.5 rounded-full bg-slate-950/95 hover:bg-slate-900 text-amber-300 border-2 border-amber-400/80 shadow-2xl backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:border-amber-300 ring-2 ring-amber-500/20 hover:scale-105"
+              >
+                <span className="text-sm">⚡</span>
+                <span>Hızlı Menü</span>
+                <span className="text-[10px] text-amber-400">▼</span>
+              </button>
+
+              {/* Direct Quick 3D Film Button visible right on screen */}
+              <button
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent('superbear:open-intro-cinematic'));
+                }}
+                title="Grizzy Süper Ayı: 3D Sinematik Filmi İzle"
+                className="pointer-events-auto px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-slate-950 border-2 border-yellow-300 shadow-2xl backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:brightness-110 ring-2 ring-amber-500/30 animate-pulse hover:scale-105"
+              >
+                <span className="text-sm">🎬</span>
+                <span>3D Film İzle</span>
+              </button>
+            </div>
           ) : (
             /* Expanded Drawer / Menu Card */
             <div className="pointer-events-auto p-2.5 sm:p-3 rounded-2xl bg-slate-950/95 border-2 border-amber-400/90 shadow-2xl backdrop-blur-xl max-w-[92vw] sm:max-w-xl text-xs animate-in fade-in zoom-in-95 duration-150">
@@ -819,17 +833,17 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
                   <span>{loreScrollsCount >= 6 ? `Kilit Açık! (${loreScrollsCount}/6)` : `Parşömen (${loreScrollsCount}/6)`}</span>
                 </button>
 
-                {/* Quick Opening Story Cinematic Button */}
+                {/* Quick 3D Opening Story Cinematic Movie Button */}
                 <button
                   onClick={() => {
                     setIsTopMenuCollapsed(true);
                     window.dispatchEvent(new CustomEvent('superbear:open-intro-cinematic'));
                   }}
-                  title="Giriş Hikayesi Filmini İzle"
+                  title="Grizzy Süper Ayı: 3D Sinematik Filmi İzle"
                   className="px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 to-red-500 text-slate-950 border border-amber-200 shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-amber-400 hover:to-red-400"
                 >
                   <span className="text-xs">🎬</span>
-                  <span>Film</span>
+                  <span>3D Film</span>
                 </button>
 
                 {/* Quick Retro Arcade Games Button (Prominently visible on Mobile and PC) */}
