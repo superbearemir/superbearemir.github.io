@@ -6656,28 +6656,6 @@ function populateSugarWorld(game) {
         game.currentLevel.mesh.add(cloudGroup);
     }
 
-    // Massive Glowing 3D Rainbow Arching in the Sky ("gökkuşağı")
-    const rainbowColors = [0xef4444, 0xf97316, 0xeab308, 0x10b981, 0x3b82f6, 0xa855f7];
-    for (let r = 0; r < rainbowColors.length; r++) {
-        const color = rainbowColors[r];
-        const radius = 100 + r * 3;
-        const steps = 60;
-        for (let s = 0; s <= steps; s++) {
-            const t = s / steps;
-            const angle = Math.PI * t; // 0 to 180 degrees
-            const rx = Math.cos(angle) * radius;
-            const ry = Math.sin(angle) * radius - 20;
-            const rz = -35 + (r * 0.4);
-            
-            const segment = new THREE.Mesh(
-                new THREE.BoxGeometry(8, 2.2, 2.5),
-                new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: 0.85 })
-            );
-            segment.position.set(rx, ry, rz);
-            segment.rotation.z = angle + Math.PI/2;
-            game.currentLevel.mesh.add(segment);
-        }
-    }
 
     // Helper to create solid platform with standard collider boundaries
     function createStaticPlatform(x, y, z, w, h, d, color = 0xdb2777) {
@@ -12850,11 +12828,11 @@ function updateSpaceLoop() {
                          pPos.z >= minZ - 0.35 && pPos.z <= maxZ + 0.35);
 
         if (inHoriz) {
-          // A) Top Surface Support (Anti-Falling & Anti-Sinking through platforms)
-          const isAtTopOrSunkInside = (pPos.y < maxY + 0.15 && pPos.y >= minY - 0.25 && (!pVel || pVel.y <= 0.85));
-          if (isAtTopOrSunkInside) {
+          // A) Top Surface Support (Only rescues player if descending/falling and sunk below surface level)
+          const isSunkInside = (pVel && pVel.y <= 0 && pPos.y < maxY - 0.05 && pPos.y >= minY - 0.15);
+          if (isSunkInside) {
             pPos.y = maxY;
-            if (pVel && pVel.y < 0) pVel.y = 0;
+            pVel.y = 0;
             if (game.isGrounded !== undefined) game.isGrounded = true;
             if (game.jumpCount !== undefined) game.jumpCount = 0;
           }

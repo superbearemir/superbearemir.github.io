@@ -5682,19 +5682,21 @@ allLevelColliders.forEach(v => {
       return;
     }
     // 3. Impenetrable Platform Landing & Anti-Fall-Through (Supports ALL elevated platforms in all 15 levels)
-    const isFalling = (this.playerVel.y <= 0.85);
-    const wasAbove = (p.y >= maxY - 0.40);
-    const isAtTopLevel = (this.playerPos.y >= maxY - 1.25 && this.playerPos.y <= maxY + 1.20);
-    // Swept vertical check (catches player if gravity dropped them fast past maxY in a single frame!)
-    const sweptCrossedTop = (p.y >= maxY - 0.15 && this.playerPos.y <= maxY + 0.10);
-    // Anti-Sinking / Recovery: If player is horizontally inside the platform volume, NEVER allow sinking through the bottom!
-    const insidePlatform = (this.playerPos.x >= minX - 0.25 && this.playerPos.x <= maxX + 0.25 &&
-                            this.playerPos.z >= minZ - 0.25 && this.playerPos.z <= maxZ + 0.25 &&
-                            this.playerPos.y >= minY - 0.20 && this.playerPos.y <= maxY + 0.50 &&
-                            this.playerVel.y <= 0.6);
+    // Only land if player is descending / not moving upwards in jump (playerVel.y <= 0.15)
+    const isFalling = (this.playerVel.y <= 0.15);
+    const wasAbove = (p.y >= maxY - 0.25);
+    // Foot position must have arrived at or slightly penetrated the surface (playerPos.y <= maxY + 0.18)
+    const reachedTopSurface = (this.playerPos.y <= maxY + 0.18 && this.playerPos.y >= maxY - 1.25);
+    // Swept vertical check (catches player if gravity dropped them past maxY in a single frame!)
+    const sweptCrossedTop = (p.y >= maxY - 0.15 && this.playerPos.y <= maxY + 0.05);
+    // Anti-Sinking / Recovery: If player is horizontally inside the platform volume, and sinking while falling:
+    const insidePlatform = (this.playerPos.x >= minX - 0.15 && this.playerPos.x <= maxX + 0.15 &&
+                            this.playerPos.z >= minZ - 0.15 && this.playerPos.z <= maxZ + 0.15 &&
+                            this.playerPos.y >= minY - 0.15 && this.playerPos.y <= maxY + 0.05 &&
+                            this.playerVel.y <= 0.05);
 
     const isInsideGroundLawn = (v.isIslandLawn || v.isGroundPlateau) && (this.playerPos.y < maxY && this.playerPos.y >= minY - 0.5);
-    const canLand = isInsideGroundLawn || (isFalling && (wasAbove || isAtTopLevel || sweptCrossedTop)) || insidePlatform;
+    const canLand = isInsideGroundLawn || (isFalling && ((wasAbove && reachedTopSurface) || sweptCrossedTop || insidePlatform));
 
     if (canLand) {
       if (maxY > bestLandingY) {
