@@ -741,15 +741,19 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
     }
   };
 
+  const safeVibrate = (ms: number = 15) => {
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      try { navigator.vibrate(ms); } catch (e) {}
+    }
+  };
+
   const selectAndExecutePower = (powerId: typeof selectedPowerId) => {
     setSelectedPowerId(powerId);
     setIsPowersRackOpen(false); // Auto-close power rack after selection
     if (powerDefinitions[powerId] && powerDefinitions[powerId].handler) {
       powerDefinitions[powerId].handler();
     }
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate(20);
-    }
+    safeVibrate(20);
   };
 
   return (
@@ -758,30 +762,16 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
       {!isMenuOpen && !isModalActive && (
         <div className="fixed top-12 sm:top-14 left-3 sm:left-4 z-[40] pointer-events-none select-none">
           {isTopMenuCollapsed ? (
-            /* Collapsed Single Pill Button + Prominent Direct 3D Film Button */
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setIsTopMenuCollapsed(false)}
-                title="Hızlı Oyun Menüsü & Araçları Aç"
-                className="pointer-events-auto px-3 py-1.5 rounded-full bg-slate-950/95 hover:bg-slate-900 text-amber-300 border-2 border-amber-400/80 shadow-2xl backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:border-amber-300 ring-2 ring-amber-500/20 hover:scale-105"
-              >
-                <span className="text-sm">⚡</span>
-                <span>Hızlı Menü</span>
-                <span className="text-[10px] text-amber-400">▼</span>
-              </button>
-
-              {/* Direct Quick 3D Film Button visible right on screen */}
-              <button
-                onClick={() => {
-                  window.dispatchEvent(new CustomEvent('superbear:open-intro-cinematic'));
-                }}
-                title="Grizzy Süper Ayı: 3D Sinematik Filmi İzle"
-                className="pointer-events-auto px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 text-slate-950 border-2 border-yellow-300 shadow-2xl backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:brightness-110 ring-2 ring-amber-500/30 animate-pulse hover:scale-105"
-              >
-                <span className="text-sm">🎬</span>
-                <span>3D Film İzle</span>
-              </button>
-            </div>
+            /* Collapsed Single Pill Button - 100% Free Screen on Phone */
+            <button
+              onClick={() => setIsTopMenuCollapsed(false)}
+              title="Hızlı Oyun Menüsü & Araçları Aç"
+              className="pointer-events-auto px-3 py-1.5 rounded-full bg-slate-950/95 hover:bg-slate-900 text-amber-300 border-2 border-amber-400/80 shadow-2xl backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:border-amber-300 ring-2 ring-amber-500/20 hover:scale-105"
+            >
+              <span className="text-sm">⚡</span>
+              <span>Hızlı Menü</span>
+              <span className="text-[10px] text-amber-400">▼</span>
+            </button>
           ) : (
             /* Expanded Drawer / Menu Card */
             <div className="pointer-events-auto p-2.5 sm:p-3 rounded-2xl bg-slate-950/95 border-2 border-amber-400/90 shadow-2xl backdrop-blur-xl max-w-[92vw] sm:max-w-xl text-xs animate-in fade-in zoom-in-95 duration-150">
@@ -833,17 +823,17 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
                   <span>{loreScrollsCount >= 6 ? `Kilit Açık! (${loreScrollsCount}/6)` : `Parşömen (${loreScrollsCount}/6)`}</span>
                 </button>
 
-                {/* Quick 3D Opening Story Cinematic Movie Button */}
+                {/* Quick Opening Story Cinematic Button */}
                 <button
                   onClick={() => {
                     setIsTopMenuCollapsed(true);
                     window.dispatchEvent(new CustomEvent('superbear:open-intro-cinematic'));
                   }}
-                  title="Grizzy Süper Ayı: 3D Sinematik Filmi İzle"
+                  title="Giriş Hikayesi Filmini İzle"
                   className="px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 to-red-500 text-slate-950 border border-amber-200 shadow-lg backdrop-blur-md flex items-center gap-1.5 text-xs font-black transition transform active:scale-95 cursor-pointer hover:from-amber-400 hover:to-red-400"
                 >
                   <span className="text-xs">🎬</span>
-                  <span>3D Film</span>
+                  <span>Film</span>
                 </button>
 
                 {/* Quick Retro Arcade Games Button (Prominently visible on Mobile and PC) */}
@@ -1766,11 +1756,11 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
                 e.preventDefault();
                 e.stopPropagation();
                 handleJump();
-                if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
+                safeVibrate(15);
               }}
               onClick={() => {
                 handleJump();
-                if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
+                safeVibrate(15);
               }}
               className="pointer-events-auto w-16 h-16 rounded-full bg-gradient-to-tr from-cyan-500 via-sky-500 to-blue-600 text-slate-950 border-2 border-cyan-100 shadow-2xl flex flex-col items-center justify-center font-black active:scale-90 transition transform cursor-pointer hover:scale-105 ring-4 ring-sky-400/30"
               title="Zıpla [Space / A]"
@@ -1785,11 +1775,11 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
                 e.preventDefault();
                 e.stopPropagation();
                 handleAttack();
-                if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
+                safeVibrate(15);
               }}
               onClick={() => {
                 handleAttack();
-                if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
+                safeVibrate(15);
               }}
               className="pointer-events-auto w-14 h-14 rounded-full bg-gradient-to-tr from-rose-600 via-red-500 to-amber-500 text-white border-2 border-rose-200 shadow-xl flex flex-col items-center justify-center font-black active:scale-90 transition transform cursor-pointer hover:scale-105"
               title="Saldırı / Vur [B]"
@@ -1805,13 +1795,13 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
                   e.preventDefault();
                   e.stopPropagation();
                   handleInteract();
-                  if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(25);
+                  safeVibrate(25);
                 }}
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   handleInteract();
-                  if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(25);
+                  safeVibrate(25);
                 }}
                 className={`pointer-events-auto w-14 h-14 rounded-full ${
                   isNearCatMerchant
@@ -1837,12 +1827,12 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
                   e.stopPropagation();
                   const def = powerDefinitions[selectedPowerId];
                   if (def) def.handler();
-                  if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
+                  safeVibrate(15);
                 }}
                 onClick={() => {
                   const def = powerDefinitions[selectedPowerId];
                   if (def) def.handler();
-                  if (typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(15);
+                  safeVibrate(15);
                 }}
                 className={`pointer-events-auto w-14 h-14 rounded-full bg-gradient-to-tr ${powerDefinitions[selectedPowerId].bgClass} border-2 ${powerDefinitions[selectedPowerId].borderClass} shadow-xl flex flex-col items-center justify-center font-black active:scale-90 transition transform cursor-pointer animate-in zoom-in-95 duration-150 hover:brightness-110`}
                 title={`Seçili Güç: ${powerDefinitions[selectedPowerId].name}`}

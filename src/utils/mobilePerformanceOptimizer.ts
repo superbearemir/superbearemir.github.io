@@ -111,24 +111,25 @@ export function optimizeGameRenderer(forceProfile?: QualityProfile) {
   let useShadows = state.shadowsEnabled;
 
   if (profile === 'batterySaver') {
-    // 🚀 Low-End / Older Tablet Mode: 0.85x resolution scale, shadows disabled completely
-    targetRatio = 0.85;
+    // 🚀 Low-End / Older Tablet Mode: 0.80x resolution scale, shadows disabled completely
+    targetRatio = 0.80;
     useShadows = false;
   } else if (profile === 'smooth60') {
-    // ⚡ 60 FPS Tablet & Mobile High-Performance Mode (Crisp 1.0x, fast basic shadows, silky 60fps)
+    // ⚡ 60 FPS Tablet & Mobile High-Performance Mode (Crisp 1.0x, 0-lag, silky 60fps)
     targetRatio = isMobile ? 1.0 : 1.25;
-    useShadows = state.shadowsEnabled;
+    useShadows = isMobile ? (savedShadows === 'true') : state.shadowsEnabled;
   } else if (profile === 'balanced') {
     // ⚖️ Balanced Mode
-    targetRatio = isMobile ? 1.15 : 1.35;
-    useShadows = state.shadowsEnabled;
+    targetRatio = isMobile ? 1.0 : 1.35;
+    useShadows = isMobile ? (savedShadows === 'true') : state.shadowsEnabled;
   } else if (profile === 'ultra') {
     // 💎 Ultra Quality Mode (high-end desktop PC / M-series Mac)
-    targetRatio = Math.min(nativeRatio, isMobile ? 1.4 : 1.75);
+    targetRatio = Math.min(nativeRatio, isMobile ? 1.25 : 1.75);
     useShadows = state.shadowsEnabled;
   } else {
     // 'auto' adaptive mode
     targetRatio = isMobile ? 1.0 : Math.min(nativeRatio, 1.35);
+    useShadows = isMobile ? (savedShadows === 'true') : state.shadowsEnabled;
   }
 
   state.currentPixelRatio = targetRatio;
@@ -280,9 +281,18 @@ function runFpsStabilizerLoop() {
     if ((state.currentProfile === 'smooth60' || state.currentProfile === 'auto') && state.isMobileDevice) {
       const game = (window as any).__superBearGame;
       if (game && game.renderer) {
-        if (avg < 40 && state.currentPixelRatio > 0.85) {
-          state.currentPixelRatio = Math.max(0.85, state.currentPixelRatio - 0.08);
+        if (avg < 40 && state.currentPixelRatio > 0.80) {
+          state.currentPixelRatio = Math.max(0.80, state.currentPixelRatio - 0.08);
           game.renderer.setPixelRatio(state.currentPixelRatio);
+          // If severely lagging (< 35 FPS), turn off shadows and clear particle congestion
+          if (avg < 35 && game.renderer.shadowMap && game.renderer.shadowMap.enabled) {
+            game.renderer.shadowMap.enabled = false;
+            state.shadowsEnabled = false;
+            if (game.sunLight) game.sunLight.castShadow = false;
+          }
+          if (Array.isArray(game.particles) && game.particles.length > 5) {
+            game.particles.splice(0, game.particles.length - 3);
+          }
         } else if (avg >= 58 && state.currentPixelRatio < 1.0) {
           state.currentPixelRatio = Math.min(1.0, state.currentPixelRatio + 0.04);
           game.renderer.setPixelRatio(state.currentPixelRatio);

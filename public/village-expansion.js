@@ -2608,16 +2608,18 @@
 
     // STRICT ISOLATION: Sadece Ayı Köyü'nde ('hub') görünmeli!
     if (currentRegion !== 'hub') {
-      if (villageExpansionGroup) {
-        villageExpansionGroup.visible = false;
-        if (villageExpansionGroup.parent) {
-          villageExpansionGroup.parent.remove(villageExpansionGroup);
+      if (isHubActive) {
+        if (villageExpansionGroup) {
+          villageExpansionGroup.visible = false;
+          if (villageExpansionGroup.parent) {
+            villageExpansionGroup.parent.remove(villageExpansionGroup);
+          }
         }
+        if (game.currentLevel && game.currentLevel.colliders) {
+          game.currentLevel.colliders = game.currentLevel.colliders.filter(c => !c.isVillageExpansionCollider);
+        }
+        isHubActive = false;
       }
-      if (game.currentLevel && game.currentLevel.colliders) {
-        game.currentLevel.colliders = game.currentLevel.colliders.filter(c => !c.isVillageExpansionCollider);
-      }
-      isHubActive = false;
       return;
     }
 

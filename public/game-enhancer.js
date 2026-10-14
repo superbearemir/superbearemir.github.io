@@ -9449,14 +9449,15 @@ function updateSpaceLoop() {
     // Helper: Precision Snap Object to Ground using exact Box3 base calculation
     function snapObjectBase(mesh, groundY, floatOffset = 0.02) {
       if (!mesh || !window.THREE) return;
+      if (mesh._groundAligned) return;
       const THREE = window.THREE;
       const box = new THREE.Box3().setFromObject(mesh);
       if (!box || !isFinite(box.min.y)) return;
       const diff = (groundY + floatOffset) - box.min.y;
-      // If object's bottom is below ground (buried/sunken) or floating unnaturally (>0.35m above ground)
       if (diff > 0.005 || diff < -0.35) {
         mesh.position.y += diff;
       }
+      mesh._groundAligned = true;
     }
 
     // 1. Level NPCs & Village Animal NPCs
@@ -12804,8 +12805,9 @@ function updateSpaceLoop() {
       // Continuous Anti-Sinking Ground Alignment for all animals, NPCs and objects
       if (!game._lastGroundAlignCounter) game._lastGroundAlignCounter = 0;
       game._lastGroundAlignCounter++;
-      if (game._lastGroundAlignCounter % 20 === 0) {
+      if (!game._levelAligned || game._lastGroundAlignCounter % 180 === 0) {
         alignAllObjectsToGround(game);
+        game._levelAligned = true;
       }
 
       // 1. Universal Solid Platform & Anti-Clipping Guard (Guarantees player never falls through or walks inside high platforms)
@@ -12828,8 +12830,8 @@ function updateSpaceLoop() {
                          pPos.z >= minZ - 0.35 && pPos.z <= maxZ + 0.35);
 
         if (inHoriz) {
-          // A) Top Surface Support (Only rescues player if descending/falling and sunk slightly below surface level)
-          const isSunkInside = (pVel && pVel.y <= 0 && pPos.y < maxY - 0.05 && pPos.y >= maxY - 0.75);
+          // A) Top Surface Support (Only rescues player if descending/falling and sunk below surface level)
+          const isSunkInside = (pVel && pVel.y <= 0 && pPos.y < maxY - 0.05 && pPos.y >= minY - 0.15);
           if (isSunkInside) {
             pPos.y = maxY;
             pVel.y = 0;
@@ -17962,7 +17964,7 @@ window.__alignCreaturesToGround = function(game) {
 let lastCreatureAlignTime = 0;
 function creatureAlignTicker() {
   const now = Date.now();
-  if (now - lastCreatureAlignTime > 1500) {
+  if (now - lastCreatureAlignTime > 4000) {
     lastCreatureAlignTime = now;
     if (window.__superBearGame) {
       window.__alignCreaturesToGround(window.__superBearGame);
