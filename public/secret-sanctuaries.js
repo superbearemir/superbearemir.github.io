@@ -22,6 +22,24 @@
 
   // Comprehensive base definitions for world regions
   const SANCTUARY_DEFS = {
+    // 15. BÖLÜM: DÜNYA FİNAL ZİRVESİ & KIRMIZI ÇİZGİ
+    earth_summit: {
+      regionKey: 'earth_summit',
+      title: "15. BÖLÜM: DÜNYA FİNAL ZİRVESİ & KIRMIZI ÇİZGİ",
+      sanctuaryName: "⛰️ Kızıl Şafak Göksel Zirve Sığınağı & Kadim Moris Otağı",
+      desc: "Kırmızı Çizgi'nin eşiğinde, uçurumun kenarında korunaklı göksel bir sığınak! Sıcak şömine ateşi, kadife ayı sediri, kutsal şifa pınarı ve şampiyon sandığı!",
+      pos: { x: -36.0, y: 39.5, z: -300.0 },
+      stepsStart: { x: -8.0, y: 38.0, z: -295.0 },
+      chestOffset: { x: 0, y: 0.25, z: -1.2 },
+      chestTitle: "Kızıl Zirve Kadim Şampiyon Sandığı",
+      rewardCoins: 360,
+      rewardHoney: 120,
+      rewardXp: 650,
+      primaryColor: 0xef4444,
+      secondaryColor: 0xfacc15,
+      theme: 'summit_sanctuary'
+    },
+
     // 11. JOKEROOMS
     jokerooms: {
       title: "11. BÖLÜM: JOKEROOMS",
@@ -306,6 +324,8 @@
     };
   }
   // Named space aliases
+  SANCTUARY_DEFS['earth_summit_level'] = SANCTUARY_DEFS['earth_summit'];
+  SANCTUARY_DEFS['summit'] = SANCTUARY_DEFS['earth_summit'];
   SANCTUARY_DEFS['space_1_stardust'] = SANCTUARY_DEFS['space_level_1'];
   SANCTUARY_DEFS['space_2_nebula'] = SANCTUARY_DEFS['space_level_2'];
   SANCTUARY_DEFS['space_2_crystal'] = SANCTUARY_DEFS['space_level_2'];
@@ -390,6 +410,11 @@
   function resolveSanctuaryDef(regionKey) {
     if (!regionKey) return null;
     if (SANCTUARY_DEFS[regionKey]) return SANCTUARY_DEFS[regionKey];
+
+    // Explicit Earth Summit Check
+    if (regionKey === 'earth_summit' || regionKey.includes('summit')) {
+      return SANCTUARY_DEFS['earth_summit'];
+    }
 
     // Fuzzy matching
     if (regionKey.startsWith('space_') || regionKey.includes('space')) {
@@ -1462,6 +1487,336 @@
   // ==========================================================================
   // BESPOKE 3D CHEST BUILDER (Theme-Specific Materials, Shapes & Lid Opening)
   // ==========================================================================
+  
+  // ============================================================================
+  // 16. 15. BÖLÜM: DÜNYA FİNAL ZİRVESİ & KIRMIZI ÇİZGİ (CRIMSON DAWN SUMMIT SANCTUARY)
+  // - Havada asılı bazalt ve kırmızı kristal atlama taşları
+  // - 4 antik dikilitaş sütun ve altın kubbe kemeri
+  // - Sıcak çıtırdayan şömine ve mangal ateşi
+  // - Kadife ayı sediri, altın puf yastıkları ve şifa pınarı
+  // - Moris'in sevgi dolu kardeşlik notu ve Kadim Şampiyon Sandığı!
+  // ============================================================================
+  function buildSummitSanctuary(THREE, def, root, animElements, game) {
+    const basaltMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.85, metalness: 0.3 });
+    const redCrystalMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xdc2626, emissiveIntensity: 1.2, roughness: 0.2 });
+    const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.85, roughness: 0.25, emissive: 0xb45309, emissiveIntensity: 0.3 });
+    const velvetMat = new THREE.MeshStandardMaterial({ color: 0x881337, roughness: 0.65 });
+    const woodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8 });
+    const fireMat = new THREE.MeshStandardMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 1.8, roughness: 0.1 });
+    const flameMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, emissive: 0xfacc15, emissiveIntensity: 2.2 });
+    const waterMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x0891b2, emissiveIntensity: 0.8, roughness: 0.1, transparent: true, opacity: 0.85 });
+
+    // A. 4 Floating Basalt & Red-Crystal Steps Connecting from Ridge (-8, 38.0, -295) to Sanctuary (-36, 39.5, -300)
+    const stepPlats = [
+      { x: -14.0, y: 38.2, z: -296.0, r: 2.2, color: 0xef4444 },
+      { x: -20.5, y: 38.6, z: -297.2, r: 2.2, color: 0xf43f5e },
+      { x: -26.5, y: 39.0, z: -298.5, r: 2.4, color: 0xfacc15 },
+      { x: -32.0, y: 39.3, z: -299.5, r: 2.4, color: 0xef4444 }
+    ];
+
+    stepPlats.forEach((p, idx) => {
+      const stepGroup = new THREE.Group();
+      const lx = p.x - def.pos.x;
+      const ly = p.y - def.pos.y;
+      const lz = p.z - def.pos.z;
+      stepGroup.position.set(lx, ly, lz);
+
+      // Basalt solid disk
+      const disc = new THREE.Mesh(new THREE.CylinderGeometry(p.r, p.r * 1.15, 0.45, 16), basaltMat);
+      stepGroup.add(disc);
+
+      // Glowing crimson crystal ring around perimeter
+      const ring = new THREE.Mesh(new THREE.TorusGeometry(p.r + 0.05, 0.12, 8, 24),
+        new THREE.MeshStandardMaterial({ color: p.color, emissive: p.color, emissiveIntensity: 1.5 }));
+      ring.rotation.x = Math.PI / 2;
+      ring.position.y = 0.15;
+      stepGroup.add(ring);
+
+      // Floating support obelisk cone below
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.8, 8),
+        new THREE.MeshStandardMaterial({ color: p.color, emissive: p.color, emissiveIntensity: 0.9, transparent: true, opacity: 0.75 }));
+      cone.rotation.x = Math.PI;
+      cone.position.y = -1.0;
+      stepGroup.add(cone);
+
+      root.add(stepGroup);
+
+      // Solid floor collider for stepping stone
+      registerCollider(game,
+        new THREE.Vector3(p.x - p.r, p.y - 0.25, p.z - p.r),
+        new THREE.Vector3(p.x + p.r, p.y + 0.5, p.z + p.r)
+      );
+
+      // Floating hover bobbing
+      animElements.push({
+        type: 'hover_y',
+        mesh: stepGroup,
+        origY: ly,
+        phase: idx * 0.8
+      });
+    });
+
+    // Arrow guide sign on Step 1 pointing toward sanctuary
+    const signGroup = new THREE.Group();
+    signGroup.position.set(-14.0 - def.pos.x, 38.2 - def.pos.y + 0.3, -296.0 - def.pos.z);
+    const signPole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.6, 8), woodMat);
+    signPole.position.y = 0.8;
+    signGroup.add(signPole);
+    const signBoard = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.7, 0.12), goldMat);
+    signBoard.position.set(0, 1.3, 0);
+    signBoard.rotation.y = -Math.PI / 3;
+    signGroup.add(signBoard);
+    root.add(signGroup);
+
+    // B. Main Grand Summit Pavilion Floor (Octagon)
+    const mainR = 6.2;
+    const floorGeo = new THREE.CylinderGeometry(mainR, mainR * 1.08, 0.65, 8);
+    const floorMesh = new THREE.Mesh(floorGeo, basaltMat);
+    floorMesh.position.y = 0.32;
+    root.add(floorMesh);
+
+    // Golden perimeter curb & red crystal trim
+    const floorRim = new THREE.Mesh(new THREE.TorusGeometry(mainR + 0.08, 0.18, 8, 8), goldMat);
+    floorRim.rotation.x = Math.PI / 2;
+    floorRim.position.y = 0.6;
+    root.add(floorRim);
+
+    // Inlaid 8-point red crystal star on floor
+    const starCore = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.4, 0.04, 8), redCrystalMat);
+    starCore.position.y = 0.66;
+    root.add(starCore);
+
+    // Register main platform floor collider
+    registerCollider(game,
+      new THREE.Vector3(def.pos.x - mainR, def.pos.y - 0.3, def.pos.z - mainR),
+      new THREE.Vector3(def.pos.x + mainR, def.pos.y + 0.7, def.pos.z + mainR)
+    );
+
+    // C. 4 Ancient Monolith Obelisk Columns & Arched Celestial Canopy
+    const pillarAngles = [Math.PI * 0.25, Math.PI * 0.75, Math.PI * 1.25, Math.PI * 1.75];
+    const pillarR = 4.8;
+    pillarAngles.forEach((ang) => {
+      const px = Math.cos(ang) * pillarR;
+      const pz = Math.sin(ang) * pillarR;
+
+      // Basalt Obelisk Pillar
+      const obelisk = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.48, 4.8, 4), basaltMat);
+      obelisk.rotation.y = Math.PI / 4;
+      obelisk.position.set(px, 2.6, pz);
+      root.add(obelisk);
+
+      // Glowing crimson rune band on pillar
+      const runeBand = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.5, 0.72), redCrystalMat);
+      runeBand.position.set(px, 2.8, pz);
+      root.add(runeBand);
+
+      // Gold capital on top
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.3, 0.9), goldMat);
+      cap.position.set(px, 5.0, pz);
+      root.add(cap);
+
+      // Arched rib connecting to center apex
+      const ribGeo = new THREE.CylinderGeometry(0.12, 0.16, 5.2, 8);
+      const rib = new THREE.Mesh(ribGeo, goldMat);
+      rib.position.set(px * 0.5, 5.8, pz * 0.5);
+      rib.lookAt(0, 6.8, 0);
+      rib.rotateX(Math.PI / 2);
+      root.add(rib);
+    });
+
+    // Central Floating Apex Beacon
+    const apexCrystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.85, 0), redCrystalMat);
+    apexCrystal.position.set(0, 6.6, 0);
+    root.add(apexCrystal);
+    animElements.push({ type: 'spin_y', mesh: apexCrystal });
+
+    // Floating Rotating Crimson Sun Halo overhead
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(3.6, 0.16, 8, 32),
+      new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xb91c1c, emissiveIntensity: 1.5 }));
+    halo.rotation.x = Math.PI / 2;
+    halo.position.set(0, 5.6, 0);
+    root.add(halo);
+    animElements.push({ type: 'spin_y', mesh: halo });
+
+    // D. Crackling Brick & Basalt Fireplace (Arka Duvarda Sıcak Şömine)
+    const fireGroup = new THREE.Group();
+    fireGroup.position.set(0, 0.65, -4.5);
+
+    // Fireplace stone hearth
+    const hearth = new THREE.Mesh(new THREE.BoxGeometry(3.4, 2.8, 1.4), basaltMat);
+    hearth.position.y = 1.4;
+    fireGroup.add(hearth);
+
+    // Fireplace inner opening (black firebox)
+    const firebox = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.6, 0.8),
+      new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.95 }));
+    firebox.position.set(0, 1.0, 0.35);
+    fireGroup.add(firebox);
+
+    // Glowing hot coals
+    const coals = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.25, 0.6), fireMat);
+    coals.position.set(0, 0.35, 0.35);
+    fireGroup.add(coals);
+
+    // Flickering fire flames (3 cones with flame animation)
+    for (let f = 0; f < 3; f++) {
+      const flame = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.9, 8), flameMat);
+      flame.position.set((f - 1) * 0.4, 0.75, 0.35);
+      fireGroup.add(flame);
+      animElements.push({ type: 'flame', mesh: flame });
+    }
+
+    // Fireplace mantle
+    const mantle = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.3, 1.6), goldMat);
+    mantle.position.y = 2.85;
+    fireGroup.add(mantle);
+
+    // Golden Tea Kettle on mantle
+    const kettle = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.35, 0.5, 12), goldMat);
+    kettle.position.set(-0.8, 3.25, 0.2);
+    fireGroup.add(kettle);
+
+    root.add(fireGroup);
+
+    // Register fireplace collider so player doesn't walk inside it
+    registerCollider(game,
+      new THREE.Vector3(def.pos.x - 1.8, def.pos.y, def.pos.z - 5.2),
+      new THREE.Vector3(def.pos.x + 1.8, def.pos.y + 3.2, def.pos.z - 3.8)
+    );
+
+    // E. Royal Velvet Bear Resting Divan & Cushions (Sağ Tarafta Dinlenme Sediri)
+    const divanGroup = new THREE.Group();
+    divanGroup.position.set(3.2, 0.65, 0.5);
+    divanGroup.rotation.y = -Math.PI / 3;
+
+    // Sofa base
+    const divanBase = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.45, 1.5), woodMat);
+    divanBase.position.y = 0.22;
+    divanGroup.add(divanBase);
+
+    // Soft burgundy velvet mattress
+    const divanCushion = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.4, 1.3), velvetMat);
+    divanCushion.position.y = 0.55;
+    divanGroup.add(divanCushion);
+
+    // Backrest
+    const backrest = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.9, 0.3), velvetMat);
+    backrest.position.set(0, 0.95, -0.55);
+    divanGroup.add(backrest);
+
+    // 2 Golden Throw Pillows
+    const pillow1 = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.3, 0.5), goldMat);
+    pillow1.position.set(-1.0, 0.85, 0);
+    pillow1.rotation.z = 0.25;
+    divanGroup.add(pillow1);
+
+    const pillow2 = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.3, 0.5), goldMat);
+    pillow2.position.set(1.0, 0.85, 0);
+    pillow2.rotation.z = -0.25;
+    divanGroup.add(pillow2);
+
+    root.add(divanGroup);
+
+    // F. Sacred Summit Healing Spring (Sol Tarafta Şifalı Dağ Pınarı)
+    const springGroup = new THREE.Group();
+    springGroup.position.set(-3.2, 0.65, 0.5);
+
+    // Stone basin
+    const basin = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.8, 0.7, 16), basaltMat);
+    basin.position.y = 0.35;
+    springGroup.add(basin);
+
+    // Golden rim
+    const basinRim = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.12, 8, 16), goldMat);
+    basinRim.rotation.x = Math.PI / 2;
+    basinRim.position.y = 0.7;
+    springGroup.add(basinRim);
+
+    // Glowing healing water surface
+    const water = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.5, 0.1, 16), waterMat);
+    water.position.y = 0.65;
+    springGroup.add(water);
+
+    // Floating healing octahedron crystal above water
+    const healGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.45, 0),
+      new THREE.MeshStandardMaterial({ color: 0x34d399, emissive: 0x10b981, emissiveIntensity: 1.8 }));
+    healGem.position.y = 1.4;
+    springGroup.add(healGem);
+    animElements.push({ type: 'spin_y', mesh: healGem });
+    animElements.push({ type: 'hover_y', mesh: healGem, origY: 1.4, phase: 0.5 });
+
+    root.add(springGroup);
+
+    // G. Refreshment Tea & Honey Table (Ahşap İkram Masası)
+    const tableGroup = new THREE.Group();
+    tableGroup.position.set(1.6, 0.65, 2.8);
+
+    const tableTop = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.12, 12), woodMat);
+    tableTop.position.y = 0.8;
+    tableGroup.add(tableTop);
+
+    const tableLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.18, 0.8, 8), woodMat);
+    tableLeg.position.y = 0.4;
+    tableGroup.add(tableLeg);
+
+    // Steaming tea mugs
+    const mug1 = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.22, 8), goldMat);
+    mug1.position.set(-0.25, 0.95, 0.1);
+    tableGroup.add(mug1);
+
+    const mug2 = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.22, 8), redCrystalMat);
+    mug2.position.set(0.25, 0.95, -0.1);
+    tableGroup.add(mug2);
+
+    // Honey pot
+    const honeyPot = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 8),
+      new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3 }));
+    honeyPot.position.set(0, 0.98, 0.25);
+    tableGroup.add(honeyPot);
+
+    root.add(tableGroup);
+
+    // H. Moris's Camp Diary Tablet (Kardeşimiz Moris'in Notu)
+    const noteGroup = new THREE.Group();
+    noteGroup.position.set(-1.6, 0.65, 2.6);
+
+    const notePedestal = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.85, 0.65), basaltMat);
+    notePedestal.position.y = 0.42;
+    noteGroup.add(notePedestal);
+
+    const noteTablet = new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.08, 0.55), goldMat);
+    noteTablet.position.set(0, 0.88, 0);
+    noteTablet.rotation.x = 0.35;
+    noteGroup.add(noteTablet);
+
+    root.add(noteGroup);
+
+    // I. Exit Jump Pad on Sanctuary Plateau to catapult player back toward main route / arena!
+    const returnPadGroup = new THREE.Group();
+    returnPadGroup.position.set(mainR * 0.72, 0.65, -mainR * 0.4);
+
+    const rPadBase = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.4, 0.25, 16), goldMat);
+    rPadBase.position.y = 0.12;
+    returnPadGroup.add(rPadBase);
+
+    const rPadCenter = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.18, 16), redCrystalMat);
+    rPadCenter.position.y = 0.28;
+    returnPadGroup.add(rPadCenter);
+
+    root.add(returnPadGroup);
+
+    // Register Jump Pad in level jump pads so player bouncing on it flies back toward (-8, 38, -295) or arena!
+    if (game && game.currentLevel) {
+      if (!game.currentLevel.jumpPads) game.currentLevel.jumpPads = [];
+      game.currentLevel.jumpPads.push({
+        pos: new THREE.Vector3(def.pos.x + mainR * 0.72, def.pos.y + 0.9, def.pos.z - mainR * 0.4),
+        power: 24,
+        mesh: returnPadGroup,
+        isSanctuaryJumpPad: true
+      });
+    }
+  }
+
   function buildThemedChestMesh(THREE, def, animElements) {
     const chestGroup = new THREE.Group();
     chestGroup.name = 'sanctuary_secret_chest_group';
@@ -1647,6 +2002,9 @@
         break;
       case 'sky_nest':
         buildSkyNestSanctuary(THREE, def, root, animElements, game);
+        break;
+      case 'summit_sanctuary':
+        buildSummitSanctuary(THREE, def, root, animElements, game);
         break;
       default:
         buildDesertCaveSanctuary(THREE, def, root, animElements, game);
