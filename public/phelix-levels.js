@@ -1744,8 +1744,14 @@
       }
     });
 
+    // 🏙️ Gökdelenler Arası Kesintisiz Siber Asansör & Bağlantı Köprüsü (idx 9 -> TV Kulesi)
+    addMovingPlatform(game, scene, { x: -3.5, topY: 59, z: -252, w: 10, h: 2, d: 10, axis: 'z', dist: 8, speed: 2.0, color: 0x06b6d4 });
+    addJumpPad(game, scene, -7, 56, -234, 26, 0x06b6d4); // Son gökdelenden kuleye fırlatıcı
+
     // Ara Kontrol Noktası: Neon Televizyon Kulesi
     addGroundedPlatform(game, scene, { x: 0, topY: 62, z: -270, w: 32, h: 6, d: 32, color: 0x7e22ce, metalness: 0.9 });
+    // TV Kulesinden Yüksek İrtifa Köprüsüne Geçiş Platformu
+    addGroundedPlatform(game, scene, { x: 0, topY: 68, z: -288, w: 12, h: 2.5, d: 14, color: 0x9333ea, metalness: 0.8 });
     addCheckpoint(game, scene, 0, 62, -270, "2. Neon Verici Kulesi");
     addPhelixStarGem(game, scene, 0, 62, -264);
     addJumpPad(game, scene, 0, 62, -270, 36, 0xec4899);
