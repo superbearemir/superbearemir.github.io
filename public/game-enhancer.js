@@ -9328,7 +9328,7 @@ function updateSpaceLoop() {
 
   // Exact Coordinates & Safety Spawns for Every Region
   const SAFE_SPAWNS = {
-    hub: { x: 0, y: 0.2, z: 5, rotY: 0, title: "1. BÖLÜM: AYI VE KEDİ KÖYÜ", sub: "Maceranın Başladığı Huzurlu Köy Meydanı", icon: "🏡" },
+    hub: { x: 0, y: 0.5, z: 22, rotY: 0, title: "1. BÖLÜM: AYI VE KEDİ KÖYÜ", sub: "Maceranın Başladığı Huzurlu Köy Meydanı", icon: "🏡" },
     forest_temple: { x: 0, y: 1.5, z: 25, rotY: 0, title: "2. BÖLÜM: ANTİK ORMAN TAPINAĞI", sub: "Sarmaşıklar ve Zehirli Spor Kanyonu", icon: "🍃" },
     beehive: { x: 0, y: 1.5, z: 42, rotY: 0, title: "3. BÖLÜM: VIZILDIYAN BAL KOVANI", sub: "Altın Bal Petekleri ve Arı Kraliçesi Labirenti", icon: "🐝" },
     pelican_plains: { x: 0, y: 2.0, z: 46, rotY: 0, title: "4. BÖLÜM: PELİKAN OVALARI & GÖK ADALARI", sub: "Rüzgarlı Bulut Köprüleri ve Gök Tapınağı", icon: "🪶" },
