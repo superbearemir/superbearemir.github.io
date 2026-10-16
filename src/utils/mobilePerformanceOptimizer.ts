@@ -277,26 +277,11 @@ function runFpsStabilizerLoop() {
     const avg = Math.round(fpsHistory.reduce((a, b) => a + b, 0) / fpsHistory.length);
     state.avgFps = avg;
 
-    // Adaptive Anti-Lag: If FPS drops below 42 on mobile/tablet in smooth60/auto, reduce DPR slightly
-    if ((state.currentProfile === 'smooth60' || state.currentProfile === 'auto') && state.isMobileDevice) {
+    // Particle cleanup if congested, but KEEP DPR and shadows completely stable to prevent screen flickering/blinking
+    if (state.isMobileDevice) {
       const game = (window as any).__superBearGame;
-      if (game && game.renderer) {
-        if (avg < 40 && state.currentPixelRatio > 0.80) {
-          state.currentPixelRatio = Math.max(0.80, state.currentPixelRatio - 0.08);
-          game.renderer.setPixelRatio(state.currentPixelRatio);
-          // If severely lagging (< 35 FPS), turn off shadows and clear particle congestion
-          if (avg < 35 && game.renderer.shadowMap && game.renderer.shadowMap.enabled) {
-            game.renderer.shadowMap.enabled = false;
-            state.shadowsEnabled = false;
-            if (game.sunLight) game.sunLight.castShadow = false;
-          }
-          if (Array.isArray(game.particles) && game.particles.length > 5) {
-            game.particles.splice(0, game.particles.length - 3);
-          }
-        } else if (avg >= 58 && state.currentPixelRatio < 1.0) {
-          state.currentPixelRatio = Math.min(1.0, state.currentPixelRatio + 0.04);
-          game.renderer.setPixelRatio(state.currentPixelRatio);
-        }
+      if (game && Array.isArray(game.particles) && game.particles.length > 30) {
+        game.particles.splice(0, game.particles.length - 15);
       }
     }
 

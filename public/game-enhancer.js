@@ -350,6 +350,31 @@ var beeDesertPopulated = false;
 // --- UNIVERSAL LEVEL CLEANUP & PURGE FUNCTION (PREVENTS LEVELS FROM OVERLAPPING/MERGING) ---
 window.__superBearPurgeScene = function(game) {
     if (!game) game = window.__superBearGame;
+    if (game && game.scene) {
+        // Deep recursive disposal of geometries and materials to prevent memory leaks and garbage collection stutters
+        game.scene.traverse(child => {
+            if (child.isMesh && child !== game.playerBear?.root) {
+                if (child.geometry && typeof child.geometry.dispose === 'function') {
+                    child.geometry.dispose();
+                }
+                if (child.material) {
+                    if (Array.isArray(child.material)) {
+                        child.material.forEach(mat => {
+                            if (mat.map && typeof mat.map.dispose === 'function') mat.map.dispose();
+                            if (typeof mat.dispose === 'function') mat.dispose();
+                        });
+                    } else {
+                        if (child.material.map && typeof child.material.map.dispose === 'function') child.material.map.dispose();
+                        if (typeof child.material.dispose === 'function') child.material.dispose();
+                    }
+                }
+            }
+        });
+        if (typeof window.gc === 'function') {
+            try { window.gc(); } catch(e) {}
+        }
+    }
+    if (!game) game = window.__superBearGame;
     if (!game || !game.scene) return;
     console.log("🧹 [Universal Purge] Deep cleaning previous scene objects, colliders and states...");
     if (game._returnPortals) {
@@ -9328,7 +9353,7 @@ function updateSpaceLoop() {
 
   // Exact Coordinates & Safety Spawns for Every Region
   const SAFE_SPAWNS = {
-    hub: { x: 0, y: 0.5, z: 22, rotY: 0, title: "1. BÖLÜM: AYI VE KEDİ KÖYÜ", sub: "Maceranın Başladığı Huzurlu Köy Meydanı", icon: "🏡" },
+    hub: { x: 0, y: 0.5, z: 28, rotY: 0, title: "1. BÖLÜM: AYI VE KEDİ KÖYÜ", sub: "Maceranın Başladığı Huzurlu Köy Meydanı", icon: "🏡" },
     forest_temple: { x: 0, y: 1.5, z: 25, rotY: 0, title: "2. BÖLÜM: ANTİK ORMAN TAPINAĞI", sub: "Sarmaşıklar ve Zehirli Spor Kanyonu", icon: "🍃" },
     beehive: { x: 0, y: 1.5, z: 42, rotY: 0, title: "3. BÖLÜM: VIZILDIYAN BAL KOVANI", sub: "Altın Bal Petekleri ve Arı Kraliçesi Labirenti", icon: "🐝" },
     pelican_plains: { x: 0, y: 2.0, z: 46, rotY: 0, title: "4. BÖLÜM: PELİKAN OVALARI & GÖK ADALARI", sub: "Rüzgarlı Bulut Köprüleri ve Gök Tapınağı", icon: "🪶" },
@@ -9375,10 +9400,10 @@ function updateSpaceLoop() {
     if (regionId === "hub") {
       if (game.camera) {
         game.camYaw = 0;
-        game.camPitch = 0.2;
-        game.camDist = 6.0;
-        game.camera.position.set(0, 2.5, 11);
-        game.camera.lookAt(0, 1.0, -10);
+        game.camPitch = 0.26;
+        game.camDist = 6.8;
+        game.camera.position.set(game.playerPos.x, game.playerPos.y + 2.4, game.playerPos.z + 6.6);
+        game.camera.lookAt(game.playerPos.x, game.playerPos.y + 1.2, game.playerPos.z);
       }
       // Remove any artificial spawn colliders that could cause bear to float in mid air
       if (game.currentLevel && game.currentLevel.colliders) {
@@ -9436,7 +9461,8 @@ function updateSpaceLoop() {
 
       for (let i = 0; i < colliders.length; i++) {
         const c = colliders[i];
-        if (!c || !c.min || !c.max || c.isToxic) continue;
+        if (!c || !c.min || !c.max || c.isToxic || c.isOverhead || c.isCeiling || c.isEaselCollider) continue;
+        if (isHub && c.min.y >= 2.4) continue;
         if (x >= c.min.x - 0.35 && x <= c.max.x + 0.35 && z >= c.min.z - 0.35 && z <= c.max.z + 0.35) {
           if (c.max.y > highestY) {
             highestY = c.max.y;
@@ -9499,15 +9525,27 @@ function updateSpaceLoop() {
       });
     }
 
-    // 4. Art Easels & Display Paintings
+    // 4. Art Easels & Display Paintings (Guaranteed ground anchoring & drop down)
+    if (game.scene) {
+      game.scene.traverse(obj => {
+        if (obj && (obj.userData && obj.userData.isArtEasel || (obj.name && (obj.name.includes('easel') || obj.name.includes('drawing') || obj.name.includes('art'))))) {
+          const isHubLevel = (game.currentRegion === 'hub' || !game.currentRegion);
+          const targetY = isHubLevel ? 0.0 : Math.min(Math.max(getGroundYAt(obj.position.x, obj.position.z), 0.0), 2.0);
+          obj.position.y = targetY;
+          obj._groundAligned = true;
+        }
+      });
+    }
     if (level.artEasels) {
       level.artEasels.forEach(e => {
-        if (!e || !e.mesh || !e.pos) return;
-        const groundY = getGroundYAt(e.pos.x, e.pos.z);
-        if (groundY > -500) {
-          snapObjectBase(e.mesh, groundY, 0.02);
-          e.pos.y = e.mesh.position.y;
-        }
+        if (!e || !e.mesh) return;
+        const isHubLevel = (game.currentRegion === 'hub' || !game.currentRegion);
+        const px = e.pos ? e.pos.x : e.mesh.position.x;
+        const pz = e.pos ? e.pos.z : e.mesh.position.z;
+        const targetY = isHubLevel ? 0.0 : Math.min(Math.max(getGroundYAt(px, pz), 0.0), 2.0);
+        e.mesh.position.y = targetY;
+        if (e.pos) e.pos.y = targetY;
+        e.mesh._groundAligned = true;
       });
     }
   }
@@ -9578,6 +9616,32 @@ function updateSpaceLoop() {
 
       // Automatically align all characters, animals, items and easels to ground height
       alignAllObjectsToGround(this);
+      // 🔥 ABSOLUTE GROUND SNAP FOR ALL ART EASELS & DRAWING BOARDS IN HUB & LEVELS
+      if (this.scene) {
+        const isHub = (this.currentRegion === 'hub' || !this.currentRegion);
+        this.scene.traverse(obj => {
+          if (obj && (obj.userData && obj.userData.isArtEasel || (obj.name && (obj.name.includes('easel') || obj.name.includes('drawing') || obj.name.includes('art'))))) {
+            obj.position.y = isHub ? 0.0 : Math.min(obj.position.y, 2.0);
+            if (obj.children) {
+              obj.children.forEach(ch => {
+                // Ensure legs touch ground and boards are aligned
+                if (ch.position.y > 2.0 && ch.geometry && ch.geometry.type === 'CylinderGeometry') {
+                  ch.position.y = 1.0;
+                }
+              });
+            }
+          }
+        });
+      }
+      if (this.currentLevel && this.currentLevel.artEasels) {
+        const isHub = (this.currentRegion === 'hub' || !this.currentRegion);
+        this.currentLevel.artEasels.forEach(e => {
+          if (!e || !e.mesh) return;
+          const targetY = isHub ? 0.0 : Math.min(e.mesh.position.y, 2.0);
+          e.mesh.position.y = targetY;
+          if (e.pos) e.pos.y = targetY;
+        });
+      }
 
       // Ensure player and camera spawn safely inside the map
       ensureSafeLevelSpawn(this, regionId, false);
@@ -17968,6 +18032,20 @@ function creatureAlignTicker() {
     lastCreatureAlignTime = now;
     if (window.__superBearGame) {
       window.__alignCreaturesToGround(window.__superBearGame);
+      const g = window.__superBearGame;
+      if (g && (g.currentRegion === 'hub' || !g.currentRegion) && g.scene) {
+        g.scene.traverse(o => {
+          if (o && (o.userData && o.userData.isArtEasel || (o.name && (o.name.includes('easel') || o.name.includes('drawing'))))) {
+            o.position.y = 0.0;
+          }
+        });
+        if (g.currentLevel && g.currentLevel.artEasels) {
+          g.currentLevel.artEasels.forEach(e => {
+            if (e && e.mesh) e.mesh.position.y = 0.0;
+            if (e && e.pos) e.pos.y = 0.0;
+          });
+        }
+      }
     }
   }
   if (typeof requestAnimationFrame !== "undefined") {
