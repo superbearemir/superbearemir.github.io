@@ -460,6 +460,21 @@ window.__superBearPurgeScene = function(game) {
         game.currentLevel.enemies = [];
         game.currentLevel.npcs = [];
         game.currentLevel.movingPlatforms = [];
+        if (Array.isArray(game.currentLevel.artEasels)) {
+            game.currentLevel.artEasels.forEach(ea => {
+                if (ea && ea.mesh) {
+                    ea.mesh.traverse(obj => {
+                        if (obj.geometry && typeof obj.geometry.dispose === "function") obj.geometry.dispose();
+                        if (obj.material) {
+                            if (Array.isArray(obj.material)) obj.material.forEach(m => { if (m.map) m.map.dispose(); if (m.dispose) m.dispose(); });
+                            else { if (obj.material.map) obj.material.map.dispose(); if (obj.material.dispose) obj.material.dispose(); }
+                        }
+                    });
+                    if (ea.mesh.parent) ea.mesh.parent.remove(ea.mesh);
+                    if (game.scene) game.scene.remove(ea.mesh);
+                }
+            });
+        }
         game.currentLevel.artEasels = [];
         game.currentLevel.fireballs = [];
         game.currentLevel.invisibleWallMeshes = [];
@@ -5548,7 +5563,88 @@ function createDragonMesh(THREE, isBoss = true) {
   return dragon;
 }
 
+function createThematicEntranceEasel(game, pageIndex, title, x, y, z) {
+  if (!game || !game.scene || !window.THREE) return null;
+  const THREE = window.THREE;
+  if (!game.currentLevel) game.currentLevel = {};
+  if (!game.currentLevel.artEasels) game.currentLevel.artEasels = [];
+
+  const easelGroup = new THREE.Group();
+  easelGroup.name = "entrance_thematic_easel_" + (pageIndex + 1);
+  easelGroup.position.set(x, y, z);
+
+  const woodMat = new THREE.MeshStandardMaterial({ color: 0x854d0e, roughness: 0.8 });
+  const legGeo = new THREE.CylinderGeometry(0.06, 0.07, 3.2, 8);
+
+  const legL = new THREE.Mesh(legGeo, woodMat);
+  legL.position.set(-0.7, 1.5, 0.1);
+  legL.rotation.z = 0.12;
+  legL.rotation.x = -0.1;
+  easelGroup.add(legL);
+
+  const legR = new THREE.Mesh(legGeo, woodMat);
+  legR.position.set(0.7, 1.5, 0.1);
+  legR.rotation.z = -0.12;
+  legR.rotation.x = -0.1;
+  easelGroup.add(legR);
+
+  const legB = new THREE.Mesh(legGeo, woodMat);
+  legB.position.set(0, 1.5, -0.6);
+  legB.rotation.x = 0.35;
+  easelGroup.add(legB);
+
+  const cross = new THREE.Mesh(new THREE.BoxGeometry(2, 0.1, 0.25), woodMat);
+  cross.position.set(0, 1.1, 0.15);
+  easelGroup.add(cross);
+
+  const cvs = document.createElement("canvas");
+  cvs.width = 512;
+  cvs.height = 512;
+  const ctx = cvs.getContext("2d");
+  if (ctx) {
+    ctx.fillStyle = "#1e1b4b";
+    ctx.fillRect(0, 0, 512, 512);
+    ctx.strokeStyle = "#f59e0b";
+    ctx.lineWidth = 12;
+    ctx.strokeRect(10, 10, 492, 492);
+    ctx.fillStyle = "#fbbf24";
+    ctx.font = "bold 28px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("🎨 " + title, 256, 75);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "22px sans-serif";
+    ctx.fillText("Bölüm Tasarım Belgesi & Rehberi", 256, 125);
+    ctx.font = "18px sans-serif";
+    ctx.fillStyle = "#93c5fd";
+    ctx.fillText("İncelemek için [E] tuşuna bas veya tıkla", 256, 460);
+  }
+  const tex = new THREE.CanvasTexture(cvs);
+  const board = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.5, 0.08), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.4 }));
+  board.position.set(0, 1.8, 0.08);
+  board.rotation.x = -0.1;
+  easelGroup.add(board);
+
+  const orb = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xfbbf24, emissiveIntensity: 0.8 }));
+  orb.position.set(0, 2.7, 0);
+  easelGroup.add(orb);
+
+  easelGroup.userData = { isArtEasel: true, pageIndex: pageIndex, title: title, orbMesh: orb };
+  game.scene.add(easelGroup);
+
+  const posVec = new THREE.Vector3(x, y, z);
+  game.currentLevel.artEasels.push({
+    id: easelGroup.name,
+    mesh: easelGroup,
+    pos: posVec,
+    pageIndex: pageIndex,
+    title: title
+  });
+
+  return easelGroup;
+}
+
 function populateVolcanoCave(game) {
+  createThematicEntranceEasel(game, 0, "6. Bölüm: Volkanik Ejderha Mağarası", -3.5, 2.5, 68);
   // Level Exit Portal to Next Region
   if (window.createCaveExitPortal) {
     window.createCaveExitPortal(game, 0, 41, -188, 'underwater_palace', '7. BÖLÜM: ANTİK SU ALTI KRİSTAL SARAYI', '🌊');
@@ -6095,6 +6191,7 @@ function populateVolcanoCave(game) {
 underwaterPalacePopulated = false;
 
 function populateUnderwaterPalace(game) {
+  createThematicEntranceEasel(game, 1, "7. Bölüm: Antik Su Altı Kristal Sarayı", -3.5, 2.0, -4);
   // Level Exit Portal to Next Region (8. Golden Sanctuary)
   if (window.createCaveExitPortal) {
     window.createCaveExitPortal(game, 0, 32, -520, 'golden_sanctuary', '8. BÖLÜM: EFSANEVİ ALTIN CENNETİ', '🌟');
@@ -6419,6 +6516,7 @@ function populateUnderwaterPalace(game) {
     game.currentLevel.kraken = krakenGroup;
 }
 function populateDinosaurWorld(game) {
+  createThematicEntranceEasel(game, 3, "9. Bölüm: Tarih Öncesi Dinozor Dünyası", -3.5, 1.8, 58);
   // Level Exit Portal to Next Region
   if (window.createCaveExitPortal) {
     window.createCaveExitPortal(game, 0, 5, -650, 'sugar_world', '10. BÖLÜM: ŞEKER DÜNYASI', '🍬');
@@ -6609,6 +6707,7 @@ sugarWorldPopulated = false;
 let playerSlowTimer = 0;
 
 function populateSugarWorld(game) {
+  createThematicEntranceEasel(game, 4, "10. Bölüm: Şeker Dünyası & Lolipop Krallığı", -3.5, 11.5, 68);
   // Level Exit Portal to Next Region
   if (window.createCaveExitPortal) {
     window.createCaveExitPortal(game, 0, 32, -520, 'jokerooms', '11. BÖLÜM: JOKEROOMS', '🚪');
@@ -7372,6 +7471,7 @@ const JOKEROOMS_JOKES = [
 ];
 
 function populateJokerooms(game) {
+  createThematicEntranceEasel(game, 5, "11. Bölüm: Jokerooms Şaka Odaları", -3.5, 1.2, -4);
   // Level Exit Portal to Next Region (12. Ruin Village)
   if (window.createCaveExitPortal) {
     window.createCaveExitPortal(game, 0, 4, -480, 'ruin_village', '12. BÖLÜM: YIKILMIŞ KÖY HARABELERİ', '🏚️');
@@ -9353,7 +9453,7 @@ function updateSpaceLoop() {
 
   // Exact Coordinates & Safety Spawns for Every Region
   const SAFE_SPAWNS = {
-    hub: { x: 0, y: 0.5, z: 28, rotY: 0, title: "1. BÖLÜM: AYI VE KEDİ KÖYÜ", sub: "Maceranın Başladığı Huzurlu Köy Meydanı", icon: "🏡" },
+    hub: { x: 0, y: 0.5, z: 20, rotY: 0, title: "1. BÖLÜM: AYI VE KEDİ KÖYÜ", sub: "Maceranın Başladığı Huzurlu Köy Meydanı", icon: "🏡" },
     forest_temple: { x: 0, y: 1.5, z: 25, rotY: 0, title: "2. BÖLÜM: ANTİK ORMAN TAPINAĞI", sub: "Sarmaşıklar ve Zehirli Spor Kanyonu", icon: "🍃" },
     beehive: { x: 0, y: 1.5, z: 42, rotY: 0, title: "3. BÖLÜM: VIZILDIYAN BAL KOVANI", sub: "Altın Bal Petekleri ve Arı Kraliçesi Labirenti", icon: "🐝" },
     pelican_plains: { x: 0, y: 2.0, z: 46, rotY: 0, title: "4. BÖLÜM: PELİKAN OVALARI & GÖK ADALARI", sub: "Rüzgarlı Bulut Köprüleri ve Gök Tapınağı", icon: "🪶" },
@@ -9402,7 +9502,7 @@ function updateSpaceLoop() {
         game.camYaw = 0;
         game.camPitch = 0.26;
         game.camDist = 6.8;
-        game.camera.position.set(game.playerPos.x, game.playerPos.y + 2.4, game.playerPos.z + 6.6);
+        game.camera.position.set(game.playerPos.x, game.playerPos.y + 2.4, game.playerPos.z + 6.8);
         game.camera.lookAt(game.playerPos.x, game.playerPos.y + 1.2, game.playerPos.z);
       }
       // Remove any artificial spawn colliders that could cause bear to float in mid air
@@ -9528,9 +9628,9 @@ function updateSpaceLoop() {
     // 4. Art Easels & Display Paintings (Guaranteed ground anchoring & drop down)
     if (game.scene) {
       game.scene.traverse(obj => {
-        if (obj && (obj.userData && obj.userData.isArtEasel || (obj.name && (obj.name.includes('easel') || obj.name.includes('drawing') || obj.name.includes('art'))))) {
+        if (obj && (obj.userData && obj.userData.isArtEasel || (obj.name && obj.name.includes('easel')))) {
           const isHubLevel = (game.currentRegion === 'hub' || !game.currentRegion);
-          const targetY = isHubLevel ? 0.0 : Math.min(Math.max(getGroundYAt(obj.position.x, obj.position.z), 0.0), 2.0);
+          const targetY = isHubLevel ? 0.0 : Math.max(getGroundYAt(obj.position.x, obj.position.z), 0.0);
           obj.position.y = targetY;
           obj._groundAligned = true;
         }
@@ -9555,6 +9655,15 @@ function updateSpaceLoop() {
     game._regionCleanupHookInstalled = true;
     const origLoadRegion = game.loadRegion;
     game.loadRegion = function(regionId) {
+      if (regionId !== "hub" && typeof window.__isChapterUnlocked === "function") {
+        if (!window.__isChapterUnlocked(regionId)) {
+          if (this.callbacks && this.callbacks.onShowNotice) {
+            this.callbacks.onShowNotice("🔒 Bu bölüm kilitli! Geçmek için önceki bölümün son boss'unu yenmelisin! ⚔️", "warning");
+          }
+          if (typeof window.St !== "undefined" && window.St.playDamage) window.St.playDamage();
+          return false;
+        }
+      }
       console.log("🧹 Region transition: loading " + regionId + " (deep cleaning previous region)...");
       if (typeof window.__superBearPurgeScene === 'function') {
         window.__superBearPurgeScene(this);
@@ -13480,6 +13589,7 @@ function createClownBossMesh(THREE) {
 ruinVillagePopulated = false;
 
 function populateRuinVillage(game) {
+  createThematicEntranceEasel(game, 0, "12. Bölüm: Yıkılmış Köy & Sirk Harabeleri", -3.5, 2.8, 78);
   // Level Exit Portal to Next Region
   if (window.createCaveExitPortal) {
     window.createCaveExitPortal(game, 0, 4, -520, 'water_cave', '13. BÖLÜM: KARANLIK SU MAĞARASI', '💧');
@@ -14020,6 +14130,7 @@ function createGoldCoinBoss(game, pos) {
 }
 
 function populateGoldenSanctuary(game) {
+  createThematicEntranceEasel(game, 2, "8. Bölüm: Efsanevi Altın Cenneti", -3.5, 2.2, 88);
   // Level Exit Portal to Next Region
   if (window.createCaveExitPortal) {
     window.createCaveExitPortal(game, 0, 5, -220, 'dinosaur_world', '9. BÖLÜM: DİNOZOR DÜNYASI', '🦖');
@@ -14851,6 +14962,7 @@ function create3DWaterDragon(game, pos) {
 }
 
 function populateWaterCave(game) {
+  createThematicEntranceEasel(game, 1, "13. Bölüm: Karanlık Su Mağarası", -3.5, 4.8, 58);
   // Level Exit Portal to Next Region (14. Bee Desert)
   if (window.createCaveExitPortal) {
     window.createCaveExitPortal(game, 0, 31.5, -815, 'bee_desert', '14. BÖLÜM: ARI ÇÖLÜ & ANTİK PİRAMİT', '🏜️');
@@ -15876,6 +15988,7 @@ function create3DCrocodileBoss(game, pos) {
 }
 
 function populateBeeDesert(game) {
+  createThematicEntranceEasel(game, 2, "14. Bölüm: Arılar Çölü & Antik Piramit", -3.5, 3.2, 58);
   // Level Exit Portal to Next Region (15. Dünya Final Zirvesi & Kırmızı Çizgi)
   if (window.createCaveExitPortal) {
     window.createCaveExitPortal(game, 0, 5, -750, 'earth_summit', '15. BÖLÜM: DÜNYA FİNAL ZİRVESİ & KIRMIZI ÇİZGİ', '⛰️');

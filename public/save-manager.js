@@ -47,7 +47,7 @@
     
     // 3. World & Level Progress
     currentRegion: 'hub',
-    unlockedLevelsMax: 14,
+    unlockedLevelsMax: 2,
     levelsProgress: {
       hub: { isUnlocked: true, bossDefeated: false, hardcoreCompletedNoDamage: false },
       forest_temple: { isUnlocked: true, bossDefeated: false, hardcoreCompletedNoDamage: false }
@@ -187,7 +187,7 @@
       localStorage.setItem(LEGACY_COINS_KEY, saveObj.goldBalance.toString());
       localStorage.setItem(LEGACY_EQUIPPED_KEY, JSON.stringify(saveObj.shopEquippedIds || []));
       localStorage.setItem(LEGACY_PURCHASED_KEY, JSON.stringify(saveObj.shopPurchasedIds || []));
-      localStorage.setItem(LEGACY_LEVELS_MAX_KEY, (saveObj.unlockedLevelsMax || 14).toString());
+      localStorage.setItem(LEGACY_LEVELS_MAX_KEY, (saveObj.unlockedLevelsMax || 2).toString());
       localStorage.setItem(LEGACY_ALIENS_KEY, (saveObj.aliensRescued || 0).toString());
 
       cachedSave = saveObj;
@@ -469,6 +469,13 @@
         goldBalance: current.goldBalance + 250,
         xp: current.xp + (xpReward || 500)
       }, { immediate: true, showToast: true, message: `🏆 Boss Yenildi & İlerleme Kaydedildi! (+250 Altın)` });
+
+      if (typeof window !== 'undefined') {
+        if (typeof window.__unlockChapterAfterBoss === 'function') {
+          window.__unlockChapterAfterBoss(levelId);
+        }
+        window.dispatchEvent(new CustomEvent('superbear:boss-defeated', { detail: { region: levelId, bossId: levelId } }));
+      }
     },
 
     onStoryCrystal(crystalId) {

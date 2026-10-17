@@ -33,7 +33,7 @@ export const SaveManagerModal: React.FC<SaveManagerModalProps> = ({ isOpen, onCl
     currentHp: 100,
     maxHp: 100,
     currentRegion: 'hub',
-    unlockedLevelsMax: 14,
+    unlockedLevelsMax: 2,
     aliensRescued: 0,
     lastSavedReadable: 'Şimdi',
     shopEquippedIds: ['back_royal_cape']
@@ -167,7 +167,7 @@ export const SaveManagerModal: React.FC<SaveManagerModalProps> = ({ isOpen, onCl
               <div className="text-sm font-black text-teal-200 mt-1 truncate capitalize">
                 {currentSave.currentRegion || 'hub'}
               </div>
-              <div className="text-[10px] text-teal-200/60 mt-0.5">{currentSave.unlockedLevelsMax || 14} Bölüm Açık</div>
+              <div className="text-[10px] text-teal-200/60 mt-0.5">{currentSave.unlockedLevelsMax || 2} Bölüm Açık</div>
             </div>
 
             {/* Rescued Aliens */}

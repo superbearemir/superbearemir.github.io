@@ -26,7 +26,7 @@
       title: "1. BÖLÜM: AYI KÖYÜ",
       subtitle: "🏡 Neşeli Ayı Köyü & Meydan Anıtı",
       icon: "🐻",
-      pos: { x: -24, z: 8 },
+      pos: { x: -26, z: 8 },
       yaw: Math.PI * 0.45,
       archColor: 0x94a3b8,
       vortexColor: 0xf59e0b,
@@ -138,7 +138,7 @@
       title: "9. BÖLÜM: ALTIN CENNETİ",
       subtitle: "🌟 Kadim Zaman Ejderi & 24K Altın Mabed",
       icon: "👑",
-      pos: { x: 10, z: 28 },
+      pos: { x: 18, z: 34 },
       yaw: Math.PI,
       archColor: 0xeab308,
       vortexColor: 0xfacc15,
@@ -152,7 +152,7 @@
       title: "10. BÖLÜM: DİNOZOR DÜNYASI",
       subtitle: "🦖 Dev T-Rex Boss & Tarih Öncesi Kanyon",
       icon: "🦖",
-      pos: { x: -12, z: 26 },
+      pos: { x: -18, z: 30 },
       yaw: Math.PI * 0.8,
       archColor: 0xb45309,
       vortexColor: 0xd97706,
@@ -208,7 +208,7 @@
       title: "14. BÖLÜM: KARANLIK SU MAĞARASI",
       subtitle: "💧 Dev Su Ejderhası & Yeraltı Mabedi",
       icon: "💎",
-      pos: { x: -4, z: 32 },
+      pos: { x: -18, z: 38 },
       yaw: Math.PI,
       archColor: 0x1e293b,
       vortexColor: 0x0ea5e9,
@@ -222,7 +222,7 @@
       title: "15. BÖLÜM: ARILAR ÇÖLÜ",
       subtitle: "🏜️ Antik Piramit & Kovan Çölü",
       icon: "🏜️",
-      pos: { x: 4, z: 32 },
+      pos: { x: 18, z: 38 },
       yaw: Math.PI,
       archColor: 0xb45309,
       vortexColor: 0xf59e0b,
@@ -737,6 +737,16 @@
           if (dist < 2.4 && !portalMaster._cooldown) {
             portalMaster._cooldown = true;
 
+            // Kilit kontrolü: Eğer bölüm henüz açılmadıysa geçiş kesinlikle yasak!
+            if (!isChapterUnlocked(pData)) {
+              if (game.callbacks && game.callbacks.onShowNotice) {
+                game.callbacks.onShowNotice("🔒 Bu bölüm kilitli! Geçmek için önce önceki bölümün son boss'unu yenmelisin! ⚔️", "warning");
+              }
+              if (typeof window.St !== 'undefined' && window.St.playDamage) window.St.playDamage();
+              setTimeout(() => { portalMaster._cooldown = false; }, 2500);
+              return;
+            }
+
             if (pData.targetRegion === 'hub') {
               if (game.callbacks && game.callbacks.onShowNotice) {
                 game.callbacks.onShowNotice("🏡 Neşeli Ayı Köyü Meydanı'ndasın! Köyü keşfet ve dilediğin portala gir!", "info");
@@ -746,7 +756,7 @@
               return;
             }
 
-            // Diğer 14 Bölüme Geçiş
+            // Diğer Bölümlere Geçiş
             if (typeof window.St !== 'undefined' && window.St.playPowerup) window.St.playPowerup();
             if (game.callbacks && game.callbacks.onShowNotice) {
               game.callbacks.onShowNotice(`🌀 ${pData.title} Geçidine Girildi...`, "success");
@@ -771,7 +781,117 @@
     return portalMaster;
   }
 
-  // Build and inject all 15 portals into Ayı Köyü
+  // Helper: Check if a chapter's portal is unlocked via Boss Defeats / Milestones
+  function isChapterUnlocked(pData) {
+    if (!pData) return false;
+    if (typeof pData === "string") {
+      const found = VILLAGE_PORTALS_DATA.find(p => p.id === pData || p.targetRegion === pData);
+      pData = found || { id: pData, targetRegion: pData, chapterNum: 99 };
+    }
+    // Hub portalı Ayı Köyü içinde oluşturulmaz (zaten köyün içindeyiz)
+    if (pData.id === "hub" || pData.targetRegion === "hub") {
+      return false;
+    }
+    // 1. Macera Portalı (2. Bölüm: Antik Orman Tapınağı) başlangıçta HER ZAMAN açıktır!
+    if (pData.chapterNum === 2 || pData.targetRegion === "forest_temple" || pData.id === "forest_temple") {
+      return true;
+    }
+    // Kademeli Boss Kilidi: Bir sonraki portal YALNIZCA bir önceki bölümün Boss'u yenildiğinde açılır!
+    const prevChapter = VILLAGE_PORTALS_DATA.find(p => p.chapterNum === pData.chapterNum - 1);
+    if (!prevChapter) return false;
+
+    // 1. SaveManager Boss Defeated Kontrolü
+    if (typeof window !== "undefined" && window.__superBearSaveManager) {
+      const save = window.__superBearSaveManager.getSaveData();
+      if (save && save.levelsProgress) {
+        const prevProg = save.levelsProgress[prevChapter.targetRegion];
+        if (prevProg && prevProg.bossDefeated) {
+          return true;
+        }
+      }
+    }
+    // 2. LocalStorage Açık Listesi Kontrolü
+    try {
+      const raw = localStorage.getItem("super_bear_unlocked_chapters_v2");
+      if (raw) {
+        const list = JSON.parse(raw);
+        if (Array.isArray(list) && (list.includes(pData.id) || list.includes(pData.targetRegion))) {
+          return true;
+        }
+      }
+    } catch(e) {}
+    return false;
+  }
+  window.__isChapterUnlocked = isChapterUnlocked;
+
+  // Dynamically unlock and add a portal when a boss is defeated
+  function unlockChapterAfterBoss(defeatedRegion) {
+    console.log("⚔️ [Progression] Boss defeated in region: " + defeatedRegion);
+    const currentChap = VILLAGE_PORTALS_DATA.find(p => p.targetRegion === defeatedRegion || p.id === defeatedRegion);
+    if (!currentChap) return;
+    const nextChapNum = currentChap.chapterNum + 1;
+    const nextChap = VILLAGE_PORTALS_DATA.find(p => p.chapterNum === nextChapNum);
+    if (!nextChap) return; // Tüm bölümler tamamlandı
+
+    // 1. LocalStorage güncelle
+    try {
+      const key = "super_bear_unlocked_chapters_v2";
+      const raw = localStorage.getItem(key);
+      const list = raw ? JSON.parse(raw) : ["forest_temple"];
+      if (!list.includes(nextChap.id)) list.push(nextChap.id);
+      if (!list.includes(nextChap.targetRegion)) list.push(nextChap.targetRegion);
+      localStorage.setItem(key, JSON.stringify(list));
+      localStorage.setItem("super_bear_unlocked_levels_max", nextChapNum.toString());
+    } catch(e) {}
+
+    // 2. SaveManager güncelle
+    if (typeof window !== "undefined" && window.__superBearSaveManager) {
+      const current = window.__superBearSaveManager.getSaveData();
+      const progress = { ...(current.levelsProgress || {}) };
+      progress[currentChap.targetRegion] = { ...(progress[currentChap.targetRegion] || {}), bossDefeated: true };
+      progress[nextChap.targetRegion] = { ...(progress[nextChap.targetRegion] || {}), isUnlocked: true };
+      window.__superBearSaveManager.saveGame({
+        levelsProgress: progress,
+        unlockedLevelsMax: Math.max(current.unlockedLevelsMax || 2, nextChapNum)
+      }, { immediate: true });
+    }
+
+    console.log("🎉 [Progression] Kilit Açıldı: " + nextChap.title + " (" + nextChap.targetRegion + ")!");
+
+    // 3. Eğer şu an Ayı Köyü'ndeysek yeni portalı hemen oluştur ve kutlama yap!
+    const game = window.__superBearGame;
+    if (game && (game.currentRegion === "hub" || !game.currentRegion)) {
+      spawnUnlockedPortalInVillage(game, nextChap);
+    }
+  }
+  window.__unlockChapterAfterBoss = unlockChapterAfterBoss;
+
+  // Helper: Spawn single new portal dynamically in Ayı Köyü with celebration
+  function spawnUnlockedPortalInVillage(game, pData) {
+    if (!game || !game.scene || !villagePortalsGroup) return;
+    if (activePortalsList.some(p => p && p.userData && p.userData.pData && p.userData.pData.id === pData.id)) {
+      return;
+    }
+    const THREE = window.THREE;
+    const pMesh = createIndividualVillagePortal(THREE, game, pData);
+    villagePortalsGroup.add(pMesh);
+    activePortalsList.push(pMesh);
+
+    if (game.spawnSparkleParticles) {
+      const pos = new THREE.Vector3(pData.pos.x, 2.5, pData.pos.z);
+      game.spawnSparkleParticles(pos, 60, pData.vortexColor);
+    }
+    if (typeof window.St !== 'undefined') {
+      if (window.St.playLevelUp) window.St.playLevelUp();
+      else if (window.St.playPowerup) window.St.playPowerup();
+    }
+    if (game.callbacks && game.callbacks.onShowNotice) {
+      game.callbacks.onShowNotice(`🎉 YENİ BÖLÜM AÇILDI: ${pData.title} Portalı Köyde Aktif Edildi! 🌀`, "success");
+    }
+  }
+  window.__spawnUnlockedPortalInVillage = spawnUnlockedPortalInVillage;
+
+  // Build ONLY unlocked portals into Ayı Köyü (Saving massive GPU memory)
   function buildAllVillagePortals(game) {
     if (!game || !game.scene || !window.THREE) return;
     const THREE = window.THREE;
@@ -782,16 +902,19 @@
       return;
     }
 
-    if (villagePortalsGroup && villagePortalsGroup.parent) {
-      game.scene.remove(villagePortalsGroup);
-    }
+    // Clean up existing portals and dispose all Three.js memory
+    removeAllVillagePortals(game);
 
-    console.log("🌀 Building 15 Themed Level Portals across Ayı Köyü (ground-aligned)...");
     villagePortalsGroup = new THREE.Group();
-    villagePortalsGroup.name = "all_village_15_portals_group";
+    villagePortalsGroup.name = "unlocked_village_portals_group";
     activePortalsList = [];
 
-    VILLAGE_PORTALS_DATA.forEach((pData) => {
+    // 🔥 KADEMELİ AÇILMA: Başlangıçta sadece 1. ve 2. bölüm (Orman Tapınağı) açık, kilitli olanlar hafızada HİÇ OLUŞTURULMAZ!
+    const unlockedPortals = VILLAGE_PORTALS_DATA.filter((pData) => isChapterUnlocked(pData));
+
+    console.log(`🌀 [Progression] Building ${unlockedPortals.length}/${VILLAGE_PORTALS_DATA.length} active unlocked portals in Ayı Köyü... (Kilitli portallar hafızada oluşturulmaz, 0 yük)`);
+
+    unlockedPortals.forEach((pData) => {
       const pMesh = createIndividualVillagePortal(THREE, game, pData);
       villagePortalsGroup.add(pMesh);
       activePortalsList.push(pMesh);
@@ -804,11 +927,34 @@
     cleanupOldGlitchedPortals(game);
   }
 
-  // Remove portals when leaving hub
+  // Remove portals when leaving hub with DEEP GEOMETRY, MATERIAL & TEXTURE DISPOSAL
   function removeAllVillagePortals(game) {
     if (!game) game = window.__superBearGame;
-    if (villagePortalsGroup && villagePortalsGroup.parent) {
-      villagePortalsGroup.parent.remove(villagePortalsGroup);
+    if (villagePortalsGroup) {
+      // 🧹 Bellek Temizliği: Tüm 3D objelerin, materyallerin, dokuların ve ışıkların hafızadan silinmesi
+      villagePortalsGroup.traverse((obj) => {
+        if (obj.geometry && typeof obj.geometry.dispose === 'function') {
+          obj.geometry.dispose();
+        }
+        if (obj.material) {
+          if (Array.isArray(obj.material)) {
+            obj.material.forEach((mat) => {
+              if (mat.map && typeof mat.map.dispose === 'function') mat.map.dispose();
+              if (typeof mat.dispose === 'function') mat.dispose();
+            });
+          } else {
+            if (obj.material.map && typeof obj.material.map.dispose === 'function') obj.material.map.dispose();
+            if (typeof obj.material.dispose === 'function') obj.material.dispose();
+          }
+        }
+        if (obj.isLight && typeof obj.dispose === 'function') {
+          obj.dispose();
+        }
+      });
+
+      if (villagePortalsGroup.parent) {
+        villagePortalsGroup.parent.remove(villagePortalsGroup);
+      }
     }
     villagePortalsGroup = null;
     activePortalsList = [];
@@ -856,6 +1002,15 @@
       }
     }
   }
+
+  // Listen to boss defeat events to dynamically unlock the next chapter
+  window.addEventListener('superbear:boss-defeated', (e) => {
+    const detail = (e && e.detail) || {};
+    const reg = detail.region || detail.bossId;
+    if (reg) {
+      unlockChapterAfterBoss(reg);
+    }
+  });
 
   // Listen to region transitions
   window.addEventListener('superbear:region-changed', (e) => {
