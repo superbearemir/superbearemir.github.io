@@ -8248,6 +8248,10 @@ function updateSpaceLoop() {
     if (!game || !game.currentLevel) return false;
     const reg = game.currentRegion;
     if (!reg || reg === 'hub') return false;
+    if (typeof window !== 'undefined' && window.__superBearSaveManager) {
+      const sd = window.__superBearSaveManager.getSaveData();
+      if (sd && sd.levelsProgress && sd.levelsProgress[reg] && sd.levelsProgress[reg].bossDefeated) return false;
+    }
 
     const cl = game.currentLevel;
     if (cl.dragonBoss && cl.dragonBoss.hp > 0 && !cl.dragonBoss.deadMessageShown) return true;
@@ -18024,10 +18028,10 @@ window.__ensureLevelExitPortalExists = function(game) {
   }
   
   const LEVEL_EXIT_MAP = {
-    forest_temple:     { next: 'beehive',           name: '3. BÖLÜM: VIZILDIYAN BAL KOVANI', icon: '🐝', pos: { x: 0, y: 18.0, z: -162 } },
-    beehive:           { next: 'pelican_plains',     name: '4. BÖLÜM: PELİKAN OVALARI', icon: '🪶', pos: { x: 0, y: 17.5, z: -162 } },
-    pelican_plains:    { next: 'snow_desert',        name: '5. BÖLÜM: KAR VADİSİ', icon: '❄️', pos: { x: 0, y: 34.0, z: -180 } },
-    snow_desert:       { next: 'volcano_cave',       name: '6. BÖLÜM: VOLKANİK EJDERHA MAĞARASI', icon: '🌋', pos: { x: 0, y: 35.5, z: -195 } },
+    forest_temple:     { next: 'beehive',           name: '3. BÖLÜM: VIZILDIYAN BAL KOVANI', icon: '🐝', pos: { x: 0, y: 36.0, z: -695 } },
+    beehive:           { next: 'pelican_plains',     name: '4. BÖLÜM: PELİKAN OVALARI', icon: '🪶', pos: { x: 0, y: 44.0, z: -820 } },
+    pelican_plains:    { next: 'snow_desert',        name: '5. BÖLÜM: KAR VADİSİ', icon: '❄️', pos: { x: 0, y: 68.0, z: -815 } },
+    snow_desert:       { next: 'volcano_cave',       name: '6. BÖLÜM: VOLKANİK EJDERHA MAĞARASI', icon: '🌋', pos: { x: 0, y: 72.0, z: -1120 } },
     volcano_cave:      { next: 'underwater_palace',  name: '7. BÖLÜM: ANTİK SU ALTI KRİSTAL SARAYI', icon: '🌊', pos: { x: 0, y: 41.0, z: -188 } },
     underwater_palace: { next: 'golden_sanctuary',   name: '8. BÖLÜM: EFSANEVİ ALTIN CENNETİ', icon: '🌟', pos: { x: 0, y: 30.0, z: -550 } },
     golden_sanctuary:  { next: 'dinosaur_world',     name: '9. BÖLÜM: DİNOZOR DÜNYASI', icon: '🦖', pos: { x: 0, y: 5.0, z: -220 } },
