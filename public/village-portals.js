@@ -90,27 +90,13 @@
       themeType: "snow"
     },
     {
-      id: "space_realm",
-      chapterNum: 6,
-      targetRegion: "space_realm",
-      title: "6. BÖLÜM: KOZMİK BOYUT",
-      subtitle: "🌌 Galaksi İblisi & Boncuk'u Kurtar!",
-      icon: "🪐",
-      pos: { x: 6, z: -22 },
-      yaw: 0,
-      archColor: 0x7c3aed,
-      vortexColor: 0xc084fc,
-      lightColor: 0xe9d5ff,
-      themeType: "space"
-    },
-    {
       id: "volcano_cave",
-      chapterNum: 7,
+      chapterNum: 6,
       targetRegion: "volcano_cave",
-      title: "7. BÖLÜM: VOLKAN MAĞARASI",
+      title: "6. BÖLÜM: VOLKANİK EJDERHA MAĞARASI",
       subtitle: "🌋 Kızıl Ejderha Ignis & Lav Vadisi",
       icon: "🔥",
-      pos: { x: -6, z: -22 },
+      pos: { x: 6, z: -22 },
       yaw: 0,
       archColor: 0xb91c1c,
       vortexColor: 0xf97316,
@@ -119,13 +105,13 @@
     },
     {
       id: "underwater_palace",
-      chapterNum: 8,
+      chapterNum: 7,
       targetRegion: "underwater_palace",
-      title: "8. BÖLÜM: SU ALTI SARAYI",
+      title: "7. BÖLÜM: SU ALTI SARAYI",
       subtitle: "🌊 Dev Neptün Kraken & Mercan Resifi",
       icon: "🐚",
-      pos: { x: 18, z: 20 },
-      yaw: -Math.PI * 0.75,
+      pos: { x: -6, z: -22 },
+      yaw: 0,
       archColor: 0x0891b2,
       vortexColor: 0x06b6d4,
       lightColor: 0x67e8f9,
@@ -133,13 +119,13 @@
     },
     {
       id: "golden_sanctuary",
-      chapterNum: 9,
+      chapterNum: 8,
       targetRegion: "golden_sanctuary",
-      title: "9. BÖLÜM: ALTIN CENNETİ",
+      title: "8. BÖLÜM: ALTIN CENNETİ",
       subtitle: "🌟 Kadim Zaman Ejderi & 24K Altın Mabed",
       icon: "👑",
-      pos: { x: 18, z: 34 },
-      yaw: Math.PI,
+      pos: { x: 18, z: 20 },
+      yaw: -Math.PI * 0.75,
       archColor: 0xeab308,
       vortexColor: 0xfacc15,
       lightColor: 0xfef08a,
@@ -147,13 +133,13 @@
     },
     {
       id: "dinosaur_world",
-      chapterNum: 10,
+      chapterNum: 9,
       targetRegion: "dinosaur_world",
-      title: "10. BÖLÜM: DİNOZOR DÜNYASI",
+      title: "9. BÖLÜM: DİNOZOR DÜNYASI",
       subtitle: "🦖 Dev T-Rex Boss & Tarih Öncesi Kanyon",
       icon: "🦖",
-      pos: { x: -18, z: 30 },
-      yaw: Math.PI * 0.8,
+      pos: { x: 18, z: 34 },
+      yaw: Math.PI,
       archColor: 0xb45309,
       vortexColor: 0xd97706,
       lightColor: 0xfde68a,
@@ -161,13 +147,13 @@
     },
     {
       id: "sugar_world",
-      chapterNum: 11,
+      chapterNum: 10,
       targetRegion: "sugar_world",
-      title: "11. BÖLÜM: ŞEKER DÜNYASI",
+      title: "10. BÖLÜM: ŞEKER DÜNYASI",
       subtitle: "🍬 Lolipop Boss & Çilekli Şeker Evleri",
       icon: "🍭",
-      pos: { x: -18, z: 16 },
-      yaw: Math.PI * 0.6,
+      pos: { x: -18, z: 30 },
+      yaw: Math.PI * 0.8,
       archColor: 0xdb2777,
       vortexColor: 0xf472b6,
       lightColor: 0xfbcfe8,
@@ -175,13 +161,13 @@
     },
     {
       id: "jokerooms",
-      chapterNum: 12,
+      chapterNum: 11,
       targetRegion: "jokerooms",
-      title: "12. BÖLÜM: JOKEROOMS",
+      title: "11. BÖLÜM: JOKEROOMS",
       subtitle: "🚪 Sonsuz Sarı Koridorlar & Şakacı Palyaço",
       icon: "🎪",
-      pos: { x: -18, z: 2 },
-      yaw: Math.PI * 0.5,
+      pos: { x: -18, z: 16 },
+      yaw: Math.PI * 0.6,
       archColor: 0xeab308,
       vortexColor: 0xfde047,
       lightColor: 0xfef08a,
@@ -189,13 +175,13 @@
     },
     {
       id: "ruin_village",
-      chapterNum: 13,
+      chapterNum: 12,
       targetRegion: "ruin_village",
-      title: "13. BÖLÜM: YIKILMIŞ KÖY",
+      title: "12. BÖLÜM: YIKILMIŞ KÖY",
       subtitle: "🏚️ Harabe Sirk Arenası & Dev Palyaço",
       icon: "🧱",
-      pos: { x: -18, z: -8 },
-      yaw: Math.PI * 0.4,
+      pos: { x: -18, z: 2 },
+      yaw: Math.PI * 0.5,
       archColor: 0x475569,
       vortexColor: 0xef4444,
       lightColor: 0xfca5a5,
@@ -203,13 +189,13 @@
     },
     {
       id: "water_cave",
-      chapterNum: 14,
+      chapterNum: 13,
       targetRegion: "water_cave",
-      title: "14. BÖLÜM: KARANLIK SU MAĞARASI",
+      title: "13. BÖLÜM: KARANLIK SU MAĞARASI",
       subtitle: "💧 Dev Su Ejderhası & Yeraltı Mabedi",
       icon: "💎",
-      pos: { x: -18, z: 38 },
-      yaw: Math.PI,
+      pos: { x: -18, z: -8 },
+      yaw: Math.PI * 0.4,
       archColor: 0x1e293b,
       vortexColor: 0x0ea5e9,
       lightColor: 0x38bdf8,
@@ -217,17 +203,31 @@
     },
     {
       id: "bee_desert",
-      chapterNum: 15,
+      chapterNum: 14,
       targetRegion: "bee_desert",
-      title: "15. BÖLÜM: ARILAR ÇÖLÜ",
+      title: "14. BÖLÜM: ARILAR ÇÖLÜ",
       subtitle: "🏜️ Antik Piramit & Kovan Çölü",
       icon: "🏜️",
-      pos: { x: 18, z: 38 },
+      pos: { x: -18, z: 38 },
       yaw: Math.PI,
       archColor: 0xb45309,
       vortexColor: 0xf59e0b,
       lightColor: 0xfef08a,
       themeType: "bee_desert"
+    },
+    {
+      id: "earth_summit",
+      chapterNum: 15,
+      targetRegion: "earth_summit",
+      title: "15. BÖLÜM: DÜNYA FİNAL ZİRVESİ",
+      subtitle: "⛰️ Evrensel Barış Zirvesi & Kırmızı Çizgi",
+      icon: "⛰️",
+      pos: { x: 18, z: 38 },
+      yaw: Math.PI,
+      archColor: 0x701a75,
+      vortexColor: 0xff7744,
+      lightColor: 0xfcd34d,
+      themeType: "summit"
     }
   ];
 
@@ -511,18 +511,7 @@
         decorGroup.add(icicle);
       });
 
-    } else if (t === "space") {
-      // 6. Kozmik Boyut: Gezegen halkası ve karanlık nebula kaidesi
-      const voidMat = new THREE.MeshStandardMaterial({ color: 0x1e1b4b, roughness: 0.2, metalness: 0.8 });
-      const spBase = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 3.9, 0.22, 20), voidMat);
-      spBase.position.y = 0.11;
-      decorGroup.add(spBase);
 
-      const ringMat = new THREE.MeshStandardMaterial({ color: 0xa855f7, emissive: 0x7c3aed, emissiveIntensity: 0.8 });
-      const orbRing = new THREE.Mesh(new THREE.TorusGeometry(0.65, 0.08, 8, 24), ringMat);
-      orbRing.position.set(-2.0, 0.7, 0.8);
-      orbRing.rotation.x = Math.PI / 3;
-      decorGroup.add(orbRing);
 
     } else if (t === "volcano") {
       // 7. Volkan Mağarası: Kıpkırmızı lav yarıkları ve lav kayaları

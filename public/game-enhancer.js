@@ -8245,30 +8245,21 @@ function updateSpaceLoop() {
 
   // Helper to check if the current region's boss is alive
   function isBossAliveInCurrentRegion(game) {
-    if (!game || !game.currentLevel) return false;
+    if (!game) return false;
     const reg = game.currentRegion;
     if (!reg || reg === 'hub') return false;
+    if (game._bossDefeatedInCurrentRegion) return false;
+    if (typeof window !== 'undefined' && window.__superBossDefeatedRegions && window.__superBossDefeatedRegions[reg]) return false;
     if (typeof window !== 'undefined' && window.__superBearSaveManager) {
       const sd = window.__superBearSaveManager.getSaveData();
       if (sd && sd.levelsProgress && sd.levelsProgress[reg] && sd.levelsProgress[reg].bossDefeated) return false;
     }
-
     const cl = game.currentLevel;
-    if (cl.dragonBoss && cl.dragonBoss.hp > 0 && !cl.dragonBoss.deadMessageShown) return true;
-    if (cl.goldCoinBoss && cl.goldCoinBoss.hp > 0 && !cl.goldCoinBoss.deadMessageShown) return true;
-    if (cl.crocodileBoss && cl.crocodileBoss.hp > 0 && !cl.crocodileBoss.isDead) return true;
-    if (cl.waterDragonBoss && cl.waterDragonBoss.hp > 0 && !cl.waterDragonBoss.deadMessageShown) return true;
-    if (cl.lollipopBoss && cl.lollipopBoss.hp > 0) return true;
-    if (cl.jokerBoss && cl.jokerBoss.hp > 0 && !cl.jokerBoss.deadMessageShown) return true;
-    if (cl.clownBoss && cl.clownBoss.hp > 0 && !cl.clownBoss.deadMessageShown) return true;
-    if (cl.dinoBoss && cl.dinoBoss.hp > 0 && !cl.dinoBoss.deadMessageShown) return true;
-    if (cl.kraken && cl.krakenHp !== undefined && cl.krakenHp > 0) return true;
-
+    if (!cl) return false;
     if (cl.enemies && Array.isArray(cl.enemies)) {
       const aliveBoss = cl.enemies.find(e => e && e.isBoss && e.hp > 0 && e.state !== 'dead');
       if (aliveBoss) return true;
     }
-
     return false;
   }
   window.__isBossAliveInCurrentRegion = isBossAliveInCurrentRegion;

@@ -79,7 +79,8 @@
     // Remove invisible wall: extend level bounds so player can explore all 14 stages freely
     const gameInstance = window.__superBearGame;
     if (gameInstance && gameInstance.currentLevel && gameInstance.currentLevel.bounds) {
-      gameInstance.currentLevel.bounds.minZ = -1400;
+      gameInstance.currentLevel.bounds.minZ = -2200;
+      gameInstance.currentLevel.bounds.maxY = 350;
       gameInstance.currentLevel.bounds.maxZ = 120;
       gameInstance.currentLevel.bounds.minX = -300;
       gameInstance.currentLevel.bounds.maxX = 300;
@@ -125,9 +126,35 @@
       metalness: 0.5
     });
 
+    let snowIceBoxes = [];
     function buildSnowPlatform(w, h, d, px, py, pz, mat, isHazard = false, isClimbable = false, isIce = true) {
-      return R(w, h, d, px, py, pz, mat, isHazard, isClimbable, isIce);
+      const mesh = R(w, h, d, px, py, pz, mat, isHazard, isClimbable, isIce);
+      if (isIce && !isHazard) {
+        snowIceBoxes.push({
+          minX: px - w / 2, maxX: px + w / 2,
+          minZ: pz - d / 2, maxZ: pz + d / 2,
+          topY: py + h / 2
+        });
+      }
+      return mesh;
     }
+
+    // =========================================================================
+    // ❄️ ESKİ BOSS İNİ KAPATILDI (z: -195) & 14 AŞAMAYA GEÇİŞ KÖPRÜSÜ
+    // =========================================================================
+    const iceWallMat = new THREE.MeshStandardMaterial({
+      color: 0x38bdf8,
+      emissive: 0x0284c7,
+      emissiveIntensity: 0.6,
+      transparent: true,
+      opacity: 0.85
+    });
+    buildSnowPlatform(2, 7, 38, -19, 36.5, -195, iceWallMat, false, false, false);
+    buildSnowPlatform(2, 7, 38, 19, 36.5, -195, iceWallMat, false, false, false);
+    buildSnowPlatform(38, 7, 2, 0, 36.5, -176, iceWallMat, false, false, false);
+    T("snow_closed_nest_easel", 4, "❄️ ESKİ BOSS İNİ KAPATILDI!\nKoca Ayak 14. Aşamaya (-1150) Taşındı!\nÖnündeki 14 Zorlu Aşamayı Aş!", 0, 36.0, -186, 0);
+    buildSnowPlatform(12, 1.8, 28, 0, 35.0, -208, v, false, false, true);
+    buildSnowPlatform(10, 0.4, 28, 0, 36.0, -208, snowWhiteMat, false, false, true);
 
     // =========================================================================
     // ❄️ 1. AŞAMA: DONMUŞ BUZUL GİRİŞİ & KAYGAN RAMPALAR [Zorlu] (z: -210 -> -270, Y: 36 -> 39)
@@ -376,67 +403,366 @@
     createArcticFrostShaman(0, 67.0, -795, enemies, snowExtensionGroup);
 
     // =========================================================================
-    // ❄️ 11. AŞAMA: DAR KAR SIRTI & DENGE KİRİŞLERİ [Zorlu] (z: -810 -> -870, Y: 66 -> 68)
     // =========================================================================
-    addCheckpoint("snow_cp_s11", "11. Aşama: Dar Kar Sırtı & Denge Kirişleri", 0, 66.5, -820);
+    // ❄️ 11. AŞAMA: DEVASA BUZUL SIRTI & FIRTINALI DENGE KİRİŞLERİ [ZORLU & UZUN] (z: -810 -> -966, Y: 66 -> 72)
+    // =========================================================================
+    addCheckpoint("snow_cp_s11", "11. Aşama: Devasa Buzul Sırtı & Fırtına Kirişleri [Zorlu & Uzun]", 0, 66.5, -820);
     buildSnowPlatform(16, 2, 14, 0, 65.5, -820, v, false, false, true);
 
-    // 1.3 unit narrow ridge
-    buildSnowPlatform(1.3, 0.6, 45, 0, 66.8, -845, snowWhiteMat, false, false, true);
-    b("snow_ridge_gem", 0, 68.5, -845, true);
+    // Kısım 1: Zikzaklı Dar Buz Bıçakları & Dönen Sivri Değirmenler
+    buildSnowPlatform(0.9, 0.8, 18, 0, 66.2, -836, snowWhiteMat, false, false, true);
+    buildSnowPlatform(4.0, 0.8, 4.0, 2.5, 66.6, -848, iceGlacierMat, false, false, true);
+    b("snow_coin_s11_0", 2.5, 67.8, -848, false);
 
-    // =========================================================================
-    // ❄️ 12. AŞAMA: DONMUŞ ZAMAN KÜPLERİ & TUZAKLAR [Zorlu] (z: -870 -> -930, Y: 68 -> 70)
-    // =========================================================================
-    addCheckpoint("snow_cp_s12", "12. Aşama: Donmuş Zaman Küpleri", 0, 68.5, -880);
-    buildSnowPlatform(16, 2, 14, 0, 67.5, -880, v, false, false, true);
+    // Dönen Sivri Değirmen 1
+    const mill11A = new THREE.Group();
+    mill11A.position.set(2.5, 67.8, -848);
+    for (let i = 0; i < 4; i++) {
+      const spike = new THREE.Mesh(new THREE.ConeGeometry(0.3, 2.6, 6), frostCrystalMat);
+      spike.rotation.z = Math.PI / 2;
+      const ang = (i / 4) * Math.PI * 2;
+      spike.position.set(Math.cos(ang) * 1.6, Math.sin(ang) * 1.6, 0);
+      mill11A.add(spike);
+    }
+    snowExtensionGroup.add(mill11A);
+    snowRotatingIceMills.push({ group: mill11A, speed: 2.2, radius: 2.8 });
 
-    [-895, -910, -925].forEach((kz, kIdx) => {
-      buildSnowPlatform(4.5, 1.0, 4.5, (kIdx % 2 === 0 ? 3.0 : -3.0), 68.5 + kIdx * 0.8, kz, frostCrystalMat, false, false, true);
-      b(`snow_time_coin_${kIdx}`, (kIdx % 2 === 0 ? 3.0 : -3.0), 70.5 + kIdx * 0.8, kz, kIdx === 1);
+    buildSnowPlatform(0.9, 0.8, 18, -2.5, 67.2, -862, snowWhiteMat, false, false, true);
+    buildSnowPlatform(4.0, 0.8, 4.0, -2.5, 67.6, -874, iceGlacierMat, false, false, true);
+    b("snow_gem_s11_1", -2.5, 69.0, -874, true);
+
+    // Düşen Sivri Sarkıtlar (Stage 11)
+    [-840, -860, -872].forEach((iz, iIdx) => {
+      const icicle = new THREE.Mesh(new THREE.ConeGeometry(0.55, 3.2, 7), frostCrystalMat);
+      icicle.rotation.x = Math.PI;
+      icicle.position.set((iIdx % 2 === 0 ? 0 : -2.5), 75.0, iz);
+      snowExtensionGroup.add(icicle);
+      snowFallingIcicles.push({
+        mesh: icicle,
+        x: (iIdx % 2 === 0 ? 0 : -2.5),
+        y: 75.0,
+        targetY: 67.5,
+        z: iz,
+        triggered: false,
+        fallSpeed: 0
+      });
     });
 
-    // =========================================================================
-    // ❄️ 13. AŞAMA: ŞİMŞEKLİ KUTUP FIRTINASI ZİRVESİ [Zorlu] (z: -930 -> -1000, Y: 70 -> 72)
-    // =========================================================================
-    addCheckpoint("snow_cp_s13", "13. Aşama: Şimşekli Fırtına Zirvesi", 0, 70.5, -940);
-    buildSnowPlatform(18, 2, 16, 0, 69.5, -940, v, false, false, true);
+    // Kısım 2: Hareketli Buz Salı & 3 Kırılan Buzul Basamağı
+    const mMesh11 = buildSnowPlatform(5.2, 0.9, 5.2, 0, 68.2, -888, iceGlacierMat, false, false, true);
+    const collM11 = collidables[collidables.length - 1];
+    snowMovingFloes.push({
+      mesh: mMesh11,
+      coll: collM11,
+      baseX: 0,
+      baseY: 68.2,
+      baseZ: -888,
+      rangeX: 4.8,
+      speed: 1.6,
+      offset: 0,
+      halfW: 2.6
+    });
 
-    // Steep climbing terraces to final summit
-    buildSnowPlatform(8, 2, 12, 0, 70.5, -960, iceGlacierMat, false, false, true);
-    buildSnowPlatform(8, 2, 12, 0, 71.5, -980, iceGlacierMat, false, false, true);
+    [-902, -915, -928].forEach((cz, cIdx) => {
+      const cx = (cIdx % 2 === 0 ? -3.0 : 3.0);
+      const cy = 68.8 + cIdx * 0.8;
+      const cMesh = buildSnowPlatform(2.4, 0.6, 2.4, cx, cy, cz, iceGlacierMat, false, false, true);
+      const cColl = collidables[collidables.length - 1];
+      snowCrumblingCrusts.push({
+        mesh: cMesh,
+        coll: cColl,
+        baseY: cy,
+        stepped: false,
+        dropTimer: 0.65,
+        fallSpeed: 0,
+        respawnTimer: 0
+      });
+      b("snow_crumb_coin_11_" + cIdx, cx, cy + 1.2, cz, cIdx === 1);
+    });
+
+    // Kısım 3: Fırtınalı Tepe Rampası & Muhafız Kurt
+    buildSnowPlatform(7.5, 1.2, 34, 0, 70.2, -946, iceGlacierMat, false, false, true);
+    createArcticAlphaWolf(0, 71.5, -944, enemies, snowExtensionGroup);
+    createFrostVortexElemental(0, 72.0, -955, enemies, snowExtensionGroup);
+    buildSnowPlatform(16, 2, 14, 0, 71.2, -966, v, false, false, true);
+
 
     // =========================================================================
-    // 👑 14. AŞAMA: [BÜYÜK BOSS ARENASI] YÜCE DONMUŞ TAHT ZİRVESİ & KOCA AYAK YETİ (z: -1000 -> -1140, Y: 72)
+    // ❄️ 12. AŞAMA: ERİYİP ÇÖKEN SÜTUNLAR & ÇİFTLİ DEĞİRMENLER [ÇOK ZORLU & UZUN] (z: -966 -> -1138, Y: 71 -> 77)
     // =========================================================================
-    addCheckpoint("snow_cp_s14", "14. Aşama: [BÜYÜK BOSS] Yüce Donmuş Taht Zirvesi ❄️", 0, 72.5, -1020);
+    addCheckpoint("snow_cp_s12", "12. Aşama: Eriyip Çöken Sütunlar & Çiftli Değirmenler [Çok Zorlu & Uzun]", 0, 72.2, -976);
+    buildSnowPlatform(16, 2, 14, 0, 71.2, -976, v, false, false, true);
 
-    const summitArenaZ = -1080;
-    const summitArenaY = 71.5;
-    buildSnowPlatform(72, 3, 72, 0, summitArenaY, summitArenaZ, v, false, false, true);
-    buildSnowPlatform(68, 0.4, 68, 0, summitArenaY + 1.6, summitArenaZ, snowWhiteMat);
+    // Kısım 1: 6 Ardışık Çöken Sivri Buzul Sütunu (dropTimer: 0.55s)
+    const crumbPillars12 = [
+      { x: -2.8, y: 72.0, z: -990 },
+      { x: 2.8, y: 72.6, z: -1002 },
+      { x: 0, y: 73.2, z: -1014 },
+      { x: -3.0, y: 73.8, z: -1026 },
+      { x: 3.0, y: 74.4, z: -1038 },
+      { x: 0, y: 75.0, z: -1050 }
+    ];
+    crumbPillars12.forEach((cp, cpIdx) => {
+      const pMesh = buildSnowPlatform(2.0, 0.8, 2.0, cp.x, cp.y, cp.z, iceGlacierMat, false, false, true);
+      const pColl = collidables[collidables.length - 1];
+      snowCrumblingCrusts.push({
+        mesh: pMesh,
+        coll: pColl,
+        baseY: cp.y,
+        stepped: false,
+        dropTimer: 0.55,
+        fallSpeed: 0,
+        respawnTimer: 0
+      });
+      b("snow_pillar12_coin_" + cpIdx, cp.x, cp.y + 1.2, cp.z, cpIdx === 2 || cpIdx === 4);
+    });
 
-    // 8 Grand Ice Monolith Obelisks with Blue Torches
-    for (let p = 0; p < 8; p++) {
-      const angle = (p / 8) * Math.PI * 2;
-      const px = Math.cos(angle) * 31;
-      const pz = summitArenaZ + Math.sin(angle) * 31;
-      buildSnowPlatform(3.0, 18, 3.0, px, summitArenaY + 9.5, pz, z, false, false, false);
-      const crystalTop = new THREE.Mesh(new THREE.ConeGeometry(1.6, 2.8, 6), frostCrystalMat);
-      crystalTop.position.set(px, summitArenaY + 19.5, pz);
+    // Aradaki Dönen Değirmen
+    const mill12A = new THREE.Group();
+    mill12A.position.set(0, 74.5, -1014);
+    for (let i = 0; i < 4; i++) {
+      const sp = new THREE.Mesh(new THREE.ConeGeometry(0.35, 2.8, 6), frostCrystalMat);
+      sp.rotation.z = Math.PI / 2;
+      const ang = (i / 4) * Math.PI * 2;
+      sp.position.set(Math.cos(ang) * 1.8, Math.sin(ang) * 1.8, 0);
+      mill12A.add(sp);
+    }
+    snowExtensionGroup.add(mill12A);
+    snowRotatingIceMills.push({ group: mill12A, speed: -2.4, radius: 2.8 });
+
+    // Kısım 2: Çiftli Karşıt Dönen Sivri Değirmenler & Kesişen Buz Salları
+    buildSnowPlatform(7.0, 1.2, 7.0, 0, 75.0, -1060, iceGlacierMat, false, false, true);
+
+    const mMesh12A = buildSnowPlatform(4.6, 0.8, 4.6, -3.2, 75.5, -1074, iceGlacierMat, false, false, true);
+    snowMovingFloes.push({
+      mesh: mMesh12A,
+      coll: collidables[collidables.length - 1],
+      baseX: 0,
+      baseY: 75.5,
+      baseZ: -1074,
+      rangeX: 3.8,
+      speed: 1.9,
+      offset: 0,
+      halfW: 2.3
+    });
+
+    const mMesh12B = buildSnowPlatform(4.6, 0.8, 4.6, 3.2, 75.9, -1088, iceGlacierMat, false, false, true);
+    snowMovingFloes.push({
+      mesh: mMesh12B,
+      coll: collidables[collidables.length - 1],
+      baseX: 0,
+      baseY: 75.9,
+      baseZ: -1088,
+      rangeX: 3.8,
+      speed: -1.9,
+      offset: Math.PI / 2,
+      halfW: 2.3
+    });
+
+    // Kısım 3: Dondurucu Gayzer Pisti & Kaplumbağa Çarpışması
+    buildSnowPlatform(7.0, 1.2, 36, 0, 76.2, -1108, iceGlacierMat, false, false, true);
+    [-1098, -1110, -1122].forEach((gz, gIdx) => {
+      const gMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, emissive: 0x38bdf8, emissiveIntensity: 1.2 });
+      const gHole = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 1.1, 0.4, 12), gMat);
+      gHole.position.set((gIdx % 2 === 0 ? -1.8 : 1.8), 76.9, gz);
+      snowExtensionGroup.add(gHole);
+      const gPlume = new THREE.Mesh(new THREE.ConeGeometry(1.2, 3.8, 10), new THREE.MeshBasicMaterial({ color: 0xa5f3fc, transparent: true, opacity: 0.65 }));
+      gPlume.position.set((gIdx % 2 === 0 ? -1.8 : 1.8), 78.8, gz);
+      snowExtensionGroup.add(gPlume);
+    });
+    createGlacialTortoise(0, 77.2, -1108, enemies, snowExtensionGroup);
+
+    // Yüksek Fırlatma Trambolini (Stage 13'e Fırlatır)
+    S(0, 77.2, -1125, 17.5);
+    buildSnowPlatform(16, 2, 14, 0, 76.8, -1138, v, false, false, true);
+
+
+    // =========================================================================
+    // ❄️ 13. AŞAMA: DONMUŞ ZAMAN KRİSTALLERİ & KAOTİK LAZER LABİRENTİ [EKSTREM ZORLU] (z: -1138 -> -1308, Y: 77 -> 83)
+    // =========================================================================
+    addCheckpoint("snow_cp_s13", "13. Aşama: Donmuş Zaman Kristalleri & Lazer Labirenti [Ekstrem Zorlu]", 0, 77.8, -1148);
+    buildSnowPlatform(16, 2, 14, 0, 76.8, -1148, v, false, false, true);
+
+    // Kısım 1: 7 Donmuş Zaman Kristal Küpü (Tırmanış)
+    const timeCubes13 = [
+      { x: -3.5, y: 77.6, z: -1162, crumble: false },
+      { x: 3.2, y: 78.3, z: -1172, crumble: true },
+      { x: 0, y: 79.0, z: -1182, crumble: false },
+      { x: -3.4, y: 79.7, z: -1192, crumble: true },
+      { x: 3.4, y: 80.4, z: -1202, crumble: false },
+      { x: 0, y: 81.1, z: -1212, crumble: false }
+    ];
+    timeCubes13.forEach((tc, tcIdx) => {
+      const tcMesh = buildSnowPlatform(3.2, 1.2, 3.2, tc.x, tc.y, tc.z, frostCrystalMat, false, false, true);
+      if (tc.crumble) {
+        snowCrumblingCrusts.push({
+          mesh: tcMesh,
+          coll: collidables[collidables.length - 1],
+          baseY: tc.y,
+          stepped: false,
+          dropTimer: 0.6,
+          fallSpeed: 0,
+          respawnTimer: 0
+        });
+      }
+      b("snow_time13_coin_" + tcIdx, tc.x, tc.y + 1.4, tc.z, tcIdx === 2 || tcIdx === 4);
+    });
+
+    // Kısım 2: 3'lü Dönen Kristal Lazer Koridoru
+    buildSnowPlatform(9.5, 1.2, 48, 0, 81.6, -1240, iceGlacierMat, false, false, true);
+    [-1225, -1242, -1258].forEach((lz, lIdx) => {
+      const lMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.85 });
+      const lMesh = new THREE.Mesh(new THREE.BoxGeometry(11.0, 0.22, 0.22), lMat);
+      lMesh.position.set(0, 82.8, lz);
+      snowExtensionGroup.add(lMesh);
+      snowFrostLasers.push({
+        mesh: lMesh,
+        speed: (lIdx % 2 === 0 ? 2.2 : -2.5),
+        y: 82.8,
+        z: lz,
+        range: 6.2
+      });
+      b("snow_laser13_gem_" + lIdx, 0, 84.5, lz, true);
+    });
+
+    // Tavandan Düşen Sivri Sarkıtlar
+    [-1232, -1248].forEach((iz, iIdx) => {
+      const icicle = new THREE.Mesh(new THREE.ConeGeometry(0.5, 3.0, 6), frostCrystalMat);
+      icicle.rotation.x = Math.PI;
+      icicle.position.set((iIdx === 0 ? -2.2 : 2.2), 89.0, iz);
+      snowExtensionGroup.add(icicle);
+      snowFallingIcicles.push({
+        mesh: icicle,
+        x: (iIdx === 0 ? -2.2 : 2.2),
+        y: 89.0,
+        targetY: 82.6,
+        z: iz,
+        triggered: false,
+        fallSpeed: 0
+      });
+    });
+
+    // Kısım 3: Kutup Avcısı Kulesi & Yarasa Dalışı
+    createIceHunterSniper(-4.2, 83.5, -1272, enemies, snowExtensionGroup);
+    createGlacialIceBat(3.5, 85.0, -1285, enemies, snowExtensionGroup);
+
+    // Zıplama Pisti
+    S(0, 82.6, -1292, 16.5);
+    buildSnowPlatform(18, 2, 16, 0, 83.0, -1308, v, false, false, true);
+
+
+    // =========================================================================
+    // ❄️ 14. AŞAMA: ŞİMŞEKLİ KUTUP ÇIĞI & KAOTİK KASIRGA TÜNELİ [HARDCORE & ÇOK UZUN] (z: -1308 -> -1496, Y: 83 -> 90)
+    // =========================================================================
+    addCheckpoint("snow_cp_s14", "14. Aşama: Şimşekli Kutup Çığı & Kasırga Tüneli [Hardcore & Çok Uzun]", 0, 84.0, -1318);
+    buildSnowPlatform(18, 2, 16, 0, 83.0, -1318, v, false, false, true);
+
+    // Kısım 1: Devasa Çığ Kanyonu & Yuvarlanan Dev Kar Gülleleri
+    buildSnowPlatform(11.0, 1.5, 62, 0, 83.8, -1355, iceGlacierMat, false, false, true);
+
+    // Yan Sığınak Cepleri
+    buildSnowPlatform(4.0, 1.5, 6.0, -7.0, 83.8, -1345, snowWhiteMat, false, false, true);
+    b("snow_shelter_coin_L", -7.0, 85.2, -1345, true);
+    buildSnowPlatform(4.0, 1.5, 6.0, 7.0, 83.8, -1365, snowWhiteMat, false, false, true);
+    b("snow_shelter_coin_R", 7.0, 85.2, -1365, true);
+
+    // 2 Dev Yuvarlanan Kar Güllesi (Stage 14 Çığı)
+    for (let bIdx = 0; bIdx < 2; bIdx++) {
+      const bGeom = new THREE.SphereGeometry(1.9, 14, 14);
+      const bMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.85 });
+      const bMesh = new THREE.Mesh(bGeom, bMat);
+      bMesh.position.set((bIdx === 0 ? -2.5 : 2.5), 85.5, -1385 + bIdx * 28);
+      snowExtensionGroup.add(bMesh);
+      snowAvalancheBoulders.push({
+        mesh: bMesh,
+        baseZ: -1385,
+        endZ: -1325,
+        speed: 15.0 + bIdx * 3.5,
+        z: -1385 + bIdx * 28
+      });
+    }
+    // Seri Kartopu Fırlatan Kar Adamı
+    createFrostSnowman(0, 84.6, -1375, enemies, snowExtensionGroup);
+
+    // Kısım 2: Titreyen Buz Asma Köprüsü & Çöken 4 Basamak
+    [-1398, -1412, -1426, -1440].forEach((cz, cIdx) => {
+      const cx = (cIdx % 2 === 0 ? -2.2 : 2.2);
+      const cy = 85.2 + cIdx * 0.8;
+      const cMesh = buildSnowPlatform(2.8, 0.6, 5.5, cx, cy, cz, iceGlacierMat, false, false, true);
+      snowCrumblingCrusts.push({
+        mesh: cMesh,
+        coll: collidables[collidables.length - 1],
+        baseY: cy,
+        stepped: false,
+        dropTimer: 0.65,
+        fallSpeed: 0,
+        respawnTimer: 0
+      });
+      b("snow_bridge14_coin_" + cIdx, cx, cy + 1.2, cz, cIdx === 2);
+    });
+
+    // Köprü Üstü Dönen Değirmen
+    const mill14 = new THREE.Group();
+    mill14.position.set(0, 87.2, -1420);
+    for (let i = 0; i < 4; i++) {
+      const sp = new THREE.Mesh(new THREE.ConeGeometry(0.35, 2.8, 6), frostCrystalMat);
+      sp.rotation.z = Math.PI / 2;
+      const ang = (i / 4) * Math.PI * 2;
+      sp.position.set(Math.cos(ang) * 1.8, Math.sin(ang) * 1.8, 0);
+      mill14.add(sp);
+    }
+    snowExtensionGroup.add(mill14);
+    snowRotatingIceMills.push({ group: mill14, speed: 2.6, radius: 2.8 });
+
+    // Kısım 3: Zirveye Tırmanan Buzul Sütunları & Şaman / Golem
+    buildSnowPlatform(12.0, 1.8, 16, 0, 88.0, -1456, iceGlacierMat, false, false, true);
+    createFrostShardGolem(0, 89.5, -1456, enemies, snowExtensionGroup);
+
+    buildSnowPlatform(12.0, 1.8, 16, 0, 89.2, -1474, iceGlacierMat, false, false, true);
+    createArcticFrostShaman(0, 90.8, -1474, enemies, snowExtensionGroup);
+
+    // Büyük Zirve Taht Girişi & Geniş Dinlenme Meydanı
+    buildSnowPlatform(24, 2.5, 20, 0, 89.5, -1496, v, false, false, true);
+
+
+    // =========================================================================
+    // 👑 15. AŞAMA: [BÜYÜK BOSS ARENASI] YÜCE DONMUŞ TAHT ZİRVESİ & KOCA AYAK YETİ (z: -1496 -> -1660, Y: 90)
+    // =========================================================================
+    addCheckpoint("snow_cp_s15", "15. Aşama: [BÜYÜK BOSS] Yüce Donmuş Taht Zirvesi ❄️", 0, 90.5, -1508);
+
+    const summitArenaZ = -1570;
+    const summitArenaY = 89.5;
+
+    // Devasa Zirve Arenası (82 x 82 birim)
+    buildSnowPlatform(82, 3.5, 82, 0, summitArenaY, summitArenaZ, v, false, false, true);
+    buildSnowPlatform(78, 0.5, 78, 0, summitArenaY + 1.8, summitArenaZ, snowWhiteMat);
+
+    // 10 Yüce Donmuş Monolit Sütunu ve Mavi Meşaleler
+    for (let p = 0; p < 10; p++) {
+      const angle = (p / 10) * Math.PI * 2;
+      const px = Math.cos(angle) * 35;
+      const pz = summitArenaZ + Math.sin(angle) * 35;
+      buildSnowPlatform(3.2, 22, 3.2, px, summitArenaY + 11.0, pz, z, false, false, false);
+
+      const crystalTop = new THREE.Mesh(new THREE.ConeGeometry(1.8, 3.5, 6), frostCrystalMat);
+      crystalTop.position.set(px, summitArenaY + 22.5, pz);
       snowExtensionGroup.add(crystalTop);
-      const torch = new THREE.PointLight(0x38bdf8, 2.5, 22);
-      torch.position.set(px, summitArenaY + 20.0, pz);
+
+      const torch = new THREE.PointLight(0x38bdf8, 3.0, 26);
+      torch.position.set(px, summitArenaY + 23.0, pz);
       snowExtensionGroup.add(torch);
     }
 
-    // THE RELOCATED ICONIC BIGFOOT YETI BOSS (Exact same appearance, fur, teeth, club!)
-    activeBigfootBoss = createExactBigfootBoss(0, summitArenaY + 1.6, summitArenaZ + 5, enemies, snowExtensionGroup);
+    // Taht Arka Süslemeleri & Zafer Şövalesi
+    T("snow_throne_easel", 4, "👑 YÜCE DONMUŞ TAHT ZİRVESİ!\nKoca Ayak Yeti'yi mağlup et ve Volkanik Ejderha Mağarası'na açılan portaldan geç!", 0, summitArenaY + 2.0, summitArenaZ - 20, 0);
 
-    // Victory Exit Portal behind the Boss leading to 6. Bölüm (Volkanik Ejderha Mağarası)
-    snowVictoryPortal = createSnowVictoryPortal(0, summitArenaY + 1.6, summitArenaZ - 25, snowExtensionGroup);
+    // TAŞINAN EFSANEVİ KOCA AYAK YETİ BOSS (Exact same appearance, fur, teeth, club, slam attacks!)
+    activeBigfootBoss = createExactBigfootBoss(0, summitArenaY + 1.8, summitArenaZ + 5, enemies, snowExtensionGroup);
 
-    console.log("✅ [Snow Desert Extension] 14 Zorlu Aşama & 10 Özel Canlı Başarıyla Yerleştirildi!");
+    // Zafer Portalı: Koca Ayak'ın arkasında (6. Bölüm Volkanik Ejderha Mağarası)
+    snowVictoryPortal = createSnowVictoryPortal(0, summitArenaY + 1.8, summitArenaZ - 30, snowExtensionGroup);
+
+    console.log("✅ [Snow Desert Extension] 15 Zorlu & Uzun Aşama Başarıyla Yerleştirildi!");
   };
 
   // =========================================================================
@@ -1176,13 +1502,36 @@
     if (!game || game.currentRegion !== 'snow_desert') return;
     totalTime += dt;
 
+    // 0. Kaygan Buz Fiziği (Slippery Ice Momentum Preservation & Drifting)
+    if (game.isGrounded && game.playerPos) {
+      const px = game.playerPos.x;
+      const py = game.playerPos.y;
+      const pz = game.playerPos.z;
+      const onIce = snowIceBoxes.some(b =>
+        px >= b.minX - 0.4 && px <= b.maxX + 0.4 &&
+        pz >= b.minZ - 0.4 && pz <= b.maxZ + 0.4 &&
+        Math.abs(py - b.topY) < 1.3
+      );
+      if (onIce) {
+        if (!game.isRolling) {
+          game.playerVel.x *= 1.21;
+          game.playerVel.z *= 1.21;
+        }
+        const hSpeed = Math.hypot(game.playerVel.x, game.playerVel.z);
+        if (hSpeed > 1.2 && Math.random() < 0.4) {
+          game.spawnSparkleParticles(game.playerPos, 2, 0xa5f3fc);
+        }
+      }
+    }
+
     // 1. Moving Ice Floes (Stage 3)
     snowMovingFloes.forEach(mp => {
       const offX = Math.sin(totalTime * mp.speed + mp.offset) * mp.rangeX;
       mp.mesh.position.x = mp.baseX + offX;
       if (mp.coll) {
-        mp.coll.min.x = mp.baseX + offX - 2.4;
-        mp.coll.max.x = mp.baseX + offX + 2.4;
+        const hw = mp.halfW || 2.4;
+        mp.coll.min.x = mp.baseX + offX - hw;
+        mp.coll.max.x = mp.baseX + offX + hw;
       }
     });
 
@@ -1229,7 +1578,8 @@
       ab.z += dt * ab.speed;
       ab.mesh.position.z = ab.z;
       ab.mesh.rotation.x += dt * 8.0;
-      if (ab.z > -520) ab.z = ab.baseZ;
+      const maxZ = ab.endZ !== undefined ? ab.endZ : -520;
+      if (ab.z > maxZ) ab.z = ab.baseZ;
       if (game.playerPos && ab.mesh.position.distanceTo(game.playerPos) < 2.4) {
         game.damagePlayer(18);
         game.playerVel.z += 12.0;
@@ -1259,7 +1609,8 @@
       fl.mesh.rotation.y += dt * fl.speed;
       if (game.playerPos) {
         const d = Math.hypot(game.playerPos.x - fl.mesh.position.x, game.playerPos.z - fl.z);
-        if (d < 5.8 && Math.abs(game.playerPos.y - fl.y) < 1.5) {
+        const sweepRange = fl.range || 5.8;
+        if (d < sweepRange && Math.abs(game.playerPos.y - fl.y) < 1.6) {
           const pAngle = Math.atan2(game.playerPos.z - fl.z, game.playerPos.x - fl.mesh.position.x);
           let diff = Math.abs(pAngle - fl.mesh.rotation.y) % (Math.PI * 2);
           if (diff < 0.25 || Math.abs(diff - Math.PI) < 0.25) {

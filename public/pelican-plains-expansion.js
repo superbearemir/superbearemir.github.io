@@ -103,6 +103,16 @@
     }
 
     // =========================================================================
+    // ⛩️ ESKİ BOSS YUVASI KAPATILDI (z: -180) & 8 YENİ AŞAMAYA GEÇİŞ KÖPRÜSÜ
+    // =========================================================================
+    const closeWallMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3 });
+    buildSkyPlatform(2, 6, 36, -18, 35.5, -180, closeWallMat);
+    buildSkyPlatform(2, 6, 36, 18, 35.5, -180, closeWallMat);
+    T("pelican_closed_nest_easel", 4, "⛩️ ESKİ BOSS YUVASI KAPATILDI!\nPelikan Lordu 8. Aşamaya (-780) Taşındı!\nİlerideki 8 Yeni Aşamaya Geç!", 0, 35.0, -170, 0);
+    buildSkyPlatform(10, 1.5, 26, 0, 34.0, -195, N);
+    buildSkyPlatform(8, 0.4, 26, 0, 34.9, -195, z);
+
+    // =========================================================================
     // 🪶 1. AŞAMA (KOLAY): GÖK ADALARI & RÜZGAR AKIMI YOLU (z: -200 -> -260, Y: 35 -> 39)
     // =========================================================================
     addCheckpoint("pelican_cp_s1", "1. Aşama: Gök Adaları & Rüzgar Yolu [Kolay]", 0, 35.5, -210);

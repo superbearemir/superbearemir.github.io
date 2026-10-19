@@ -1209,9 +1209,17 @@
     if (victoryExitPortal && game.playerPos) {
       victoryExitPortal.mesh.rotation.y += dt * 0.8;
       const d = victoryExitPortal.pos.distanceTo(game.playerPos);
-      if (d < 3.8) {
-        const isBossAlive = (game.currentLevel && game.currentLevel.enemies || []).some(
-          e => e && e.id === "boss_vine_guardian" && e.hp > 0
+      if (d < 4.2) {
+        const isBossDefeated = !!(
+          game._bossDefeatedInCurrentRegion ||
+          (typeof window !== "undefined" && window.__superBossDefeatedRegions && (window.__superBossDefeatedRegions["forest_temple"] || window.__superBossDefeatedRegions["boss_vine_guardian"])) ||
+          (typeof window !== "undefined" && window.__superBearSaveManager && !!(
+            window.__superBearSaveManager.getSaveData()?.levelsProgress?.["forest_temple"]?.bossDefeated ||
+            window.__superBearSaveManager.getSaveData()?.levelsProgress?.["beehive"]?.unlocked
+          ))
+        );
+        const isBossAlive = !isBossDefeated && (game.currentLevel && game.currentLevel.enemies || []).some(
+          e => e && e.id === "boss_vine_guardian" && e.hp > 0 && e.state !== "dead"
         );
         if (isBossAlive) {
           const now = Date.now();

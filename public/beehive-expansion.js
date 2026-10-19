@@ -1034,9 +1034,17 @@
     if (hiveVictoryPortal && game.playerPos) {
       hiveVictoryPortal.mesh.rotation.y += dt * 0.8;
       const d = hiveVictoryPortal.pos.distanceTo(game.playerPos);
-      if (d < 3.8) {
-        const isBossAlive = (game.currentLevel && game.currentLevel.enemies || []).some(
-          e => e && e.id === "boss_purple_bear" && e.hp > 0
+      if (d < 4.2) {
+        const isBossDefeated = !!(
+          game._bossDefeatedInCurrentRegion ||
+          (typeof window !== "undefined" && window.__superBossDefeatedRegions && (window.__superBossDefeatedRegions["beehive"] || window.__superBossDefeatedRegions["boss_purple_bear"])) ||
+          (typeof window !== "undefined" && window.__superBearSaveManager && !!(
+            window.__superBearSaveManager.getSaveData()?.levelsProgress?.["beehive"]?.bossDefeated ||
+            window.__superBearSaveManager.getSaveData()?.levelsProgress?.["pelican_plains"]?.unlocked
+          ))
+        );
+        const isBossAlive = !isBossDefeated && (game.currentLevel && game.currentLevel.enemies || []).some(
+          e => e && e.id === "boss_purple_bear" && e.hp > 0 && e.state !== "dead"
         );
         if (isBossAlive) {
           const now = Date.now();
