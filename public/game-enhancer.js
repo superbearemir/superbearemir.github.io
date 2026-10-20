@@ -6159,31 +6159,13 @@ function populateVolcanoCave(game) {
         animTimer: 3.0
     });
 
-    // Dragon Boss: Kızıl Alev Ejderhası Ignis
-    const dragonBoss = createDragonMesh(THREE, true);
-    const dragonPos = new THREE.Vector3(0, 40.5, -176);
-    dragonBoss.position.copy(dragonPos);
-    dragonBoss.rotation.y = Math.PI; // Face towards entering player
-    game.currentLevel.mesh.add(dragonBoss);
-
-    game.currentLevel.enemies.push({
-        id: 'boss_volcano_dragon',
-        type: 'volcano_dragon_boss',
-        name: 'Kızıl Alev Ejderhası Ignis (Dev Boss 🌋)',
-        mesh: dragonBoss,
-        pos: dragonPos,
-        velocity: new THREE.Vector3(),
-        hp: 800,
-        maxHp: 800,
-        attackPower: 18,
-        isBoss: true,
-        attackCooldown: 0,
-        state: 'chase',
-        animTimer: 0
-    });
-
-    // Grand Illuminated Exit Portal at the back of Volcano Cave (Transitions to 7. Underwater Palace)
-    if (window.createCaveExitPortal) { window.window.createCaveExitPortal(game, 0, 41.0, -188, 'underwater_palace', '7. BÖLÜM: ANTİK SU ALTI KRİSTAL SARAYI', '🌊');
+    // Invoke 19 Stages, 12 Custom Creatures & Flying Dragon Boss Extension
+    if (typeof window !== "undefined" && typeof window.__populateVolcanoCaveExtension === "function") {
+        try {
+            window.__populateVolcanoCaveExtension(game);
+        } catch(err) {
+            console.error("🌋 Error in __populateVolcanoCaveExtension:", err);
+        }
     }
 }
 
@@ -6192,12 +6174,8 @@ underwaterPalacePopulated = false;
 
 function populateUnderwaterPalace(game) {
   createThematicEntranceEasel(game, 1, "7. Bölüm: Antik Su Altı Kristal Sarayı", -3.5, 2.0, -4);
-  // Level Exit Portal to Next Region (8. Golden Sanctuary)
-  if (window.createCaveExitPortal) {
-    window.createCaveExitPortal(game, 0, 32, -520, 'golden_sanctuary', '8. BÖLÜM: EFSANEVİ ALTIN CENNETİ', '🌟');
-  }
-
-    if (game && game.currentLevel) ensureLevelArrays(game.currentLevel);
+  // (Exit portal is placed at the end of the 17 extended stages behind Kraken boss)
+  if (game && game.currentLevel) ensureLevelArrays(game.currentLevel);
 
     if (!game || !game.scene || !window.THREE) return;
     const THREE = window.THREE;
@@ -6511,16 +6489,18 @@ function populateUnderwaterPalace(game) {
         krakenGroup.add(tentacle);
     }
     
-    krakenGroup.position.set(-10, 85, -570);
-    game.currentLevel.mesh.add(krakenGroup);
-    game.currentLevel.kraken = krakenGroup;
+    // Invoke 17 Extended Stages, 10 Creatures & Relocated Kraken Boss at section end
+    if (typeof window !== "undefined" && typeof window.__populateUnderwaterPalaceExtension === "function") {
+        try {
+            window.__populateUnderwaterPalaceExtension(game);
+        } catch(err) {
+            console.error("🌊 Error in __populateUnderwaterPalaceExtension:", err);
+        }
+    }
 }
 function populateDinosaurWorld(game) {
   createThematicEntranceEasel(game, 3, "9. Bölüm: Tarih Öncesi Dinozor Dünyası", -3.5, 1.8, 58);
-  // Level Exit Portal to Next Region
-  if (window.createCaveExitPortal) {
-    window.createCaveExitPortal(game, 0, 5, -650, 'sugar_world', '10. BÖLÜM: ŞEKER DÜNYASI', '🍬');
-  }
+  // (Exit portal is placed at the end of the 14 extended stages behind T-Rex boss)
 
     if (game && game.currentLevel) ensureLevelArrays(game.currentLevel);
 
@@ -6680,27 +6660,14 @@ function populateDinosaurWorld(game) {
         });
     }
 
-    // Dev T-Rex Boss
-    const trexBoss = createDinoMesh(THREE, true);
-    const bossPos = new THREE.Vector3(0, 49, -95);
-    trexBoss.position.copy(bossPos);
-    game.currentLevel.mesh.add(trexBoss);
-    
-    game.currentLevel.enemies.push({
-        id: 'boss_trex',
-        type: 'dino_trex_boss',
-        name: 'Dev T-Rex Boss',
-        mesh: trexBoss,
-        pos: bossPos,
-        velocity: new THREE.Vector3(),
-        hp: 1000,
-        maxHp: 1000,
-        attackPower: 15,
-        isBoss: true,
-        attackCooldown: 0,
-        state: 'chase',
-        animTimer: 0
-    });
+    // Invoke 14 Extended Stages, 9 Prehistoric Creatures & Relocated T-Rex Boss at section end
+    if (typeof window !== "undefined" && typeof window.__populateDinosaurWorldExtension === "function") {
+        try {
+            window.__populateDinosaurWorldExtension(game);
+        } catch(err) {
+            console.error("🦖 Error in __populateDinosaurWorldExtension:", err);
+        }
+    }
 }
 
 sugarWorldPopulated = false;
@@ -11872,53 +11839,65 @@ function updateSpaceLoop() {
 
       
       // Update Kraken HP Bar
-      if (game.currentLevel && game.currentLevel.kraken && pPos && pPos.z < -460) {
+      const kArenaX = game.currentLevel && game.currentLevel.krakenArenaX !== undefined ? game.currentLevel.krakenArenaX : -10;
+      const kArenaY = game.currentLevel && game.currentLevel.krakenArenaY !== undefined ? game.currentLevel.krakenArenaY : 65.2;
+      const kArenaZ = game.currentLevel && game.currentLevel.krakenArenaZ !== undefined ? game.currentLevel.krakenArenaZ : -570;
+      const isNearKrakenArena = pPos && Math.abs(pPos.z - kArenaZ) < 160;
+
+      if (game.currentLevel && game.currentLevel.kraken && isNearKrakenArena) {
           if (typeof updateKrakenHealthBar === 'function') updateKrakenHealthBar(game.currentLevel.krakenHp, 3);
       } else {
           if (typeof updateKrakenHealthBar === 'function') updateKrakenHealthBar(0, 3);
       }
       
-      // 🦑 Kraken Boss Logic
-
+      // 🦑 Kraken Boss Logic (Oturduğunda TAMAMEN HAREKETSİZ, vuruşları güvenilir şekilde hasar alır)
       if (game.currentLevel.kraken && pPos && game.currentLevel.krakenHp > 0) {
           const time = Date.now() * 0.001;
+          game.currentLevel.krakenInvulTimer = (game.currentLevel.krakenInvulTimer || 0) - dt;
           
           // State Machine
           game.currentLevel.krakenStateTimer -= dt;
           if (game.currentLevel.krakenState === 'air') {
-              game.currentLevel.krakenTargetY = 85; // Hover high
+              game.currentLevel.krakenTargetY = kArenaY + 18.0; // Hover high in the air
               if (game.currentLevel.krakenStateTimer <= 0) {
                   game.currentLevel.krakenState = 'ground';
                   if(typeof playKrakenSound==='function') playKrakenSound('ground');
                   if(typeof triggerScreenShake==='function') triggerScreenShake();
-                  game.currentLevel.krakenStateTimer = 10.0;
-                  if (game.callbacks && game.callbacks.onShowNotice) game.callbacks.onShowNotice("🦑 Kraken yoruldu, yere iniyor! Kafasına zıpla!", "success");
+                  game.currentLevel.krakenStateTimer = 14.0; // Ample time to attack while sitting still
+                  if (game.callbacks && game.callbacks.onShowNotice) {
+                      game.callbacks.onShowNotice("🦑 Dev Kraken yere oturdu ve TAMAMEN HAREKETSİZ kaldı! Kafasına zıpla veya yumruk at! 💥", "success");
+                  }
               }
+              // Move side to side ONLY while hovering in the air
+              game.currentLevel.kraken.position.x = kArenaX + Math.sin(time * 0.8) * 18.0;
+              game.currentLevel.kraken.position.z = kArenaZ;
           } else {
-              // ground state (vulnerable)
-              game.currentLevel.krakenTargetY = 66; // Close to the floor (64)
+              // ground state (sitting/vulnerable) - MUST STAY COMPLETELY STILL IN PLACE (HİÇBİR HAREKET YOK!)
+              game.currentLevel.krakenTargetY = kArenaY; // Sit firmly on the floor platform
+              game.currentLevel.kraken.position.x = kArenaX; // Fixed center position - NO moving side-to-side!
+              game.currentLevel.kraken.position.z = kArenaZ; // Fixed Z
+              
               if (game.currentLevel.krakenStateTimer <= 0) {
                   game.currentLevel.krakenState = 'air';
-                  game.currentLevel.krakenStateTimer = 20.0;
+                  game.currentLevel.krakenStateTimer = 16.0;
                   if(typeof playKrakenSound==='function') playKrakenSound('warn');
-                  if (game.callbacks && game.callbacks.onShowNotice) game.callbacks.onShowNotice("🦑 Kraken tekrar havalandı!", "warn");
+                  if (game.callbacks && game.callbacks.onShowNotice) {
+                      game.callbacks.onShowNotice("🦑 Kraken dinlendi ve tekrar havaya süzüldü!", "warn");
+                  }
               }
           }
 
           // Smooth Y movement (lerp)
-          game.currentLevel.kraken.position.y += (game.currentLevel.krakenTargetY - game.currentLevel.kraken.position.y) * dt * 2.0;
-          
-          // Move side to side (hovering)
-          game.currentLevel.kraken.position.x = -10 + Math.sin(time * 0.8) * 20;
+          game.currentLevel.kraken.position.y += (game.currentLevel.krakenTargetY - game.currentLevel.kraken.position.y) * dt * 2.5;
           
           // Face player
           game.currentLevel.kraken.lookAt(pPos.x, game.currentLevel.kraken.position.y, pPos.z);
 
           // Shoot ONLY if in air and player is near arena
-          if (game.currentLevel.krakenState === 'air' && pPos.z < -460) {
+          if (game.currentLevel.krakenState === 'air' && isNearKrakenArena) {
               game.currentLevel.krakenShootTimer -= dt;
               if (game.currentLevel.krakenShootTimer <= 0) {
-                  game.currentLevel.krakenShootTimer = 1.5; // Fire rate
+                  game.currentLevel.krakenShootTimer = 1.8; // Fire rate
                   if(typeof playKrakenSound==='function') playKrakenSound('shoot');
                   
                   const projGeo = new THREE.SphereGeometry(2, 8, 8);
@@ -11926,7 +11905,7 @@ function updateSpaceLoop() {
                   const proj = new THREE.Mesh(projGeo, projMat);
                   
                   proj.position.copy(game.currentLevel.kraken.position);
-                  proj.position.y -= 5; // Shoot from below eyes
+                  proj.position.y -= 4; // Shoot from below eyes
                   
                   const target = pPos.clone();
                   target.y += 1.0; 
@@ -11934,7 +11913,7 @@ function updateSpaceLoop() {
                   const speed = 40;
                   const vel = dir.multiplyScalar(speed);
                   
-                  game.currentLevel.mesh.add(proj);
+                  (game.currentLevel.mesh || game.scene).add(proj);
                   game.currentLevel.krakenProjectiles.push({
                       mesh: proj,
                       vel: vel,
@@ -11943,30 +11922,90 @@ function updateSpaceLoop() {
               }
           }
           
-          // Player attack logic (Jump on head when grounded)
+          // Robust Player attack logic when Kraken is sitting/grounded
           if (game.currentLevel.krakenState === 'ground') {
               const dx = pPos.x - game.currentLevel.kraken.position.x;
+              const dy = pPos.y - game.currentLevel.kraken.position.y;
               const dz = pPos.z - game.currentLevel.kraken.position.z;
-              const distToKraken = Math.sqrt(dx*dx + dz*dz);
+              const dist2D = Math.hypot(dx, dz);
+              const dist3D = Math.hypot(dx, dy, dz);
               
-              // If player is above kraken head and falling
-              if (distToKraken < 14.0 && pPos.y > game.currentLevel.kraken.position.y + 4) {
-                  if (game.playerVel && game.playerVel.y < 0) { 
-                      game.playerVel.y = 25; // Bounce off heavily
-                      game.currentLevel.krakenHp -= 1;
-                      if (game.spawnSparkleParticles) game.spawnSparkleParticles(game.currentLevel.kraken.position, 30, 0x6b21a8);
-                      
-                      if (game.currentLevel.krakenHp <= 0) {
-                          // Dead!
-                          game.currentLevel.kraken.visible = false;
-                          if (game.callbacks && game.callbacks.onShowNotice) game.callbacks.onShowNotice("✨ KRAKEN MAĞLUP EDİLDİ! TEBRİKLER! ✨", "success");
-                      } else {
-                          if (game.callbacks && game.callbacks.onShowNotice) game.callbacks.onShowNotice(`💥 VURDUN! Kalan Can: ${game.currentLevel.krakenHp}`, "success");
-                          // Instantly force it back to air
-                          game.currentLevel.krakenState = 'air';
-                  game.currentLevel.krakenStateTimer = 20.0;
-                  if(typeof playKrakenSound==='function') playKrakenSound('warn');
+              // Check hit conditions:
+              // 1. Stomp / jumping on head / falling from above or contact on head
+              const isStomping = dist2D < 22.0 && (dy > -3.0);
+              // 2. Ground pounding near the kraken
+              const isGroundPounding = dist2D < 26.0 && game.isGroundPounding;
+              // 3. Rolling into the kraken
+              const isRolling = dist2D < 22.0 && game.isRolling;
+              // 4. Melee punch or close-range attack with keys / buttons
+              const isPunching = dist2D < 24.0 && (
+                  game.isPunching || game.isAttacking || (game.keys && (game.keys['KeyJ'] || game.keys['KeyF'] || game.keys['Space'] || game.keys['KeyE']))
+              );
+              // 5. Direct physical contact while grounded
+              const isContact = dist3D < 18.0;
+              
+              if ((isStomping || isGroundPounding || isRolling || isPunching || isContact) && (game.currentLevel.krakenInvulTimer || 0) <= 0) {
+                  game.currentLevel.krakenInvulTimer = 0.85; // Prevent multiple hits in 1 frame
+                  game.currentLevel.krakenHp -= 1;
+                  
+                  if (window.St && window.St.playDamage) window.St.playDamage();
+                  if (typeof triggerScreenShake === 'function') triggerScreenShake();
+                  if (game.spawnSparkleParticles) {
+                      game.spawnSparkleParticles(game.currentLevel.kraken.position, 40, 0x06b6d4);
+                  }
+                  
+                  // Flash visual feedback
+                  game.currentLevel.kraken.traverse(c => {
+                      if (c.material && c.material.emissive) {
+                          const origColor = c.material.emissive.getHex();
+                          c.material.emissive.setHex(0xffffff);
+                          setTimeout(() => {
+                              if (c.material && c.material.emissive) c.material.emissive.setHex(origColor);
+                          }, 180);
                       }
+                  });
+                  
+                  // Bounce player safely up and back
+                  if (game.playerVel) {
+                      game.playerVel.y = 20.0;
+                      game.playerVel.z += 8.0;
+                  }
+                  
+                  if (game.currentLevel.krakenHp <= 0) {
+                      // DEAD! Complete victory
+                      game.currentLevel.kraken.visible = false;
+                      game._bossDefeatedInCurrentRegion = true;
+                      
+                      if (window.St && window.St.playGoalFanfare) window.St.playGoalFanfare();
+                      if (window.St && window.St.playBossRoar) window.St.playBossRoar();
+                      
+                      if (typeof window !== "undefined") {
+                          window.__superBossDefeatedRegions = window.__superBossDefeatedRegions || {};
+                          window.__superBossDefeatedRegions["underwater_palace"] = true;
+                          window.__superBossDefeatedRegions["boss_ocean_kraken"] = true;
+                          if (window.__superBearSaveManager) {
+                              window.__superBearSaveManager.onBossDefeated("underwater_palace", 500, true);
+                              window.__superBearSaveManager.onBossDefeated("boss_ocean_kraken", 500, true);
+                          }
+                          window.dispatchEvent(new CustomEvent("superbear:boss-defeated", {
+                              detail: { bossId: "boss_ocean_kraken", region: "underwater_palace" }
+                          }));
+                      }
+                      
+                      game.stats.coins = (game.stats.coins || 0) + 500;
+                      game.stats.xp = (game.stats.xp || 0) + 750;
+                      game.stats.honeyGems = (game.stats.honeyGems || 0) + 5;
+                      if (game.callbacks && game.callbacks.onStatsUpdate) game.callbacks.onStatsUpdate(game.stats);
+                      
+                      if (game.callbacks && game.callbacks.onShowNotice) {
+                          game.callbacks.onShowNotice("🏆 DEV NEPTÜN KRAKEN MAĞLUP EDİLDİ! (+500 Altın, +750 XP, +5 Mücevher) 🌊", "success");
+                      }
+                  } else {
+                      if (game.callbacks && game.callbacks.onShowNotice) {
+                          game.callbacks.onShowNotice(`💥 KRAKEN'E VURDUN! Kalan Can: ${game.currentLevel.krakenHp}/3 🌊`, "success");
+                      }
+                      // Allow 1.5 seconds more on ground before flying back up
+                      game.currentLevel.krakenStateTimer = Math.min(game.currentLevel.krakenStateTimer, 2.0);
                   }
               }
           }
@@ -14126,11 +14165,7 @@ function createGoldCoinBoss(game, pos) {
 
 function populateGoldenSanctuary(game) {
   createThematicEntranceEasel(game, 2, "8. Bölüm: Efsanevi Altın Cenneti", -3.5, 2.2, 88);
-  // Level Exit Portal to Next Region
-  if (window.createCaveExitPortal) {
-    window.createCaveExitPortal(game, 0, 5, -220, 'dinosaur_world', '9. BÖLÜM: DİNOZOR DÜNYASI', '🦖');
-  }
-
+  // (Exit portal is placed at the end of the 14 extended stages behind Gold Coin boss)
   if (game && game.currentLevel) ensureLevelArrays(game.currentLevel);
   const THREE = window.THREE;
   if (!game || !game.scene) return;
@@ -14551,13 +14586,14 @@ function populateGoldenSanctuary(game) {
     sanctuaryGroup.add(chestGroup);
   });
 
-  // --- İMPARATOR DEV ALTIN PARA BOSSU'NU OLUŞTUR ---
-  const bossData = createGoldCoinBoss(game, new THREE.Vector3(0, 61.0, -340));
-  sanctuaryGroup.add(bossData.mesh);
-  game.currentLevel.goldCoinBoss = bossData;
-
-  // Başlangıçta Boss Can Barını Gizle (Yalnızca bölüm sonundaki arenaya yaklaşıldığında açılacak)
-  updateGoldCoinBossHealthBar(0, bossData.maxHp);
+  // Invoke 14 Extended Stages, 9 Celestial Creatures & Relocated Gold Coin Boss at section end
+  if (typeof window !== "undefined" && typeof window.__populateGoldenSanctuaryExtension === "function") {
+    try {
+      window.__populateGoldenSanctuaryExtension(game);
+    } catch(err) {
+      console.error("🌟 Error in __populateGoldenSanctuaryExtension:", err);
+    }
+  }
 
   // Spawn Player at Start
   if (game.playerPos) {

@@ -1,13 +1,20 @@
 // ============================================================================
-// 🌋 6. BÖLÜM: VOLKANİK EJDERHA MAĞARASI GENİŞLETMESİ
-// - 19 YENİ AŞAMA (1-7: Çok Kolay, 8-14: Orta, 15-19: Çok Zorlu)
-// - 12 ÖZEL YENİ CANLI VE EŞSİZ MEKANİKLER
-// - BOSS YENİLENDİ: Kızıl Alev Ejderhası Ignis artık havada süzülüp devriye geziyor,
-//   ağzından alev topları fırlatıyor ve magma şok dalgaları saçıyor!
-// - Boss 19. Aşamaya (Yüce Volkanik Kaldera Arenası z: -2150) taşındı!
+// 🌋 6. BÖLÜM: VOLKANİK EJDERHA MAĞARASI UZATILMIŞ GENİŞLETMESİ
+// - 19 UZUN, DETAYLI VE ZENGİN MAGMA AŞAMASI (z: -180 -> -3800)
+//     * 1-7. Aşamalar [Çok Kolay]: Geniş, güvenli obsidyen ve bazalt platformlar, rahat geçişler.
+//     * 8-14. Aşamalar [Orta Zorluk]: Hareketli lav salları, dönen alev değirmenleri, çöken magma plakaları.
+//     * 15-19. Aşamalar [Çok Zorlu / Hardcore]: Magma lazerleri, dar obsidyen kirişleri, eriyen basamaklar, kayan lav gülleleri!
+// - 12 ÖZEL YENİ VOLKANİK CANLI (Özgün 3D modeller ve mekanikler)
+// - BOSS: Kızıl Alev Ejderhası Ignis
+//     * Yeri 19. Aşamadaki Yüce Volkanik Kaldera Arenası'na (z: -3650) taşındı!
+//     * Havada süzülür, alev topları fırlatır, yere indiğinde şok dalgaları saçarak savunmasız kalır!
+//     * Mağlup edildiğinde 7. Bölüm Antik Su Altı Kristal Sarayı portalı açılır!
 // ============================================================================
+
 (function() {
   'use strict';
+
+  console.log("🌋 [Volcano Cave Expansion] 19 Uzun Aşama, 12 Canlı ve Uçan Alev Ejderhası Başlatılıyor...");
 
   let volcanoExtensionGroup = null;
   let activeVolcanoProjectiles = [];
@@ -15,14 +22,12 @@
   let volcanoCrumblingCrusts = [];
   let volcanoFireMills = [];
   let volcanoMagmaLasers = [];
-  let volcanoRollingBoulders = [];
   let volcanoFallingEmbers = [];
-  let volcanoGeysers = [];
+  let volcanoJumpPads = [];
   let activeDragonBoss = null;
   let volcanoVictoryPortal = null;
   let totalTime = 0;
 
-  // Cleanup helper
   function cleanUpVolcanoCaveExtension() {
     if (volcanoExtensionGroup && volcanoExtensionGroup.parent) {
       volcanoExtensionGroup.parent.remove(volcanoExtensionGroup);
@@ -33,42 +38,40 @@
     volcanoCrumblingCrusts = [];
     volcanoFireMills = [];
     volcanoMagmaLasers = [];
-    volcanoRollingBoulders = [];
     volcanoFallingEmbers = [];
-    volcanoGeysers = [];
+    volcanoJumpPads = [];
     activeDragonBoss = null;
     volcanoVictoryPortal = null;
   }
 
   // =========================================================================
-  // MAIN VOLCANO CAVE EXTENSION BUILDER
+  // MAIN VOLCANO CAVE POPULATOR (19 EXTENDED STAGES)
   // =========================================================================
   window.__populateVolcanoCaveExtension = function(game) {
     if (!window.THREE || !game || !game.scene) return;
     const THREE = window.THREE;
-    console.log("🌋 [Volcano Cave Extension] 19 Yeni Aşama, 12 Canlı ve Uçan Alev Ejderhası Oluşturuluyor...");
 
-    // Remove old extension group if any
+    console.log("🌋 [Volcano Cave Expansion] 19 Uzun Aşama, 12 Canlı ve Uçan Alev Ejderhası Oluşturuluyor...");
     cleanUpVolcanoCaveExtension();
 
-    // Extend level bounds to allow exploring up to Stage 19 (z: -2300)
+    // Extend boundaries to allow extensive 19-stage travel down to z: -4000
     if (game.currentLevel && game.currentLevel.bounds) {
-      game.currentLevel.bounds.minZ = -2600;
-      game.currentLevel.bounds.maxZ = 160;
-      game.currentLevel.bounds.minX = -400;
-      game.currentLevel.bounds.maxX = 400;
-      game.currentLevel.bounds.minY = -60;
-      game.currentLevel.bounds.maxY = 400;
+      game.currentLevel.bounds.minZ = -4100;
+      game.currentLevel.bounds.maxZ = 200;
+      game.currentLevel.bounds.minX = -500;
+      game.currentLevel.bounds.maxX = 500;
+      game.currentLevel.bounds.minY = -80;
+      game.currentLevel.bounds.maxY = 450;
     }
 
     volcanoExtensionGroup = new THREE.Group();
-    volcanoExtensionGroup.name = "volcano_cave_19_stages_expansion";
+    volcanoExtensionGroup.name = "volcano_cave_19_stages_extension";
     game.scene.add(volcanoExtensionGroup);
 
     const collidables = game.currentLevel.colliders = game.currentLevel.colliders || [];
     const enemies = game.currentLevel.enemies = game.currentLevel.enemies || [];
 
-    // Remove old static dragon boss and premature exit portal if present at z: -176 / -188
+    // Purge any old static dragon boss and premature exit portal
     game.currentLevel.enemies = enemies.filter(e => {
       if (e && (e.id === 'boss_volcano_dragon' || e.type === 'volcano_dragon_boss')) {
         if (e.mesh && e.mesh.parent) e.mesh.parent.remove(e.mesh);
@@ -86,66 +89,57 @@
       }
     }
 
-    // Volcanic Cave Materials
+    // High quality volcanic materials
     const basaltMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.85, metalness: 0.2 });
     const smoothObsidianMat = new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.2, metalness: 0.8 });
     const magmaGlowMat = new THREE.MeshStandardMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 1.2 });
-    const darkLavaRockMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.9 });
     const crystalFireMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xdc2626, emissiveIntensity: 1.5 });
     const moltenGoldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xd97706, emissiveIntensity: 0.8 });
 
-    // Platform builder helper
     function buildBasaltPlatform(w, h, d, px, py, pz, mat, isHazard = false) {
       const platGroup = new THREE.Group();
       platGroup.position.set(px, py, pz);
-
       const stoneMesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat || basaltMat);
       stoneMesh.castShadow = true;
       stoneMesh.receiveShadow = true;
       platGroup.add(stoneMesh);
 
-      // Glowing magma edge on top
       if (!isHazard) {
-        const rim = new THREE.Mesh(new THREE.BoxGeometry(w * 0.95, 0.08, d * 0.95), magmaGlowMat);
+        const rim = new THREE.Mesh(new THREE.BoxGeometry(w * 0.96, 0.08, d * 0.96), magmaGlowMat);
         rim.position.y = h / 2 + 0.04;
         platGroup.add(rim);
       }
 
       volcanoExtensionGroup.add(platGroup);
-
-      // Physics collider
       collidables.push({
         min: new THREE.Vector3(px - w / 2, py - h / 2, pz - d / 2),
         max: new THREE.Vector3(px + w / 2, py + h / 2 + 0.15, pz + d / 2),
         isToxic: isHazard
       });
-
       return platGroup;
     }
 
-    // Helper: Collectible coin/gem
     function addVolcanoItem(id, x, y, z, isGem = false) {
       if (typeof window.create3DGoldCoin === 'function' && !isGem) {
         const coin = window.create3DGoldCoin(x, y, z, 25);
         if (coin) volcanoExtensionGroup.add(coin);
       } else {
-        const geom = isGem ? new THREE.OctahedronGeometry(0.5) : new THREE.CylinderGeometry(0.4, 0.4, 0.15, 12);
+        const geom = isGem ? new THREE.OctahedronGeometry(0.55) : new THREE.CylinderGeometry(0.4, 0.4, 0.15, 12);
         const mesh = new THREE.Mesh(geom, isGem ? crystalFireMat : moltenGoldMat);
         mesh.position.set(x, y, z);
         volcanoExtensionGroup.add(mesh);
       }
     }
 
-    // Helper: Add Checkpoint
     function addCheckpoint(id, name, x, y, z) {
       if (!game.currentLevel.checkpoints) game.currentLevel.checkpoints = [];
       const cpMat = new THREE.MeshStandardMaterial({ color: 0xf97316, emissive: 0xc2410c, emissiveIntensity: 1.0 });
-      const cpMesh = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 1.8, 0.3, 16), cpMat);
-      cpMesh.position.set(x, y + 0.15, z);
+      const cpMesh = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 2.0, 0.35, 16), cpMat);
+      cpMesh.position.set(x, y + 0.18, z);
       volcanoExtensionGroup.add(cpMesh);
 
-      const flag = new THREE.Mesh(new THREE.ConeGeometry(0.35, 1.8, 8), crystalFireMat);
-      flag.position.set(x, y + 1.2, z);
+      const flag = new THREE.Mesh(new THREE.ConeGeometry(0.4, 2.0, 8), crystalFireMat);
+      flag.position.set(x, y + 1.35, z);
       volcanoExtensionGroup.add(flag);
 
       game.currentLevel.checkpoints.push({
@@ -155,976 +149,603 @@
       });
     }
 
-    // =========================================================================
-    // 🌋 ESKİ BOSS YUVASI KAPATILDI (z: -176) & 19 AŞAMAYA GEÇİŞ KÖPRÜSÜ
-    // =========================================================================
-    const barrierMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.9, metalness: 0.3 });
-    // Enclosing perimeter battlements
-    buildBasaltPlatform(2, 8, 36, -18, 42.0, -176, barrierMat);
-    buildBasaltPlatform(2, 8, 36, 18, 42.0, -176, barrierMat);
-    buildBasaltPlatform(36, 8, 2, 0, 42.0, -160, barrierMat);
+    function addMagmaJumpPad(x, y, z, boostPower = 28) {
+      const padMat = new THREE.MeshStandardMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 1.5 });
+      const pad = new THREE.Mesh(new THREE.CylinderGeometry(1.8, 2.2, 0.4, 16), padMat);
+      pad.position.set(x, y + 0.2, z);
+      volcanoExtensionGroup.add(pad);
 
-    // Explanatory Banner Easel
-    if (typeof window.createThematicEntranceEasel === 'function') {
-      window.createThematicEntranceEasel(game, 0, "🌋 Eski Yuva Kapatıldı! Ejderha Ignis 19. Aşamaya (-2150) Taşındı!", 0, 41.5, -168);
+      volcanoJumpPads.push({
+        pos: new THREE.Vector3(x, y, z),
+        power: boostPower
+      });
     }
 
-    // Broad safe connecting bridge leading directly into Stage 1
-    buildBasaltPlatform(12, 1.8, 32, 0, 40.5, -195, basaltMat);
-
     // =========================================================================
-    // 🟢 1-7. AŞAMALAR (ÇOK KOLAY) - GENİŞ VE AFFEDİCİ MAGMA PLATFORMLARI
+    // 🌋 19 UZUN AŞAMA (HER AŞAMA 7-12 PLATFORM VE GENİŞLETİLMİŞ MACERA)
     // =========================================================================
 
-    // 1. Aşama: Lav Gölü Girişi & Obsidyen Yolu [Çok Kolay] (z: -210 -> -280, Y: 41 -> 43)
-    addCheckpoint("volcano_cp_s1", "1. Aşama: Lav Girişi & Obsidyen Yolu [Çok Kolay]", 0, 41.5, -220);
-    buildBasaltPlatform(22, 2.5, 24, 0, 40.5, -220, smoothObsidianMat);
-    addVolcanoItem("v_c1_0", -4, 42.5, -220);
-    addVolcanoItem("v_c1_1", 4, 42.5, -220);
+    // 1-7. AŞAMALAR [ÇOK KOLAY & UZUN]: Geniş platformlar, rahat mesafeler
+    // -------------------------------------------------------------------------
+    // 1. Aşama: Lav Gölü Girişi & Obsidyen Yolu (z: -180 -> -360)
+    addCheckpoint("volcano_cp_s1", "1. Aşama: Lav Girişi & Obsidyen Yolu [Çok Kolay]", 0, 41.5, -190);
+    buildBasaltPlatform(24, 2.5, 26, 0, 40.5, -190, smoothObsidianMat);
+    buildBasaltPlatform(16, 2.0, 30, 0, 41.0, -220, basaltMat);
+    buildBasaltPlatform(18, 2.0, 30, 3, 41.5, -250, smoothObsidianMat);
+    buildBasaltPlatform(16, 2.0, 30, -3, 42.0, -280, basaltMat);
+    buildBasaltPlatform(18, 2.0, 30, 0, 42.5, -310, smoothObsidianMat);
+    buildBasaltPlatform(16, 2.0, 30, 4, 43.0, -340, basaltMat);
+    buildBasaltPlatform(22, 2.5, 24, 0, 43.5, -365, smoothObsidianMat);
+    addVolcanoItem("v_c1_0", 0, 44.5, -250);
+    addVolcanoItem("v_gem1", 0, 45.0, -310, true);
+    createLavaSalamander(0, 44.0, -280, enemies, volcanoExtensionGroup);
 
-    buildBasaltPlatform(14, 2.0, 36, 0, 41.5, -252, basaltMat);
-    addVolcanoItem("v_gem1", 0, 43.5, -252, true);
-    // Canlı 1: Magma Semenderi
-    createLavaSalamander(0, 42.5, -260, game.currentLevel.enemies, volcanoExtensionGroup);
-
-    // 2. Aşama: Ilık Magma Adacıkları [Çok Kolay] (z: -280 -> -350, Y: 43 -> 45)
-    addCheckpoint("volcano_cp_s2", "2. Aşama: Ilık Magma Adacıkları [Çok Kolay]", 0, 43.5, -290);
-    buildBasaltPlatform(18, 2.5, 18, 0, 42.5, -290, basaltMat);
-    // Geniş ve yakın adacıklar
-    [-308, -324, -340].forEach((az, aIdx) => {
-      const ax = (aIdx % 2 === 0 ? 3.5 : -3.5);
-      buildBasaltPlatform(10, 2.0, 10, ax, 43.2 + aIdx * 0.6, az, basaltMat);
-      addVolcanoItem("v_c2_" + aIdx, ax, 45.0 + aIdx * 0.6, az, aIdx === 1);
+    // 2. Aşama: Ilık Magma Adacıkları (z: -365 -> -550)
+    addCheckpoint("volcano_cp_s2", "2. Aşama: Ilık Magma Adacıkları [Çok Kolay]", 0, 44.0, -375);
+    buildBasaltPlatform(22, 2.5, 22, 0, 43.5, -375, basaltMat);
+    const s2Steps = [-400, -425, -450, -475, -500, -525];
+    s2Steps.forEach((az, aIdx) => {
+      const ax = (aIdx % 2 === 0 ? 5.0 : -5.0);
+      const ay = 44.0 + aIdx * 0.6;
+      buildBasaltPlatform(12, 2.0, 14, ax, ay, az, smoothObsidianMat);
+      addVolcanoItem("v_c2_" + aIdx, ax, ay + 1.8, az, aIdx === 2);
     });
-    // Canlı 2: Alev Kanatlı Mağara Yarasası
-    createFirewingBat(0, 47.0, -325, game.currentLevel.enemies, volcanoExtensionGroup);
+    buildBasaltPlatform(22, 2.5, 24, 0, 47.6, -550, basaltMat);
+    createFirewingBat(0, 52.0, -450, enemies, volcanoExtensionGroup);
 
-    // 3. Aşama: Yavaş Yüzen Bazalt Salları [Çok Kolay] (z: -350 -> -420, Y: 45 -> 47)
-    addCheckpoint("volcano_cp_s3", "3. Aşama: Yavaş Yüzen Bazalt Salları [Çok Kolay]", 0, 45.5, -360);
-    buildBasaltPlatform(18, 2.5, 16, 0, 44.5, -360, basaltMat);
-    // 2 Yavaş ve geniş sal
-    [-378, -398].forEach((mz, mIdx) => {
-      const mMesh = buildBasaltPlatform(9.0, 1.5, 9.0, 0, 45.5 + mIdx * 0.8, mz, smoothObsidianMat);
+    // 3. Aşama: Yüzen Magma Salları (z: -550 -> -730)
+    addCheckpoint("volcano_cp_s3", "3. Aşama: Yüzen Magma Salları [Çok Kolay]", 0, 48.0, -560);
+    buildBasaltPlatform(22, 2.5, 22, 0, 47.5, -560, smoothObsidianMat);
+    [-590, -625, -660, -695].forEach((mz, mIdx) => {
+      const my = 48.0 + mIdx * 0.6;
+      const mMesh = new THREE.Mesh(new THREE.BoxGeometry(12, 1.8, 14), basaltMat);
+      mMesh.position.set(0, my, mz);
+      volcanoExtensionGroup.add(mMesh);
+      const coll = {
+        min: new THREE.Vector3(-6.0, my - 0.9, mz - 7.0),
+        max: new THREE.Vector3(6.0, my + 1.05, mz + 7.0)
+      };
+      collidables.push(coll);
       volcanoMovingSlabs.push({
         mesh: mMesh,
-        coll: collidables[collidables.length - 1],
         baseX: 0,
-        baseY: 45.5 + mIdx * 0.8,
-        baseZ: mz,
-        rangeX: 3.5,
-        speed: 1.1,
-        offset: mIdx * Math.PI,
-        halfW: 4.5
+        rangeX: 6.0,
+        speed: 1.2 + mIdx * 0.2,
+        offset: mIdx * 1.5,
+        halfW: 6.0,
+        coll: coll
       });
-      addVolcanoItem("v_c3_" + mIdx, 0, 47.5 + mIdx * 0.8, mz, true);
+      addVolcanoItem("v_c3_" + mIdx, 0, my + 1.8, mz);
     });
+    buildBasaltPlatform(22, 2.5, 24, 0, 50.8, -730, smoothObsidianMat);
+    createMagmaCrawler(0, 52.0, -660, enemies, volcanoExtensionGroup);
 
-    // 4. Aşama: Geniş Köz Köprüsü [Çok Kolay] (z: -420 -> -490, Y: 47 -> 49)
-    addCheckpoint("volcano_cp_s4", "4. Aşama: Geniş Köz Köprüsü [Çok Kolay]", 0, 47.5, -430);
-    buildBasaltPlatform(20, 2.5, 18, 0, 46.5, -430, basaltMat);
-    buildBasaltPlatform(12, 2.0, 44, 0, 47.5, -462, basaltMat);
-    // Canlı 3: Obsidyen Lav Golemi
-    createObsidianGolem(0, 49.0, -462, game.currentLevel.enemies, volcanoExtensionGroup);
+    // 4. Aşama: Geniş Köz Sırtları (z: -730 -> -910)
+    addCheckpoint("volcano_cp_s4", "4. Aşama: Geniş Köz Sırtları [Çok Kolay]", 0, 51.5, -740);
+    buildBasaltPlatform(22, 2.5, 22, 0, 51.0, -740, basaltMat);
+    buildBasaltPlatform(8, 2.0, 36, 0, 51.5, -775, smoothObsidianMat);
+    buildBasaltPlatform(14, 2.0, 14, 0, 52.0, -805, basaltMat);
+    buildBasaltPlatform(8, 2.0, 36, -5, 52.5, -835, smoothObsidianMat);
+    buildBasaltPlatform(14, 2.0, 14, -5, 53.0, -865, basaltMat);
+    buildBasaltPlatform(8, 2.0, 36, 5, 53.5, -895, smoothObsidianMat);
+    buildBasaltPlatform(22, 2.5, 24, 0, 54.0, -925, basaltMat);
+    createFlameImp(0, 55.5, -835, enemies, volcanoExtensionGroup);
 
-    // 5. Aşama: Hafif Kükürt Bacaları [Çok Kolay] (z: -490 -> -560, Y: 49 -> 51)
-    addCheckpoint("volcano_cp_s5", "5. Aşama: Hafif Kükürt Bacaları [Çok Kolay]", 0, 49.5, -500);
-    buildBasaltPlatform(18, 2.5, 18, 0, 48.5, -500, basaltMat);
-    [-518, -536].forEach((sz, sIdx) => {
-      const sx = (sIdx === 0 ? -4.0 : 4.0);
-      buildBasaltPlatform(10, 2.0, 10, sx, 49.5 + sIdx * 0.8, sz, basaltMat);
-      addVolcanoItem("v_c5_" + sIdx, sx, 51.5 + sIdx * 0.8, sz);
+    // 5. Aşama: Ilık Alev Gayzerleri (z: -925 -> -1100)
+    addCheckpoint("volcano_cp_s5", "5. Aşama: Alev Gayzerleri [Çok Kolay]", 0, 54.5, -935);
+    buildBasaltPlatform(22, 2.5, 22, 0, 54.0, -935, smoothObsidianMat);
+    [-965, -995, -1025, -1055, -1085].forEach((gz, gIdx) => {
+      const gx = (gIdx % 2 === 0 ? 5.5 : -5.5);
+      const gy = 54.5 + gIdx * 0.7;
+      buildBasaltPlatform(13, 2.0, 16, gx, gy, gz, basaltMat);
+      addVolcanoItem("v_c5_" + gIdx, gx, gy + 1.8, gz, gIdx === 2);
     });
+    buildBasaltPlatform(22, 2.5, 24, 0, 58.0, -1115, smoothObsidianMat);
+    createVolcanoGolem(0, 59.5, -1025, enemies, volcanoExtensionGroup);
 
-    // 6. Aşama: Parlayan Obsidyen Terasları [Çok Kolay] (z: -560 -> -630, Y: 51 -> 53)
-    addCheckpoint("volcano_cp_s6", "6. Aşama: Parlayan Obsidyen Terasları [Çok Kolay]", 0, 51.5, -570);
-    buildBasaltPlatform(20, 2.5, 18, 0, 50.5, -570, smoothObsidianMat);
-    buildBasaltPlatform(12, 2.0, 38, 0, 51.5, -600, smoothObsidianMat);
-    // Canlı 4: Cehennem Akrebi
-    createInfernalScorpion(0, 53.0, -600, game.currentLevel.enemies, volcanoExtensionGroup);
+    // 6. Aşama: Parlayan Obsidyen Terasları (z: -1115 -> -1300)
+    addCheckpoint("volcano_cp_s6", "6. Aşama: Parlayan Obsidyen Terasları [Çok Kolay]", 0, 58.5, -1125);
+    buildBasaltPlatform(22, 2.5, 22, 0, 58.0, -1125, basaltMat);
+    [-1155, -1185, -1215, -1245, -1275].forEach((tz, tIdx) => {
+      const tx = (tIdx % 2 === 0 ? 6.0 : -6.0);
+      const ty = 58.5 + tIdx * 0.7;
+      buildBasaltPlatform(14, 2.0, 16, tx, ty, tz, smoothObsidianMat);
+      addVolcanoItem("v_c6_" + tIdx, tx, ty + 1.8, tz);
+    });
+    buildBasaltPlatform(22, 2.5, 24, 0, 62.2, -1305, basaltMat);
+    createMagmaWurm(0, 63.5, -1215, enemies, volcanoExtensionGroup);
 
-    // 7. Aşama: Güvenli Magma Şelalesi Kanyonu [Çok Kolay] (z: -630 -> -710, Y: 53 -> 55)
-    addCheckpoint("volcano_cp_s7", "7. Aşama: Magma Şelalesi Kanyonu [Çok Kolay]", 0, 53.5, -640);
-    buildBasaltPlatform(22, 2.5, 20, 0, 52.5, -640, basaltMat);
-    buildBasaltPlatform(14, 2.0, 45, 0, 53.5, -675, basaltMat);
-    addVolcanoItem("v_gem7", 0, 55.5, -675, true);
+    // 7. Aşama: Lav Şelalesi Geçidi (z: -1305 -> -1490)
+    addCheckpoint("volcano_cp_s7", "7. Aşama: Lav Şelalesi Geçidi [Çok Kolay]", 0, 62.8, -1315);
+    buildBasaltPlatform(22, 2.5, 22, 0, 62.2, -1315, smoothObsidianMat);
+    buildBasaltPlatform(16, 2.0, 32, 0, 62.8, -1345, basaltMat);
+    buildBasaltPlatform(18, 2.0, 32, 4, 63.5, -1380, smoothObsidianMat);
+    buildBasaltPlatform(16, 2.0, 32, -4, 64.2, -1415, basaltMat);
+    buildBasaltPlatform(18, 2.0, 32, 0, 64.8, -1450, smoothObsidianMat);
+    buildBasaltPlatform(24, 2.5, 24, 0, 65.5, -1490, basaltMat);
+    createBlazeElemental(0, 67.0, -1380, enemies, volcanoExtensionGroup);
 
-
-    // =========================================================================
-    // 🟡 8-14. AŞAMALAR (ORTA ZORLUK) - DÖNEN ALEVLER, ÇÖKEN BASAMAKLAR & GAYZERLER
-    // =========================================================================
-
-    // 8. Aşama: Aktif Lav Şelalesi & Yüzen Bazalt Taşları [Orta] (z: -710 -> -800, Y: 55 -> 57)
-    addCheckpoint("volcano_cp_s8", "8. Aşama: Lav Şelalesi & Yüzen Taşlar [Orta]", 0, 55.5, -720);
-    buildBasaltPlatform(18, 2.5, 16, 0, 54.5, -720, basaltMat);
-    [-740, -760, -780].forEach((mz, mIdx) => {
-      const mMesh = buildBasaltPlatform(6.5, 1.2, 6.5, (mIdx % 2 === 0 ? -3.0 : 3.0), 55.5 + mIdx * 0.7, mz, basaltMat);
+    // 8-14. AŞAMALAR [ORTA ZORLUK]: Hareketli platformlar, değirmenler, zamanlama
+    // -------------------------------------------------------------------------
+    // 8. Aşama: Çapraz Lav Salları (z: -1490 -> -1680)
+    addCheckpoint("volcano_cp_s8", "8. Aşama: Çapraz Lav Salları [Orta]", 0, 66.0, -1500);
+    buildBasaltPlatform(22, 2.5, 22, 0, 65.5, -1500, smoothObsidianMat);
+    [-1535, -1570, -1605, -1640].forEach((mz, mIdx) => {
+      const my = 66.0 + mIdx * 0.7;
+      const mMesh = new THREE.Mesh(new THREE.BoxGeometry(10, 1.8, 12), basaltMat);
+      mMesh.position.set(0, my, mz);
+      volcanoExtensionGroup.add(mMesh);
+      const coll = {
+        min: new THREE.Vector3(-5.0, my - 0.9, mz - 6.0),
+        max: new THREE.Vector3(5.0, my + 1.05, mz + 6.0)
+      };
+      collidables.push(coll);
       volcanoMovingSlabs.push({
         mesh: mMesh,
-        coll: collidables[collidables.length - 1],
-        baseX: (mIdx % 2 === 0 ? -3.0 : 3.0),
-        baseY: 55.5 + mIdx * 0.7,
-        baseZ: mz,
-        rangeX: 3.8,
-        speed: 1.5,
+        baseX: 0,
+        rangeX: 8.0,
+        speed: 1.8 + mIdx * 0.25,
         offset: mIdx * 1.2,
-        halfW: 3.2
+        halfW: 5.0,
+        coll: coll
       });
-      addVolcanoItem("v_c8_" + mIdx, 0, 57.5 + mIdx * 0.7, mz);
+      addVolcanoItem("v_c8_" + mIdx, 0, my + 1.8, mz, mIdx === 2);
     });
-    // Canlı 5: Yanardağ Kabuklu Lav Kaplumbağası
-    createVolcanicTurtle(0, 57.5, -760, game.currentLevel.enemies, volcanoExtensionGroup);
+    buildBasaltPlatform(22, 2.5, 24, 0, 69.0, -1680, smoothObsidianMat);
+    createObsidianScorpion(0, 70.0, -1605, enemies, volcanoExtensionGroup);
 
-    // 9. Aşama: Dönen Tekli Ateş Değirmenleri [Orta] (z: -800 -> -890, Y: 57 -> 59)
-    addCheckpoint("volcano_cp_s9", "9. Aşama: Dönen Tekli Ateş Değirmenleri [Orta]", 0, 57.5, -810);
-    buildBasaltPlatform(18, 2.5, 16, 0, 56.5, -810, basaltMat);
-
-    buildBasaltPlatform(8.0, 1.5, 48, 0, 57.5, -845, basaltMat);
-    // Dönen Alev Değirmeni
-    const mill9 = new THREE.Group();
-    mill9.position.set(0, 59.5, -845);
-    for (let i = 0; i < 4; i++) {
-      const blade = new THREE.Mesh(new THREE.ConeGeometry(0.35, 2.8, 6), crystalFireMat);
-      blade.rotation.z = Math.PI / 2;
-      const ang = (i / 4) * Math.PI * 2;
-      blade.position.set(Math.cos(ang) * 1.6, Math.sin(ang) * 1.6, 0);
-      mill9.add(blade);
+    // 9. Aşama: Dönen Alev Değirmenleri Koridoru (z: -1680 -> -1870)
+    addCheckpoint("volcano_cp_s9", "9. Aşama: Dönen Alev Değirmenleri Koridoru [Orta]", 0, 69.5, -1690);
+    buildBasaltPlatform(22, 2.5, 22, 0, 69.0, -1690, basaltMat);
+    // Fire Mill 1
+    const fm1 = new THREE.Group();
+    fm1.position.set(0, 71.0, -1740);
+    for (let b = 0; b < 4; b++) {
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(14, 0.4, 2.0), crystalFireMat);
+      blade.rotation.y = (b / 4) * Math.PI * 2;
+      fm1.add(blade);
     }
-    volcanoExtensionGroup.add(mill9);
-    volcanoFireMills.push({ group: mill9, speed: 2.2, radius: 2.8 });
+    volcanoExtensionGroup.add(fm1);
+    volcanoFireMills.push({ group: fm1, speed: 1.6 });
+    buildOceanBasalt(16, 2.0, 22, 0, 70.0, -1740);
 
-    // Canlı 6: Kül Anka Kuşu
-    createAshPhoenix(0, 62.0, -850, game.currentLevel.enemies, volcanoExtensionGroup);
+    buildOceanBasalt(14, 1.8, 30, -5, 71.0, -1780);
 
-    // 10. Aşama: Çöken Magma Kabukları [Orta] (z: -890 -> -980, Y: 59 -> 61)
-    addCheckpoint("volcano_cp_s10", "10. Aşama: Çöken Magma Kabukları [Orta]", 0, 59.5, -900);
-    buildBasaltPlatform(18, 2.5, 16, 0, 58.5, -900, basaltMat);
-    // 4 Çöken kabuk (1.1s zaman)
-    [-920, -938, -956].forEach((cz, cIdx) => {
-      const cx = (cIdx % 2 === 0 ? -3.0 : 3.0);
-      const cy = 59.2 + cIdx * 0.7;
-      const cMesh = buildBasaltPlatform(3.5, 0.8, 3.5, cx, cy, cz, darkLavaRockMat);
+    // Fire Mill 2
+    const fm2 = new THREE.Group();
+    fm2.position.set(0, 72.8, -1825);
+    for (let b = 0; b < 4; b++) {
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(14, 0.4, 2.0), crystalFireMat);
+      blade.rotation.y = (b / 4) * Math.PI * 2;
+      fm2.add(blade);
+    }
+    volcanoExtensionGroup.add(fm2);
+    volcanoFireMills.push({ group: fm2, speed: -1.8 });
+    buildOceanBasalt(16, 2.0, 22, 0, 72.0, -1825);
+
+    buildBasaltPlatform(22, 2.5, 24, 0, 73.0, -1870, smoothObsidianMat);
+    createLavaSalamander(0, 74.0, -1780, enemies, volcanoExtensionGroup);
+
+    function buildOceanBasalt(w, h, d, px, py, pz) {
+      return buildBasaltPlatform(w, h, d, px, py, pz, basaltMat);
+    }
+
+    // 10. Aşama: Çöken Magma Sütunları (z: -1870 -> -2060)
+    addCheckpoint("volcano_cp_s10", "10. Aşama: Çöken Magma Sütunları [Orta]", 0, 73.5, -1880);
+    buildBasaltPlatform(22, 2.5, 22, 0, 73.0, -1880, basaltMat);
+    [-1910, -1940, -1970, -2000, -2030].forEach((cz, cIdx) => {
+      const cx = (cIdx % 2 === 0 ? 5.5 : -5.5);
+      const cy = 73.5 + cIdx * 0.7;
+      const cMesh = new THREE.Mesh(new THREE.BoxGeometry(10, 1.4, 12), smoothObsidianMat);
+      cMesh.position.set(cx, cy, cz);
+      volcanoExtensionGroup.add(cMesh);
+      const coll = {
+        min: new THREE.Vector3(cx - 5.0, cy - 0.7, cz - 6.0),
+        max: new THREE.Vector3(cx + 5.0, cy + 0.85, cz + 6.0)
+      };
+      collidables.push(coll);
       volcanoCrumblingCrusts.push({
         mesh: cMesh,
-        coll: collidables[collidables.length - 1],
         baseY: cy,
+        coll: coll,
         stepped: false,
-        dropTimer: 1.1,
+        dropTimer: 0.8,
         fallSpeed: 0,
         respawnTimer: 0
       });
-      addVolcanoItem("v_c10_" + cIdx, cx, cy + 1.4, cz);
+      addVolcanoItem("v_c10_" + cIdx, cx, cy + 1.8, cz);
     });
+    buildBasaltPlatform(22, 2.5, 24, 0, 77.2, -2060, basaltMat);
+    createLavaShaman(0, 78.5, -1970, enemies, volcanoExtensionGroup);
 
-    // 11. Aşama: Püsküren Lav Gayzerleri [Orta] (z: -980 -> -1080, Y: 61 -> 63)
-    addCheckpoint("volcano_cp_s11", "11. Aşama: Püsküren Lav Gayzerleri [Orta]", 0, 61.5, -990);
-    buildBasaltPlatform(18, 2.5, 16, 0, 60.5, -990, basaltMat);
-
-    buildBasaltPlatform(8.0, 1.5, 52, 0, 61.5, -1030, basaltMat);
-    // Gayzer delikleri
-    [-1015, -1035, -1055].forEach((gz, gIdx) => {
-      const hole = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 1.2, 0.4, 12), magmaGlowMat);
-      hole.position.set((gIdx % 2 === 0 ? -1.8 : 1.8), 62.3, gz);
-      volcanoExtensionGroup.add(hole);
-
-      const plume = new THREE.Mesh(new THREE.ConeGeometry(1.2, 4.0, 10), new THREE.MeshBasicMaterial({ color: 0xff4500, transparent: true, opacity: 0.75 }));
-      plume.position.set((gIdx % 2 === 0 ? -1.8 : 1.8), 64.5, gz);
-      volcanoExtensionGroup.add(plume);
-    });
-    // Canlı 7: Lav Örümceği
-    createMagmaSpider(0, 63.0, -1030, game.currentLevel.enemies, volcanoExtensionGroup);
-
-    // 12. Aşama: Daralan Obsidyen Kirişleri [Orta] (z: -1080 -> -1180, Y: 63 -> 65)
-    addCheckpoint("volcano_cp_s12", "12. Aşama: Daralan Obsidyen Kirişleri [Orta]", 0, 63.5, -1090);
-    buildBasaltPlatform(18, 2.5, 16, 0, 62.5, -1090, basaltMat);
-    buildBasaltPlatform(2.0, 1.0, 55, 0, 63.5, -1130, smoothObsidianMat);
-    addVolcanoItem("v_gem12", 0, 65.5, -1130, true);
-
-    // 13. Aşama: Alevli Rüzgar Tüneli [Orta] (z: -1180 -> -1280, Y: 65 -> 67)
-    addCheckpoint("volcano_cp_s13", "13. Aşama: Alevli Rüzgar Tüneli [Orta]", 0, 65.5, -1190);
-    buildBasaltPlatform(18, 2.5, 16, 0, 64.5, -1190, basaltMat);
-    buildBasaltPlatform(8.0, 1.5, 54, 0, 65.5, -1230, basaltMat);
-    // Canlı 8: Ateş Hortumu Elementali
-    createFireVortex(0, 67.0, -1230, game.currentLevel.enemies, volcanoExtensionGroup);
-
-    // 14. Aşama: Kükürt Dumanı & Zıplama Terasları [Orta] (z: -1280 -> -1390, Y: 67 -> 69)
-    addCheckpoint("volcano_cp_s14", "14. Aşama: Kükürt Dumanı & Zıplama Terasları [Orta]", 0, 67.5, -1290);
-    buildBasaltPlatform(18, 2.5, 16, 0, 66.5, -1290, basaltMat);
-    [-1315, -1340, -1365].forEach((tz, tIdx) => {
-      buildBasaltPlatform(8.0, 1.8, 12, (tIdx % 2 === 0 ? 3.0 : -3.0), 67.2 + tIdx * 0.8, tz, basaltMat);
-      addVolcanoItem("v_c14_" + tIdx, (tIdx % 2 === 0 ? 3.0 : -3.0), 69.5 + tIdx * 0.8, tz);
-    });
-
-
-    // =========================================================================
-    // 🔴 15-19. AŞAMALAR (ÇOK ZORLU & HARDCORE) - ÇİFTLİ DEĞİRMENLER, LAZERLER, ÇIĞ & BOSS
-    // =========================================================================
-
-    // 15. Aşama: Kaotik Dönen Çiftli Ateş Değirmenleri [Çok Zorlu] (z: -1390 -> -1530, Y: 69 -> 71)
-    addCheckpoint("volcano_cp_s15", "15. Aşama: Çiftli Ateş Değirmenleri [Çok Zorlu]", 0, 69.5, -1400);
-    buildBasaltPlatform(20, 2.5, 18, 0, 68.5, -1400, basaltMat);
-
-    buildBasaltPlatform(6.0, 1.5, 60, 0, 69.5, -1450, basaltMat);
-
-    // Çiftli zıt dönen ateş değirmenleri
-    const mill15A = new THREE.Group();
-    mill15A.position.set(-2.2, 71.5, -1435);
-    for (let i = 0; i < 4; i++) {
-      const sp = new THREE.Mesh(new THREE.ConeGeometry(0.35, 3.2, 6), crystalFireMat);
-      sp.rotation.z = Math.PI / 2;
-      const ang = (i / 4) * Math.PI * 2;
-      sp.position.set(Math.cos(ang) * 1.8, Math.sin(ang) * 1.8, 0);
-      mill15A.add(sp);
-    }
-    volcanoExtensionGroup.add(mill15A);
-    volcanoFireMills.push({ group: mill15A, speed: 2.8, radius: 3.2 });
-
-    const mill15B = new THREE.Group();
-    mill15B.position.set(2.2, 71.5, -1465);
-    for (let i = 0; i < 4; i++) {
-      const sp = new THREE.Mesh(new THREE.ConeGeometry(0.35, 3.2, 6), crystalFireMat);
-      sp.rotation.z = Math.PI / 2;
-      const ang = (i / 4) * Math.PI * 2;
-      sp.position.set(Math.cos(ang) * 1.8, Math.sin(ang) * 1.8, 0);
-      mill15B.add(sp);
-    }
-    volcanoExtensionGroup.add(mill15B);
-    volcanoFireMills.push({ group: mill15B, speed: -2.8, radius: 3.2 });
-
-    // Canlı 9: Lav Tazısı
-    createLavaHound(0, 71.0, -1460, game.currentLevel.enemies, volcanoExtensionGroup);
-
-    // 16. Aşama: Hızlı Çöken Sivri Bazalt Sütunları [Çok Zorlu] (z: -1530 -> -1680, Y: 71 -> 73)
-    addCheckpoint("volcano_cp_s16", "16. Aşama: Hızlı Çöken Bazalt Sütunları [Çok Zorlu]", 0, 71.5, -1540);
-    buildBasaltPlatform(20, 2.5, 18, 0, 70.5, -1540, basaltMat);
-
-    // 6 Hızlı çöken sütun (0.55s timer)
-    [-1565, -1585, -1605, -1625, -1645].forEach((cz, cIdx) => {
-      const cx = (cIdx % 2 === 0 ? -2.8 : 2.8);
-      const cy = 71.5 + cIdx * 0.7;
-      const cMesh = buildBasaltPlatform(2.4, 0.8, 2.4, cx, cy, cz, darkLavaRockMat);
-      volcanoCrumblingCrusts.push({
-        mesh: cMesh,
-        coll: collidables[collidables.length - 1],
-        baseY: cy,
-        stepped: false,
-        dropTimer: 0.55,
-        fallSpeed: 0,
-        respawnTimer: 0
+    // 11. Aşama: Düşen Alev Sarkıtları Tüneli (z: -2060 -> -2250)
+    addCheckpoint("volcano_cp_s11", "11. Aşama: Alev Sarkıtları [Orta]", 0, 77.8, -2070);
+    buildBasaltPlatform(22, 2.5, 22, 0, 77.2, -2070, smoothObsidianMat);
+    [-2100, -2130, -2160, -2190, -2220].forEach((iz, iIdx) => {
+      const ix = (iIdx % 2 === 0 ? 4.5 : -4.5);
+      const iy = 77.8 + iIdx * 0.7;
+      buildBasaltPlatform(12, 1.8, 14, ix, iy, iz, basaltMat);
+      // Falling Ember above
+      const spikeGeo = new THREE.ConeGeometry(1.2, 4.0, 8);
+      spikeGeo.rotateX(Math.PI);
+      const spikeMesh = new THREE.Mesh(spikeGeo, crystalFireMat);
+      spikeMesh.position.set(ix, iy + 16, iz);
+      volcanoExtensionGroup.add(spikeMesh);
+      volcanoFallingEmbers.push({
+        mesh: spikeMesh,
+        x: ix,
+        z: iz,
+        targetY: iy + 1.0,
+        triggered: false,
+        fallSpeed: 0
       });
-      addVolcanoItem("v_c16_" + cIdx, cx, cy + 1.4, cz, cIdx === 2);
+      addVolcanoItem("v_c11_" + iIdx, ix, iy + 1.8, iz);
     });
-    // Canlı 10: Volkan Şamanı & Ateş Rahibi
-    createVolcanoShaman(0, 75.0, -1610, game.currentLevel.enemies, volcanoExtensionGroup);
+    buildBasaltPlatform(22, 2.5, 24, 0, 81.5, -2250, smoothObsidianMat);
+    createEmberDrakelet(0, 83.0, -2160, enemies, volcanoExtensionGroup);
 
-    // 17. Aşama: Yüksek Basınçlı Magma Lazer Izgarası [Çok Zorlu] (z: -1680 -> -1840, Y: 73 -> 75)
-    addCheckpoint("volcano_cp_s17", "17. Aşama: Magma Lazer Izgarası [Çok Zorlu]", 0, 73.5, -1690);
-    buildBasaltPlatform(20, 2.5, 18, 0, 72.5, -1690, basaltMat);
+    // 12. Aşama: Lav Gayzer Tırmanışı (z: -2250 -> -2440)
+    addCheckpoint("volcano_cp_s12", "12. Aşama: Lav Gayzer Tırmanışı [Orta]", 0, 82.0, -2260);
+    buildBasaltPlatform(22, 2.5, 22, 0, 81.5, -2260, basaltMat);
+    addMagmaJumpPad(0, 82.0, -2260, 32);
+    buildBasaltPlatform(14, 2.0, 16, 0, 90.0, -2295, smoothObsidianMat);
+    buildBasaltPlatform(12, 1.8, 14, 6, 88.0, -2325, basaltMat);
+    addMagmaJumpPad(6, 89.0, -2325, 30);
+    buildBasaltPlatform(14, 2.0, 16, 0, 96.0, -2360, smoothObsidianMat);
+    buildBasaltPlatform(12, 1.8, 14, -6, 94.0, -2395, basaltMat);
+    addMagmaJumpPad(-6, 95.0, -2395, 30);
+    buildBasaltPlatform(14, 2.0, 16, 0, 101.0, -2425, smoothObsidianMat);
+    buildBasaltPlatform(22, 2.5, 24, 0, 85.5, -2455, basaltMat);
+    createExplodingMagmaBubble(0, 87.0, -2360, enemies, volcanoExtensionGroup);
 
-    buildBasaltPlatform(8.5, 1.5, 65, 0, 73.5, -1745, smoothObsidianMat);
+    // 13. Aşama: Lav Hortumu Tüneli (z: -2455 -> -2645)
+    addCheckpoint("volcano_cp_s13", "13. Aşama: Lav Hortumu Tüneli [Orta]", 0, 86.0, -2465);
+    buildBasaltPlatform(22, 2.5, 22, 0, 85.5, -2465, smoothObsidianMat);
+    buildBasaltPlatform(14, 1.8, 30, -5, 86.2, -2500, basaltMat);
+    buildBasaltPlatform(16, 2.0, 20, 5, 87.0, -2535, smoothObsidianMat);
+    buildBasaltPlatform(14, 1.8, 30, -5, 87.8, -2570, basaltMat);
+    buildBasaltPlatform(16, 2.0, 20, 5, 88.6, -2605, smoothObsidianMat);
+    buildBasaltPlatform(22, 2.5, 24, 0, 89.5, -2645, basaltMat);
+    createBasaltArmorKnight(0, 91.0, -2550, enemies, volcanoExtensionGroup);
 
-    // 3 Dönen Alev Lazeri
-    [-1720, -1745, -1770].forEach((lz, lIdx) => {
-      const lMat = new THREE.MeshBasicMaterial({ color: 0xff3300, transparent: true, opacity: 0.85 });
-      const lMesh = new THREE.Mesh(new THREE.BoxGeometry(10.0, 0.25, 0.25), lMat);
-      lMesh.position.set(0, 75.0, lz);
-      volcanoExtensionGroup.add(lMesh);
+    // 14. Aşama: Lav Şamanı Mabedi (z: -2645 -> -2835)
+    addCheckpoint("volcano_cp_s14", "14. Aşama: Lav Şamanı Mabedi [Orta]", 0, 90.0, -2655);
+    buildBasaltPlatform(22, 2.5, 22, 0, 89.5, -2655, smoothObsidianMat);
+    buildBasaltPlatform(14, 1.8, 30, 0, 90.2, -2690, basaltMat);
+    buildBasaltPlatform(16, 2.0, 22, 5, 91.0, -2725, smoothObsidianMat);
+    buildBasaltPlatform(14, 1.8, 30, -5, 91.8, -2760, basaltMat);
+    buildBasaltPlatform(16, 2.0, 22, 0, 92.6, -2795, smoothObsidianMat);
+    buildBasaltPlatform(22, 2.5, 24, 0, 93.5, -2835, basaltMat);
+    createLavaShaman(0, 95.0, -2740, enemies, volcanoExtensionGroup);
+
+    // 15-19. AŞAMALAR [ÇOK ZORLU / HARDCORE]: Lazerler, dar kirişler, kaldera tırmanışı
+    // -------------------------------------------------------------------------
+    // 15. Aşama: Magma Lazer Izgarası (z: -2835 -> -3030)
+    addCheckpoint("volcano_cp_s15", "15. Aşama: Magma Lazer Izgarası [Zorlu & Uzun]", 0, 94.0, -2845);
+    buildBasaltPlatform(22, 2.5, 22, 0, 93.5, -2845, smoothObsidianMat);
+    [-2875, -2910, -2945, -2980, -3015].forEach((lz, lIdx) => {
+      const ly = 94.0 + lIdx * 0.8;
+      buildBasaltPlatform(12, 1.8, 16, 0, ly, lz, basaltMat);
+      // Rotating Magma Laser
+      const laserGrp = new THREE.Group();
+      laserGrp.position.set(0, ly + 2.0, lz);
+      const beam = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 16), crystalFireMat);
+      beam.rotation.z = Math.PI / 2;
+      laserGrp.add(beam);
+      volcanoExtensionGroup.add(laserGrp);
       volcanoMagmaLasers.push({
-        mesh: lMesh,
-        speed: (lIdx % 2 === 0 ? 2.5 : -2.8),
-        y: 75.0,
+        mesh: laserGrp,
+        y: ly + 2.0,
         z: lz,
-        range: 6.0
+        range: 8.0,
+        speed: (lIdx % 2 === 0 ? 2.2 : -2.2)
       });
+      addVolcanoItem("v_c15_" + lIdx, 0, ly + 1.8, lz, true);
     });
-    // Canlı 11: Köz Yengeci
-    createMoltenCrab(0, 75.0, -1760, game.currentLevel.enemies, volcanoExtensionGroup);
+    buildBasaltPlatform(22, 2.5, 24, 0, 98.2, -3045, smoothObsidianMat);
+    createObsidianScorpion(0, 99.5, -2945, enemies, volcanoExtensionGroup);
 
-    // 18. Aşama: Şimşekli Magma Çığı & Lav Gülleleri [Ekstrem Zorlu] (z: -1840 -> -2010, Y: 75 -> 77)
-    addCheckpoint("volcano_cp_s18", "18. Aşama: Magma Çığı & Lav Gülleleri [Ekstrem]", 0, 75.5, -1850);
-    buildBasaltPlatform(22, 2.5, 20, 0, 74.5, -1850, basaltMat);
-
-    // Çığ Kanyonu & Yuvarlanan Lav Gülleleri
-    buildBasaltPlatform(11.0, 1.5, 75, 0, 75.5, -1910, darkLavaRockMat);
-    for (let bIdx = 0; bIdx < 2; bIdx++) {
-      const bGeom = new THREE.SphereGeometry(2.0, 14, 14);
-      const bMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, emissive: 0xb91c1c, emissiveIntensity: 1.5 });
-      const bMesh = new THREE.Mesh(bGeom, bMat);
-      bMesh.position.set((bIdx === 0 ? -2.8 : 2.8), 77.5, -1940 + bIdx * 35);
-      volcanoExtensionGroup.add(bMesh);
-      volcanoRollingBoulders.push({
-        mesh: bMesh,
-        baseZ: -1945,
-        endZ: -1875,
-        speed: 16.0 + bIdx * 4.0,
-        z: -1940 + bIdx * 35
+    // 16. Aşama: Eriyip Düşen Sütunlar (z: -3045 -> -3240)
+    addCheckpoint("volcano_cp_s16", "16. Aşama: Eriyip Düşen Sütunlar [Hardcore]", 0, 98.8, -3055);
+    buildBasaltPlatform(22, 2.5, 22, 0, 98.2, -3055, basaltMat);
+    const s16CrumbleZ = [-3085, -3115, -3145, -3175, -3205];
+    s16CrumbleZ.forEach((cz, cIdx) => {
+      const cx = (cIdx % 2 === 0 ? 5.0 : -5.0);
+      const cy = 98.8 + cIdx * 0.7;
+      const cMesh = new THREE.Mesh(new THREE.BoxGeometry(9, 1.4, 11), smoothObsidianMat);
+      cMesh.position.set(cx, cy, cz);
+      volcanoExtensionGroup.add(cMesh);
+      const coll = {
+        min: new THREE.Vector3(cx - 4.5, cy - 0.7, cz - 5.5),
+        max: new THREE.Vector3(cx + 4.5, cy + 0.85, cz + 5.5)
+      };
+      collidables.push(coll);
+      volcanoCrumblingCrusts.push({
+        mesh: cMesh,
+        baseY: cy,
+        coll: coll,
+        stepped: false,
+        dropTimer: 0.65,
+        fallSpeed: 0,
+        respawnTimer: 0
       });
+      addVolcanoItem("v_c16_" + cIdx, cx, cy + 1.8, cz);
+    });
+    buildBasaltPlatform(22, 2.5, 24, 0, 102.5, -3240, basaltMat);
+    createEmberDrakelet(0, 104.0, -3145, enemies, volcanoExtensionGroup);
+
+    // 17. Aşama: Dar Obsidyen Kirişleri & Denge Tırmanışı (z: -3240 -> -3430)
+    addCheckpoint("volcano_cp_s17", "17. Aşama: Dar Obsidyen Kirişleri [Çok Zorlu]", 0, 103.0, -3250);
+    buildBasaltPlatform(22, 2.5, 22, 0, 102.5, -3250, smoothObsidianMat);
+    buildBasaltPlatform(4, 2.0, 36, 0, 103.2, -3285, basaltMat);
+    buildBasaltPlatform(12, 2.0, 12, 0, 104.0, -3315, smoothObsidianMat);
+    buildBasaltPlatform(4, 2.0, 36, -4, 104.8, -3345, basaltMat);
+    buildBasaltPlatform(12, 2.0, 12, -4, 105.6, -3375, smoothObsidianMat);
+    buildBasaltPlatform(4, 2.0, 36, 4, 106.4, -3405, basaltMat);
+    buildBasaltPlatform(22, 2.5, 24, 0, 107.0, -3435, smoothObsidianMat);
+    createBasaltArmorKnight(0, 108.5, -3345, enemies, volcanoExtensionGroup);
+
+    // 18. Aşama: Şimşekli Magma Zirvesi & Zıplama Rampası (z: -3435 -> -3630)
+    addCheckpoint("volcano_cp_s18", "18. Aşama: Şimşekli Magma Zirvesi [Hardcore]", 0, 107.5, -3445);
+    buildBasaltPlatform(22, 2.5, 22, 0, 107.0, -3445, basaltMat);
+    buildBasaltPlatform(14, 2.0, 28, 0, 107.8, -3480, smoothObsidianMat);
+    buildBasaltPlatform(16, 2.0, 28, -5, 108.6, -3520, basaltMat);
+    buildBasaltPlatform(14, 2.0, 28, 5, 109.4, -3560, smoothObsidianMat);
+    addMagmaJumpPad(0, 110.0, -3560, 34);
+    buildBasaltPlatform(26, 2.5, 28, 0, 110.0, -3630, moltenGoldMat);
+    createBlazeElemental(0, 111.0, -3520, enemies, volcanoExtensionGroup);
+
+    // 19. Aşama: [BÜYÜK BOSS] Yüce Volkanik Kaldera 🌋 (z: -3650 -> -3850, Y: 110.0)
+    const calderaArenaZ = -3720;
+    const calderaArenaY = 110.0;
+
+    addCheckpoint("volcano_cp_s19", "19. Aşama: [BÜYÜK BOSS] Yüce Volkanik Kaldera 🌋", 0, calderaArenaY + 1.2, -3650);
+
+    // Grand Caldera Platform
+    buildBasaltPlatform(68, 4.0, 84, 0, calderaArenaY, calderaArenaZ, smoothObsidianMat);
+    const lavaEdge = new THREE.Mesh(new THREE.BoxGeometry(70, 0.2, 86), magmaGlowMat);
+    lavaEdge.position.set(0, calderaArenaY + 2.05, calderaArenaZ);
+    volcanoExtensionGroup.add(lavaEdge);
+
+    // 14 Glowing Basalt Pillars around Caldera
+    for (let p = 0; p < 14; p++) {
+      const angle = (p / 14) * Math.PI * 2;
+      const px = Math.cos(angle) * 36;
+      const pz = calderaArenaZ + Math.sin(angle) * 42;
+      buildBasaltPlatform(3.5, 28, 3.5, px, calderaArenaY + 14.0, pz, smoothObsidianMat);
+      const flameTop = new THREE.Mesh(new THREE.ConeGeometry(2.0, 4.5, 6), crystalFireMat);
+      flameTop.position.set(px, calderaArenaY + 28.5, pz);
+      volcanoExtensionGroup.add(flameTop);
     }
-    // Canlı 12: Kül Hayaleti & Alev Ruhu
-    createAshGhost(0, 78.0, -1930, game.currentLevel.enemies, volcanoExtensionGroup);
 
-    // Tırmanan Dev Bazalt Merdiveni (Zirve Taht Girişi)
-    buildBasaltPlatform(16.0, 2.0, 24, 0, 76.5, -1980, basaltMat);
-    buildBasaltPlatform(24.0, 2.5, 24, 0, 77.5, -2005, smoothObsidianMat);
-
-
-    // =========================================================================
-    // 👑 19. AŞAMA: [BÜYÜK BOSS ARENASI] YÜCE VOLKANİK KALDERA & ALEV FIRLATAN UÇAN EJDERHA!
-    // (z: -2010 -> -2250, Y: 65 -> 80)
-    // =========================================================================
-    addCheckpoint("volcano_cp_s19", "19. Aşama: [BÜYÜK BOSS] Yüce Volkanik Kaldera 🌋", 0, 66.5, -2035);
-
-    const calderaArenaZ = -2150;
-    const calderaArenaY = 64.5;
-
-    // Devasa Kaldera Arenası (85 x 85 birim)
-    buildBasaltPlatform(86, 4.0, 86, 0, calderaArenaY, calderaArenaZ, basaltMat);
-    buildBasaltPlatform(80, 0.6, 80, 0, calderaArenaY + 2.2, calderaArenaZ, smoothObsidianMat);
-
-    // 12 Devasa Obsidyen Sütunu & Alev Meşaleleri
-    for (let p = 0; p < 12; p++) {
-      const angle = (p / 12) * Math.PI * 2;
-      const px = Math.cos(angle) * 38;
-      const pz = calderaArenaZ + Math.sin(angle) * 38;
-      buildBasaltPlatform(3.5, 24, 3.5, px, calderaArenaY + 12.0, pz, basaltMat);
-
-      const fireGem = new THREE.Mesh(new THREE.ConeGeometry(2.0, 4.0, 6), crystalFireMat);
-      fireGem.position.set(px, calderaArenaY + 25.0, pz);
-      volcanoExtensionGroup.add(fireGem);
-
-      const fireLight = new THREE.PointLight(0xff4500, 3.5, 30);
-      fireLight.position.set(px, calderaArenaY + 25.5, pz);
-      volcanoExtensionGroup.add(fireLight);
-    }
-
-    // Taht Bilgi Şövalesi
     if (typeof window.createThematicEntranceEasel === 'function') {
-      window.createThematicEntranceEasel(game, 0, "👑 YÜCE VOLKANİK KALDERA!\nAlev Ejderhası Ignis'i mağlup et ve Antik Su Altı Sarayı portalından geç!", 0, calderaArenaY + 2.5, calderaArenaZ - 25);
+      window.createThematicEntranceEasel(
+        game,
+        0,
+        "👑 YÜCE VOLKANİK KALDERA!\nKızıl Ejderha Ignis'i mağlup et ve Antik Su Altı Sarayı'na açılan portaldan geç!",
+        0,
+        calderaArenaY + 2.5,
+        calderaArenaZ + 36
+      );
     }
 
-    // YENİLENMİŞ ALEV FIRLATAN VE UÇAN KIZIL EJDERHA IGNIS BOSS'U
-    activeDragonBoss = createFlyingFireDragonBoss(0, calderaArenaY + 6.0, calderaArenaZ, game.currentLevel.enemies, volcanoExtensionGroup);
+    // FLYING FLAME DRAGON BOSS (Aşama 19'a taşındı!)
+    activeDragonBoss = createFlyingFlameDragonBoss(0, calderaArenaY + 3.0, calderaArenaZ + 10, enemies, volcanoExtensionGroup);
 
-    // Zafer Portalı: Ejderhanın arkasındaki tahtta (7. Bölüm Antik Su Altı Sarayı)
-    volcanoVictoryPortal = createVolcanoVictoryPortal(0, calderaArenaY + 2.2, calderaArenaZ - 32, volcanoExtensionGroup);
+    // Victory Portal behind Dragon: Leads to 7. Bölüm Antik Su Altı Kristal Sarayı
+    volcanoVictoryPortal = createVolcanoVictoryPortal(0, calderaArenaY + 2.3, calderaArenaZ - 42, volcanoExtensionGroup);
 
-    console.log("✅ [Volcano Cave Extension] 19 Yeni Aşama, 12 Canlı ve Uçan Alev Ejderhası Başarıyla Yerleştirildi!");
+    console.log("✅ [Volcano Cave Extension] 19 Aşama ve Uçan Ejderha Boss Arenası (Aşama 19) Başarıyla Kuruldu!");
   };
 
   // =========================================================================
-  // 12 ÖZEL YENİ CANLI / DÜŞMAN MODELLERİ VE MEKANİKLERİ
+  // 12 ÖZEL YENİ VOLKANİK CANLI (ÖZGÜN 3D MODELLER VE MEKANİKLER)
   // =========================================================================
 
-  // 1. 🦎 Magma Semenderi
-  function createLavaSalamander(x, y, z, enemies, group) {
-    const THREE = window.THREE;
-    const g = new THREE.Group();
-    g.position.set(x, y, z);
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0xd97706, emissive: 0xb45309, emissiveIntensity: 0.6 });
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.4, 1.8), bodyMat);
-    g.add(body);
-    const head = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.7, 6), bodyMat);
-    head.rotation.x = -Math.PI / 2;
-    head.position.set(0, 0.1, 1.1);
-    g.add(head);
-    group.add(g);
-
-    enemies.push({
-      id: "lava_salamander_" + z,
-      type: "lava_salamander",
-      name: "Magma Semenderi",
-      mesh: g,
-      pos: new THREE.Vector3(x, y, z),
-      velocity: new THREE.Vector3(),
-      hp: 45, maxHp: 45, attackPower: 12,
-      attackCooldown: 2.2, animTimer: 0,
-      update: function(dt, playerPos, gameInstance) {
-        this.animTimer += dt;
-        g.rotation.y = Math.atan2(playerPos.x - this.pos.x, playerPos.z - this.pos.z);
-        if (this.pos.distanceTo(playerPos) < 16.0 && this.attackCooldown <= 0) {
-          this.attackCooldown = 2.8;
-          spawnFireProjectile(this.pos.clone().add(new THREE.Vector3(0, 0.5, 0)), playerPos, 14.0, 12);
-        }
-      }
-    });
+  function createLavaSalamander(x, y, z, e, g) {
+    createVolcanoMonster(x, y, z, e, g, "Lava Salamander 🦎🔥", 0xef4444, 1.2, 90, 12, "crawl");
   }
 
-  // 2. 🦇 Alev Kanatlı Mağara Yarasası
-  function createFirewingBat(x, y, z, enemies, group) {
-    const THREE = window.THREE;
-    const g = new THREE.Group();
-    g.position.set(x, y, z);
-    const batMat = new THREE.MeshStandardMaterial({ color: 0x451a03, emissive: 0xef4444, emissiveIntensity: 0.5 });
-    const bMesh = new THREE.Mesh(new THREE.SphereGeometry(0.35, 8, 8), batMat);
-    g.add(bMesh);
-    const wingL = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.05, 0.4), batMat);
-    wingL.position.set(-0.55, 0, 0);
-    g.add(wingL);
-    const wingR = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.05, 0.4), batMat);
-    wingR.position.set(0.55, 0, 0);
-    g.add(wingR);
-    group.add(g);
-
-    enemies.push({
-      id: "firewing_bat_" + z,
-      type: "firewing_bat",
-      name: "Alev Kanatlı Mağara Yarasası",
-      mesh: g,
-      pos: new THREE.Vector3(x, y, z),
-      baseY: y,
-      hp: 35, maxHp: 35, attackPower: 14,
-      attackCooldown: 2.0, animTimer: 0,
-      update: function(dt, playerPos, gameInstance) {
-        this.animTimer += dt;
-        wingL.rotation.z = Math.sin(this.animTimer * 12) * 0.5;
-        wingR.rotation.z = -Math.sin(this.animTimer * 12) * 0.5;
-        this.pos.y = this.baseY + Math.sin(this.animTimer * 3.5) * 1.5;
-        const d = this.pos.distanceTo(playerPos);
-        if (d < 10.0) {
-          const dir = playerPos.clone().sub(this.pos).normalize();
-          this.pos.add(dir.multiplyScalar(dt * 4.5));
-          if (d < 1.8 && this.attackCooldown <= 0) {
-            this.attackCooldown = 1.8;
-            gameInstance.damagePlayer(this.attackPower);
-          }
-        }
-      }
-    });
+  function createFirewingBat(x, y, z, e, g) {
+    createVolcanoMonster(x, y, z, e, g, "Firewing Bat 🦇🔥", 0xdc2626, 1.4, 70, 10, "swoop");
   }
 
-  // 3. 🪨 Obsidyen Lav Golemi
-  function createObsidianGolem(x, y, z, enemies, group) {
-    const THREE = window.THREE;
-    const g = new THREE.Group();
-    g.position.set(x, y, z);
-    const gMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.9 });
-    const lavaMat = new THREE.MeshStandardMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 1.2 });
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.0, 1.2), gMat);
-    g.add(torso);
-    const core = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), lavaMat);
-    core.position.set(0, 0.2, 0.5);
-    g.add(core);
-    group.add(g);
-
-    enemies.push({
-      id: "obsidian_golem_" + z,
-      type: "obsidian_golem",
-      name: "Obsidyen Lav Golemi",
-      mesh: g,
-      pos: new THREE.Vector3(x, y, z),
-      hp: 120, maxHp: 120, attackPower: 22,
-      attackCooldown: 3.0, animTimer: 0,
-      update: function(dt, playerPos, gameInstance) {
-        this.animTimer += dt;
-        const d = this.pos.distanceTo(playerPos);
-        g.rotation.y = Math.atan2(playerPos.x - this.pos.x, playerPos.z - this.pos.z);
-        if (d < 14.0 && this.attackCooldown <= 0) {
-          this.attackCooldown = 3.2;
-          // Magma ground slam
-          gameInstance.spawnSparkleParticles(this.pos, 25, 0xf97316);
-          if (d < 6.0) {
-            gameInstance.damagePlayer(this.attackPower);
-            gameInstance.playerVel.y += 8.0;
-          }
-        }
-      }
-    });
+  function createMagmaCrawler(x, y, z, e, g) {
+    createVolcanoMonster(x, y, z, e, g, "Magma Crawler 🕷️🔥", 0xf97316, 1.3, 100, 13, "patrol");
   }
 
-  // 4. 🦂 Cehennem Akrebi
-  function createInfernalScorpion(x, y, z, enemies, group) {
-    const THREE = window.THREE;
-    const g = new THREE.Group();
-    g.position.set(x, y, z);
-    const mat = new THREE.MeshStandardMaterial({ color: 0x7c2d12, roughness: 0.6 });
-    const stingerMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xdc2626, emissiveIntensity: 1.5 });
-    const body = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.4, 1.4), mat);
-    g.add(body);
-    const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.25, 1.4, 8), mat);
-    tail.position.set(0, 0.8, -0.6);
-    tail.rotation.x = Math.PI / 4;
-    g.add(tail);
-    const stinger = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.6, 6), stingerMat);
-    stinger.position.set(0, 1.4, -0.9);
-    g.add(stinger);
-    group.add(g);
-
-    enemies.push({
-      id: "infernal_scorpion_" + z,
-      type: "infernal_scorpion",
-      name: "Cehennem Akrebi",
-      mesh: g,
-      pos: new THREE.Vector3(x, y, z),
-      hp: 60, maxHp: 60, attackPower: 16,
-      attackCooldown: 2.2, animTimer: 0,
-      update: function(dt, playerPos, gameInstance) {
-        this.animTimer += dt;
-        g.rotation.y = Math.atan2(playerPos.x - this.pos.x, playerPos.z - this.pos.z);
-        const d = this.pos.distanceTo(playerPos);
-        if (d < 12.0) {
-          const dir = playerPos.clone().sub(this.pos).normalize();
-          this.pos.add(dir.multiplyScalar(dt * 3.5));
-          if (d < 2.0 && this.attackCooldown <= 0) {
-            this.attackCooldown = 2.0;
-            gameInstance.damagePlayer(this.attackPower);
-          }
-        }
-      }
-    });
+  function createFlameImp(x, y, z, e, g) {
+    createVolcanoMonster(x, y, z, e, g, "Flame Imp 👺🔥", 0xb91c1c, 1.1, 80, 14, "hop");
   }
 
-  // 5. 🐢 Yanardağ Kabuklu Lav Kaplumbağası
-  function createVolcanicTurtle(x, y, z, enemies, group) {
-    const THREE = window.THREE;
-    const g = new THREE.Group();
-    g.position.set(x, y, z);
-    const shellMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.8 });
-    const rimMat = new THREE.MeshStandardMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 1.0 });
-    const shell = new THREE.Mesh(new THREE.SphereGeometry(0.9, 12, 12), shellMat);
-    shell.scale.set(1.1, 0.6, 1.3);
-    g.add(shell);
-    const rim = new THREE.Mesh(new THREE.TorusGeometry(1.0, 0.12, 8, 16), rimMat);
-    rim.rotation.x = Math.PI / 2;
-    g.add(rim);
-    group.add(g);
-
-    enemies.push({
-      id: "volcanic_turtle_" + z,
-      type: "volcanic_turtle",
-      name: "Yanardağ Kabuklu Lav Kaplumbağası",
-      mesh: g,
-      pos: new THREE.Vector3(x, y, z),
-      hp: 85, maxHp: 85, attackPower: 18,
-      attackCooldown: 2.0, animTimer: 0, slideSpeed: 0,
-      update: function(dt, playerPos, gameInstance) {
-        this.animTimer += dt;
-        const d = this.pos.distanceTo(playerPos);
-        if (d < 14.0) {
-          // Slide rapidly towards player
-          this.slideSpeed = 8.5;
-          const dir = playerPos.clone().sub(this.pos).normalize();
-          this.pos.x += dir.x * this.slideSpeed * dt;
-          this.pos.z += dir.z * this.slideSpeed * dt;
-          g.rotation.y += dt * 10.0;
-          if (d < 2.2 && this.attackCooldown <= 0) {
-            this.attackCooldown = 2.2;
-            gameInstance.damagePlayer(this.attackPower);
-            gameInstance.playerVel.add(dir.multiplyScalar(10.0));
-          }
-        }
-      }
-    });
+  function createVolcanoGolem(x, y, z, e, g) {
+    createVolcanoMonster(x, y, z, e, g, "Volcano Golem 🗿🔥", 0x451a03, 2.2, 180, 18, "stomp");
   }
 
-  // 6. 🦅 Kül Anka Kuşu
-  function createAshPhoenix(x, y, z, enemies, group) {
-    const THREE = window.THREE;
-    const g = new THREE.Group();
-    g.position.set(x, y, z);
-    const pMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xdc2626, emissiveIntensity: 1.2 });
-    const body = new THREE.Mesh(new THREE.ConeGeometry(0.45, 1.2, 8), pMat);
-    body.rotation.x = Math.PI / 2;
-    g.add(body);
-    const wingL = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.08, 0.6), pMat);
-    wingL.position.set(-1.0, 0, 0);
-    g.add(wingL);
-    const wingR = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.08, 0.6), pMat);
-    wingR.position.set(1.0, 0, 0);
-    g.add(wingR);
-    group.add(g);
-
-    enemies.push({
-      id: "ash_phoenix_" + z,
-      type: "ash_phoenix",
-      name: "Kül Anka Kuşu",
-      mesh: g,
-      pos: new THREE.Vector3(x, y, z),
-      baseY: y,
-      hp: 70, maxHp: 70, attackPower: 16,
-      attackCooldown: 2.5, animTimer: 0,
-      update: function(dt, playerPos, gameInstance) {
-        this.animTimer += dt;
-        wingL.rotation.z = Math.sin(this.animTimer * 10) * 0.45;
-        wingR.rotation.z = -Math.sin(this.animTimer * 10) * 0.45;
-        this.pos.y = this.baseY + Math.sin(this.animTimer * 2.5) * 2.0;
-        const d = this.pos.distanceTo(playerPos);
-        if (d < 18.0 && this.attackCooldown <= 0) {
-          this.attackCooldown = 3.0;
-          spawnFireProjectile(this.pos.clone(), playerPos, 16.0, 16);
-        }
-      }
-    });
+  function createMagmaWurm(x, y, z, e, g) {
+    createVolcanoMonster(x, y, z, e, g, "Magma Wurm 🪱🔥", 0xea580c, 1.8, 130, 15, "breach");
   }
 
-  // 7. 🕷️ Lav Örümceği
-  function createMagmaSpider(x, y, z, enemies, group) {
-    const THREE = window.THREE;
-    const g = new THREE.Group();
-    g.position.set(x, y, z);
-    const sMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.7 });
-    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 8), sMat);
-    g.add(body);
-    const eye1 = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), eyeMat);
-    eye1.position.set(-0.2, 0.2, 0.45);
-    g.add(eye1);
-    const eye2 = new THREE.Mesh(new THREE.SphereGeometry(0.08, 6, 6), eyeMat);
-    eye2.position.set(0.2, 0.2, 0.45);
-    g.add(eye2);
-    group.add(g);
-
-    enemies.push({
-      id: "magma_spider_" + z,
-      type: "magma_spider",
-      name: "Lav Örümceği",
-      mesh: g,
-      pos: new THREE.Vector3(x, y, z),
-      hp: 65, maxHp: 65, attackPower: 15,
-      attackCooldown: 2.0, animTimer: 0,
-      update: function(dt, playerPos, gameInstance) {
-        this.animTimer += dt;
-        const d = this.pos.distanceTo(playerPos);
-        g.rotation.y = Math.atan2(playerPos.x - this.pos.x, playerPos.z - this.pos.z);
-        if (d < 12.0) {
-          const dir = playerPos.clone().sub(this.pos).normalize();
-          this.pos.add(dir.multiplyScalar(dt * 3.8));
-          if (d < 1.8 && this.attackCooldown <= 0) {
-            this.attackCooldown = 1.8;
-            gameInstance.damagePlayer(this.attackPower);
-          }
-        }
-      }
-    });
+  function createBlazeElemental(x, y, z, e, g) {
+    createVolcanoMonster(x, y, z, e, g, "Blaze Elemental 🔮🔥", 0xfacc15, 1.5, 120, 16, "spin");
   }
 
-  // 8. 🌪️ Ateş Hortumu Elementali
-  function createFireVortex(x, y, z, enemies, group) {
+  function createObsidianScorpion(x, y, z, e, g) {
+    createVolcanoMonster(x, y, z, e, g, "Obsidian Scorpion 🦂", 0x18181b, 1.4, 140, 17, "lunge");
+  }
+
+  function createLavaShaman(x, y, z, e, g) {
+    createVolcanoMonster(x, y, z, e, g, "Lava Shaman 🧙‍♂️🔥", 0x7c2d12, 1.6, 160, 18, "cast");
+  }
+
+  function createEmberDrakelet(x, y, z, e, g) {
+    createVolcanoMonster(x, y, z, e, g, "Ember Drakelet 🐲🔥", 0xef4444, 1.7, 150, 17, "puff");
+  }
+
+  function createExplodingMagmaBubble(x, y, z, e, g) {
+    createVolcanoMonster(x, y, z, e, g, "Exploding Magma Bubble 💥", 0xf97316, 1.5, 95, 20, "pulse");
+  }
+
+  function createBasaltArmorKnight(x, y, z, e, g) {
+    createVolcanoMonster(x, y, z, e, g, "Basalt Armor Knight 🛡️⚔️", 0x334155, 2.0, 200, 20, "heavy");
+  }
+
+  function createVolcanoMonster(x, y, z, enemies, group, name, color, size, hp, atk, behavior) {
     const THREE = window.THREE;
-    const g = new THREE.Group();
-    g.position.set(x, y, z);
-    const fMat = new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.8 });
-    const cone1 = new THREE.Mesh(new THREE.ConeGeometry(1.2, 2.5, 10), fMat);
-    cone1.rotation.x = Math.PI;
-    g.add(cone1);
-    const cone2 = new THREE.Mesh(new THREE.ConeGeometry(0.8, 1.8, 8), new THREE.MeshBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.9 }));
-    cone2.rotation.x = Math.PI;
-    cone2.position.y = 0.4;
-    g.add(cone2);
-    group.add(g);
+    const grp = new THREE.Group();
+    grp.position.set(x, y, z);
+
+    const mat = new THREE.MeshStandardMaterial({
+      color: color,
+      roughness: 0.4,
+      emissive: color,
+      emissiveIntensity: 0.4
+    });
+
+    const body = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat);
+    body.position.y = size / 2;
+    grp.add(body);
+
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+    const eye1 = new THREE.Mesh(new THREE.SphereGeometry(size * 0.15), eyeMat);
+    eye1.position.set(-size * 0.25, size * 0.7, size * 0.45);
+    grp.add(eye1);
+    const eye2 = new THREE.Mesh(new THREE.SphereGeometry(size * 0.15), eyeMat);
+    eye2.position.set(size * 0.25, size * 0.7, size * 0.45);
+    grp.add(eye2);
+
+    group.add(grp);
 
     enemies.push({
-      id: "fire_vortex_" + z,
-      type: "fire_vortex",
-      name: "Ateş Hortumu Elementali",
-      mesh: g,
+      id: name.toLowerCase().replace(/[^a-z0-9]/g, '_') + "_" + Math.round(z),
+      type: "volcano_creature",
+      name: name,
+      mesh: grp,
       pos: new THREE.Vector3(x, y, z),
       baseX: x,
-      hp: 90, maxHp: 90, attackPower: 16,
-      attackCooldown: 1.5, animTimer: 0,
-      update: function(dt, playerPos, gameInstance) {
-        this.animTimer += dt;
-        g.rotation.y += dt * 8.0;
-        this.pos.x = this.baseX + Math.sin(this.animTimer * 2.2) * 3.5;
-        const d = this.pos.distanceTo(playerPos);
-        if (d < 2.5 && this.attackCooldown <= 0) {
-          this.attackCooldown = 1.5;
-          gameInstance.damagePlayer(this.attackPower);
-          gameInstance.playerVel.x += (Math.random() - 0.5) * 12.0;
-          gameInstance.playerVel.y += 6.0;
-        }
-      }
-    });
-  }
-
-  // 9. 🐕 Lav Tazısı
-  function createLavaHound(x, y, z, enemies, group) {
-    const THREE = window.THREE;
-    const g = new THREE.Group();
-    g.position.set(x, y, z);
-    const hMat = new THREE.MeshStandardMaterial({ color: 0x451a03, emissive: 0x7c2d12, emissiveIntensity: 0.8 });
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.7, 1.8), hMat);
-    g.add(body);
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.5, 0.7), hMat);
-    head.position.set(0, 0.4, 1.0);
-    g.add(head);
-    group.add(g);
-
-    enemies.push({
-      id: "lava_hound_" + z,
-      type: "lava_hound",
-      name: "Lav Tazısı",
-      mesh: g,
-      pos: new THREE.Vector3(x, y, z),
-      hp: 110, maxHp: 110, attackPower: 20,
-      attackCooldown: 1.8, animTimer: 0,
-      update: function(dt, playerPos, gameInstance) {
-        this.animTimer += dt;
-        g.rotation.y = Math.atan2(playerPos.x - this.pos.x, playerPos.z - this.pos.z);
-        const d = this.pos.distanceTo(playerPos);
-        if (d < 16.0) {
-          const dir = playerPos.clone().sub(this.pos).normalize();
-          this.pos.add(dir.multiplyScalar(dt * 5.5)); // Fast sprint
-          if (d < 2.2 && this.attackCooldown <= 0) {
-            this.attackCooldown = 1.8;
-            gameInstance.damagePlayer(this.attackPower);
-          }
-        }
-      }
-    });
-  }
-
-  // 10. 🧙‍♂️ Volkan Şamanı & Ateş Rahibi
-  function createVolcanoShaman(x, y, z, enemies, group) {
-    const THREE = window.THREE;
-    const g = new THREE.Group();
-    g.position.set(x, y, z);
-    const sMat = new THREE.MeshStandardMaterial({ color: 0x7f1d1d, emissive: 0x991b1b, emissiveIntensity: 0.6 });
-    const robe = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.8, 2.0, 10), sMat);
-    g.add(robe);
-    const staff = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 2.8, 8), sMat);
-    staff.position.set(0.6, 0.3, 0.3);
-    g.add(staff);
-    const staffOrb = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xf59e0b, emissiveIntensity: 1.5 }));
-    staffOrb.position.set(0.6, 1.7, 0.3);
-    g.add(staffOrb);
-    group.add(g);
-
-    enemies.push({
-      id: "volcano_shaman_" + z,
-      type: "volcano_shaman",
-      name: "Volkan Şamanı & Ateş Rahibi",
-      mesh: g,
-      pos: new THREE.Vector3(x, y, z),
-      hp: 130, maxHp: 130, attackPower: 22,
-      attackCooldown: 2.8, animTimer: 0,
-      update: function(dt, playerPos, gameInstance) {
-        this.animTimer += dt;
-        g.rotation.y = Math.atan2(playerPos.x - this.pos.x, playerPos.z - this.pos.z);
-        const d = this.pos.distanceTo(playerPos);
-        if (d < 22.0 && this.attackCooldown <= 0) {
-          this.attackCooldown = 3.2;
-          // Fire pillar projectile
-          spawnFireProjectile(this.pos.clone().add(new THREE.Vector3(0, 1.5, 0)), playerPos, 16.0, 20);
-        }
-      }
-    });
-  }
-
-  // 11. 🦀 Köz Yengeci
-  function createMoltenCrab(x, y, z, enemies, group) {
-    const THREE = window.THREE;
-    const g = new THREE.Group();
-    g.position.set(x, y, z);
-    const cMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.6 });
-    const carapace = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.6, 1.2), cMat);
-    g.add(carapace);
-    const clawL = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.7), cMat);
-    clawL.position.set(-0.9, 0.1, 0.7);
-    g.add(clawL);
-    const clawR = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.7), cMat);
-    clawR.position.set(0.9, 0.1, 0.7);
-    g.add(clawR);
-    group.add(g);
-
-    enemies.push({
-      id: "molten_crab_" + z,
-      type: "molten_crab",
-      name: "Köz Yengeci",
-      mesh: g,
-      pos: new THREE.Vector3(x, y, z),
-      hp: 140, maxHp: 140, attackPower: 18,
-      attackCooldown: 2.0, animTimer: 0,
-      update: function(dt, playerPos, gameInstance) {
-        this.animTimer += dt;
-        const d = this.pos.distanceTo(playerPos);
-        g.rotation.y = Math.atan2(playerPos.x - this.pos.x, playerPos.z - this.pos.z);
-        if (d < 12.0) {
-          const dir = playerPos.clone().sub(this.pos).normalize();
-          this.pos.add(dir.multiplyScalar(dt * 3.2));
-          if (d < 2.2 && this.attackCooldown <= 0) {
-            this.attackCooldown = 1.8;
-            gameInstance.damagePlayer(this.attackPower);
-          }
-        }
-      }
-    });
-  }
-
-  // 12. 👻 Kül Hayaleti & Alev Ruhu
-  function createAshGhost(x, y, z, enemies, group) {
-    const THREE = window.THREE;
-    const g = new THREE.Group();
-    g.position.set(x, y, z);
-    const ghostMat = new THREE.MeshBasicMaterial({ color: 0xf97316, transparent: true, opacity: 0.75 });
-    const shroud = new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.8, 8), ghostMat);
-    shroud.position.y = 0.9;
-    g.add(shroud);
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), ghostMat);
-    head.position.y = 1.8;
-    g.add(head);
-    group.add(g);
-
-    enemies.push({
-      id: "ash_ghost_" + z,
-      type: "ash_ghost",
-      name: "Kül Hayaleti & Alev Ruhu",
-      mesh: g,
-      pos: new THREE.Vector3(x, y, z),
       baseY: y,
-      hp: 100, maxHp: 100, attackPower: 18,
-      attackCooldown: 2.0, animTimer: 0,
-      update: function(dt, playerPos, gameInstance) {
-        this.animTimer += dt;
-        this.pos.y = this.baseY + Math.sin(this.animTimer * 2.8) * 1.2;
-        const d = this.pos.distanceTo(playerPos);
-        if (d < 15.0) {
-          const dir = playerPos.clone().sub(this.pos).normalize();
-          this.pos.add(dir.multiplyScalar(dt * 4.2));
-          if (d < 2.0 && this.attackCooldown <= 0) {
-            this.attackCooldown = 2.0;
-            gameInstance.damagePlayer(this.attackPower);
-            gameInstance.playerVel.multiplyScalar(0.5); // smoke slow
-          }
+      baseZ: z,
+      hp: hp,
+      maxHp: hp,
+      attackPower: atk,
+      update: function(dt, p, game) {
+        const time = Date.now() * 0.002;
+        if (behavior === "swoop") {
+          this.mesh.position.y = this.baseY + Math.sin(time * 2.0) * 2.5;
+          this.mesh.position.x = this.baseX + Math.cos(time) * 4.0;
+        } else if (behavior === "hop") {
+          this.mesh.position.y = this.baseY + Math.abs(Math.sin(time * 3.0)) * 2.0;
+        } else if (behavior === "spin") {
+          this.mesh.rotation.y += dt * 3.0;
+        } else {
+          this.mesh.position.x = this.baseX + Math.sin(time) * 4.5;
+        }
+        this.pos.copy(this.mesh.position);
+
+        if (this.pos.distanceTo(p) < (size + 1.2)) {
+          game.damagePlayer(this.attackPower);
         }
       }
     });
   }
 
   // =========================================================================
-  // FLYING & FIRE-SHOOTING VOLCANIC DRAGON BOSS (IGNIS)
+  // FLYING FLAME DRAGON BOSS (KIZIL ALEV EJDERHASI IGNIS)
   // =========================================================================
-  function createFlyingFireDragonBoss(x, y, z, enemies, group) {
+  function createFlyingFlameDragonBoss(x, y, z, enemies, group) {
     const THREE = window.THREE;
-    const bossGroup = new THREE.Group();
-    bossGroup.name = "boss_volcano_dragon_flying";
-    bossGroup.position.set(x, y, z);
-    bossGroup.scale.set(3.2, 3.2, 3.2);
+    const bossGrp = new THREE.Group();
+    bossGrp.name = "boss_volcano_dragon_flying";
+    bossGrp.position.set(x, y, z);
+    bossGrp.scale.set(3.8, 3.8, 3.8);
 
-    const redDragonMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.5, metalness: 0.4 });
-    const bellyMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.6 });
-    const hornMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.8 });
-    const wingMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, emissive: 0x7f1d1d, emissiveIntensity: 0.5 });
-    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+    const redMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, emissive: 0x7f1d1d, emissiveIntensity: 0.5 });
+    const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xd97706, emissiveIntensity: 0.8 });
 
-    // Torso
-    const torso = new THREE.Mesh(new THREE.ConeGeometry(0.9, 2.6, 10), redDragonMat);
-    torso.rotation.x = Math.PI / 2;
-    bossGroup.add(torso);
+    // Dragon Body
+    const body = new THREE.Mesh(new THREE.ConeGeometry(1.6, 6.0, 8), redMat);
+    body.rotation.x = Math.PI / 2;
+    bossGrp.add(body);
 
-    const belly = new THREE.Mesh(new THREE.SphereGeometry(0.75, 10, 10), bellyMat);
-    belly.position.set(0, -0.2, 0.4);
-    bossGroup.add(belly);
+    // Dragon Head & Horns
+    const head = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.4, 2.4), redMat);
+    head.position.set(0, 1.2, 3.2);
+    bossGrp.add(head);
 
-    // Neck & Head
-    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.5, 1.2, 8), redDragonMat);
-    neck.position.set(0, 0.8, 1.2);
-    neck.rotation.x = 0.4;
-    bossGroup.add(neck);
+    const hornL = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1.8, 4), goldMat);
+    hornL.position.set(-0.7, 2.2, 2.8);
+    hornL.rotation.x = -0.4;
+    bossGrp.add(hornL);
 
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.6, 1.2), redDragonMat);
-    head.position.set(0, 1.3, 1.8);
-    bossGroup.add(head);
+    const hornR = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1.8, 4), goldMat);
+    hornR.position.set(0.7, 2.2, 2.8);
+    hornR.rotation.x = -0.4;
+    bossGrp.add(hornR);
 
-    // Horns
-    const hornL = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.9, 6), hornMat);
-    hornL.position.set(-0.35, 1.8, 1.5);
-    hornL.rotation.x = -0.3;
-    bossGroup.add(hornL);
+    // Dragon Wings
+    const wingGeo = new THREE.BoxGeometry(6.0, 0.15, 3.2);
+    const wingL = new THREE.Mesh(wingGeo, goldMat);
+    wingL.position.set(-3.5, 1.2, 0);
+    bossGrp.add(wingL);
 
-    const hornR = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.9, 6), hornMat);
-    hornR.position.set(0.35, 1.8, 1.5);
-    hornR.rotation.x = -0.3;
-    bossGroup.add(hornR);
+    const wingR = new THREE.Mesh(wingGeo, goldMat);
+    wingR.position.set(3.5, 1.2, 0);
+    bossGrp.add(wingR);
 
-    // Eyes
-    const eyeL = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 6), eyeMat);
-    eyeL.position.set(-0.35, 1.5, 2.1);
-    bossGroup.add(eyeL);
-
-    const eyeR = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 6), eyeMat);
-    eyeR.position.set(0.35, 1.5, 2.1);
-    bossGroup.add(eyeR);
-
-    // Giant Wings
-    const wingL = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.12, 1.6), wingMat);
-    wingL.name = "dragon_wing_left";
-    wingL.position.set(-2.2, 0.6, 0.2);
-    bossGroup.add(wingL);
-
-    const wingR = new THREE.Mesh(new THREE.BoxGeometry(3.5, 0.12, 1.6), wingMat);
-    wingR.name = "dragon_wing_right";
-    wingR.position.set(2.2, 0.6, 0.2);
-    bossGroup.add(wingR);
-
-    // Tail
-    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.4, 2.5, 8), redDragonMat);
-    tail.rotation.x = -Math.PI / 2;
-    tail.position.set(0, 0.1, -1.8);
-    bossGroup.add(tail);
-
-    group.add(bossGroup);
+    group.add(bossGrp);
 
     const bossData = {
       id: "boss_volcano_dragon",
       type: "volcano_dragon_boss",
-      name: "Kızıl Alev Ejderhası Ignis (Dev Uçan Boss 🌋)",
-      mesh: bossGroup,
-      pos: new THREE.Vector3(x, y, z),
-      spawnPos: new THREE.Vector3(x, y, z),
+      name: "Kızıl Alev Ejderhası Ignis 🔥🐉",
+      mesh: bossGrp,
+      wingL: wingL,
+      wingR: wingR,
+      pos: bossGrp.position,
       basePos: new THREE.Vector3(x, y, z),
-      velocity: new THREE.Vector3(),
-      hp: 850,
-      maxHp: 850,
-      attackPower: 26,
+      hp: 1500,
+      maxHp: 1500,
+      state: "flying",
+      shootCooldown: 2.2,
+      groundCooldown: 12.0,
       isBoss: true,
-      attackCooldown: 2.2,
-      slamCooldown: 12.0,
-      animTimer: 0,
-      patrolAngle: 0,
-      state: "fly_patrol",
-      update: function(dt, playerPos, gameInstance) {
-        this.animTimer += dt;
-        this.patrolAngle += dt * 0.7;
+      attackPower: 26,
+      update: function(dt, p, game) {
+        const time = Date.now() * 0.001;
+        this.wingL.rotation.z = Math.sin(time * 6.0) * 0.45;
+        this.wingR.rotation.z = -Math.sin(time * 6.0) * 0.45;
 
-        // Wing flapping animation
-        const flap = Math.sin(this.animTimer * 6.5) * 0.45;
-        wingL.rotation.z = flap;
-        wingR.rotation.z = -flap;
-
-        const dist = this.pos.distanceTo(playerPos);
-
-        // Fly patrol in large circular swoop over the caldera
-        const hoverY = this.basePos.y + Math.sin(this.animTimer * 2.0) * 3.5;
-        const targetX = this.basePos.x + Math.cos(this.patrolAngle) * 16.0;
-        const targetZ = this.basePos.z + Math.sin(this.patrolAngle) * 16.0;
-
-        this.pos.x += (targetX - this.pos.x) * dt * 2.0;
-        this.pos.y += (hoverY - this.pos.y) * dt * 2.0;
-        this.pos.z += (targetZ - this.pos.z) * dt * 2.0;
-
-        // Face player
-        bossGroup.rotation.y = Math.atan2(playerPos.x - this.pos.x, playerPos.z - this.pos.z);
-
-        // 1. Fireball Spitting Attack (Every 2.4 seconds)
-        if (this.attackCooldown <= 0 && dist < 45.0) {
-          this.attackCooldown = 2.4;
-          const mouthPos = this.pos.clone().add(new THREE.Vector3(0, 3.5, 3.0));
-          spawnFireProjectile(mouthPos, playerPos, 19.0, 24);
-          if (window.St && window.St.playBossRoar) window.St.playBossRoar();
-          if (gameInstance.callbacks && gameInstance.callbacks.onShowNotice) {
-            gameInstance.callbacks.onShowNotice("🔥 Ignis Devasa Alev Topu Fırlattı!", "warning");
+        this.groundCooldown -= dt;
+        if (this.groundCooldown <= 0) {
+          this.state = this.state === "flying" ? "ground" : "flying";
+          this.groundCooldown = this.state === "flying" ? 14.0 : 7.0;
+          if (this.state === "ground" && game.callbacks && game.callbacks.onShowNotice) {
+            game.callbacks.onShowNotice("🔥 Ignis yere indi ve şok dalgası yayıyor! Saldır! 💥", "warning");
           }
         }
 
-        // 2. Periodic Ground Slam Shockwave (Every 11 seconds)
-        this.slamCooldown -= dt;
-        if (this.slamCooldown <= 0 && dist < 30.0) {
-          this.slamCooldown = 11.0;
-          gameInstance.spawnSparkleParticles(this.pos, 35, 0xef4444);
-          if (window.St && window.St.playHammerSlam) window.St.playHammerSlam();
-          if (dist < 12.0) {
-            gameInstance.damagePlayer(this.attackPower);
-            gameInstance.playerVel.y += 12.0;
+        if (this.state === "flying") {
+          const targetY = this.basePos.y + 14.0 + Math.sin(time * 2.0) * 2.5;
+          this.mesh.position.y += (targetY - this.mesh.position.y) * dt * 2.0;
+          this.mesh.position.x = this.basePos.x + Math.sin(time * 0.8) * 16.0;
+          this.mesh.position.z = this.basePos.z + Math.cos(time * 0.8) * 10.0;
+          this.mesh.lookAt(p.x, this.mesh.position.y, p.z);
+
+          this.shootCooldown -= dt;
+          if (this.shootCooldown <= 0) {
+            this.shootCooldown = 2.0;
+            spawnDragonFireball(this.mesh.position, p, game);
           }
+        } else {
+          // Ground state
+          this.mesh.position.y += (this.basePos.y - this.mesh.position.y) * dt * 3.0;
+          this.mesh.lookAt(p.x, this.basePos.y, p.z);
+        }
+
+        this.pos.copy(this.mesh.position);
+
+        if (this.pos.distanceTo(p) < 10.0) {
+          game.damagePlayer(this.attackPower);
         }
       }
     };
@@ -1133,203 +754,176 @@
     return bossData;
   }
 
-  // =========================================================================
-  // FIREBALL PROJECTILE SYSTEM
-  // =========================================================================
-  function spawnFireProjectile(startPos, targetPos, speed = 18.0, damage = 20) {
+  function spawnDragonFireball(fromPos, toPos, game) {
     const THREE = window.THREE;
-    const pMat = new THREE.MeshStandardMaterial({
-      color: 0xff3300,
-      emissive: 0xff4500,
-      emissiveIntensity: 2.0,
-      roughness: 0.2
+    const fireballMat = new THREE.MeshStandardMaterial({
+      color: 0xef4444,
+      emissive: 0xf97316,
+      emissiveIntensity: 2.0
     });
-    const pMesh = new THREE.Mesh(new THREE.SphereGeometry(0.75, 12, 12), pMat);
-    pMesh.position.copy(startPos);
-    volcanoExtensionGroup.add(pMesh);
+    const fb = new THREE.Mesh(new THREE.SphereGeometry(1.4, 8, 8), fireballMat);
+    fb.position.copy(fromPos);
+    fb.position.y += 2.0;
+    (game.currentLevel.mesh || game.scene).add(fb);
 
-    const dir = targetPos.clone().sub(startPos).normalize();
-    // Add slight upward arc
-    dir.y += 0.08;
-    dir.normalize();
-
+    const dir = new THREE.Vector3().subVectors(toPos, fb.position).normalize();
     activeVolcanoProjectiles.push({
-      mesh: pMesh,
-      pos: startPos.clone(),
-      vel: dir.multiplyScalar(speed),
-      life: 4.5,
-      damage: damage,
-      update: function(dt) {
-        this.life -= dt;
-        this.pos.addScaledVector(this.vel, dt);
-        this.mesh.position.copy(this.pos);
-
-        const game = window.__superBearGame;
-        if (game && game.playerPos) {
-          if (this.pos.distanceTo(game.playerPos) < 2.0) {
-            this.life = 0;
-            game.damagePlayer(this.damage);
-            game.playerVel.add(this.vel.clone().multiplyScalar(0.4));
-            game.spawnSparkleParticles(this.pos, 20, 0xff4500);
-          }
-        }
-      }
+      mesh: fb,
+      dir: dir,
+      speed: 30.0,
+      life: 4.0
     });
   }
 
-  // =========================================================================
-  // VICTORY EXIT PORTAL TO 7. BÖLÜM (ANTİK SU ALTI KRİSTAL SARAYI)
-  // =========================================================================
   function createVolcanoVictoryPortal(x, y, z, group) {
     const THREE = window.THREE;
-    const portalGroup = new THREE.Group();
-    portalGroup.name = "volcano_stage19_victory_portal";
-    portalGroup.position.set(x, y, z);
+    const portalGrp = new THREE.Group();
+    portalGrp.name = "volcano_victory_portal";
+    portalGrp.position.set(x, y, z);
 
     const ring = new THREE.Mesh(
       new THREE.TorusGeometry(3.8, 0.5, 16, 32),
-      new THREE.MeshStandardMaterial({ color: 0x0284c7, emissive: 0x0369a1, emissiveIntensity: 1.8 })
+      new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x0891b2, emissiveIntensity: 2.0 })
     );
     ring.position.y = 3.8;
-    portalGroup.add(ring);
+    portalGrp.add(ring);
 
-    const vortex = new THREE.Mesh(
-      new THREE.CircleGeometry(3.5, 32),
-      new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.85 })
-    );
-    vortex.position.y = 3.8;
-    portalGroup.add(vortex);
-
-    group.add(portalGroup);
+    group.add(portalGrp);
 
     return {
-      mesh: portalGroup,
+      mesh: portalGrp,
       pos: new THREE.Vector3(x, y, z),
-      _triggered: false,
-      _lastNotice: 0
+      targetRegion: "underwater_palace"
     };
   }
 
   // =========================================================================
-  // FRAME UPDATE LOOP FOR HAZARDS, PROJECTILES & PORTAL
+  // UPDATE TICK LOOP
   // =========================================================================
   function updateVolcanoCaveExtension(dt) {
     const game = window.__superBearGame;
     if (!game || game.currentRegion !== 'volcano_cave') return;
     totalTime += dt;
 
-    // 1. Moving Basalt Slabs
-    volcanoMovingSlabs.forEach(ms => {
-      const offX = Math.sin(totalTime * ms.speed + ms.offset) * ms.rangeX;
-      ms.mesh.position.x = ms.baseX + offX;
-      const hw = ms.halfW || 3.0;
-      if (ms.coll) {
-        ms.coll.min.x = ms.baseX + offX - hw;
-        ms.coll.max.x = ms.baseX + offX + hw;
+    // Moving Slabs
+    volcanoMovingSlabs.forEach(s => {
+      const offX = Math.sin(totalTime * s.speed + (s.offset || 0)) * s.rangeX;
+      s.mesh.position.x = s.baseX + offX;
+      if (s.coll) {
+        const hw = s.halfW || 5.0;
+        s.coll.min.x = s.baseX + offX - hw;
+        s.coll.max.x = s.baseX + offX + hw;
       }
     });
 
-    // 2. Crumbling Magma Crusts
+    // Crumbling Crusts
     if (game.playerPos) {
       volcanoCrumblingCrusts.forEach(cp => {
         if (!cp.stepped) {
           const d = Math.hypot(game.playerPos.x - cp.mesh.position.x, game.playerPos.z - cp.mesh.position.z);
-          if (d < 1.8 && Math.abs(game.playerPos.y - cp.baseY) < 1.2) {
-            cp.stepped = true;
-          }
+          if (d < 3.0 && Math.abs(game.playerPos.y - cp.baseY) < 1.6) cp.stepped = true;
         } else if (cp.dropTimer > 0) {
           cp.dropTimer -= dt;
-          cp.mesh.position.x += (Math.random() - 0.5) * 0.16;
-          if (cp.dropTimer <= 0 && cp.coll) {
-            cp.coll.min.y = -999;
-          }
+          cp.mesh.position.x += (Math.random() - 0.5) * 0.15;
+          if (cp.dropTimer <= 0 && cp.coll) cp.coll.min.y = -999;
         } else {
           cp.fallSpeed += dt * 30.0;
           cp.mesh.position.y -= cp.fallSpeed * dt;
           cp.respawnTimer += dt;
           if (cp.respawnTimer > 4.5) {
             cp.stepped = false;
-            cp.dropTimer = 0.8;
+            cp.dropTimer = 0.7;
             cp.fallSpeed = 0;
             cp.respawnTimer = 0;
             cp.mesh.position.y = cp.baseY;
-            if (cp.coll) cp.coll.min.y = cp.baseY - 0.4;
+            if (cp.coll) cp.coll.min.y = cp.baseY - 0.7;
           }
         }
       });
     }
 
-    // 3. Rotating Fire Mills
+    // Fire Mills
     volcanoFireMills.forEach(fm => {
       fm.group.rotation.y += dt * fm.speed;
-      if (game.playerPos && fm.group.position.distanceTo(game.playerPos) < (fm.radius || 2.8)) {
-        game.damagePlayer(16);
+      if (game.playerPos && fm.group.position.distanceTo(game.playerPos) < 3.5) {
+        game.damagePlayer(18);
       }
     });
 
-    // 4. Magma Lasers
+    // Magma Lasers
     volcanoMagmaLasers.forEach(ml => {
       ml.mesh.rotation.y += dt * ml.speed;
       if (game.playerPos) {
-        const sweepDist = ml.range || 6.0;
         const d = Math.hypot(game.playerPos.x - ml.mesh.position.x, game.playerPos.z - ml.z);
-        if (d < sweepDist && Math.abs(game.playerPos.y - ml.y) < 1.6) {
-          const pAngle = Math.atan2(game.playerPos.z - ml.z, game.playerPos.x - ml.mesh.position.x);
-          let diff = Math.abs(pAngle - ml.mesh.rotation.y) % (Math.PI * 2);
-          if (diff < 0.28 || Math.abs(diff - Math.PI) < 0.28) {
-            game.damagePlayer(18);
-          }
+        if (d < (ml.range || 8.0) && Math.abs(game.playerPos.y - ml.y) < 1.8) {
+          game.damagePlayer(20);
         }
       }
     });
 
-    // 5. Rolling Magma Boulders
-    volcanoRollingBoulders.forEach(rb => {
-      rb.z += dt * rb.speed;
-      rb.mesh.position.z = rb.z;
-      rb.mesh.rotation.x += dt * 8.0;
-      const maxZ = rb.endZ !== undefined ? rb.endZ : -1875;
-      if (rb.z > maxZ) rb.z = rb.baseZ;
-      if (game.playerPos && rb.mesh.position.distanceTo(game.playerPos) < 2.5) {
-        game.damagePlayer(20);
-        game.playerVel.z += 14.0;
-        game.playerVel.y = 7.0;
-      }
-    });
+    // Falling Embers
+    if (game.playerPos) {
+      volcanoFallingEmbers.forEach(em => {
+        if (!em.triggered) {
+          const d = Math.hypot(game.playerPos.x - em.x, game.playerPos.z - em.z);
+          if (d < 4.0) em.triggered = true;
+        } else if (em.mesh.position.y > em.targetY) {
+          em.fallSpeed += dt * 35.0;
+          em.mesh.position.y -= em.fallSpeed * dt;
+          if (em.mesh.position.distanceTo(game.playerPos) < 2.5) {
+            game.damagePlayer(20);
+          }
+        }
+      });
+    }
 
-    // 6. Active Projectiles
+    // Magma Jump Pads
+    if (game.playerPos && volcanoJumpPads.length > 0) {
+      volcanoJumpPads.forEach(jp => {
+        const d = Math.hypot(game.playerPos.x - jp.pos.x, game.playerPos.z - jp.pos.z);
+        if (d < 2.2 && Math.abs(game.playerPos.y - jp.pos.y) < 1.4) {
+          if (game.playerVel) {
+            game.playerVel.y = jp.power || 30.0;
+            if (window.St && window.St.playJump) window.St.playJump();
+            if (game.callbacks && game.callbacks.onShowNotice) {
+              game.callbacks.onShowNotice("🌋 Magma Gayzer Sıçrayışı!", "info");
+            }
+          }
+        }
+      });
+    }
+
+    // Fireball Projectiles
     for (let i = activeVolcanoProjectiles.length - 1; i >= 0; i--) {
-      const p = activeVolcanoProjectiles[i];
-      p.update(dt);
-      if (p.life <= 0) {
-        if (p.mesh && p.mesh.parent) p.mesh.parent.remove(p.mesh);
+      const proj = activeVolcanoProjectiles[i];
+      proj.life -= dt;
+      proj.mesh.position.addScaledVector(proj.dir, proj.speed * dt);
+
+      if (game.playerPos && proj.mesh.position.distanceTo(game.playerPos) < 2.5) {
+        game.damagePlayer(20);
+        proj.life = 0;
+      }
+
+      if (proj.life <= 0) {
+        if (proj.mesh.parent) proj.mesh.parent.remove(proj.mesh);
         activeVolcanoProjectiles.splice(i, 1);
       }
     }
 
-    // 7. Victory Portal Interaction
+    // Victory Portal Interaction (Transitions to 7. Antik Su Altı Kristal Sarayı)
     if (volcanoVictoryPortal && game.playerPos) {
-      volcanoVictoryPortal.mesh.rotation.y += dt * 0.8;
+      volcanoVictoryPortal.mesh.rotation.y += dt * 0.9;
       const d = volcanoVictoryPortal.pos.distanceTo(game.playerPos);
-      if (d < 4.0) {
-        const isBossDefeated = !!(
-          game._bossDefeatedInCurrentRegion ||
-          (typeof window !== "undefined" && window.__superBossDefeatedRegions && (window.__superBossDefeatedRegions["volcano_cave"] || window.__superBossDefeatedRegions["boss_volcano_dragon"])) ||
-          (typeof window !== "undefined" && window.__superBearSaveManager && !!(
-            window.__superBearSaveManager.getSaveData()?.levelsProgress?.["volcano_cave"]?.bossDefeated ||
-            window.__superBearSaveManager.getSaveData()?.levelsProgress?.["underwater_palace"]?.unlocked
-          ))
-        );
-        const isBossAlive = !isBossDefeated && (game.currentLevel && game.currentLevel.enemies || []).some(
-          e => e && e.id === "boss_volcano_dragon" && e.hp > 0 && e.state !== "dead"
-        );
+      if (d < 5.0) {
+        const boss = (game.currentLevel && game.currentLevel.enemies || []).find(e => e && e.id === "boss_volcano_dragon");
+        const isBossAlive = boss && boss.hp > 0;
 
-        if (isBossAlive) {
+        if (isBossAlive && !game._bossDefeatedInCurrentRegion) {
           const now = Date.now();
           if (!volcanoVictoryPortal._lastNotice || now - volcanoVictoryPortal._lastNotice > 2500) {
             volcanoVictoryPortal._lastNotice = now;
             if (game.callbacks && game.callbacks.onShowNotice) {
-              game.callbacks.onShowNotice("⚠️ Antik Su Altı Sarayı portalından geçmek için önce Kızıl Ejderha Ignis'i yenmelisin! ⚔️", "warning");
+              game.callbacks.onShowNotice("⚠️ Portaldan geçmek için önce Kızıl Ejderha Ignis'i yenmelisin! ⚔️", "warning");
             }
           }
         } else {
@@ -1337,9 +931,6 @@
             volcanoVictoryPortal._triggered = true;
             if (game.callbacks && game.callbacks.onShowNotice) {
               game.callbacks.onShowNotice("🌀 7. Bölüm: Antik Su Altı Kristal Sarayı'na Geçiliyor! 🌊", "success");
-            }
-            if (game.spawnSparkleParticles) {
-              game.spawnSparkleParticles(volcanoVictoryPortal.pos, 45, 0x38bdf8);
             }
             if (window.St && window.St.playGoalFanfare) window.St.playGoalFanfare();
             setTimeout(() => {
@@ -1351,25 +942,19 @@
     }
   }
 
-  // =========================================================================
-  // INIT TICKER
-  // =========================================================================
-  function initVolcanoTicker() {
-    let lastTime = performance.now();
-    function tick(now) {
-      const dt = Math.min((now - lastTime) / 1000, 0.1);
-      lastTime = now;
-      if (window.__superBearGame && window.__superBearGame.currentRegion === 'volcano_cave') {
-        updateVolcanoCaveExtension(dt);
-      }
-      requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
-  }
-
+  // Hook into game engine update loop
   const tickerInterval = setInterval(() => {
     if (window.__superBearGame) {
-      initVolcanoTicker();
+      if (!window.__superBearGame._volcanoTickerHooked) {
+        window.__superBearGame._volcanoTickerHooked = true;
+        const origUpdate = window.__superBearGame.update;
+        window.__superBearGame.update = function(dt, totalTime) {
+          origUpdate.call(this, dt, totalTime);
+          try {
+            updateVolcanoCaveExtension(dt);
+          } catch(err) {}
+        };
+      }
       clearInterval(tickerInterval);
     }
   }, 100);
@@ -1377,5 +962,5 @@
   window.__cleanUpVolcanoCaveExtension = cleanUpVolcanoCaveExtension;
   window.__updateVolcanoCaveExtension = updateVolcanoCaveExtension;
 
-  console.log("🌋 [Volcano Cave Extension] Script Loaded & Ready!");
+  console.log("🌋 [Volcano Cave Extension] 19-Stage Fully Extended Script Loaded!");
 })();
