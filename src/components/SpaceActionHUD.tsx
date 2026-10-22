@@ -80,6 +80,7 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
   const [isNearInteractable, setIsNearInteractable] = useState(false);
   const [isNearCatMerchant, setIsNearCatMerchant] = useState(false);
   const [isNearArcade, setIsNearArcade] = useState(false);
+  const [isNearDimensionPortal, setIsNearDimensionPortal] = useState(false);
   const [isTopMenuCollapsed, setIsTopMenuCollapsed] = useState(true);
   const [activeTab, setActiveTab] = useState<'powers' | 'emotes' | 'shop' | 'settings'>('powers');
   const [selectedPowerId, setSelectedPowerId] = useState<'teleport' | 'laser' | 'rocket' | 'ground_pound' | 'roll' | 'fish' | 'spray' | 'companion' | 'dance' | 'triple_jump' | 'interact'>('laser');
@@ -221,9 +222,18 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
       setIsPowersRackOpen((prev) => !prev);
     };
 
+    const handleDimensionPortalProximity = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && typeof detail.isNear === 'boolean') {
+        setIsNearDimensionPortal(detail.isNear);
+        if (detail.isNear) setIsNearInteractable(true);
+      }
+    };
+
     window.addEventListener('superbear:interact-proximity', handleInteractProximity);
     window.addEventListener('superbear:cat-merchant-proximity', handleCatMerchantProximity);
     window.addEventListener('superbear:arcade-proximity', handleArcadeProximity);
+    window.addEventListener('superbear:dimension-portal-proximity', handleDimensionPortalProximity);
     window.addEventListener('superbear:open-powers-rack', handleOpenPowersRack);
 
     const handleResetRocket = () => {
@@ -251,6 +261,7 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
       window.removeEventListener('superbear:interact-proximity', handleInteractProximity);
       window.removeEventListener('superbear:cat-merchant-proximity', handleCatMerchantProximity);
       window.removeEventListener('superbear:arcade-proximity', handleArcadeProximity);
+      window.removeEventListener('superbear:dimension-portal-proximity', handleDimensionPortalProximity);
       window.removeEventListener('superbear:open-powers-rack', handleOpenPowersRack);
       window.removeEventListener('superbear:reset-rocket', handleResetRocket);
       window.removeEventListener('superbear:region-changed', handleResetRocket);
@@ -562,6 +573,12 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
         onOpenArcade();
       }
       window.dispatchEvent(new CustomEvent('superbear:open-arcade'));
+      return;
+    }
+
+    // 3. Direct Master Dimension Portal Check
+    if (isNearDimensionPortal) {
+      window.dispatchEvent(new CustomEvent('superbear:open-dimension-portal'));
       return;
     }
 
@@ -1804,17 +1821,19 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
                   safeVibrate(25);
                 }}
                 className={`pointer-events-auto w-14 h-14 rounded-full ${
-                  isNearCatMerchant
+                  isNearDimensionPortal
+                    ? 'bg-gradient-to-tr from-slate-900 via-indigo-900 to-purple-900 text-white border-2 border-white ring-4 ring-white/50 animate-pulse'
+                    : isNearCatMerchant
                     ? 'bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-600 text-slate-950 border-2 border-amber-200 ring-4 ring-amber-400/50 animate-pulse'
                     : isNearArcade
                     ? 'bg-gradient-to-tr from-purple-600 via-pink-500 to-indigo-600 text-white border-2 border-pink-200 ring-4 ring-purple-400/50 animate-pulse'
                     : 'bg-gradient-to-tr from-amber-400 via-yellow-400 to-orange-500 text-slate-950 border-2 border-yellow-100'
                 } shadow-2xl flex flex-col items-center justify-center font-black active:scale-90 transition transform cursor-pointer hover:scale-105 animate-bounce`}
-                title={isNearCatMerchant ? "Bakkal Kedi Dükkanı [E]" : isNearArcade ? "Arcade Oyunları [E]" : "Etkileşim / Konuş [E]"}
+                title={isNearDimensionPortal ? "Kadim Boyut Portalı [E]" : isNearCatMerchant ? "Bakkal Kedi Dükkanı [E]" : isNearArcade ? "Arcade Oyunları [E]" : "Etkileşim / Konuş [E]"}
               >
-                <span className="text-xl leading-none">{isNearCatMerchant ? '🐱' : isNearArcade ? '🕹️' : '💬'}</span>
+                <span className="text-xl leading-none">{isNearDimensionPortal ? '🌀' : isNearCatMerchant ? '🐱' : isNearArcade ? '🕹️' : '💬'}</span>
                 <span className="text-[9px] font-black mt-0.5 tracking-tight">
-                  {isNearCatMerchant ? 'BAKKAL' : isNearArcade ? 'OYUN' : '[E]'}
+                  {isNearDimensionPortal ? 'PORTAL' : isNearCatMerchant ? 'BAKKAL' : isNearArcade ? 'OYUN' : '[E]'}
                 </span>
               </button>
             )}

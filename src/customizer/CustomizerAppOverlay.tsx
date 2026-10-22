@@ -18,8 +18,9 @@ import { LootBoxModal } from '../components/LootBoxModal';
 import { CountryLanguageModal } from '../components/CountryLanguageModal';
 import { OpeningCinematicModal } from '../components/OpeningCinematicModal';
 import { VillageLoreModal } from '../components/VillageLoreModal';
+import { DimensionPortalModal } from '../components/DimensionPortalModal';
 import { useLanguage } from '../i18n/LanguageContext';
-import { ShoppingBag, Gamepad2, Globe } from 'lucide-react';
+import { ShoppingBag, Gamepad2, Globe, Sparkles } from 'lucide-react';
 
 export const CustomizerAppOverlay: React.FC = () => {
   const { language, country, t } = useLanguage();
@@ -34,6 +35,7 @@ export const CustomizerAppOverlay: React.FC = () => {
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [isLootBoxModalOpen, setIsLootBoxModalOpen] = useState(false);
   const [isLanguageModalOpen, setIsLanguageModalOpen] = useState(false);
+  const [isDimensionPortalOpen, setIsDimensionPortalOpen] = useState(false);
   const [isCinematicOpen, setIsCinematicOpen] = useState(() => {
     try {
       return localStorage.getItem('superbear_intro_seen') !== 'true';
@@ -68,6 +70,7 @@ export const CustomizerAppOverlay: React.FC = () => {
 
   const [isNearCatMerchant, setIsNearCatMerchant] = useState(false);
   const [isNearArcade, setIsNearArcade] = useState(false);
+  const [isNearDimensionPortal, setIsNearDimensionPortal] = useState(false);
 
   const [aliensRescued, setAliensRescued] = useState(() => {
     if (typeof window !== 'undefined' && (window as any).__superBearSaveManager) {
@@ -93,6 +96,7 @@ export const CustomizerAppOverlay: React.FC = () => {
     isSaveModalOpen ||
     isLootBoxModalOpen ||
     isLanguageModalOpen ||
+    isDimensionPortalOpen ||
     isCinematicOpen;
 
   useEffect(() => {
@@ -207,6 +211,19 @@ export const CustomizerAppOverlay: React.FC = () => {
     };
     window.addEventListener('superbear:arcade-proximity', handleArcadeProximity);
 
+    const handleDimensionPortalProximity = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && typeof detail.isNear === 'boolean') {
+        setIsNearDimensionPortal(detail.isNear);
+      }
+    };
+    window.addEventListener('superbear:dimension-portal-proximity', handleDimensionPortalProximity);
+
+    const handleOpenDimensionPortal = () => {
+      setIsDimensionPortalOpen(true);
+    };
+    window.addEventListener('superbear:open-dimension-portal', handleOpenDimensionPortal);
+
     const handleSpaceStateUpdate = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail && typeof detail.aliensRescued === 'number') {
@@ -216,6 +233,7 @@ export const CustomizerAppOverlay: React.FC = () => {
     const handleRegionChange = () => {
       setIsNearCatMerchant(false);
       setIsNearArcade(false);
+      setIsNearDimensionPortal(false);
     };
     window.addEventListener('superbear:region-change', handleRegionChange);
     window.addEventListener('superbear:space-state-update', handleSpaceStateUpdate);
@@ -234,6 +252,8 @@ export const CustomizerAppOverlay: React.FC = () => {
           setIsArcadeGamesOpen(true);
         } else if (isNearCatMerchant) {
           setIsCatShopOpen(true);
+        } else if (isNearDimensionPortal) {
+          setIsDimensionPortalOpen(true);
         }
       } else if (e.code === 'KeyC' || e.key === 'c' || e.key === 'C') {
         setIsOpen((prev) => !prev);
@@ -292,11 +312,13 @@ export const CustomizerAppOverlay: React.FC = () => {
       window.removeEventListener('superbear:coins-updated', handleCoinsUpdated);
       window.removeEventListener('superbear:cat-merchant-proximity', handleCatMerchantProximity);
       window.removeEventListener('superbear:arcade-proximity', handleArcadeProximity);
+      window.removeEventListener('superbear:dimension-portal-proximity', handleDimensionPortalProximity);
+      window.removeEventListener('superbear:open-dimension-portal', handleOpenDimensionPortal);
       window.removeEventListener('superbear:space-state-update', handleSpaceStateUpdate);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('superbear:game-ready', handleGameReady);
     };
-  }, [isNearArcade]);
+  }, [isNearArcade, isNearCatMerchant, isNearDimensionPortal]);
 
   const handleApplyDesign = (design: CustomCharacterDesign) => {
     setActiveDesign(design);
@@ -356,7 +378,7 @@ export const CustomizerAppOverlay: React.FC = () => {
       />
 
       {/* Cat Merchant Proximity Interactive Floating Banner */}
-      {!isAnyModalOpen && isNearCatMerchant && !isCatShopOpen && (
+      {!isAnyModalOpen && !isNearDimensionPortal && isNearCatMerchant && !isCatShopOpen && (
         <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[85] pointer-events-auto animate-in slide-in-from-bottom-4 duration-200">
           <button
             onClick={() => setIsCatShopOpen(true)}
@@ -402,6 +424,36 @@ export const CustomizerAppOverlay: React.FC = () => {
           </button>
         </div>
       )}
+
+      {/* Kadim Boyut Portalı Proximity Floating Banner (Aynı Kedi Bakkalı gibi sadece yanına yaklaşınca çıkar!) */}
+      {!isAnyModalOpen && isNearDimensionPortal && !isDimensionPortalOpen && (
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 z-[85] pointer-events-auto animate-in slide-in-from-bottom-4 duration-200">
+          <button
+            onClick={() => setIsDimensionPortalOpen(true)}
+            className="px-5 py-3 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 hover:from-slate-800 hover:to-indigo-900 text-white font-black text-sm border-2 border-white shadow-[0_0_30px_rgba(255,255,255,0.45)] backdrop-blur-md flex items-center gap-3 transition transform active:scale-95 hover:scale-105 cursor-pointer"
+          >
+            <div className="w-8 h-8 rounded-xl bg-white/20 border border-white flex items-center justify-center text-lg shadow-inner">
+              🌀
+            </div>
+            <div className="text-left">
+              <div className="flex items-center gap-1.5 leading-tight">
+                <span>Kadim Boyut Portalı</span>
+                <span className="px-1.5 py-0.2 bg-white text-slate-950 rounded text-[10px] font-mono font-bold">[E Tuşu]</span>
+              </div>
+              <p className="text-[11px] font-bold text-slate-200 opacity-90">
+                "15 Bölüm Geçidi - Tıkla & Bölüm Seç!"
+              </p>
+            </div>
+            <Sparkles className="w-5 h-5 text-amber-300 animate-bounce ml-1" />
+          </button>
+        </div>
+      )}
+
+      {/* Kadim Boyut Portalı (15 Bölüm Seçimi) Modal */}
+      <DimensionPortalModal
+        isOpen={isDimensionPortalOpen}
+        onClose={() => setIsDimensionPortalOpen(false)}
+      />
 
       {/* Cat Merchant Shop Modal */}
       <CatMerchantShopModal
@@ -500,6 +552,12 @@ export const CustomizerAppOverlay: React.FC = () => {
       <CountryLanguageModal
         isOpen={isLanguageModalOpen}
         onClose={() => setIsLanguageModalOpen(false)}
+      />
+
+      {/* 15-Chapter Master Dimension Portal Modal */}
+      <DimensionPortalModal
+        isOpen={isDimensionPortalOpen}
+        onClose={() => setIsDimensionPortalOpen(false)}
       />
 
       {/* Village Ancient Lore Scrolls and Story Mystery Modal */}

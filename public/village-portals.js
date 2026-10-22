@@ -847,40 +847,237 @@
 
     console.log("🎉 [Progression] Kilit Açıldı: " + nextChap.title + " (" + nextChap.targetRegion + ")!");
 
-    // 3. Eğer şu an Ayı Köyü'ndeysek yeni portalı hemen oluştur ve kutlama yap!
+    // 3. Bildirim ve UI güncellemesi
     const game = window.__superBearGame;
-    if (game && (game.currentRegion === "hub" || !game.currentRegion)) {
-      spawnUnlockedPortalInVillage(game, nextChap);
+    if (game && game.callbacks && game.callbacks.onShowNotice) {
+      game.callbacks.onShowNotice(`🎉 YENİ BÖLÜM KİLİDİ AÇILDI: ${nextChap.title}! Kadim Boyut Portalı'nda artık seçilebilir! 🌀`, "success");
     }
+    window.dispatchEvent(new CustomEvent('superbear:chapter-unlocked', { detail: { chapter: nextChap } }));
   }
   window.__unlockChapterAfterBoss = unlockChapterAfterBoss;
 
-  // Helper: Spawn single new portal dynamically in Ayı Köyü with celebration
-  function spawnUnlockedPortalInVillage(game, pData) {
-    if (!game || !game.scene || !villagePortalsGroup) return;
-    if (activePortalsList.some(p => p && p.userData && p.userData.pData && p.userData.pData.id === pData.id)) {
-      return;
-    }
-    const THREE = window.THREE;
-    const pMesh = createIndividualVillagePortal(THREE, game, pData);
-    villagePortalsGroup.add(pMesh);
-    activePortalsList.push(pMesh);
+  let masterPortalInstance = null;
+  let currentMasterPortalChapter = null;
 
-    if (game.spawnSparkleParticles) {
-      const pos = new THREE.Vector3(pData.pos.x, 2.5, pData.pos.z);
-      game.spawnSparkleParticles(pos, 60, pData.vortexColor);
+  // Master Portal Color & Destination Changer
+  function setMasterPortalChapter(chapterId) {
+    let pData = null;
+    if (typeof chapterId === 'object' && chapterId) {
+      pData = VILLAGE_PORTALS_DATA.find(p => p.id === chapterId.id || p.targetRegion === chapterId.targetRegion) || chapterId;
+    } else {
+      pData = VILLAGE_PORTALS_DATA.find(p => p.id === chapterId || p.targetRegion === chapterId);
     }
-    if (typeof window.St !== 'undefined') {
-      if (window.St.playLevelUp) window.St.playLevelUp();
-      else if (window.St.playPowerup) window.St.playPowerup();
+    if (!pData) return false;
+
+    // Check if chapter is unlocked
+    if (!isChapterUnlocked(pData)) {
+      const warningText = "⚠️ Bu portala giremezsin! Git boss'u yen sonra gel!";
+      const game = window.__superBearGame;
+      if (game && game.callbacks && game.callbacks.onShowNotice) {
+        game.callbacks.onShowNotice(warningText, "warning");
+      }
+      if (typeof window.St !== 'undefined' && window.St.playDamage) window.St.playDamage();
+      return false;
     }
-    if (game.callbacks && game.callbacks.onShowNotice) {
-      game.callbacks.onShowNotice(`🎉 YENİ BÖLÜM AÇILDI: ${pData.title} Portalı Köyde Aktif Edildi! 🌀`, "success");
+
+    currentMasterPortalChapter = pData;
+    window.__currentMasterPortalChapter = pData;
+
+    if (masterPortalInstance && masterPortalInstance.userData && masterPortalInstance.userData.setChapter) {
+      masterPortalInstance.userData.setChapter(pData);
     }
+
+    const game = window.__superBearGame;
+    if (game && game.callbacks && game.callbacks.onShowNotice) {
+      game.callbacks.onShowNotice(`🌀 Portal Ayarlandı: ${pData.title} (Işık Aktif!)`, "success");
+    }
+    if (typeof window.St !== 'undefined' && window.St.playPowerup) window.St.playPowerup();
+    return true;
   }
-  window.__spawnUnlockedPortalInVillage = spawnUnlockedPortalInVillage;
+  window.__setMasterPortalChapter = setMasterPortalChapter;
 
-  // Build ONLY unlocked portals into Ayı Köyü (Saving massive GPU memory)
+  // Create Master White Dimension Portal directly between Arcade (-11, 0.2, -22) and Capi Bakkal (9, 0.2, -18)
+  function createMasterDimensionPortal(THREE, game) {
+    const portalMaster = new THREE.Group();
+    portalMaster.name = "master_white_dimension_portal";
+
+    // Exact midpoint: X = -1.0, Y = 0.2, Z = -20.0
+    const portalX = -1.0;
+    const portalZ = -20.0;
+    const groundY = getVillageGroundY(portalX, portalZ);
+    portalMaster.position.set(portalX, groundY, portalZ);
+    portalMaster.rotation.y = 0; // facing south towards village center
+
+    // 1. Solid White Marble Pedestal
+    const pedMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.3,
+      metalness: 0.1
+    });
+    const ped = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 4.0, 0.5, 24), pedMat);
+    ped.position.y = 0.25;
+    ped.receiveShadow = true;
+    portalMaster.add(ped);
+
+    // Golden inlay ring
+    const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.8, roughness: 0.2 });
+    const trim = new THREE.Mesh(new THREE.TorusGeometry(3.6, 0.12, 8, 24), goldMat);
+    trim.position.y = 0.25;
+    trim.rotation.x = Math.PI / 2;
+    portalMaster.add(trim);
+
+    // 2. White Marble Arch Pillars with Rune Inlays
+    const archMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.25,
+      metalness: 0.3,
+      emissive: 0xffffff,
+      emissiveIntensity: 0.25
+    });
+    const pillarGeo = new THREE.BoxGeometry(0.85, 5.4, 0.85);
+
+    const leftPillar = new THREE.Mesh(pillarGeo, archMat);
+    leftPillar.position.set(-2.2, 2.7, 0);
+    leftPillar.castShadow = true;
+    portalMaster.add(leftPillar);
+
+    const rightPillar = new THREE.Mesh(pillarGeo, archMat);
+    rightPillar.position.set(2.2, 2.7, 0);
+    rightPillar.castShadow = true;
+    portalMaster.add(rightPillar);
+
+    const topBeam = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.9, 0.9), archMat);
+    topBeam.position.set(0, 5.4, 0);
+    topBeam.castShadow = true;
+    portalMaster.add(topBeam);
+
+    // Crown Diamond Capstone
+    const diamondMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0xffffff,
+      emissiveIntensity: 0.8,
+      roughness: 0.1
+    });
+    const capstone = new THREE.Mesh(new THREE.OctahedronGeometry(0.7), diamondMat);
+    capstone.position.set(0, 6.3, 0);
+    portalMaster.add(capstone);
+
+    // 3. Swirling Magical Vortex (Default Pure White)
+    const vortexGeo = new THREE.CircleGeometry(2.1, 32);
+    const vortexMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      emissive: 0xffffff,
+      emissiveIntensity: 1.5,
+      transparent: true,
+      opacity: 0.88,
+      side: THREE.DoubleSide
+    });
+    const vortex = new THREE.Mesh(vortexGeo, vortexMat);
+    vortex.position.set(0, 2.7, 0);
+    portalMaster.add(vortex);
+
+    // 4. Atmospheric Point Light (Default Pure White)
+    const pLight = new THREE.PointLight(0xffffff, 2.5, 18);
+    pLight.position.set(0, 3.2, 0.6);
+    portalMaster.add(pLight);
+
+    // (No static 3D text signboard in the world - text only appears when approaching the portal!)
+    let isNearDispatched = false;
+
+    portalMaster.userData = {
+      isMasterPortal: true,
+      vortexMesh: vortex,
+      vortexMat: vortexMat,
+      pointLight: pLight,
+      diamondMat: diamondMat,
+      archMat: archMat,
+      setChapter: (pData) => {
+        currentMasterPortalChapter = pData;
+        window.__currentMasterPortalChapter = pData;
+        const colorHex = pData.vortexColor || pData.colorHex || 0xffffff;
+        vortexMat.color.setHex(colorHex);
+        vortexMat.emissive.setHex(colorHex);
+        pLight.color.setHex(pData.lightColor || colorHex);
+        diamondMat.color.setHex(colorHex);
+        diamondMat.emissive.setHex(colorHex);
+        archMat.emissive.setHex(colorHex);
+        if (game && game.spawnSparkleParticles) {
+          game.spawnSparkleParticles(new THREE.Vector3(portalX, groundY + 2.5, portalZ), 50, colorHex);
+        }
+      },
+      update: () => {
+        vortex.rotation.z += 0.025;
+        capstone.rotation.y += 0.03;
+
+        if (game && game.playerPos) {
+          const dist = game.playerPos.distanceTo(portalMaster.position);
+
+          // Proximity notification event for UI banner - SADECE portalın yanına yaklaşınca görünür (4.2m)
+          if (dist < 4.2) {
+            if (!isNearDispatched) {
+              isNearDispatched = true;
+              window.dispatchEvent(new CustomEvent('superbear:dimension-portal-proximity', {
+                detail: { isNear: true, dist, activeChapter: currentMasterPortalChapter }
+              }));
+            }
+          } else {
+            if (isNearDispatched) {
+              isNearDispatched = false;
+              window.dispatchEvent(new CustomEvent('superbear:dimension-portal-proximity', {
+                detail: { isNear: false }
+              }));
+            }
+          }
+
+          // Stepping into portal trigger
+          if (dist < 2.2 && !portalMaster._cooldown) {
+            portalMaster._cooldown = true;
+
+            if (!currentMasterPortalChapter || currentMasterPortalChapter.id === 'hub' || currentMasterPortalChapter.targetRegion === 'hub') {
+              // Open modal so player selects a chapter!
+              window.dispatchEvent(new CustomEvent('superbear:open-dimension-portal'));
+              setTimeout(() => { portalMaster._cooldown = false; }, 1500);
+              return;
+            }
+
+            // Kilit kontrolü: Eğer bölüm henüz açılmadıysa geçiş kesinlikle yasak!
+            if (!isChapterUnlocked(currentMasterPortalChapter)) {
+              const warningText = "⚠️ Bu portala giremezsin! Git boss'u yen sonra gel!";
+              if (game.callbacks && game.callbacks.onShowNotice) {
+                game.callbacks.onShowNotice(warningText, "warning");
+              }
+              if (typeof window.St !== 'undefined' && window.St.playDamage) window.St.playDamage();
+              setTimeout(() => { portalMaster._cooldown = false; }, 2500);
+              return;
+            }
+
+            // Unlocked transition
+            if (typeof window.St !== 'undefined' && window.St.playPortal) window.St.playPortal();
+            if (game.callbacks && game.callbacks.onShowNotice) {
+              game.callbacks.onShowNotice(`🌀 ${currentMasterPortalChapter.title} Geçidine Girildi...`, "success");
+            }
+            if (game.spawnSparkleParticles) {
+              game.spawnSparkleParticles(game.playerPos, 45, currentMasterPortalChapter.vortexColor || 0xffffff);
+            }
+
+            setTimeout(() => {
+              if (game.loadRegion) {
+                game.loadRegion(currentMasterPortalChapter.targetRegion);
+              } else if (game.callbacks && game.callbacks.onSelectRegion) {
+                game.callbacks.onSelectRegion(currentMasterPortalChapter.targetRegion);
+              }
+              setTimeout(() => { portalMaster._cooldown = false; }, 4000);
+            }, 350);
+          }
+        }
+      }
+    };
+
+    masterPortalInstance = portalMaster;
+    return portalMaster;
+  }
+
+  // Build SINGLE Master Dimension Portal in Ayı Köyü (Eliminating all lag!)
   function buildAllVillagePortals(game) {
     if (!game || !game.scene || !window.THREE) return;
     const THREE = window.THREE;
@@ -891,28 +1088,25 @@
       return;
     }
 
-    // Clean up existing portals and dispose all Three.js memory
     removeAllVillagePortals(game);
 
     villagePortalsGroup = new THREE.Group();
     villagePortalsGroup.name = "unlocked_village_portals_group";
     activePortalsList = [];
 
-    // 🔥 KADEMELİ AÇILMA: Başlangıçta sadece 1. ve 2. bölüm (Orman Tapınağı) açık, kilitli olanlar hafızada HİÇ OLUŞTURULMAZ!
-    const unlockedPortals = VILLAGE_PORTALS_DATA.filter((pData) => isChapterUnlocked(pData));
+    console.log("🌀 [Master Dimension Portal] Arcade ve Capi Bakkalı arasına Tek Beyaz Boyut Portalı kuruluyor... (0 Kasma)");
+    const masterPortal = createMasterDimensionPortal(THREE, game);
+    villagePortalsGroup.add(masterPortal);
+    activePortalsList.push(masterPortal);
 
-    console.log(`🌀 [Progression] Building ${unlockedPortals.length}/${VILLAGE_PORTALS_DATA.length} active unlocked portals in Ayı Köyü... (Kilitli portallar hafızada oluşturulmaz, 0 yük)`);
-
-    unlockedPortals.forEach((pData) => {
-      const pMesh = createIndividualVillagePortal(THREE, game, pData);
-      villagePortalsGroup.add(pMesh);
-      activePortalsList.push(pMesh);
-    });
+    // Apply active chapter if selected previously
+    if (currentMasterPortalChapter && masterPortal.userData.setChapter) {
+      masterPortal.userData.setChapter(currentMasterPortalChapter);
+    }
 
     game.scene.add(villagePortalsGroup);
     isPortalsBuilt = true;
 
-    // Clean up any old glitched floating portal meshes from legacy code
     cleanupOldGlitchedPortals(game);
   }
 

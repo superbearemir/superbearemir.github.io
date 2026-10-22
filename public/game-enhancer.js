@@ -6675,8 +6675,8 @@ let playerSlowTimer = 0;
 
 function populateSugarWorld(game) {
   createThematicEntranceEasel(game, 4, "10. Bölüm: Şeker Dünyası & Lolipop Krallığı", -3.5, 11.5, 68);
-  // Level Exit Portal to Next Region
-  if (window.createCaveExitPortal) {
+  // Level Exit Portal to Next Region (Bypassed when 14-stage extension is active)
+  if (!window.__populateSugarWorldExtension && window.createCaveExitPortal) {
     window.createCaveExitPortal(game, 0, 32, -520, 'jokerooms', '11. BÖLÜM: JOKEROOMS', '🚪');
   }
 
@@ -7171,6 +7171,10 @@ function populateSugarWorld(game) {
 
     if (game.callbacks && game.callbacks.onShowNotice) {
         game.callbacks.onShowNotice("🌈 Gökkuşağı Dünyası! Zorlu parkurları geçerek Elleri ve Ayakları olan Lolipop Patronu yenin!", "success");
+    }
+
+    if (typeof window !== "undefined" && typeof window.__populateSugarWorldExtension === "function") {
+        window.__populateSugarWorldExtension(game);
     }
 }
 
@@ -13624,8 +13628,8 @@ ruinVillagePopulated = false;
 
 function populateRuinVillage(game) {
   createThematicEntranceEasel(game, 0, "12. Bölüm: Yıkılmış Köy & Sirk Harabeleri", -3.5, 2.8, 78);
-  // Level Exit Portal to Next Region
-  if (window.createCaveExitPortal) {
+  // Level Exit Portal to Next Region (Bypassed when 15-stage extension is active)
+  if (!window.__populateRuinVillageExtension && window.createCaveExitPortal) {
     window.createCaveExitPortal(game, 0, 4, -520, 'water_cave', '13. BÖLÜM: KARANLIK SU MAĞARASI', '💧');
   }
 
@@ -13898,7 +13902,11 @@ function populateRuinVillage(game) {
   game.currentLevel.enemies.push(game.currentLevel.clownBoss);
 
   if (game.callbacks && game.callbacks.onShowNotice) {
-    game.callbacks.onShowNotice("🏚️ 13. Bölüm: Yıkılmış Köy! Uzatılmış zorlu parkur ve dev palyaço boss!", "success");
+    game.callbacks.onShowNotice("🏚️ 12. Bölüm: Yıkılmış Köy & Sirk Harabeleri! Uzatılmış 15 yeni aşama ve dev palyaço boss!", "success");
+  }
+
+  if (typeof window !== "undefined" && typeof window.__populateRuinVillageExtension === "function") {
+    window.__populateRuinVillageExtension(game);
   }
 }function teleportToRuinVillage() {
   const game = window.__superBearGame;
@@ -14994,8 +15002,8 @@ function create3DWaterDragon(game, pos) {
 
 function populateWaterCave(game) {
   createThematicEntranceEasel(game, 1, "13. Bölüm: Karanlık Su Mağarası", -3.5, 4.8, 58);
-  // Level Exit Portal to Next Region (14. Bee Desert)
-  if (window.createCaveExitPortal) {
+  // Level Exit Portal to Next Region (Bypassed when 14-stage extension is active)
+  if (!window.__populateWaterCaveExtension && window.createCaveExitPortal) {
     window.createCaveExitPortal(game, 0, 31.5, -815, 'bee_desert', '14. BÖLÜM: ARI ÇÖLÜ & ANTİK PİRAMİT', '🏜️');
   }
 
@@ -15719,7 +15727,11 @@ function populateWaterCave(game) {
   }
 
   if (game.callbacks && game.callbacks.onShowNotice) {
-    game.callbacks.onShowNotice("🌊 Karanlık Su Mağarası'na Giriş Yaptın! Köstebeklerle tanışıp Dev Su Ejderhası'nı alt et!", "success");
+    game.callbacks.onShowNotice("🌊 Karanlık Su Mağarası'na Giriş Yaptın! 14 yeni aşama ve 12 farklı canlı ile Dev Su Ejderhası'nı alt et!", "success");
+  }
+
+  if (typeof window !== "undefined" && typeof window.__populateWaterCaveExtension === "function") {
+    window.__populateWaterCaveExtension(game);
   }
 }
 
@@ -16020,8 +16032,8 @@ function create3DCrocodileBoss(game, pos) {
 
 function populateBeeDesert(game) {
   createThematicEntranceEasel(game, 2, "14. Bölüm: Arılar Çölü & Antik Piramit", -3.5, 3.2, 58);
-  // Level Exit Portal to Next Region (15. Dünya Final Zirvesi & Kırmızı Çizgi)
-  if (window.createCaveExitPortal) {
+  // Level Exit Portal to Next Region (Bypassed when 17-stage extension is active)
+  if (!window.__populateBeeDesertExtension && window.createCaveExitPortal) {
     window.createCaveExitPortal(game, 0, 5, -750, 'earth_summit', '15. BÖLÜM: DÜNYA FİNAL ZİRVESİ & KIRMIZI ÇİZGİ', '⛰️');
   }
 
@@ -16615,7 +16627,11 @@ function populateBeeDesert(game) {
   }
 
   if (game.callbacks && game.callbacks.onShowNotice) {
-    game.callbacks.onShowNotice("🏜️ 15. Bölüm: Arıların Çölü'ne Giriş Yaptın! Parkurları aşıp Piramit ve Dev Timsah'a ulaş!", "success");
+    game.callbacks.onShowNotice("🏜️ 14. Bölüm: Arıların Çölü'ne Giriş Yaptın! 17 yeni aşama ve 14 yeni canlı ile Piramit ve Dev Timsah'a ulaş!", "success");
+  }
+
+  if (typeof window !== "undefined" && typeof window.__populateBeeDesertExtension === "function") {
+    window.__populateBeeDesertExtension(game);
   }
 }
 

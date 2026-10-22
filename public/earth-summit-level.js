@@ -1566,28 +1566,34 @@
       summitGroup.add(flame);
     }
 
-    // SPAWN MOR AYI (MORİS) BOSS IN ARENA CENTER
-    const morisData = createMorisBossMesh(THREE);
-    morisData.group.position.set(0, 51.5, -2640);
-    summitGroup.add(morisData.group);
+    if (typeof window !== "undefined" && typeof window.__populateEarthSummitExtension === "function") {
+      // 18 New Stages Extension is active: Moris boss is relocated to the apex at Stage 18
+      activeMorisBoss = null;
+      window.__populateEarthSummitExtension(game);
+      console.log("✅ Earth Summit 15 Original Stages preserved + 18 Extended Stages & 16 New Creatures Loaded!");
+    } else {
+      // Original Stage 15 Boss placement
+      const morisData = createMorisBossMesh(THREE);
+      morisData.group.position.set(0, 51.5, -2640);
+      summitGroup.add(morisData.group);
 
-    activeMorisBoss = {
-      group: morisData.group,
-      parts: morisData.parts,
-      pos: morisData.group.position,
-      hp: 850,
-      maxHp: 850,
-      speed: 5.0,
-      isEnraged: false,
-      animTimer: 0,
-      attackCooldown: 1.5,
-      isAttacking: false,
-      lastHitTime: 0,
-      isDead: false,
-      meteorTimer: 0
-    };
-
-    console.log("✅ Earth Summit 15 FULL Stages Successfully Populated!");
+      activeMorisBoss = {
+        group: morisData.group,
+        parts: morisData.parts,
+        pos: morisData.group.position,
+        hp: 850,
+        maxHp: 850,
+        speed: 5.0,
+        isEnraged: false,
+        animTimer: 0,
+        attackCooldown: 1.5,
+        isAttacking: false,
+        lastHitTime: 0,
+        isDead: false,
+        meteorTimer: 0
+      };
+      console.log("✅ Earth Summit 15 FULL Stages Successfully Populated!");
+    }
   }
 
   // ============================================================================
