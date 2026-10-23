@@ -283,7 +283,6 @@
       const jx = (jIdx % 2 === 0 ? 5.0 : -5.0);
       const jy = 71.5 + jIdx * 0.6;
       buildPrehistoricPlatform(13, 1.8, 16, jx, jy, jz, volcanicBasaltMat);
-      createGiantPterodactyl(jx, jy + 5.0, jz, enemies, dinosaurExtensionGroup);
       addPrehistoricItem("d_c6_" + jIdx, jx, jy + 1.8, jz);
     });
     buildPrehistoricPlatform(22, 2.2, 24, 0, 75.2, -1380, mossyStoneMat);
@@ -360,7 +359,7 @@
     buildPrehistoricPlatform(14, 1.8, 30, -5, 89.8, -2125, mossyStoneMat);
     buildPrehistoricPlatform(16, 2.0, 20, 5, 90.6, -2160, volcanicBasaltMat);
     buildPrehistoricPlatform(22, 2.2, 24, 0, 91.5, -2220, jungleRockMat);
-    createSwampSpinosaur(0, 93.0, -2125, enemies, dinosaurExtensionGroup);
+    createVenomDilophosaur(0, 93.0, -2125, enemies, dinosaurExtensionGroup);
 
     // 11. Aşama: Dinozor Kabuğu Zıplama Rampaları (z: -2220 -> -2430, Y: 91 -> 97)
     addCheckpoint("dino_cp_s11", "11. Aşama: Dinozor Zıplama Rampaları", 0, 92.0, -2230);
@@ -374,7 +373,7 @@
     addGeyserJumpPad(-6, 105.0, -2370, 30);
     buildPrehistoricPlatform(14, 2.0, 16, 0, 110.0, -2400, volcanicBasaltMat);
     buildPrehistoricPlatform(24, 2.2, 24, 0, 97.0, -2430, mossyStoneMat);
-    createArmoredAnkilosaur(0, 98.5, -2335, enemies, dinosaurExtensionGroup);
+    createObsidianPachycephalosaur(0, 98.5, -2335, enemies, dinosaurExtensionGroup);
 
     // 12. Aşama: Lav Akıntıları & Fosil Lazer Koridoru (z: -2430 -> -2640, Y: 97 -> 101)
     addCheckpoint("dino_cp_s12", "12. Aşama: Fosil Lazer Koridoru", 0, 97.8, -2440);
@@ -398,7 +397,7 @@
       addPrehistoricItem("d_c12_" + lIdx, 0, ly + 1.8, lz, true);
     });
     buildPrehistoricPlatform(22, 2.2, 24, 0, 101.5, -2640, mossyStoneMat);
-    createSwiftVelociraptor(0, 103.0, -2540, enemies, dinosaurExtensionGroup);
+    createFossilBoneScorpion(0, 103.0, -2540, enemies, dinosaurExtensionGroup);
 
     // 13. Aşama: Çöken Zırh Plakaları & Ters Magma Rüzgarları (z: -2640 -> -2860, Y: 101 -> 105)
     addCheckpoint("dino_cp_s13", "13. Aşama: Çöken Zırh Plakaları", 0, 102.2, -2650);
@@ -426,7 +425,7 @@
       addPrehistoricItem("d_c13_" + cIdx, cx, cy + 1.8, cz);
     });
     buildPrehistoricPlatform(22, 2.2, 24, 0, 106.5, -2860, volcanicBasaltMat);
-    createThreeHornedTriceratops(0, 108.0, -2770, enemies, dinosaurExtensionGroup);
+    createVolcanicCarnotaurus(0, 108.0, -2770, enemies, dinosaurExtensionGroup);
 
     // 14. Aşama: [BÜYÜK BOSS] BÖLÜMÜN EN SONUNDAKİ VOLKANİK DİNOZOR KRALLIĞI ARENASI 🦖🌋 (z: -3050 -> -3400)
     const arenaX = 0;
@@ -469,72 +468,91 @@
     // Victory Portal behind T-Rex (10. Bölüm Şeker Dünyası'na açılır)
     dinoVictoryPortal = createDinoVictoryPortal(arenaX, arenaY + 2.2, arenaZ - 44, dinosaurExtensionGroup);
 
-    console.log("✅ [Dinosaur World] Orijinal Dağ korundu, 14 Yeni Aşama, 9 Canlı ve Taşınan T-Rex Boss Başarıyla Kuruldu!");
+    console.log("✅ [Dinosaur World] Orijinal Dağ korundu, 14 Yeni Aşama, 13 Farklı Canlı ve Taşınan T-Rex Boss Başarıyla Kuruldu!");
   };
 
   // =========================================================================
-  // 9 ÖZEL YENİ FARKLI DİNOZOR CANLISI VE MEKANİĞİ
+  // 13 ÖZEL YENİ FARKLI DİNOZOR CANLISI VE MEKANİĞİ (HAREKET + ATEŞ ETME)
   // =========================================================================
 
   function createBabyTRexHunter(x, y, z, enemies, group) {
-    createDinoMonster(x, y, z, enemies, group, "T-Rex Avcısı 🦖", 0x15803d, 1.8, 160, 18, "charge");
+    createDinoMonster(x, y, z, enemies, group, "T-Rex Avcısı 🦖", 0x15803d, 1.8, 160, 18, "charge", 4, 0xfef08a);
   }
 
   function createGiantPterodactyl(x, y, z, enemies, group) {
-    createDinoMonster(x, y, z, enemies, group, "Uçan Dev Pterodaktil 🦅🦕", 0x0284c7, 1.5, 90, 14, "swoop");
+    createDinoMonster(x, y, z, enemies, group, "Uçan Dev Pterodaktil 🦅🦕", 0x0284c7, 1.5, 90, 14, "swoop", 1, 0x38bdf8);
   }
 
   function createArmoredAnkilosaur(x, y, z, enemies, group) {
-    createDinoMonster(x, y, z, enemies, group, "Zırhlı Ankilozor 🐢🛡️", 0x78350f, 2.2, 220, 20, "heavy");
+    createDinoMonster(x, y, z, enemies, group, "Zırhlı Ankilozor 🐢🛡️", 0x78350f, 2.2, 220, 20, "heavy", 6, 0xd97706);
   }
 
   function createSpikyStegosaur(x, y, z, enemies, group) {
-    createDinoMonster(x, y, z, enemies, group, "Dikenli Stegozor 🦕", 0x047857, 2.0, 190, 18, "patrol");
+    createDinoMonster(x, y, z, enemies, group, "Dikenli Stegozor 🦕", 0x047857, 2.0, 190, 18, "patrol", 15, 0x10b981);
   }
 
   function createSwiftVelociraptor(x, y, z, enemies, group) {
-    createDinoMonster(x, y, z, enemies, group, "Hızlı Velosiraptor 🦎💨", 0xb91c1c, 1.3, 110, 16, "sprint");
+    createDinoMonster(x, y, z, enemies, group, "Hızlı Velosiraptor 🦎💨", 0xb91c1c, 1.3, 110, 16, "sprint", 9, 0xf97316);
   }
 
   function createThreeHornedTriceratops(x, y, z, enemies, group) {
-    createDinoMonster(x, y, z, enemies, group, "Üç Boynuzlu Triseratops 🦏🦕", 0x854d0e, 2.4, 240, 22, "horn");
+    createDinoMonster(x, y, z, enemies, group, "Üç Boynuzlu Triseratops 🦏🦕", 0x854d0e, 2.4, 240, 22, "horn", 15, 0xfef08a);
   }
 
   function createSwampSpinosaur(x, y, z, enemies, group) {
-    createDinoMonster(x, y, z, enemies, group, "Bataklık Spinozoru 🐊🦕", 0x0f766e, 2.3, 210, 20, "ambush");
+    createDinoMonster(x, y, z, enemies, group, "Bataklık Spinozoru 🐊🦕", 0x0f766e, 2.3, 210, 20, "ambush", 5, 0x2dd4bf);
   }
 
   function createGiantPrehistoricHornet(x, y, z, enemies, group) {
-    createDinoMonster(x, y, z, enemies, group, "Tarih Öncesi Dev Eşek Arısı 🐝🦴", 0xf59e0b, 1.2, 80, 15, "buzz");
+    createDinoMonster(x, y, z, enemies, group, "Tarih Öncesi Dev Eşek Arısı 🐝🦴", 0xf59e0b, 1.2, 80, 15, "buzz", 12, 0x1e293b);
   }
 
   function createMagmaRockDrake(x, y, z, enemies, group) {
-    createDinoMonster(x, y, z, enemies, group, "Lav Kayası Ejder-Kertenkelesi 🌋🦎", 0xdc2626, 1.9, 180, 19, "magma");
+    createDinoMonster(x, y, z, enemies, group, "Lav Kayası Ejder-Kertenkelesi 🌋🦎", 0xdc2626, 1.9, 180, 19, "magma", 0, 0xfacc15);
   }
 
-  function createDinoMonster(x, y, z, enemies, group, name, color, size, hp, atk, behavior) {
+  function createVenomDilophosaur(x, y, z, enemies, group) {
+    createDinoMonster(x, y, z, enemies, group, "Zehir Yakalı Dilofozor 🦎☣️", 0x65a30d, 1.6, 175, 19, "sprint", 3, 0xa3e635);
+  }
+
+  function createObsidianPachycephalosaur(x, y, z, enemies, group) {
+    createDinoMonster(x, y, z, enemies, group, "Kafatası Kıran Pakisefalozor 🦕💥", 0x475569, 1.8, 210, 21, "charge", 11, 0xef4444);
+  }
+
+  function createFossilBoneScorpion(x, y, z, enemies, group) {
+    createDinoMonster(x, y, z, enemies, group, "Fosil Kemik Akrebi 🦂🦴", 0xd6d3d1, 1.6, 190, 20, "patrol", 2, 0xdc2626);
+  }
+
+  function createVolcanicCarnotaurus(x, y, z, enemies, group) {
+    createDinoMonster(x, y, z, enemies, group, "Boynuzlu Volkan Karnotauru 🦖🔥", 0x991b1b, 2.1, 250, 22, "horn", 17, 0xf97316);
+  }
+
+  function createDinoMonster(x, y, z, enemies, group, name, color, size, hp, atk, behavior, archetypeIdx, accentColor) {
     const THREE = window.THREE;
-    const grp = new THREE.Group();
+    let grp;
+    if (typeof window.__buildDistinctCreatureMesh === 'function') {
+      grp = window.__buildDistinctCreatureMesh(THREE, archetypeIdx, {
+        primary: color,
+        secondary: accentColor || 0xfef08a,
+        eye: 0xff3300,
+        scale: size * 0.72
+      });
+    } else {
+      grp = new THREE.Group();
+      const mat = new THREE.MeshStandardMaterial({
+        color: color,
+        roughness: 0.5,
+        emissive: color,
+        emissiveIntensity: 0.25
+      });
+      const body = new THREE.Mesh(new THREE.BoxGeometry(size * 1.2, size, size * 1.5), mat);
+      body.position.y = size / 2;
+      grp.add(body);
+    }
     grp.position.set(x, y, z);
-
-    const mat = new THREE.MeshStandardMaterial({
-      color: color,
-      roughness: 0.6,
-      emissive: color,
-      emissiveIntensity: 0.3
-    });
-
-    const body = new THREE.Mesh(new THREE.BoxGeometry(size * 1.2, size, size * 1.5), mat);
-    body.position.y = size / 2;
-    grp.add(body);
-
-    const headMat = new THREE.MeshStandardMaterial({ color: color, roughness: 0.5 });
-    const head = new THREE.Mesh(new THREE.ConeGeometry(size * 0.45, size * 1.1, 6), headMat);
-    head.rotation.x = Math.PI / 2;
-    head.position.set(0, size * 0.8, size * 0.9);
-    grp.add(head);
-
     group.add(grp);
+
+    const isFlyer = (behavior === "swoop" || behavior === "buzz");
 
     enemies.push({
       id: name.toLowerCase().replace(/[^a-z0-9]/g, '_') + "_" + Math.round(z),
@@ -548,19 +566,21 @@
       hp: hp,
       maxHp: hp,
       attackPower: atk,
+      _combatUpgraded: true,
+      _archetype: archetypeIdx,
+      _isFlyer: isFlyer,
+      _patrolSpeed: behavior === "sprint" ? 5.2 : 3.6,
+      _patrolRangeX: 5.2,
+      _patrolRangeZ: 2.8,
+      _animPhase: Math.random() * 10,
+      _projCooldown: 1.0 + Math.random() * 1.4,
+      _projInterval: 2.2,
+      _projTheme: { color: color, emissive: accentColor || 0xf97316, speed: 17.5, damage: Math.max(10, Math.round(atk * 0.7)), radius: 0.45 },
       update: function(dt, p, game) {
-        const time = Date.now() * 0.002;
-        if (behavior === "swoop" || behavior === "buzz") {
-          this.mesh.position.y = this.baseY + Math.sin(time * 2.5) * 2.5;
-          this.mesh.position.x = this.baseX + Math.cos(time) * 4.5;
-        } else if (behavior === "sprint") {
-          this.mesh.position.x = this.baseX + Math.sin(time * 2.0) * 6.5;
-        } else {
-          this.mesh.position.x = this.baseX + Math.sin(time) * 4.5;
+        if (typeof window.__updateCreatureCombatAI === 'function') {
+          window.__updateCreatureCombatAI(this, dt, p, game, archetypeIdx);
         }
-        this.pos.copy(this.mesh.position);
-
-        if (this.pos.distanceTo(p) < (size + 1.2)) {
+        if (p && this.pos.distanceTo(p) < (size + 1.2)) {
           game.damagePlayer(this.attackPower);
         }
       }
@@ -576,6 +596,13 @@
 
     if (typeof window.createDinoMesh === 'function') {
       trexMesh = window.createDinoMesh(THREE, true);
+    } else if (typeof window.__buildDistinctCreatureMesh === 'function') {
+      trexMesh = window.__buildDistinctCreatureMesh(THREE, 4, {
+        primary: 0x166534,
+        secondary: 0xef4444,
+        eye: 0xfacc15,
+        scale: 3.4
+      });
     } else {
       trexMesh = new THREE.Group();
       const body = new THREE.Mesh(new THREE.BoxGeometry(6, 7, 10), new THREE.MeshStandardMaterial({ color: 0x166534 }));
@@ -598,18 +625,37 @@
       maxHp: 1200,
       isBoss: true,
       attackPower: 24,
-      attackCooldown: 0,
+      attackCooldown: 1.5,
       state: "chase",
       animTimer: 0,
       update: function(dt, p, game) {
         this.animTimer += dt * 3.0;
-        this.mesh.position.x = this.basePos.x + Math.sin(this.animTimer * 0.5) * 12.0;
-        this.mesh.position.z = this.basePos.z + Math.cos(this.animTimer * 0.3) * 6.0;
-        this.mesh.lookAt(p.x, this.mesh.position.y, p.z);
-        this.pos.copy(this.mesh.position);
+        this.mesh.position.x = this.basePos.x + Math.sin(this.animTimer * 0.5) * 14.0;
+        this.mesh.position.z = this.basePos.z + Math.cos(this.animTimer * 0.35) * 10.0;
+        if (p) {
+          this.mesh.lookAt(p.x, this.mesh.position.y, p.z);
+          this.pos.copy(this.mesh.position);
 
-        if (this.pos.distanceTo(p) < 8.0) {
-          game.damagePlayer(this.attackPower);
+          this.attackCooldown -= dt;
+          const dist = this.pos.distanceTo(p);
+          if (dist < 42.0 && this.attackCooldown <= 0) {
+            this.attackCooldown = 2.0;
+            if (typeof window.__spawnEnemyProjectile === 'function') {
+              const mouthPos = this.pos.clone();
+              mouthPos.y += 4.2;
+              window.__spawnEnemyProjectile(game, mouthPos, p, {
+                color: 0xff4500,
+                emissive: 0xfacc15,
+                speed: 21.0,
+                damage: 18,
+                radius: 0.75
+              });
+            }
+          }
+
+          if (dist < 6.5) {
+            game.damagePlayer(this.attackPower);
+          }
         }
       }
     };

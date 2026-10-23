@@ -29,267 +29,137 @@
   }
 
   // =========================================================================
-  // 14 UNIQUE DESERT BEASTS HELPERS
+  // 16 UNIQUE DESERT BEASTS HELPERS (MOVE & SHOOT)
   // =========================================================================
 
-  function createCreature(type, x, y, z, hp, updateFn, meshCreator) {
-    const group = meshCreator(x, y, z);
-    group.userData = {
-      type: type,
-      hp: hp,
+  function spawnDesertCreature(x, y, z, name, archetypeIdx, primaryHex, secondaryHex, hp, isFlyer) {
+    const THREE = window.THREE;
+    const game = window.__superBearGame;
+    let group;
+    if (typeof window.__buildDistinctCreatureMesh === 'function') {
+      group = window.__buildDistinctCreatureMesh(THREE, archetypeIdx, {
+        primary: primaryHex,
+        secondary: secondaryHex,
+        eye: 0xfacc15,
+        scale: 1.28
+      });
+    } else {
+      group = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(1.1, 1.4, 1.4),
+        new THREE.MeshStandardMaterial({ color: primaryHex, roughness: 0.5 })
+      );
+      body.position.y = 0.8;
+      group.add(body);
+    }
+    group.position.set(x, y, z);
+
+    const enemyObj = {
+      id: "desert_" + archetypeIdx + "_" + Math.round(z),
+      type: "desert_creature_" + archetypeIdx,
+      name: name,
+      mesh: group,
+      pos: new THREE.Vector3(x, y, z),
+      baseX: x,
       baseY: y,
-      startX: x,
-      startZ: z,
-      dir: 1,
-      time: Math.random() * 5,
-      update: function(dt, playerPos, game) {
-        updateFn.call(this, group, dt, playerPos, game);
+      baseZ: z,
+      hp: hp * 32,
+      maxHp: hp * 32,
+      attackPower: 16,
+      _combatUpgraded: true,
+      _archetype: archetypeIdx,
+      _isFlyer: !!isFlyer,
+      _patrolSpeed: isFlyer ? 4.6 : 3.9,
+      _patrolRangeX: 5.2,
+      _patrolRangeZ: 2.8,
+      _animPhase: Math.random() * 10,
+      _projCooldown: 0.9 + Math.random() * 1.4,
+      _projInterval: 2.0,
+      _projTheme: {
+        color: primaryHex,
+        emissive: secondaryHex,
+        speed: 18.5,
+        damage: 14,
+        radius: 0.44
+      },
+      update: function(dt, playerPos, gameInst) {
+        if (this.hp <= 0) return;
+        if (typeof window.__updateCreatureCombatAI === 'function') {
+          window.__updateCreatureCombatAI(this, dt, playerPos, gameInst, archetypeIdx);
+        }
         if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.8 && playerPos.y > group.position.y + 0.8 && game.playerVel && game.playerVel.y < 0) {
-            this.hp--;
-            game.playerVel.y = 11;
+          const d = this.pos.distanceTo(playerPos);
+          if (d < 2.0 && playerPos.y > this.pos.y + 1.2 && gameInst.playerVel && gameInst.playerVel.y < 0) {
+            this.hp -= 35;
+            gameInst.playerVel.y = 12;
             if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) { group.visible = false; group.position.y = -9999; }
-          } else if (d < 1.4 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
+            if (this.hp <= 0) {
+              group.visible = false;
+              this.pos.y = -9999;
+              group.position.y = -9999;
+            }
+          } else if (d < 1.65) {
+            if (gameInst.damagePlayer) gameInst.damagePlayer(16);
+            else if (gameInst.takeDamage) gameInst.takeDamage(1);
           }
         }
       }
     };
+
+    group.userData = enemyObj;
+    if (game && game.currentLevel && Array.isArray(game.currentLevel.enemies)) {
+      game.currentLevel.enemies.push(enemyObj);
+    }
     return group;
   }
 
-  // 1. Desert Soldier Bee
   function createSoldierBee(x, y, z) {
-    return createCreature("soldier_bee", x, y, z, 2, function(grp, dt) {
-      this.time += dt * 3;
-      grp.position.y = this.baseY + Math.sin(this.time) * 1.5;
-      grp.position.x = this.startX + Math.cos(this.time * 0.7) * 4;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const m = new THREE.Mesh(new THREE.SphereGeometry(0.7, 8, 8), new THREE.MeshStandardMaterial({ color: 0xd97706 }));
-      g.add(m);
-      return g;
-    });
+    return spawnDesertCreature(x, y, z, "Çöl Asker Eşekarısı 🐝🏜️", 12, 0xd97706, 0x1e293b, 3, true);
   }
-
-  // 2. Giant Dune Scorpion
   function createDuneScorpion(x, y, z) {
-    return createCreature("scorpion", x, y, z, 3, function(grp, dt) {
-      grp.position.z += this.dir * dt * 3.0;
-      if (Math.abs(grp.position.z - this.startZ) > 6) this.dir *= -1;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.5, 1.6), new THREE.MeshStandardMaterial({ color: 0xb45309 }));
-      b.position.y = 0.3;
-      const t = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.4, 6), new THREE.MeshStandardMaterial({ color: 0x92400e }));
-      t.position.set(0, 1.0, -0.9);
-      t.rotation.x = -Math.PI / 3;
-      g.add(b, t);
-      return g;
-    });
+    return spawnDesertCreature(x, y, z, "Dev Kumul Akrebi 🦂🔥", 2, 0xb45309, 0xef4444, 4, false);
   }
-
-  // 3. Mummified Bear Sentinel
   function createMummyBear(x, y, z) {
-    return createCreature("mummy_bear", x, y, z, 5, function(grp, dt) {
-      grp.position.x += this.dir * dt * 2.0;
-      if (Math.abs(grp.position.x - this.startX) > 5) this.dir *= -1;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.9, 2.2, 8), new THREE.MeshStandardMaterial({ color: 0xfef3c7, roughness: 0.9 }));
-      b.position.y = 1.1;
-      const h = new THREE.Mesh(new THREE.SphereGeometry(0.6, 8, 8), new THREE.MeshStandardMaterial({ color: 0xfef3c7 }));
-      h.position.y = 2.4;
-      g.add(b, h);
-      return g;
-    });
+    return spawnDesertCreature(x, y, z, "Lanetli Mumya Muhafızı 🤕⚱️", 11, 0xfef3c7, 0xd97706, 5, false);
   }
-
-  // 4. Dust Devil Elemental
   function createDustDevil(x, y, z) {
-    return createCreature("dust_devil", x, y, z, 2, function(grp, dt) {
-      this.time += dt * 4;
-      grp.rotation.y += dt * 6;
-      grp.position.y = this.baseY + Math.sin(this.time) * 1.0;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const cone = new THREE.Mesh(new THREE.ConeGeometry(1.0, 2.4, 8), new THREE.MeshStandardMaterial({ color: 0xfde047, transparent: true, opacity: 0.7 }));
-      cone.position.y = 1.2;
-      g.add(cone);
-      return g;
-    });
+    return spawnDesertCreature(x, y, z, "Kum Fırtınası Cin Ruhu 🌪️✨", 3, 0xfde047, 0xea580c, 3, true);
   }
-
-  // 5. Sacred Gold Scarab
   function createGoldScarab(x, y, z) {
-    return createCreature("gold_scarab", x, y, z, 3, function(grp, dt) {
-      grp.position.x += this.dir * dt * 3.5;
-      if (Math.abs(grp.position.x - this.startX) > 6) this.dir *= -1;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.SphereGeometry(0.7, 8, 8), new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.8, roughness: 0.2 }));
-      b.scale.set(1.1, 0.6, 1.3);
-      b.position.y = 0.4;
-      g.add(b);
-      return g;
-    });
+    return spawnDesertCreature(x, y, z, "Kutsal Altın Bokböceği 🪲👑", 6, 0xfacc15, 0x0284c7, 4, false);
   }
-
-  // 6. Desert Horned Viper
   function createHornedViper(x, y, z) {
-    return createCreature("horned_viper", x, y, z, 2, function(grp, dt) {
-      grp.position.z += this.dir * dt * 4.0;
-      if (Math.abs(grp.position.z - this.startZ) > 7) this.dir *= -1;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 2.0, 6), new THREE.MeshStandardMaterial({ color: 0x78350f }));
-      b.rotation.x = Math.PI / 2;
-      b.position.y = 0.2;
-      g.add(b);
-      return g;
-    });
+    return spawnDesertCreature(x, y, z, "Boynuzlu Çöl Engereği 🐍☣️", 5, 0x78350f, 0x84cc16, 3, false);
   }
-
-  // 7. Hornet Sentry
   function createHornetSentry(x, y, z) {
-    return createCreature("hornet_sentry", x, y, z, 3, function(grp, dt) {
-      this.time += dt * 3;
-      grp.position.y = this.baseY + Math.sin(this.time) * 1.4;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.SphereGeometry(0.6, 8, 8), new THREE.MeshStandardMaterial({ color: 0xca8a04 }));
-      b.position.y = 1.0;
-      g.add(b);
-      return g;
-    });
+    return spawnDesertCreature(x, y, z, "Kovan Nöbetçi Bombacısı 🐝💥", 14, 0xca8a04, 0xef4444, 4, true);
   }
-
-  // 8. Desert Sun Falcon
   function createSunFalcon(x, y, z) {
-    return createCreature("sun_falcon", x, y, z, 2, function(grp, dt) {
-      this.time += dt * 3.5;
-      grp.position.y = this.baseY + Math.sin(this.time) * 1.8;
-      grp.position.x = this.startX + Math.sin(this.time * 0.8) * 5;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.4, 6), new THREE.MeshStandardMaterial({ color: 0x92400e }));
-      b.rotation.x = Math.PI / 2;
-      g.add(b);
-      return g;
-    });
+    return spawnDesertCreature(x, y, z, "Güneş Tanrısı Horus Şahini 🦅☀️", 1, 0x92400e, 0xfacc15, 3, true);
   }
-
-  // 9. Spiny Cactus Golem
   function createCactusGolem(x, y, z) {
-    return createCreature("cactus_golem", x, y, z, 5, function(grp, dt) {
-      grp.rotation.y += dt * 0.8;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 2.5, 8), new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.9 }));
-      b.position.y = 1.25;
-      g.add(b);
-      return g;
-    });
+    return spawnDesertCreature(x, y, z, "Dikenli Kaktüs Golemi 🌵🪨", 0, 0x15803d, 0xfacc15, 5, false);
   }
-
-  // 10. Mirage Shifter
   function createMirageShifter(x, y, z) {
-    return createCreature("mirage_shifter", x, y, z, 2, function(grp, dt) {
-      this.time += dt * 2;
-      grp.position.y = this.baseY + Math.sin(this.time) * 1.2;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.SphereGeometry(0.7, 8, 8), new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.6 }));
-      b.position.y = 1.0;
-      g.add(b);
-      return g;
-    });
+    return spawnDesertCreature(x, y, z, "Çöl Serabı İllüzyonisti 🔮🌊", 8, 0x38bdf8, 0xfacc15, 3, true);
   }
-
-  // 11. Bastet Mummy Stalker
   function createBastetMummy(x, y, z) {
-    return createCreature("bastet_mummy", x, y, z, 3, function(grp, dt) {
-      grp.position.x += this.dir * dt * 3.2;
-      if (Math.abs(grp.position.x - this.startX) > 5) this.dir *= -1;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.2, 1.4), new THREE.MeshStandardMaterial({ color: 0x451a03 }));
-      b.position.y = 0.6;
-      g.add(b);
-      return g;
-    });
+    return spawnDesertCreature(x, y, z, "Bastet Tapınak Panteri 🐈‍⬛🌙", 4, 0x451a03, 0xfacc15, 4, false);
   }
-
-  // 12. Molten Dune Skink
   function createMoltenSkink(x, y, z) {
-    return createCreature("molten_skink", x, y, z, 3, function(grp, dt) {
-      grp.position.z += this.dir * dt * 3.8;
-      if (Math.abs(grp.position.z - this.startZ) > 6) this.dir *= -1;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.4, 1.8), new THREE.MeshStandardMaterial({ color: 0xea580c }));
-      b.position.y = 0.3;
-      g.add(b);
-      return g;
-    });
+    return spawnDesertCreature(x, y, z, "Kızgın Kum Kertenkelesi 🦎🔥", 15, 0xea580c, 0xfef08a, 4, false);
   }
-
-  // 13. Anubis Stone Carrier
   function createAnubisCarrier(x, y, z) {
-    return createCreature("anubis_carrier", x, y, z, 5, function(grp, dt) {
-      grp.rotation.y += dt * 0.7;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.2, 1.0), new THREE.MeshStandardMaterial({ color: 0x1e1b4b }));
-      b.position.y = 1.4;
-      g.add(b);
-      return g;
-    });
+    return spawnDesertCreature(x, y, z, "Anubis Çakal Şövalyesi 🐺⚔️", 17, 0x1e1b4b, 0xfacc15, 5, false);
   }
-
-  // 14. Royal Hornet Knight
   function createHornetKnight(x, y, z) {
-    return createCreature("hornet_knight", x, y, z, 4, function(grp, dt) {
-      this.time += dt * 2.5;
-      grp.position.y = this.baseY + Math.sin(this.time) * 1.3;
-      grp.position.x = this.startX + Math.sin(this.time * 0.9) * 4.5;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.ConeGeometry(0.7, 2.0, 8), new THREE.MeshStandardMaterial({ color: 0xf59e0b, metalness: 0.6 }));
-      b.position.y = 1.0;
-      g.add(b);
-      return g;
-    });
+    return spawnDesertCreature(x, y, z, "Kraliyet Kovan Mızrakçısı 🐝🛡️", 9, 0xf59e0b, 0x78350f, 4, true);
+  }
+  function createPharaohSphinxLancer(x, y, z) {
+    return spawnDesertCreature(x, y, z, "Piramit Sfenks Muhafızı 🦁👑", 7, 0xd97706, 0x38bdf8, 5, false);
+  }
+  function createSolarPyramidColossus(x, y, z) {
+    return spawnDesertCreature(x, y, z, "Güneş Sunağı Seraf Arkonu ☀️🔱", 13, 0xfacc15, 0xef4444, 5, true);
   }
 
   // =========================================================================
@@ -298,7 +168,7 @@
   window.__populateBeeDesertExtension = function(game) {
     if (!window.THREE || !game || !game.scene) return;
     const THREE = window.THREE;
-    console.log("🏜️ [Arılar Çölü] Orijinal Çöl korundu, 17 Yeni Aşama ve 14 Yeni Canlı Yükleniyor...");
+    console.log("🏜️ [Arılar Çölü] Orijinal Çöl korundu, 17 Yeni Aşama ve 16 Farklı Canlı Yükleniyor...");
 
     cleanUpBeeDesertExtension();
 
@@ -392,8 +262,8 @@
       { name: "12. Aşama: Mumya Mezarı Tünelleri", z: -3110, y: 50, cFn: createMoltenSkink },
       { name: "13. Aşama: Akrep Kanyonu Köprüleri", z: -3320, y: 54, cFn: createAnubisCarrier },
       { name: "14. Aşama: Sıcak Bazalt Kayaları", z: -3530, y: 58, cFn: createHornetKnight },
-      { name: "15. Aşama: Basamaklı Piramit Terasları", z: -3740, y: 62, cFn: createSoldierBee },
-      { name: "16. Aşama: Anubis Sunağı & Gökyüzü Yolu", z: -3950, y: 66, cFn: createDuneScorpion }
+      { name: "15. Aşama: Basamaklı Piramit Terasları", z: -3740, y: 62, cFn: createPharaohSphinxLancer },
+      { name: "16. Aşama: Anubis Sunağı & Gökyüzü Yolu", z: -3950, y: 66, cFn: createSolarPyramidColossus }
     ];
 
     stageDefs.forEach(sd => {
@@ -438,31 +308,53 @@
     desertExtensionGroup.add(bossGroup);
 
     desertCrocBoss = {
+      id: "boss_desert_sobek",
+      name: "Dev Çöl Timsahı Sobek 🐊👑",
+      mesh: bossGroup,
       group: bossGroup,
+      pos: bossGroup.position,
       hp: 55,
       maxHp: 55,
+      isBoss: true,
+      baseX: 0,
       baseY: 70,
-      attackTimer: 2.0,
+      baseZ: -4350,
+      attackTimer: 1.7,
       isDead: false,
-      update: function(dt, playerPos, game) {
-        if (this.isDead) return;
+      _combatUpgraded: true,
+      update: function(dt, playerPos, gameInst) {
+        if (this.isDead || this.hp <= 0) return;
+        const t = Date.now() * 0.0025;
         this.attackTimer -= dt;
-        bossGroup.position.y = this.baseY + Math.sin(Date.now() * 0.003) * 0.5;
+        bossGroup.position.x = this.baseX + Math.sin(t * 1.2) * 12.0;
+        bossGroup.position.z = this.baseZ + Math.cos(t * 0.85) * 10.0;
+        bossGroup.position.y = this.baseY + Math.sin(t * 1.5) * 0.5;
 
         if (playerPos) {
           bossGroup.lookAt(playerPos.x, bossGroup.position.y, playerPos.z);
         }
 
-        if (this.attackTimer <= 0) {
-          this.attackTimer = 2.4;
+        if (this.attackTimer <= 0 && playerPos) {
+          this.attackTimer = 1.9;
           if (window.St && window.St.playBossRoar) window.St.playBossRoar();
+          if (typeof window.__spawnEnemyProjectile === 'function' && bossGroup.position.distanceTo(playerPos) < 44) {
+            const fireOrigin = bossGroup.position.clone();
+            fireOrigin.y += 2.2;
+            window.__spawnEnemyProjectile(gameInst, fireOrigin, playerPos, {
+              color: 0xfacc15,
+              emissive: 0xd97706,
+              speed: 21.0,
+              damage: 18,
+              radius: 0.7
+            });
+          }
         }
 
         if (playerPos) {
           const d = bossGroup.position.distanceTo(playerPos);
-          if (d < 5.0 && playerPos.y > bossGroup.position.y + 2.5 && game.playerVel && game.playerVel.y < 0) {
+          if (d < 5.0 && playerPos.y > bossGroup.position.y + 2.2 && gameInst.playerVel && gameInst.playerVel.y < 0) {
             this.hp -= 5;
-            game.playerVel.y = 15;
+            gameInst.playerVel.y = 15;
             if (window.St && window.St.playBossHit) window.St.playBossHit();
 
             if (this.hp <= 0) {
@@ -470,16 +362,16 @@
               bossGroup.visible = false;
               bossGroup.position.y = -9999;
               if (window.St && window.St.playGoalFanfare) window.St.playGoalFanfare();
-              if (game.callbacks && game.callbacks.onShowNotice) {
-                game.callbacks.onShowNotice("🎉 Sobek Yenildi! 15. Bölüm: Dünya Final Zirvesi Portalı Açıldı! ⛰️", "success");
+              if (gameInst.callbacks && gameInst.callbacks.onShowNotice) {
+                gameInst.callbacks.onShowNotice("🎉 Sobek Yenildi! 15. Bölüm: Dünya Final Zirvesi Portalı Açıldı! ⛰️", "success");
               }
               if (desertVictoryPortal) {
                 desertVictoryPortal.visible = true;
                 desertVictoryPortal.position.set(0, 71, -4420);
               }
             }
-          } else if (d < 3.5 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(2);
+          } else if (d < 3.5 && (!gameInst.damageInvulnerable || gameInst.damageInvulnerable <= 0)) {
+            if (gameInst.takeDamage) gameInst.takeDamage(2);
           }
         }
       }
@@ -505,7 +397,7 @@
     desertVictoryPortal = portalGroup;
 
     if (game.callbacks && game.callbacks.onShowNotice) {
-      game.callbacks.onShowNotice("🏜️ 14. Bölüm Arılar Çölü 17 Yeni Aşamayla Genişletildi! 14 Yeni Canlı Eklendi!", "info");
+      game.callbacks.onShowNotice("🏜️ 14. Bölüm Arılar Çölü 17 Yeni Aşama ve 16 Farklı Hareketli/Ateş Eden Canlıyla Genişletildi!", "info");
     }
   };
 
@@ -516,13 +408,6 @@
     const game = window.__superBearGame;
     if (!game || game.currentRegion !== "bee_desert") return;
     const playerPos = game.playerPos;
-
-    for (let i = 0; i < desertCreatures.length; i++) {
-      const c = desertCreatures[i];
-      if (c && typeof c.update === "function") {
-        c.update(dt, playerPos, game);
-      }
-    }
 
     if (desertCrocBoss && typeof desertCrocBoss.update === "function") {
       desertCrocBoss.update(dt, playerPos, game);

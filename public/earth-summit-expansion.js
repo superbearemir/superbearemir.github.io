@@ -29,293 +29,139 @@
   }
 
   // =========================================================================
-  // 16 UNIQUE SUMMIT CREATURE GENERATOR HELPERS
+  // 17 UNIQUE SUMMIT CREATURE GENERATOR HELPERS (MOVE & SHOOT)
   // =========================================================================
-  function createSummitCreature(type, x, y, z, hp, updateFn, meshCreator) {
-    const group = meshCreator(x, y, z);
-    group.userData = {
-      type: type,
-      hp: hp,
+  function spawnSummitCreature(x, y, z, name, archetypeIdx, primaryHex, secondaryHex, hp, isFlyer) {
+    const THREE = window.THREE;
+    const game = window.__superBearGame;
+    let group;
+    if (typeof window.__buildDistinctCreatureMesh === 'function') {
+      group = window.__buildDistinctCreatureMesh(THREE, archetypeIdx, {
+        primary: primaryHex,
+        secondary: secondaryHex,
+        eye: 0xef4444,
+        scale: 1.32
+      });
+    } else {
+      group = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(1.2, 1.8, 1.2),
+        new THREE.MeshStandardMaterial({ color: primaryHex, roughness: 0.4 })
+      );
+      body.position.y = 1.0;
+      group.add(body);
+    }
+    group.position.set(x, y, z);
+
+    const enemyObj = {
+      id: "summit_ext_" + archetypeIdx + "_" + Math.round(z),
+      type: "summit_ext_creature_" + archetypeIdx,
+      name: name,
+      mesh: group,
+      pos: new THREE.Vector3(x, y, z),
+      baseX: x,
       baseY: y,
-      startX: x,
-      startZ: z,
-      dir: 1,
-      time: Math.random() * 5,
-      update: function(dt, playerPos, game) {
-        updateFn.call(this, group, dt, playerPos, game);
+      baseZ: z,
+      hp: hp * 35,
+      maxHp: hp * 35,
+      attackPower: 18,
+      _combatUpgraded: true,
+      _archetype: archetypeIdx,
+      _isFlyer: !!isFlyer,
+      _patrolSpeed: isFlyer ? 4.8 : 4.1,
+      _patrolRangeX: 5.2,
+      _patrolRangeZ: 2.8,
+      _animPhase: Math.random() * 10,
+      _projCooldown: 0.8 + Math.random() * 1.3,
+      _projInterval: 1.95,
+      _projTheme: {
+        color: primaryHex,
+        emissive: secondaryHex,
+        speed: 19.5,
+        damage: 16,
+        radius: 0.46
+      },
+      update: function(dt, playerPos, gameInst) {
+        if (this.hp <= 0) return;
+        if (typeof window.__updateCreatureCombatAI === 'function') {
+          window.__updateCreatureCombatAI(this, dt, playerPos, gameInst, archetypeIdx);
+        }
         if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.9 && playerPos.y > group.position.y + 0.9 && game.playerVel && game.playerVel.y < 0) {
-            this.hp -= 2;
-            game.playerVel.y = 12;
+          const d = this.pos.distanceTo(playerPos);
+          if (d < 2.1 && playerPos.y > this.pos.y + 1.2 && gameInst.playerVel && gameInst.playerVel.y < 0) {
+            this.hp -= 40;
+            gameInst.playerVel.y = 13;
             if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) { group.visible = false; group.position.y = -9999; }
-          } else if (d < 1.5 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
+            if (this.hp <= 0) {
+              group.visible = false;
+              this.pos.y = -9999;
+              group.position.y = -9999;
+            }
+          } else if (d < 1.7) {
+            if (gameInst.damagePlayer) gameInst.damagePlayer(18);
+            else if (gameInst.takeDamage) gameInst.takeDamage(1);
           }
         }
       }
     };
+
+    group.userData = enemyObj;
+    if (game && game.currentLevel && Array.isArray(game.currentLevel.enemies)) {
+      game.currentLevel.enemies.push(enemyObj);
+    }
     return group;
   }
 
-  // 1. Stratosfer Plazma Gözcüsü (Plasma Sky Watcher)
   function createPlasmaWatcher(x, y, z) {
-    return createSummitCreature("plasma_watcher", x, y, z, 3, function(grp, dt) {
-      this.time += dt * 3;
-      grp.position.y = this.baseY + Math.sin(this.time) * 1.5;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.8, 12, 12), new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xdc2626, emissiveIntensity: 0.8 }));
-      const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), new THREE.MeshBasicMaterial({ color: 0x000000 }));
-      pupil.position.z = 0.7;
-      g.add(eye, pupil);
-      return g;
-    });
+    return spawnSummitCreature(x, y, z, "Stratosfer Plazma Gözcüsü 👁️⚡", 10, 0xef4444, 0xfacc15, 3, true);
   }
-
-  // 2. Kızıl Lav Ejdercik (Crimson Drake Hatchling)
   function createCrimsonDrake(x, y, z) {
-    return createSummitCreature("crimson_drake", x, y, z, 4, function(grp, dt) {
-      this.time += dt * 4;
-      grp.position.y = this.baseY + Math.sin(this.time) * 1.6;
-      grp.position.x = this.startX + Math.sin(this.time * 0.8) * 4;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.6, 6), new THREE.MeshStandardMaterial({ color: 0x991b1b }));
-      b.rotation.x = Math.PI / 2;
-      g.add(b);
-      return g;
-    });
+    return spawnSummitCreature(x, y, z, "Kızıl Lav Ejderhası 🐉🔥", 1, 0x991b1b, 0xf97316, 4, true);
   }
-
-  // 3. Kozmik Şimşek Şövalyesi (Cosmic Lightning Knight)
   function createLightningKnight(x, y, z) {
-    return createSummitCreature("lightning_knight", x, y, z, 5, function(grp, dt) {
-      grp.rotation.y += dt * 1.2;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.0, 0.8), new THREE.MeshStandardMaterial({ color: 0x3b82f6, metalness: 0.8 }));
-      b.position.y = 1.0;
-      g.add(b);
-      return g;
-    });
+    return spawnSummitCreature(x, y, z, "Kozmik Şimşek Şövalyesi ⚡🛡️", 9, 0x3b82f6, 0x67e8f9, 5, false);
   }
-
-  // 4. Zirve Kar Leoparı (Summit Frost Leopard)
   function createFrostLeopard(x, y, z) {
-    return createSummitCreature("frost_leopard", x, y, z, 4, function(grp, dt) {
-      grp.position.z += this.dir * dt * 4.2;
-      if (Math.abs(grp.position.z - this.startZ) > 7) this.dir *= -1;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.7, 2.0), new THREE.MeshStandardMaterial({ color: 0xe0f2fe }));
-      b.position.y = 0.5;
-      g.add(b);
-      return g;
-    });
+    return spawnSummitCreature(x, y, z, "Zirve Buzul Panteri 🐆❄️", 4, 0xe0f2fe, 0x38bdf8, 4, false);
   }
-
-  // 5. Antik Titan Baş Muhafızı (Ancient Colossus Warden)
   function createColossusWarden(x, y, z) {
-    return createSummitCreature("colossus_warden", x, y, z, 7, function(grp, dt) {
-      grp.rotation.y += dt * 0.6;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.8, 1.4), new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9 }));
-      b.position.y = 1.6;
-      g.add(b);
-      return g;
-    });
+    return spawnSummitCreature(x, y, z, "Antik Titan Baş Muhafızı 🗿💥", 0, 0x334155, 0xef4444, 6, false);
   }
-
-  // 6. Kızıl Çizgi Hançercisi (Red Line Assassin)
   function createRedLineAssassin(x, y, z) {
-    return createSummitCreature("red_line_assassin", x, y, z, 3, function(grp, dt) {
-      grp.position.x += this.dir * dt * 4.0;
-      if (Math.abs(grp.position.x - this.startX) > 6) this.dir *= -1;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 2.0, 6), new THREE.MeshStandardMaterial({ color: 0xdc2626 }));
-      b.position.y = 1.0;
-      g.add(b);
-      return g;
-    });
+    return spawnSummitCreature(x, y, z, "Kırmızı Çizgi Suikastçısı 🗡️🔴", 16, 0xdc2626, 0x1e293b, 4, false);
   }
-
-  // 7. Aura Büyücüsü (Aura Sorcerer)
   function createAuraSorcerer(x, y, z) {
-    return createSummitCreature("aura_sorcerer", x, y, z, 3, function(grp, dt) {
-      this.time += dt * 2.5;
-      grp.position.y = this.baseY + Math.sin(this.time) * 1.3;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.ConeGeometry(0.8, 2.4, 8), new THREE.MeshStandardMaterial({ color: 0x7c3aed }));
-      b.position.y = 1.2;
-      g.add(b);
-      return g;
-    });
+    return spawnSummitCreature(x, y, z, "Kozmik Aura Büyücüsü 🔮✨", 3, 0x7c3aed, 0xc084fc, 4, true);
   }
-
-  // 8. Stratosfer Harpiya Kraliçesi (Queen Harpy)
   function createQueenHarpy(x, y, z) {
-    return createSummitCreature("queen_harpy", x, y, z, 4, function(grp, dt) {
-      this.time += dt * 3.5;
-      grp.position.y = this.baseY + Math.sin(this.time) * 1.8;
-      grp.position.x = this.startX + Math.sin(this.time * 0.9) * 4.5;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.ConeGeometry(0.6, 1.8, 6), new THREE.MeshStandardMaterial({ color: 0x475569 }));
-      b.position.y = 1.0;
-      g.add(b);
-      return g;
-    });
+    return spawnSummitCreature(x, y, z, "Stratosfer Harpiya Kraliçesi 🦅🌪️", 12, 0x475569, 0xf43f5e, 4, true);
   }
-
-  // 9. Meteorite Golemi (Meteor Golem)
   function createMeteorGolem(x, y, z) {
-    return createSummitCreature("meteor_golem", x, y, z, 6, function(grp, dt) {
-      grp.rotation.x += dt * 3;
-      grp.position.z += this.dir * dt * 3.5;
-      if (Math.abs(grp.position.z - this.startZ) > 7) this.dir *= -1;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.SphereGeometry(1.0, 8, 8), new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.9 }));
-      b.position.y = 1.0;
-      g.add(b);
-      return g;
-    });
+    return spawnSummitCreature(x, y, z, "Meteorit Zırhlı Golem ☄️🪨", 6, 0x1c1917, 0xf97316, 6, false);
   }
-
-  // 10. Kızıl Boğa Canavarı (Crimson Minotaur)
   function createCrimsonMinotaur(x, y, z) {
-    return createSummitCreature("minotaur", x, y, z, 6, function(grp, dt) {
-      grp.position.x += this.dir * dt * 3.8;
-      if (Math.abs(grp.position.x - this.startX) > 6) this.dir *= -1;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.4, 1.2), new THREE.MeshStandardMaterial({ color: 0x7f1d1d }));
-      b.position.y = 1.3;
-      g.add(b);
-      return g;
-    });
+    return spawnSummitCreature(x, y, z, "Kızıl Zirve Minotoru 🐂🔥", 11, 0x7f1d1d, 0xfacc15, 6, false);
   }
-
-  // 11. Gölge Kanat Gargoyle (Shadowwing Gargoyle)
   function createShadowwingGargoyle(x, y, z) {
-    return createSummitCreature("gargoyle", x, y, z, 4, function(grp, dt) {
-      this.time += dt * 3;
-      grp.position.y = this.baseY + Math.sin(this.time) * 1.5;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.4, 0.8), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
-      b.position.y = 0.8;
-      g.add(b);
-      return g;
-    });
+    return spawnSummitCreature(x, y, z, "Gölge Kanat Gargoyle 🦇🌑", 8, 0x1e293b, 0xef4444, 4, true);
   }
-
-  // 12. Kutup Yıldızı Ruhu (Polaris Wisp)
   function createPolarisWisp(x, y, z) {
-    return createSummitCreature("polaris_wisp", x, y, z, 3, function(grp, dt) {
-      this.time += dt * 2.5;
-      grp.position.y = this.baseY + Math.sin(this.time) * 1.2;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.SphereGeometry(0.7, 8, 8), new THREE.MeshStandardMaterial({ color: 0x67e8f9, emissive: 0x06b6d4, emissiveIntensity: 0.6 }));
-      b.position.y = 1.0;
-      g.add(b);
-      return g;
-    });
+    return spawnSummitCreature(x, y, z, "Kutup Yıldızı Serafı 🌟❄️", 13, 0x67e8f9, 0xffffff, 4, true);
   }
-
-  // 13. Obsidyen Kalkan Taşıyıcısı (Obsidian Shieldbearer)
   function createShieldbearer(x, y, z) {
-    return createSummitCreature("shieldbearer", x, y, z, 5, function(grp, dt) {
-      grp.rotation.y += dt * 0.8;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.2, 0.6), new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8 }));
-      b.position.y = 1.2;
-      g.add(b);
-      return g;
-    });
+    return spawnSummitCreature(x, y, z, "Obsidyen Kalkan Muhafızı 🛡️🖤", 15, 0x0f172a, 0xef4444, 5, false);
   }
-
-  // 14. Kızıl Kristal Yılanı (Crimson Crystal Serpent)
   function createCrystalSerpent(x, y, z) {
-    return createSummitCreature("serpent", x, y, z, 4, function(grp, dt) {
-      grp.position.z += this.dir * dt * 3.5;
-      if (Math.abs(grp.position.z - this.startZ) > 7) this.dir *= -1;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 2.5, 6), new THREE.MeshStandardMaterial({ color: 0xb91c1c }));
-      b.rotation.x = Math.PI / 2;
-      b.position.y = 0.3;
-      g.add(b);
-      return g;
-    });
+    return spawnSummitCreature(x, y, z, "Kızıl Kristal Engereği 🐍💎", 5, 0xb91c1c, 0xfacc15, 4, false);
   }
-
-  // 15. Fırtına Devinin Eli (Storm Giant Hand)
   function createStormGiantHand(x, y, z) {
-    return createSummitCreature("giant_hand", x, y, z, 5, function(grp, dt) {
-      this.time += dt * 2.8;
-      grp.position.y = this.baseY + Math.abs(Math.sin(this.time)) * 1.6;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.6, 1.6), new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.5 }));
-      b.position.y = 0.5;
-      g.add(b);
-      return g;
-    });
+    return spawnSummitCreature(x, y, z, "Fırtına Devi Akrep Kolosu 🦂⚡", 2, 0x475569, 0x38bdf8, 5, false);
   }
-
-  // 16. Moris Kraliyet Elit Muhafızı (Moris Supreme Praetorian)
   function createMorisPraetorian(x, y, z) {
-    return createSummitCreature("moris_praetorian", x, y, z, 6, function(grp, dt) {
-      grp.rotation.y += dt * 1.5;
-      grp.position.x += this.dir * dt * 3.2;
-      if (Math.abs(grp.position.x - this.startX) > 5) this.dir *= -1;
-    }, function(px, py, pz) {
-      const THREE = window.THREE;
-      const g = new THREE.Group();
-      g.position.set(px, py, pz);
-      const b = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.2, 1.0), new THREE.MeshStandardMaterial({ color: 0x701a75, emissive: 0x4a044e, emissiveIntensity: 0.5 }));
-      b.position.y = 1.2;
-      g.add(b);
-      return g;
-    });
+    return spawnSummitCreature(x, y, z, "Moris Kraliyet Elit Muhafızı 👑⚔️", 17, 0x701a75, 0xef4444, 6, false);
+  }
+  function createCelestialArchangelChampion(x, y, z) {
+    return spawnSummitCreature(x, y, z, "Göksel Şampiyonluk Başmeleği 🪽🔥", 14, 0xfacc15, 0xef4444, 6, true);
   }
 
   // =========================================================================
@@ -324,7 +170,7 @@
   window.__populateEarthSummitExtension = function(game) {
     if (!window.THREE || !game || !game.scene) return;
     const THREE = window.THREE;
-    console.log("⛰️ [Dünya Zirvesi] Orijinal 15 Aşama korundu, 18 Yeni Aşama ve 16 Yeni Canlı Yükleniyor...");
+    console.log("⛰️ [Dünya Zirvesi] Orijinal 15 Aşama korundu, 18 Yeni Aşama ve 17 Farklı Canlı Yükleniyor...");
 
     cleanUpEarthSummitExtension();
 
@@ -420,7 +266,7 @@
       { name: "14. Aşama: Kristal Yılan Sarmalı", z: -5490, y: 132, cFn: createCrystalSerpent },
       { name: "15. Aşama: Fırtına Devinin Pençesi", z: -5700, y: 138, cFn: createStormGiantHand },
       { name: "16. Aşama: Moris Elit Muhafız Barikatı", z: -5910, y: 144, cFn: createMorisPraetorian },
-      { name: "17. Aşama: Göksel Şampiyonluk Rampası", z: -6120, y: 152, cFn: createPlasmaWatcher }
+      { name: "17. Aşama: Göksel Şampiyonluk Rampası", z: -6120, y: 152, cFn: createCelestialArchangelChampion }
     ];
 
     summitStages.forEach(st => {
@@ -458,13 +304,11 @@
     head.position.y = 9.0;
     bossGroup.add(head);
 
-    // Red Crown of Chaos
     const crown = new THREE.Mesh(new THREE.ConeGeometry(1.8, 2.5, 6), redAura);
     crown.rotation.x = Math.PI;
     crown.position.set(0, 12.5, 0);
     bossGroup.add(crown);
 
-    // Glowing Red Eyes
     [-0.7, 0.7].forEach(ex => {
       const eye = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), redAura);
       eye.position.set(ex, 9.2, 2.0);
@@ -474,31 +318,53 @@
     summitExtGroup.add(bossGroup);
 
     summitExtMorisBoss = {
+      id: "boss_summit_moris",
+      name: "Kırmızı Çizgi Hakimi Moris 🐻👑",
+      mesh: bossGroup,
       group: bossGroup,
+      pos: bossGroup.position,
       hp: 100,
       maxHp: 100,
+      isBoss: true,
+      baseX: 0,
       baseY: 160,
-      attackTimer: 2.0,
+      baseZ: -6520,
+      attackTimer: 1.6,
       isDead: false,
-      update: function(dt, playerPos, game) {
-        if (this.isDead) return;
+      _combatUpgraded: true,
+      update: function(dt, playerPos, gameInst) {
+        if (this.isDead || this.hp <= 0) return;
+        const t = Date.now() * 0.0025;
         this.attackTimer -= dt;
-        bossGroup.position.y = this.baseY + Math.sin(Date.now() * 0.003) * 1.0;
+        bossGroup.position.x = this.baseX + Math.sin(t * 1.2) * 14.0;
+        bossGroup.position.z = this.baseZ + Math.cos(t * 0.85) * 10.0;
+        bossGroup.position.y = this.baseY + Math.sin(t * 1.5) * 1.0;
 
         if (playerPos) {
           bossGroup.lookAt(playerPos.x, bossGroup.position.y, playerPos.z);
         }
 
-        if (this.attackTimer <= 0) {
-          this.attackTimer = 2.0;
+        if (this.attackTimer <= 0 && playerPos) {
+          this.attackTimer = 1.7;
           if (window.St && window.St.playBossRoar) window.St.playBossRoar();
+          if (typeof window.__spawnEnemyProjectile === 'function' && bossGroup.position.distanceTo(playerPos) < 46) {
+            const fireOrigin = bossGroup.position.clone();
+            fireOrigin.y += 6.5;
+            window.__spawnEnemyProjectile(gameInst, fireOrigin, playerPos, {
+              color: 0xef4444,
+              emissive: 0xa855f7,
+              speed: 22.0,
+              damage: 20,
+              radius: 0.75
+            });
+          }
         }
 
         if (playerPos) {
           const d = bossGroup.position.distanceTo(playerPos);
-          if (d < 5.0 && playerPos.y > bossGroup.position.y + 7.0 && game.playerVel && game.playerVel.y < 0) {
+          if (d < 5.0 && playerPos.y > bossGroup.position.y + 6.5 && gameInst.playerVel && gameInst.playerVel.y < 0) {
             this.hp -= 10;
-            game.playerVel.y = 16;
+            gameInst.playerVel.y = 16;
             if (window.St && window.St.playBossHit) window.St.playBossHit();
 
             if (this.hp <= 0) {
@@ -506,16 +372,16 @@
               bossGroup.visible = false;
               bossGroup.position.y = -9999;
               if (window.St && window.St.playGoalFanfare) window.St.playGoalFanfare();
-              if (game.callbacks && game.callbacks.onShowNotice) {
-                game.callbacks.onShowNotice("🏆 MORİS YENİLDİ! EVRENSEL ŞAMPİYONLUK KUPASI KAZANILDI! AYI KÖYÜ PORTALI AÇIK! 🎉", "success");
+              if (gameInst.callbacks && gameInst.callbacks.onShowNotice) {
+                gameInst.callbacks.onShowNotice("🏆 MORİS YENİLDİ! EVRENSEL ŞAMPİYONLUK KUPASI KAZANILDI! AYI KÖYÜ PORTALI AÇIK! 🎉", "success");
               }
               if (summitExtVictoryPortal) {
                 summitExtVictoryPortal.visible = true;
                 summitExtVictoryPortal.position.set(0, 161, -6590);
               }
             }
-          } else if (d < 3.5 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(2);
+          } else if (d < 3.5 && (!gameInst.damageInvulnerable || gameInst.damageInvulnerable <= 0)) {
+            if (gameInst.takeDamage) gameInst.takeDamage(2);
           }
         }
       }
@@ -541,7 +407,7 @@
     summitExtVictoryPortal = portalGroup;
 
     if (game.callbacks && game.callbacks.onShowNotice) {
-      game.callbacks.onShowNotice("⛰️ 15. Bölüm Dünya Zirvesi 18 Yeni Aşamayla Genişletildi! 16 Yeni Canlı Eklendi!", "info");
+      game.callbacks.onShowNotice("⛰️ 15. Bölüm Dünya Zirvesi 18 Yeni Aşama ve 17 Farklı Hareketli/Ateş Eden Canlıyla Genişletildi!", "info");
     }
   };
 
@@ -552,13 +418,6 @@
     const game = window.__superBearGame;
     if (!game || game.currentRegion !== "earth_summit") return;
     const playerPos = game.playerPos;
-
-    for (let i = 0; i < summitExtCreatures.length; i++) {
-      const c = summitExtCreatures[i];
-      if (c && typeof c.update === "function") {
-        c.update(dt, playerPos, game);
-      }
-    }
 
     if (summitExtMorisBoss && typeof summitExtMorisBoss.update === "function") {
       summitExtMorisBoss.update(dt, playerPos, game);

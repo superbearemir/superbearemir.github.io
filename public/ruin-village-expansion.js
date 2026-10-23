@@ -29,490 +29,130 @@
   }
 
   // =========================================================================
-  // CREATURE CREATION HELPERS (9 UNIQUE RUIN CREATURES)
+  // CREATURE CREATION HELPERS (14 UNIQUE RUIN CREATURES - MOVE & SHOOT)
   // =========================================================================
-
-  // 1. Shadow Clown Phantom (Teleporting spectral jester)
-  function createShadowClownPhantom(x, y, z) {
+  function spawnRuinCreature(x, y, z, name, archetypeIdx, primaryHex, secondaryHex, hp, isFlyer) {
     const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-
-    const ghostMat = new THREE.MeshStandardMaterial({
-      color: 0x9333ea,
-      emissive: 0x581c87,
-      emissiveIntensity: 0.6,
-      transparent: true,
-      opacity: 0.85
-    });
-
-    const body = new THREE.Mesh(new THREE.ConeGeometry(0.7, 2.0, 8), ghostMat);
-    body.position.y = 1.0;
-    group.add(body);
-
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.55, 10, 10), new THREE.MeshStandardMaterial({ color: 0xf1f5f9 }));
-    head.position.y = 2.2;
-    group.add(head);
-
-    // Jester cap horns
-    [-0.4, 0.4].forEach(hx => {
-      const horn = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.8, 6), ghostMat);
-      horn.position.set(hx, 2.8, 0);
-      horn.rotation.z = hx > 0 ? -0.4 : 0.4;
-      group.add(horn);
-    });
-
-    group.userData = {
-      type: "clown_phantom",
-      hp: 3,
-      baseY: y,
-      startX: x,
-      startZ: z,
-      teleportTimer: 0,
-      update: function(dt, playerPos, game) {
-        this.teleportTimer += dt;
-        group.position.y = this.baseY + Math.sin(this.teleportTimer * 3) * 0.6;
-        group.rotation.y += dt * 2.0;
-
-        // Teleport every 3.5s
-        if (this.teleportTimer > 3.5) {
-          this.teleportTimer = 0;
-          const angle = Math.random() * Math.PI * 2;
-          group.position.x = this.startX + Math.cos(angle) * 5;
-          group.position.z = this.startZ + Math.sin(angle) * 5;
-        }
-
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.8 && playerPos.y > group.position.y + 1.2 && game.playerVel && game.playerVel.y < 0) {
-            this.hp--;
-            game.playerVel.y = 11;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) {
-              group.visible = false;
-              group.position.y = -9999;
-            }
-          } else if (d < 1.4 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
-  }
-
-  // 2. Rusty Marionette (Jerky puppet warrior)
-  function createRustyMarionette(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-
-    const woodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8 });
-    const rustMat = new THREE.MeshStandardMaterial({ color: 0xb45309, metalness: 0.5, roughness: 0.7 });
-
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.4, 0.5), woodMat);
-    torso.position.y = 1.2;
-    group.add(torso);
-
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.45, 8, 8), woodMat);
-    head.position.y = 2.2;
-    group.add(head);
-
-    // Rusty cleaver arm
-    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.2, 0.3), rustMat);
-    arm.position.set(0.6, 1.2, 0.4);
-    arm.rotation.x = Math.PI / 4;
-    group.add(arm);
-
-    group.userData = {
-      type: "marionette",
-      hp: 3,
-      baseY: y,
-      time: Math.random() * 5,
-      dir: 1,
-      startX: x,
-      update: function(dt, playerPos, game) {
-        this.time += dt * 4;
-        group.rotation.y = Math.sin(this.time) * 0.4;
-        group.position.x += this.dir * dt * 2.2;
-        if (Math.abs(group.position.x - this.startX) > 5) {
-          this.dir *= -1;
-        }
-
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.7 && playerPos.y > group.position.y + 1.4 && game.playerVel && game.playerVel.y < 0) {
-            this.hp--;
-            game.playerVel.y = 11;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) {
-              group.visible = false;
-              group.position.y = -9999;
-            }
-          } else if (d < 1.4 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
-  }
-
-  // 3. Cinder Raven (Fiery dive-bombing bird)
-  function createCinderRaven(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-
-    const ashMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, roughness: 0.9 });
-    const fireMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xdc2626, emissiveIntensity: 0.8 });
-
-    const body = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.2, 6), ashMat);
-    body.rotation.x = Math.PI / 2;
-    group.add(body);
-
-    const wingL = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.05, 0.6), fireMat);
-    wingL.position.x = -0.8;
-    const wingR = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.05, 0.6), fireMat);
-    wingR.position.x = 0.8;
-    group.add(wingL, wingR);
-
-    group.userData = {
-      type: "cinder_raven",
-      hp: 2,
-      baseY: y,
-      time: Math.random() * 5,
-      wingL, wingR,
-      update: function(dt, playerPos, game) {
-        this.time += dt * 3;
-        wingL.rotation.z = Math.sin(this.time * 6) * 0.6;
-        wingR.rotation.z = -Math.sin(this.time * 6) * 0.6;
-        group.position.y = this.baseY + Math.sin(this.time * 1.5) * 1.8;
-        group.position.x += Math.cos(this.time) * dt * 3.5;
-
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.6 && playerPos.y > group.position.y + 0.4 && game.playerVel && game.playerVel.y < 0) {
-            this.hp--;
-            game.playerVel.y = 10;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) {
-              group.visible = false;
-              group.position.y = -9999;
-            }
-          } else if (d < 1.3 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
-  }
-
-  // 4. Rubble Golem (Stonework colossus)
-  function createRubbleGolem(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-
-    const rockMat = new THREE.MeshStandardMaterial({ color: 0x52525b, roughness: 0.95 });
-    const lavaVein = new THREE.MeshStandardMaterial({ color: 0xf97316, emissive: 0xea580c, emissiveIntensity: 0.6 });
-
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.8, 1.4), rockMat);
-    torso.position.y = 1.6;
-    group.add(torso);
-
-    const crack = new THREE.Mesh(new THREE.BoxGeometry(0.2, 1.4, 1.45), lavaVein);
-    crack.position.y = 1.6;
-    group.add(crack);
-
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.8, 0.9), rockMat);
-    head.position.y = 2.9;
-    group.add(head);
-
-    group.userData = {
-      type: "rubble_golem",
-      hp: 5,
-      baseY: y,
-      stompTimer: 0,
-      update: function(dt, playerPos, game) {
-        this.stompTimer += dt;
-        group.position.y = this.baseY + Math.abs(Math.sin(this.stompTimer * 2)) * 0.3;
-
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 2.0 && playerPos.y > group.position.y + 2.0 && game.playerVel && game.playerVel.y < 0) {
-            this.hp -= 2;
-            game.playerVel.y = 12;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) {
-              group.visible = false;
-              group.position.y = -9999;
-            }
-          } else if (d < 1.8 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
-  }
-
-  // 5. Gas Balloon Spitter (Floating toxic cloud spitter)
-  function createGasBalloonSpitter(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-
-    const gasMat = new THREE.MeshStandardMaterial({
-      color: 0x84cc16,
-      emissive: 0x4d7c0f,
-      emissiveIntensity: 0.5,
-      transparent: true,
-      opacity: 0.85
-    });
-
-    const balloon = new THREE.Mesh(new THREE.SphereGeometry(1.0, 12, 12), gasMat);
-    balloon.scale.set(1, 1.3, 1);
-    balloon.position.y = 1.5;
-    group.add(balloon);
-
-    const mouth = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.08, 6, 10), new THREE.MeshBasicMaterial({ color: 0x14532d }));
-    mouth.position.set(0, 1.2, 0.9);
-    group.add(mouth);
-
-    group.userData = {
-      type: "gas_balloon",
-      hp: 2,
-      baseY: y,
-      time: Math.random() * 5,
-      update: function(dt, playerPos, game) {
-        this.time += dt;
-        group.position.y = this.baseY + Math.sin(this.time * 2) * 1.4;
-
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.7 && playerPos.y > group.position.y + 1.2 && game.playerVel && game.playerVel.y < 0) {
-            this.hp--;
-            game.playerVel.y = 11;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) {
-              group.visible = false;
-              group.position.y = -9999;
-            }
-          } else if (d < 1.4 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
-  }
-
-  // 6. Cursed Automaton Lion (Mechanical brass lion)
-  function createAutomatonLion(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-
-    const brassMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.7, roughness: 0.3 });
-    const maneMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.8 });
-
-    const body = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.0, 2.0), brassMat);
-    body.position.y = 0.8;
-    group.add(body);
-
-    const head = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.9), brassMat);
-    head.position.set(0, 1.4, 1.1);
-    group.add(head);
-
-    const mane = new THREE.Mesh(new THREE.TorusGeometry(0.7, 0.3, 6, 12), maneMat);
-    mane.position.set(0, 1.4, 0.8);
-    group.add(mane);
-
-    group.userData = {
-      type: "auto_lion",
-      hp: 4,
-      baseY: y,
-      startX: x,
-      dir: 1,
-      update: function(dt, playerPos, game) {
-        group.position.x += this.dir * dt * 3.8;
-        if (Math.abs(group.position.x - this.startX) > 6) {
-          this.dir *= -1;
-          group.rotation.y = this.dir > 0 ? 0 : Math.PI;
-        }
-
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.9 && playerPos.y > group.position.y + 1.2 && game.playerVel && game.playerVel.y < 0) {
-            this.hp -= 2;
-            game.playerVel.y = 11;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) {
-              group.visible = false;
-              group.position.y = -9999;
-            }
-          } else if (d < 1.6 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
-  }
-
-  // 7. Bone Skitterer (Fast skeletal crawler)
-  function createBoneSkitterer(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-
-    const boneMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.6 });
-
-    const skull = new THREE.Mesh(new THREE.SphereGeometry(0.6, 8, 8), boneMat);
-    skull.position.y = 0.6;
-    group.add(skull);
-
-    // Bone legs
-    for (let l = 0; l < 4; l++) {
-      const legL = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.0, 6), boneMat);
-      legL.position.set(-0.7, 0.3, -0.4 + l * 0.3);
-      legL.rotation.z = Math.PI / 4;
-      const legR = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.0, 6), boneMat);
-      legR.position.set(0.7, 0.3, -0.4 + l * 0.3);
-      legR.rotation.z = -Math.PI / 4;
-      group.add(legL, legR);
+    const game = window.__superBearGame;
+    let group;
+    if (typeof window.__buildDistinctCreatureMesh === 'function') {
+      group = window.__buildDistinctCreatureMesh(THREE, archetypeIdx, {
+        primary: primaryHex,
+        secondary: secondaryHex,
+        eye: 0xff2200,
+        scale: 1.28
+      });
+    } else {
+      group = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.BoxGeometry(1.1, 1.6, 1.1),
+        new THREE.MeshStandardMaterial({ color: primaryHex, roughness: 0.7 })
+      );
+      body.position.y = 0.9;
+      group.add(body);
     }
+    group.position.set(x, y, z);
 
-    group.userData = {
-      type: "bone_skitterer",
-      hp: 2,
+    const enemyObj = {
+      id: "ruin_" + archetypeIdx + "_" + Math.round(z),
+      type: "ruin_creature_" + archetypeIdx,
+      name: name,
+      mesh: group,
+      pos: new THREE.Vector3(x, y, z),
+      baseX: x,
       baseY: y,
-      startZ: z,
-      dir: 1,
-      update: function(dt, playerPos, game) {
-        group.position.z += this.dir * dt * 4.5;
-        if (Math.abs(group.position.z - this.startZ) > 7) {
-          this.dir *= -1;
+      baseZ: z,
+      hp: hp * 32,
+      maxHp: hp * 32,
+      attackPower: 15,
+      _combatUpgraded: true,
+      _archetype: archetypeIdx,
+      _isFlyer: !!isFlyer,
+      _patrolSpeed: isFlyer ? 4.5 : 3.8,
+      _patrolRangeX: 5.0,
+      _patrolRangeZ: 2.8,
+      _animPhase: Math.random() * 10,
+      _projCooldown: 0.9 + Math.random() * 1.4,
+      _projInterval: 2.1,
+      _projTheme: {
+        color: primaryHex,
+        emissive: secondaryHex,
+        speed: 18.0,
+        damage: 14,
+        radius: 0.44
+      },
+      update: function(dt, playerPos, gameInst) {
+        if (this.hp <= 0) return;
+        if (typeof window.__updateCreatureCombatAI === 'function') {
+          window.__updateCreatureCombatAI(this, dt, playerPos, gameInst, archetypeIdx);
         }
-
         if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.5 && playerPos.y > group.position.y + 0.6 && game.playerVel && game.playerVel.y < 0) {
-            this.hp--;
-            game.playerVel.y = 11;
+          const d = this.pos.distanceTo(playerPos);
+          if (d < 2.0 && playerPos.y > this.pos.y + 1.2 && gameInst.playerVel && gameInst.playerVel.y < 0) {
+            this.hp -= 35;
+            gameInst.playerVel.y = 12;
             if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
             if (this.hp <= 0) {
               group.visible = false;
+              this.pos.y = -9999;
               group.position.y = -9999;
             }
-          } else if (d < 1.3 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
+          } else if (d < 1.65) {
+            if (gameInst.damagePlayer) gameInst.damagePlayer(15);
+            else if (gameInst.takeDamage) gameInst.takeDamage(1);
           }
         }
       }
     };
+
+    group.userData = enemyObj;
+    if (game && game.currentLevel && Array.isArray(game.currentLevel.enemies)) {
+      game.currentLevel.enemies.push(enemyObj);
+    }
     return group;
   }
 
-  // 8. Flame Acrobat Imp (Fire-flipping demon)
+  function createShadowClownPhantom(x, y, z) {
+    return spawnRuinCreature(x, y, z, "Gölge Palyaço Hayaleti 🤡👻", 16, 0x9333ea, 0xfacc15, 3, true);
+  }
+  function createRustyMarionette(x, y, z) {
+    return spawnRuinCreature(x, y, z, "Paslı Kukla Savaşçısı 🪆⚔️", 9, 0x78350f, 0xd97706, 3, false);
+  }
+  function createCinderRaven(x, y, z) {
+    return spawnRuinCreature(x, y, z, "Kor Kanatlı Kül Kuzgunu 🐦‍⬛🔥", 1, 0x1f2937, 0xef4444, 3, true);
+  }
+  function createRubbleGolem(x, y, z) {
+    return spawnRuinCreature(x, y, z, "Yıkıntı Moloz Golemi 🪨💥", 0, 0x52525b, 0xf97316, 5, false);
+  }
+  function createGasBalloonSpitter(x, y, z) {
+    return spawnRuinCreature(x, y, z, "Zehirli Sirk Balonu 🎈☣️", 10, 0x84cc16, 0xa855f7, 3, true);
+  }
+  function createAutomatonLion(x, y, z) {
+    return spawnRuinCreature(x, y, z, "Lanetli Mekanik Sirk Aslanı 🦁⚙️", 4, 0xd97706, 0xef4444, 4, false);
+  }
+  function createBoneSkitterer(x, y, z) {
+    return spawnRuinCreature(x, y, z, "İskelet Akrep Örümceği 🦴🕷️", 7, 0xfef08a, 0xdc2626, 3, false);
+  }
   function createFlameAcrobatImp(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-
-    const impMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, emissive: 0x991b1b, emissiveIntensity: 0.5 });
-
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.65, 10, 10), impMat);
-    body.position.y = 0.8;
-    group.add(body);
-
-    const hornL = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.6, 6), impMat);
-    hornL.position.set(-0.35, 1.4, 0);
-    const hornR = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.6, 6), impMat);
-    hornR.position.set(0.35, 1.4, 0);
-    group.add(hornL, hornR);
-
-    group.userData = {
-      type: "flame_imp",
-      hp: 3,
-      baseY: y,
-      flipAngle: 0,
-      startX: x,
-      dir: 1,
-      update: function(dt, playerPos, game) {
-        this.flipAngle += dt * 5;
-        group.rotation.x = this.flipAngle;
-        group.position.x += this.dir * dt * 3.2;
-        if (Math.abs(group.position.x - this.startX) > 6) {
-          this.dir *= -1;
-        }
-
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.6 && playerPos.y > group.position.y + 0.8 && game.playerVel && game.playerVel.y < 0) {
-            this.hp--;
-            game.playerVel.y = 11;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) {
-              group.visible = false;
-              group.position.y = -9999;
-            }
-          } else if (d < 1.4 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
+    return spawnRuinCreature(x, y, z, "Ateşbaz İblis Cambaz 🎪🔥", 12, 0xdc2626, 0xfacc15, 3, true);
   }
-
-  // 9. Haunted Knight Armor (Living steel suit)
   function createHauntedArmor(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-
-    const steelMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.9, roughness: 0.3 });
-    const blueVisor = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-
-    const cuirass = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.6, 0.9), steelMat);
-    cuirass.position.y = 1.6;
-    group.add(cuirass);
-
-    const helm = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), steelMat);
-    helm.position.y = 2.8;
-    group.add(helm);
-
-    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.15, 0.1), blueVisor);
-    visor.position.set(0, 2.8, 0.42);
-    group.add(visor);
-
-    group.userData = {
-      type: "haunted_armor",
-      hp: 5,
-      baseY: y,
-      update: function(dt, playerPos, game) {
-        group.rotation.y += dt * 0.8;
-
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.9 && playerPos.y > group.position.y + 2.0 && game.playerVel && game.playerVel.y < 0) {
-            this.hp -= 2;
-            game.playerVel.y = 12;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) {
-              group.visible = false;
-              group.position.y = -9999;
-            }
-          } else if (d < 1.6 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
+    return spawnRuinCreature(x, y, z, "Lanetli Zırhlı Şövalye 🛡️🗡️", 17, 0x334155, 0x38bdf8, 5, false);
+  }
+  function createCatapultSiegeBrute(x, y, z) {
+    return spawnRuinCreature(x, y, z, "Harabe Kuşatma Minotoru 🐂🔨", 11, 0x7c2d12, 0xef4444, 5, false);
+  }
+  function createCharredMillSpider(x, y, z) {
+    return spawnRuinCreature(x, y, z, "Yanmış Değirmen Akrebi 🦂🔥", 2, 0x27272a, 0xf97316, 4, false);
+  }
+  function createTarPitLeviathan(x, y, z) {
+    return spawnRuinCreature(x, y, z, "Kaynar Zift Yılanı 🐍🖤", 5, 0x18181b, 0xef4444, 4, false);
+  }
+  function createMirrorHallIllusionist(x, y, z) {
+    return spawnRuinCreature(x, y, z, "Aynalı Labirent Sihirbazı 🪞🔮", 3, 0x6366f1, 0xf43f5e, 4, true);
+  }
+  function createBloodBellGargoyle(x, y, z) {
+    return spawnRuinCreature(x, y, z, "Kanlı Çan Kulesi Gargoyle'u 🦇🔔", 8, 0x7f1d1d, 0xfacc15, 5, true);
   }
 
   // =========================================================================
@@ -521,7 +161,7 @@
   window.__populateRuinVillageExtension = function(game) {
     if (!window.THREE || !game || !game.scene) return;
     const THREE = window.THREE;
-    console.log("🏚️ [Yıkılmış Köy] Orijinal Köy korundu, 15 Yeni Aşama ve 9 Yeni Canlı Yükleniyor...");
+    console.log("🏚️ [Yıkılmış Köy] Orijinal Köy korundu, 15 Yeni Aşama ve 14 Farklı Canlı Yükleniyor...");
 
     cleanUpRuinVillageExtension();
 
@@ -598,7 +238,7 @@
     addPlat(12, 2, 45, 0, 4, -525, rustIronMat);
 
     // =========================================================================
-    // 15 EXTENDED STAGES
+    // 15 EXTENDED STAGES (HER AŞAMADA FARKLI BİR HARABE CANLISI!)
     // =========================================================================
 
     // Stage 1: Yıkık Sirk Halatları (z: -560 to -740)
@@ -699,9 +339,9 @@
     addPlat(8, 2, 14, -8, 32, -2570, rubbleStoneMat);
     addPlat(8, 2, 14, 8, 30, -2610, rubbleStoneMat);
     addPlat(16, 2, 25, 0, 28, -2660, rustIronMat);
-    const g2 = createRubbleGolem(0, 29, -2660);
-    ruinExtensionGroup.add(g2);
-    ruinCreatures.push(g2.userData);
+    const brute10 = createCatapultSiegeBrute(0, 29, -2660);
+    ruinExtensionGroup.add(brute10);
+    ruinCreatures.push(brute10.userData);
 
     // Stage 11: Yanmış Değirmen Çarkları (z: -2720 to -2930)
     addCheckpoint(0, 28, -2720, "11. Aşama: Yanmış Değirmen Çarkı");
@@ -709,9 +349,9 @@
     addPlat(6, 2, 12, -7, 30, -2790, rustIronMat);
     addPlat(6, 2, 12, 7, 32, -2830, rustIronMat);
     addPlat(16, 2, 25, 0, 34, -2880, burntWoodMat);
-    const m2 = createRustyMarionette(0, 35, -2880);
-    ruinExtensionGroup.add(m2);
-    ruinCreatures.push(m2.userData);
+    const spider11 = createCharredMillSpider(0, 35, -2880);
+    ruinExtensionGroup.add(spider11);
+    ruinCreatures.push(spider11.userData);
 
     // Stage 12: Zift Şelalesi & Dönen Bazalt Sütunlar (z: -2940 to -3150)
     addCheckpoint(0, 34, -2940, "12. Aşama: Zift Şelalesi");
@@ -719,9 +359,9 @@
     addPlat(6, 2, 10, -6, 36, -3010, bloodStoneMat);
     addPlat(6, 2, 10, 6, 38, -3050, bloodStoneMat);
     addPlat(16, 2, 25, 0, 40, -3100, rubbleStoneMat);
-    const s2 = createBoneSkitterer(0, 41, -3100);
-    ruinExtensionGroup.add(s2);
-    ruinCreatures.push(s2.userData);
+    const levi12 = createTarPitLeviathan(0, 41, -3100);
+    ruinExtensionGroup.add(levi12);
+    ruinCreatures.push(levi12.userData);
 
     // Stage 13: Lanetli Aynalı Sirk Labirenti (z: -3160 to -3370)
     addCheckpoint(0, 40, -3160, "13. Aşama: Aynalı Sirk Labirenti");
@@ -729,9 +369,9 @@
     addPlat(7, 2, 14, -8, 42, -3230, crackedBrickMat);
     addPlat(7, 2, 14, 8, 44, -3270, crackedBrickMat);
     addPlat(16, 2, 25, 0, 46, -3320, rustIronMat);
-    const p2 = createShadowClownPhantom(0, 47, -3320);
-    ruinExtensionGroup.add(p2);
-    ruinCreatures.push(p2.userData);
+    const illus13 = createMirrorHallIllusionist(0, 47, -3320);
+    ruinExtensionGroup.add(illus13);
+    ruinCreatures.push(illus13.userData);
 
     // Stage 14: Kanlı Çan Kulesi Merdiveni (z: -3380 to -3590)
     addCheckpoint(0, 46, -3380, "14. Aşama: Kanlı Çan Kulesi");
@@ -741,9 +381,9 @@
     addPlat(8, 2, 14, -8, 56, -3500, rubbleStoneMat);
     addPlat(8, 2, 14, 8, 52, -3540, rubbleStoneMat);
     addPlat(18, 2, 28, 0, 48, -3580, bloodStoneMat);
-    const a2 = createHauntedArmor(0, 49, -3580);
-    ruinExtensionGroup.add(a2);
-    ruinCreatures.push(a2.userData);
+    const garg14 = createBloodBellGargoyle(0, 50, -3580);
+    ruinExtensionGroup.add(garg14);
+    ruinCreatures.push(garg14.userData);
 
     // Stage 15: BÜYÜK HARABE SİRK ARENASI & DEV PALYAÇO BOSS (z: -3630 to -3900)
     addCheckpoint(0, 48, -3630, "15. Aşama: Sirk Arenası - Dev Palyaço Boss");
@@ -772,12 +412,10 @@
     head.position.y = 9.0;
     bossGroup.add(head);
 
-    // Red clown nose
     const nose = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 12), new THREE.MeshStandardMaterial({ color: 0xdc2626 }));
     nose.position.set(0, 9.0, 2.3);
     bossGroup.add(nose);
 
-    // Jester cap
     const cap = new THREE.Mesh(new THREE.ConeGeometry(1.6, 3.2, 12), new THREE.MeshStandardMaterial({ color: 0x8b5cf6 }));
     cap.position.set(0, 12.2, 0);
     bossGroup.add(cap);
@@ -785,32 +423,53 @@
     ruinExtensionGroup.add(bossGroup);
 
     ruinClownBoss = {
+      id: "boss_ruin_clown",
+      name: "Dev Sirk Palyaçosu 🤡👑",
+      mesh: bossGroup,
       group: bossGroup,
+      pos: bossGroup.position,
       hp: 45,
       maxHp: 45,
+      isBoss: true,
+      baseX: 0,
       baseY: 48,
-      attackTimer: 2.0,
+      baseZ: -3790,
+      attackTimer: 1.7,
       isDead: false,
-      update: function(dt, playerPos, game) {
-        if (this.isDead) return;
+      _combatUpgraded: true,
+      update: function(dt, playerPos, gameInst) {
+        if (this.isDead || this.hp <= 0) return;
+        const t = Date.now() * 0.0025;
         this.attackTimer -= dt;
-        bossGroup.position.y = this.baseY + Math.sin(Date.now() * 0.003) * 1.0;
-        bossGroup.rotation.y += dt * 0.8;
+        bossGroup.position.x = this.baseX + Math.sin(t * 1.1) * 11.0;
+        bossGroup.position.z = this.baseZ + Math.cos(t * 0.8) * 9.0;
+        bossGroup.position.y = this.baseY + Math.sin(t * 1.5) * 1.0;
 
         if (playerPos) {
           bossGroup.lookAt(playerPos.x, bossGroup.position.y, playerPos.z);
         }
 
-        if (this.attackTimer <= 0) {
-          this.attackTimer = 2.4;
+        if (this.attackTimer <= 0 && playerPos) {
+          this.attackTimer = 1.9;
           if (window.St && window.St.playBossRoar) window.St.playBossRoar();
+          if (typeof window.__spawnEnemyProjectile === 'function' && bossGroup.position.distanceTo(playerPos) < 42) {
+            const fireOrigin = bossGroup.position.clone();
+            fireOrigin.y += 6.5;
+            window.__spawnEnemyProjectile(gameInst, fireOrigin, playerPos, {
+              color: 0x8b5cf6,
+              emissive: 0xef4444,
+              speed: 20.0,
+              damage: 17,
+              radius: 0.65
+            });
+          }
         }
 
         if (playerPos) {
           const d = bossGroup.position.distanceTo(playerPos);
-          if (d < 4.5 && playerPos.y > bossGroup.position.y + 7.0 && game.playerVel && game.playerVel.y < 0) {
+          if (d < 4.5 && playerPos.y > bossGroup.position.y + 6.5 && gameInst.playerVel && gameInst.playerVel.y < 0) {
             this.hp -= 5;
-            game.playerVel.y = 15;
+            gameInst.playerVel.y = 15;
             if (window.St && window.St.playBossHit) window.St.playBossHit();
 
             if (this.hp <= 0) {
@@ -818,16 +477,16 @@
               bossGroup.visible = false;
               bossGroup.position.y = -9999;
               if (window.St && window.St.playGoalFanfare) window.St.playGoalFanfare();
-              if (game.callbacks && game.callbacks.onShowNotice) {
-                game.callbacks.onShowNotice("🎉 Dev Palyaço Boss Yenildi! 13. Bölüm: Su Mağarası Portalı Açıldı! 💧", "success");
+              if (gameInst.callbacks && gameInst.callbacks.onShowNotice) {
+                gameInst.callbacks.onShowNotice("🎉 Dev Palyaço Boss Yenildi! 13. Bölüm: Su Mağarası Portalı Açıldı! 💧", "success");
               }
               if (ruinVictoryPortal) {
                 ruinVictoryPortal.visible = true;
                 ruinVictoryPortal.position.set(0, 49, -3860);
               }
             }
-          } else if (d < 3.2 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(2);
+          } else if (d < 3.4 && (!gameInst.damageInvulnerable || gameInst.damageInvulnerable <= 0)) {
+            if (gameInst.takeDamage) gameInst.takeDamage(2);
           }
         }
       }
@@ -853,7 +512,7 @@
     ruinVictoryPortal = portalGroup;
 
     if (game.callbacks && game.callbacks.onShowNotice) {
-      game.callbacks.onShowNotice("🏚️ 12. Bölüm Yıkılmış Köy 15 Yeni Aşamayla Genişletildi! 9 Yeni Canlı Eklendi!", "info");
+      game.callbacks.onShowNotice("🏚️ 12. Bölüm Yıkılmış Köy 15 Yeni Aşama ve 14 Farklı Hareketli/Ateş Eden Canlıyla Genişletildi!", "info");
     }
   };
 
@@ -864,13 +523,6 @@
     const game = window.__superBearGame;
     if (!game || game.currentRegion !== "ruin_village") return;
     const playerPos = game.playerPos;
-
-    for (let i = 0; i < ruinCreatures.length; i++) {
-      const c = ruinCreatures[i];
-      if (c && typeof c.update === "function") {
-        c.update(dt, playerPos, game);
-      }
-    }
 
     if (ruinClownBoss && typeof ruinClownBoss.update === "function") {
       ruinClownBoss.update(dt, playerPos, game);

@@ -6636,9 +6636,55 @@ function populateDinosaurWorld(game) {
         }
     }
 
-    // Mini Dinosaurs
+    // Prehistoric Valley Diverse Creatures (20 unique variations)
+    const dinoValleyPalette = [
+        { name: 'Kızıl Velosiraptor 🦎', color: 0xdc2626, crest: 'fin', scale: 0.95 },
+        { name: 'Zümrüt Dilofozor 🦖', color: 0x16a34a, crest: 'frill', scale: 1.05 },
+        { name: 'Zırhlı Ankilozor Yavrusu 🛡️', color: 0xca8a04, crest: 'spikes', scale: 1.15 },
+        { name: 'Mor Kretase Sürüngeni 🐉', color: 0x9333ea, crest: 'horns', scale: 1.0 },
+        { name: 'Turkuaz Bataklık Avcısı 🐊', color: 0x0891b2, crest: 'sail', scale: 1.1 },
+        { name: 'Ateş Sırtlı İguanodon 🔥', color: 0xea580c, crest: 'plates', scale: 1.08 },
+        { name: 'Gece Gölgesi Raptor 🌑', color: 0x3b82f6, crest: 'wing', scale: 0.92 },
+        { name: 'Altın Boynuzlu Seratops 🦏', color: 0xeab308, crest: 'trihorn', scale: 1.18 }
+    ];
     for(let i=0; i<20; i++) {
+        const spec = dinoValleyPalette[i % dinoValleyPalette.length];
         const miniDino = createDinoMesh(THREE, false);
+        const sFactor = spec.scale * (0.88 + (i % 4) * 0.08);
+        miniDino.scale.set(sFactor, sFactor, sFactor);
+        const tintMat = new THREE.MeshStandardMaterial({ color: spec.color, roughness: 0.45, emissive: spec.color, emissiveIntensity: 0.18 });
+        miniDino.traverse(ch => {
+            if (ch.isMesh && ch.geometry && ch.geometry.type === 'BoxGeometry') {
+                ch.material = tintMat;
+            }
+        });
+        // Add distinct species feature (horns, dorsal sail, wings, or tail club)
+        const featMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: spec.color, emissiveIntensity: 0.4 });
+        if (spec.crest === 'sail' || spec.crest === 'fin') {
+            const sail = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1.1, 1.8), featMat);
+            sail.position.set(0, 2.2, -0.2);
+            miniDino.add(sail);
+        } else if (spec.crest === 'horns' || spec.crest === 'trihorn') {
+            [-0.35, 0.35].forEach(hx => {
+                const horn = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.9, 6), featMat);
+                horn.position.set(hx, 2.5, 1.2);
+                horn.rotation.x = Math.PI / 4;
+                miniDino.add(horn);
+            });
+        } else if (spec.crest === 'wing') {
+            [-1.1, 1.1].forEach(wx => {
+                const wing = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.1, 0.9), featMat);
+                wing.position.set(wx, 1.6, 0);
+                miniDino.add(wing);
+            });
+        } else {
+            for (let sp = 0; sp < 3; sp++) {
+                const spike = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.75, 5), featMat);
+                spike.position.set(0, 2.1, -0.6 + sp * 0.6);
+                miniDino.add(spike);
+            }
+        }
+
         const pos = new THREE.Vector3((Math.random()-0.5)*140, 0.5, (Math.random()-0.5)*100 + 40);
         miniDino.position.copy(pos);
         game.currentLevel.mesh.add(miniDino);
@@ -6646,17 +6692,20 @@ function populateDinosaurWorld(game) {
         game.currentLevel.enemies.push({
             id: `mini_dino_${i}`,
             type: 'dino_minion',
-            name: 'Küçük Dinozor',
+            name: `${spec.name} #${i + 1}`,
             mesh: miniDino,
             pos: pos,
+            basePos: pos.clone(),
             velocity: new THREE.Vector3(),
-            hp: 100,
-            maxHp: 100,
-            attackPower: 3,
+            hp: 90 + (i % 5) * 15,
+            maxHp: 90 + (i % 5) * 15,
+            attackPower: 8 + (i % 4) * 2,
             isBoss: false,
-            attackCooldown: 0,
+            attackCooldown: 1.0 + (i % 5) * 0.4,
+            patrolSpeed: 2.2 + (i % 5) * 0.45,
+            patrolRadius: 5.5 + (i % 4) * 2.0,
             state: 'chase',
-            animTimer: Math.random() * 10
+            animTimer: i * 1.37
         });
     }
 
@@ -12423,50 +12472,72 @@ function updateSpaceLoop() {
               const dist = e.pos.distanceTo(pPos);
               
               if (e.type === 'dino_trex_boss') {
-                  // Only wake up if player is very close (e.g. reached the tower)
-                  if (dist < 32) { 
+                  const arenaCenterX = e.basePos ? e.basePos.x : 0;
+                  const arenaCenterZ = e.basePos ? e.basePos.z : -90;
+                  // Wake up or patrol arena
+                  if (dist < 42) { 
                       e.mesh.rotation.y = Math.atan2(pPos.x - e.pos.x, pPos.z - e.pos.z);
                       
-                      if (dist > 8) {
+                      if (dist > 7) {
                           const dir = pPos.clone().sub(e.pos).normalize();
-                          e.pos.x += dir.x * 2.5 * dt;
-                          e.pos.z += dir.z * 2.5 * dt;
+                          e.pos.x += dir.x * 4.2 * dt;
+                          e.pos.z += dir.z * 4.2 * dt;
                       }
                       
-                      // Keep boss on the tower (center: 0, -90, radius: 24)
-                      const distToTowerCenter = Math.sqrt(e.pos.x * e.pos.x + (e.pos.z + 90) * (e.pos.z + 90));
-                      if (distToTowerCenter > 22) {
-                          const angle = Math.atan2(e.pos.x, e.pos.z + 90);
-                          e.pos.x = Math.sin(angle) * 22;
-                          e.pos.z = -90 + Math.cos(angle) * 22;
+                      // Keep boss within its arena (radius: 26)
+                      const dx = e.pos.x - arenaCenterX;
+                      const dz = e.pos.z - arenaCenterZ;
+                      const distToArenaCenter = Math.sqrt(dx * dx + dz * dz);
+                      if (distToArenaCenter > 26) {
+                          const angle = Math.atan2(dx, dz);
+                          e.pos.x = arenaCenterX + Math.sin(angle) * 26;
+                          e.pos.z = arenaCenterZ + Math.cos(angle) * 26;
                       }
 
                       if (e.attackCooldown <= 0) {
-                          e.attackCooldown = 3.0; // Fireball frequency
+                          e.attackCooldown = 2.2; // Fireball frequency
                           createFireball(game, e.pos, pPos);
                       } else {
                           e.attackCooldown -= dt;
                       }
                   } else {
-                      // Sleep / patrol idle on tower
-                      e.attackCooldown = 2.0; 
+                      // Active patrol in arena even when player is far
+                      e.animTimer = (e.animTimer || 0) + dt * 1.8;
+                      e.pos.x = arenaCenterX + Math.sin(e.animTimer) * 12;
+                      e.pos.z = arenaCenterZ + Math.cos(e.animTimer * 0.7) * 10;
+                      e.mesh.rotation.y = Math.atan2(Math.cos(e.animTimer), -Math.sin(e.animTimer * 0.7));
+                      e.attackCooldown = 1.5; 
                   }
               } else if (e.type === 'dino_minion') {
-                  if (dist < 40) {
+                  e.animTimer = (e.animTimer || 0) + dt * (e.patrolSpeed || 2.5);
+                  const bx = e.basePos ? e.basePos.x : e.pos.x;
+                  const bz = e.basePos ? e.basePos.z : e.pos.z;
+                  if (dist < 36) {
                       e.mesh.rotation.y = Math.atan2(pPos.x - e.pos.x, pPos.z - e.pos.z);
-                      if (dist > 2.5) {
+                      if (dist > 2.8) {
                           const dir = pPos.clone().sub(e.pos).normalize();
-                          e.pos.x += dir.x * 2.5 * dt; 
-                          e.pos.z += dir.z * 2.5 * dt;
-                      } else {
-                          if (e.attackCooldown <= 0) {
-                              e.attackCooldown = 1.2;
-                              if (game.damagePlayer) {
-                                  game.damagePlayer(3); // -3 can gitsin
-                              }
+                          e.pos.x += dir.x * 3.6 * dt; 
+                          e.pos.z += dir.z * 3.6 * dt;
+                      } else if ((e.attackCooldown || 0) <= 0) {
+                          e.attackCooldown = 1.2;
+                          if (game.damagePlayer) game.damagePlayer(e.attackPower || 8);
+                      }
+                      // Ranged fireball/venom spit attack when player is at medium range
+                      if (dist > 4.0 && dist < 26.0) {
+                          if ((e.attackCooldown || 0) <= 0) {
+                              e.attackCooldown = 2.6;
+                              createFireball(game, e.pos, pPos);
                           }
                       }
                       if (e.attackCooldown > 0) e.attackCooldown -= dt;
+                  } else {
+                      // Continuous patrol when player is not nearby
+                      const rad = e.patrolRadius || 6.0;
+                      const nx = bx + Math.sin(e.animTimer) * rad;
+                      const nz = bz + Math.cos(e.animTimer * 0.8) * rad;
+                      e.mesh.rotation.y = Math.atan2(nx - e.pos.x, nz - e.pos.z);
+                      e.pos.x = nx;
+                      e.pos.z = nz;
                   }
               }
               
@@ -12715,7 +12786,7 @@ function updateSpaceLoop() {
       }
       if (game.playerPos) {
         const dist = game.playerPos.distanceTo(cat.position);
-        if (dist < 10.0) {
+        if (dist < 4.5) {
           window.__superBearNearCatMerchant = true;
           window.dispatchEvent(new CustomEvent('superbear:cat-merchant-proximity', { detail: { isNear: true, dist } }));
         } else {

@@ -299,7 +299,6 @@
       const jx = (jIdx % 2 === 0 ? 5.0 : -5.0);
       const jy = 83.5 + jIdx * 0.6;
       buildGoldPlatform(13, 1.8, 16, jx, jy, jz, polishedGoldMat);
-      createSunPhoenix(jx, jy + 4.0, jz, enemies, goldenExtensionGroup);
       addGoldItem("g_c6_" + jIdx, jx, jy + 1.8, jz);
     });
     buildGoldPlatform(22, 2.2, 24, 0, 87.2, -1630, polishedGoldMat);
@@ -376,7 +375,7 @@
     buildGoldPlatform(14, 1.8, 30, -5, 101.8, -2375, polishedGoldMat);
     buildGoldPlatform(16, 2.0, 20, 5, 102.6, -2410, darkGoldBrickMat);
     buildGoldPlatform(22, 2.2, 24, 0, 103.5, -2470, polishedGoldMat);
-    createGoldSandWyrm(0, 105.0, -2375, enemies, goldenExtensionGroup);
+    createSolarSphinxGuardian(0, 105.0, -2375, enemies, goldenExtensionGroup);
 
     // 11. Aşama: Yüksek Zıplama Altın Kalkanları (z: -2470 -> -2680, Y: 103 -> 109)
     addCheckpoint("gold_cp_s11", "11. Aşama: Zıplama Kalkanları", 0, 104.0, -2480);
@@ -390,7 +389,7 @@
     addSunJumpPad(-6, 117.0, -2620, 30);
     buildGoldPlatform(14, 2.0, 16, 0, 122.0, -2650, darkGoldBrickMat);
     buildGoldPlatform(24, 2.2, 24, 0, 109.0, -2680, polishedGoldMat);
-    createGoldenStoneGolem(0, 110.5, -2585, enemies, goldenExtensionGroup);
+    createAmberColossusMinotaur(0, 110.5, -2585, enemies, goldenExtensionGroup);
 
     // 12. Aşama: Kutsal Işık Lazerleri Izgarası (z: -2680 -> -2890, Y: 109 -> 113)
     addCheckpoint("gold_cp_s12", "12. Aşama: Kutsal Işık Lazerleri", 0, 109.8, -2690);
@@ -414,7 +413,7 @@
       addGoldItem("g_c12_" + lIdx, 0, ly + 1.8, lz, true);
     });
     buildGoldPlatform(22, 2.2, 24, 0, 113.5, -2890, polishedGoldMat);
-    createSacredScorpion(0, 115.0, -2790, enemies, goldenExtensionGroup);
+    createRadiantSeraphArchon(0, 115.0, -2790, enemies, goldenExtensionGroup);
 
     // 13. Aşama: Eriyip Yenilenen Altın Plakalar (z: -2890 -> -3110, Y: 113 -> 117)
     addCheckpoint("gold_cp_s13", "13. Aşama: Eriyip Yenilenen Altın Plakalar", 0, 114.2, -2900);
@@ -442,7 +441,7 @@
       addGoldItem("g_c13_" + cIdx, cx, cy + 1.8, cz);
     });
     buildGoldPlatform(22, 2.2, 24, 0, 118.5, -3110, polishedGoldMat);
-    createCelestialAngel(0, 120.0, -3020, enemies, goldenExtensionGroup);
+    createImperialAnubisPaladin(0, 120.0, -3020, enemies, goldenExtensionGroup);
 
     // 14. Aşama: [BÜYÜK BOSS] BÖLÜMÜN EN SONUNDAKİ İMPARATORLUK ALTIN KOLEZYUMU 👑 (z: -3150 -> -3500)
     const arenaX = 0;
@@ -493,75 +492,64 @@
     // Victory Portal behind Gold Boss (9. Bölüm Dinozor Dünyası'na açılır)
     goldenVictoryPortal = createGoldenVictoryPortal(arenaX, arenaY + 2.2, arenaZ - 44, goldenExtensionGroup);
 
-    console.log("✅ [Golden Sanctuary] 14 Yeni Aşama, 9 Canlı ve Taşınan Boss Başarıyla Kuruldu!");
+    console.log("✅ [Golden Sanctuary] 14 Yeni Aşama, 13 Benzersiz Semavi Canlı ve Taşınan Boss Başarıyla Kuruldu!");
   };
 
   // =========================================================================
-  // 9 ÖZEL YENİ ALTIN / SEMAVİ CANLI VE MEKANİĞİ
+  // 13 ÖZEL YENİ ALTIN / SEMAVİ CANLI VE MERMİ MEKANİĞİ
   // =========================================================================
 
   function createGoldenStoneGolem(x, y, z, enemies, group) {
-    createCelestialCreature(x, y, z, enemies, group, "Altın Taş Golemi 🗿✨", 0xffd700, 2.0, 180, 18, "smash");
+    createCelestialCreature(x, y, z, enemies, group, "Altın Taş Golemi 🗿✨", 0xffd700, 0xfef08a, 0, 1.3, 180, 18, 0);
   }
-
   function createSunPhoenix(x, y, z, enemies, group) {
-    createCelestialCreature(x, y, z, enemies, group, "Güneş Ankası 🦅🔥", 0xf59e0b, 1.4, 90, 14, "swoop");
+    createCelestialCreature(x, y, z, enemies, group, "Güneş Ankası 🦅🔥", 0xf59e0b, 0xfde047, 1, 1.2, 105, 14, 4);
   }
-
   function createSacredScorpion(x, y, z, enemies, group) {
-    createCelestialCreature(x, y, z, enemies, group, "Kutsal Altın Akrebi 🦂✨", 0xca8a04, 1.5, 130, 16, "strike");
+    createCelestialCreature(x, y, z, enemies, group, "Kutsal Altın Akrebi 🦂✨", 0xca8a04, 0xfef08a, 2, 1.2, 135, 16, 0);
   }
-
   function createHolyLightWisp(x, y, z, enemies, group) {
-    createCelestialCreature(x, y, z, enemies, group, "Kutsal Işık Ruhu ☀️🧚", 0xfef08a, 1.2, 70, 12, "wisp");
+    createCelestialCreature(x, y, z, enemies, group, "Kutsal Işık Şamanı ☀️🧙‍♂️", 0xeab308, 0x38bdf8, 3, 1.15, 110, 14, 2);
   }
-
   function createSunGuardKnight(x, y, z, enemies, group) {
-    createCelestialCreature(x, y, z, enemies, group, "Güneş Muhafız Şövalyesi 🛡️⚔️", 0xfacc15, 1.8, 160, 18, "knight");
+    createCelestialCreature(x, y, z, enemies, group, "Güneş Muhafız Şövalyesi 🛡️⚔️", 0xfacc15, 0xffffff, 9, 1.25, 165, 18, 0);
   }
-
   function createGoldButterfly(x, y, z, enemies, group) {
-    createCelestialCreature(x, y, z, enemies, group, "Işıltılı Altın Kelebeği 🦋✨", 0xffe066, 1.1, 60, 10, "flutter");
+    createCelestialCreature(x, y, z, enemies, group, "Işıltılı Altın Kelebeği 🦋✨", 0xfbbf24, 0x38bdf8, 12, 1.15, 95, 13, 4);
   }
-
   function createGoldSandWyrm(x, y, z, enemies, group) {
-    createCelestialCreature(x, y, z, enemies, group, "Altın Kum Ejderciği 🐍✨", 0xd97706, 1.7, 140, 16, "undulate");
+    createCelestialCreature(x, y, z, enemies, group, "Altın Kum Ejder-Yılanı 🐍✨", 0xd97706, 0xfef08a, 5, 1.25, 150, 16, 1);
   }
-
   function createLightPrism(x, y, z, enemies, group) {
-    createCelestialCreature(x, y, z, enemies, group, "Kristal Işık Prizması 💎✨", 0x38bdf8, 1.5, 120, 15, "rotate");
+    createCelestialCreature(x, y, z, enemies, group, "Kristal Işık Prizması 💎✨", 0x38bdf8, 0xfacc15, 8, 1.2, 135, 15, 4);
   }
-
   function createCelestialAngel(x, y, z, enemies, group) {
-    createCelestialCreature(x, y, z, enemies, group, "Semavi Melek Savaşçısı 👼⚔️", 0xffffff, 1.9, 190, 20, "angel");
+    createCelestialCreature(x, y, z, enemies, group, "Semavi Kanatlı Savaşçı 👼⚔️", 0xf8fafc, 0xfacc15, 13, 1.25, 185, 19, 4);
+  }
+  function createSolarSphinxGuardian(x, y, z, enemies, group) {
+    createCelestialCreature(x, y, z, enemies, group, "Güneş Sfenks Panteri 🦁✨", 0xb45309, 0xfde047, 4, 1.25, 175, 18, 1);
+  }
+  function createAmberColossusMinotaur(x, y, z, enemies, group) {
+    createCelestialCreature(x, y, z, enemies, group, "Kehribar Boynuzlu Minotor 🐂✨", 0x92400e, 0xfacc15, 11, 1.3, 195, 19, 0);
+  }
+  function createRadiantSeraphArchon(x, y, z, enemies, group) {
+    createCelestialCreature(x, y, z, enemies, group, "Sekiz Bacaklı Altın Tarantula 🕷️✨", 0xeab308, 0x38bdf8, 7, 1.2, 180, 19, 2);
+  }
+  function createImperialAnubisPaladin(x, y, z, enemies, group) {
+    createCelestialCreature(x, y, z, enemies, group, "İmparatorluk Hilal Muhafızı ⚔️👑", 0xca8a04, 0xffffff, 17, 1.25, 200, 20, 0);
   }
 
-  function createCelestialCreature(x, y, z, enemies, group, name, color, size, hp, atk, behavior) {
+  function createCelestialCreature(x, y, z, enemies, group, name, color, accentColor, variantIdx, scale, hp, atk, moveMode) {
     const THREE = window.THREE;
-    const grp = new THREE.Group();
+    const grp = (typeof window.__buildDistinctCreatureMesh === 'function')
+      ? window.__buildDistinctCreatureMesh(THREE, variantIdx, { primaryColor: color, accentColor: accentColor, scale: scale })
+      : new THREE.Group();
     grp.position.set(x, y, z);
-
-    const mat = new THREE.MeshStandardMaterial({
-      color: color,
-      metalness: 0.8,
-      roughness: 0.25,
-      emissive: color,
-      emissiveIntensity: 0.4
-    });
-
-    const body = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat);
-    body.position.y = size / 2;
-    grp.add(body);
-
-    const glow = new THREE.Mesh(new THREE.SphereGeometry(size * 0.35), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    glow.position.set(0, size * 0.8, size * 0.4);
-    grp.add(glow);
-
     group.add(grp);
 
     enemies.push({
-      id: name.toLowerCase().replace(/[^a-z0-9]/g, '_') + "_" + Math.round(z),
-      type: "celestial_creature",
+      id: "gold_" + variantIdx + "_" + Math.round(z),
+      type: "celestial_beast_" + variantIdx,
       name: name,
       mesh: grp,
       pos: new THREE.Vector3(x, y, z),
@@ -571,20 +559,13 @@
       hp: hp,
       maxHp: hp,
       attackPower: atk,
+      _moveMode: moveMode,
+      _projTheme: { color: color, glow: accentColor, shape: 'crystal', speed: 20, dmg: atk },
       update: function(dt, p, game) {
-        const time = Date.now() * 0.002;
-        if (behavior === "swoop" || behavior === "flutter") {
-          this.mesh.position.y = this.baseY + Math.sin(time * 2.0) * 2.5;
-          this.mesh.position.x = this.baseX + Math.cos(time) * 4.5;
-        } else if (behavior === "wisp" || behavior === "rotate") {
-          this.mesh.rotation.y += dt * 2.5;
-          this.mesh.position.y = this.baseY + Math.sin(time * 1.5) * 1.2;
-        } else {
-          this.mesh.position.x = this.baseX + Math.sin(time) * 4.5;
+        if (typeof window.__updateCreatureCombatAI === 'function') {
+          window.__updateCreatureCombatAI(this, dt, p, game, variantIdx);
         }
-        this.pos.copy(this.mesh.position);
-
-        if (this.pos.distanceTo(p) < (size + 1.2)) {
+        if (p && this.pos.distanceTo(p) < 2.4) {
           game.damagePlayer(this.attackPower);
         }
       }

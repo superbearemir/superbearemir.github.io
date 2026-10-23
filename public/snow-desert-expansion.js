@@ -272,13 +272,14 @@
     addCheckpoint("snow_cp_s11", "11. Aşama: Devasa Buzul Sırtı & Fırtına Kirişleri", 0, 66.5, -820);
     buildSnowPlatform(16, 2, 14, 0, 65.5, -820, v, false, false, true);
     buildSnowPlatform(7.5, 1.2, 34, 0, 70.2, -946, iceGlacierMat, false, false, true);
-    createArcticAlphaWolf(0, 71.5, -944, enemies, snowExtensionGroup);
+    createPolarIceBehemoth(0, 71.0, -944, enemies, snowExtensionGroup);
 
     // =========================================================================
-    // ❄️ 12. AŞAMA: ERİYİp ÇÖKEN SÜTUNLAR & ÇİFTLİ DEĞİRMENLER
+    // ❄️ 12. AŞAMA: ERİYİP ÇÖKEN SÜTUNLAR & ÇİFTLİ DEĞİRMENLER
     // =========================================================================
     addCheckpoint("snow_cp_s12", "12. Aşama: Eriyip Çöken Sütunlar & Çiftli Değirmenler", 0, 72.2, -976);
     buildSnowPlatform(16, 2, 14, 0, 71.2, -976, v, false, false, true);
+    createCryoScorpionStalker(0, 72.4, -976, enemies, snowExtensionGroup);
     S(0, 77.2, -1125, 17.5);
 
     // =========================================================================
@@ -286,6 +287,7 @@
     // =========================================================================
     addCheckpoint("snow_cp_s13", "13. Aşama: Donmuş Zaman Kristalleri & Lazer Labirenti", 0, 77.8, -1148);
     buildSnowPlatform(18, 2, 16, 0, 83.0, -1308, v, false, false, true);
+    createFrostValkyrieKnight(0, 84.2, -1308, enemies, snowExtensionGroup);
 
     // =========================================================================
     // 👑 14. AŞAMA: [BÜYÜK BOSS ARENASI] YÜCE DONMUŞ TAHT ZİRVESİ & KOCA AYAK YETİ
@@ -310,92 +312,189 @@
 
     T("snow_throne_easel", 4, "👑 YÜCE DONMUŞ TAHT ZİRVESİ!\nKoca Ayak Yeti'yi mağlup et ve Volkanik Ejderha Mağarası'na açılan portaldan geç!", 0, summitArenaY + 2.0, summitArenaZ - 20, 0);
 
-    activeBigfootBoss = createExactBigfootBoss(0, summitArenaY + 1.8, summitArenaZ + 5, enemies, snowExtensionGroup);
+    activeBigfootBoss = createExactBigfootBoss(0, summitArenaY + 2.0, summitArenaZ + 5, enemies, snowExtensionGroup);
     snowVictoryPortal = createSnowVictoryPortal(0, summitArenaY + 1.8, summitArenaZ - 30, snowExtensionGroup);
 
-    console.log("✅ [Snow Desert Extension] 14 Aşama ve Bigfoot Boss Başarıyla Yüklendi!");
+    console.log("✅ [Snow Desert Extension] 14 Aşama, 13 Benzersiz Buz Canlısı ve Bigfoot Boss Başarıyla Yüklendi!");
   };
 
+  function spawnArcticCreature(x, y, z, enemies, group, variantIdx, idPrefix, name, primaryColor, accentColor, hp, atk, moveMode) {
+    const THREE = window.THREE;
+    const g = (typeof window.__buildDistinctCreatureMesh === 'function')
+      ? window.__buildDistinctCreatureMesh(THREE, variantIdx, { primaryColor, accentColor, scale: 1.05 })
+      : new THREE.Group();
+    g.position.set(x, y, z);
+    group.add(g);
+
+    const enemyObj = {
+      id: idPrefix + "_" + Math.round(z),
+      type: "arctic_beast_" + variantIdx,
+      name: name,
+      mesh: g,
+      pos: new THREE.Vector3(x, y, z),
+      baseX: x,
+      baseY: y,
+      baseZ: z,
+      hp: hp,
+      maxHp: hp,
+      attackPower: atk,
+      _moveMode: moveMode,
+      _projTheme: { color: primaryColor, glow: accentColor, shape: variantIdx % 2 === 0 ? 'spear' : 'orb', speed: 19, dmg: atk },
+      update: function(dt, p, game) {
+        if (typeof window.__updateCreatureCombatAI === 'function') {
+          window.__updateCreatureCombatAI(this, dt, p, game, variantIdx);
+        }
+        if (p && this.pos.distanceTo(p) < 2.4) {
+          game.damagePlayer(this.attackPower);
+        }
+      }
+    };
+    enemies.push(enemyObj);
+    return enemyObj;
+  }
+
   function createFrostShardGolem(x, y, z, enemies, group) {
-    const THREE = window.THREE; const g = new THREE.Group(); g.position.set(x, y, z);
-    const b = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.2, 1.4), new THREE.MeshStandardMaterial({ color: 0x93c5fd }));
-    b.position.y = 1.4; g.add(b); group.add(g);
-    enemies.push({ id: "g_" + z, type: "snow_golem", name: "Buzul Golemi", mesh: g, pos: new THREE.Vector3(x,y,z), hp: 140, maxHp: 140, attackPower: 16, update: function(dt, p, game) { if(this.pos.distanceTo(p)<15&&this.pos.distanceTo(p)<2.5) game.damagePlayer(16); } });
+    return spawnArcticCreature(x, y, z, enemies, group, 0, "golem", "Buzul Kristal Golemi 🗿❄️", 0x38bdf8, 0xe0f2fe, 140, 15, 0);
   }
   function createArcticAlphaWolf(x, y, z, enemies, group) {
-    const THREE = window.THREE; const g = new THREE.Group(); g.position.set(x, y, z);
-    const b = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.9, 2.0), new THREE.MeshStandardMaterial({ color: 0xe2e8f0 }));
-    b.position.y = 0.8; g.add(b); group.add(g);
-    enemies.push({ id: "w_" + z, type: "frost_wolf", name: "Alfa Kurt", mesh: g, pos: new THREE.Vector3(x,y,z), hp: 75, maxHp: 75, attackPower: 14, update: function(dt, p, game) { if(this.pos.distanceTo(p)<15&&this.pos.distanceTo(p)<2.5) { game.damagePlayer(14); window.__freezePlayer(1.2); } } });
+    return spawnArcticCreature(x, y, z, enemies, group, 4, "wolf", "Kutup Alfa Kurdu 🐺❄️", 0xcbd5e1, 0x38bdf8, 95, 14, 1);
   }
   function createGlacialTortoise(x, y, z, enemies, group) {
-    const THREE = window.THREE; const g = new THREE.Group(); g.position.set(x, y, z);
-    const s = new THREE.Mesh(new THREE.SphereGeometry(1.0, 10, 8), new THREE.MeshStandardMaterial({ color: 0x60a5fa }));
-    s.scale.set(1.2, 0.6, 1.2); s.position.y = 0.55; g.add(s); group.add(g);
-    enemies.push({ id: "t_" + z, type: "ice_tortoise", name: "Buzul Kaplumbağası", mesh: g, pos: new THREE.Vector3(x,y,z), hp: 110, maxHp: 110, attackPower: 12, update: function() {} });
+    return spawnArcticCreature(x, y, z, enemies, group, 6, "tortoise", "Dikenli Buzul Kaplumbağası 🐢🧊", 0x0284c7, 0x7dd3fc, 130, 14, 0);
   }
   function createBlizzardEagle(x, y, z, enemies, group) {
-    const THREE = window.THREE; const g = new THREE.Group(); g.position.set(x, y, z);
-    const b = new THREE.Mesh(new THREE.ConeGeometry(0.5, 1.8, 6), new THREE.MeshStandardMaterial({ color: 0x94a3b8 }));
-    b.rotation.x = Math.PI / 2; g.add(b); group.add(g);
-    enemies.push({ id: "e_" + z, type: "blizzard_eagle", name: "Buzul Kartalı", mesh: g, pos: new THREE.Vector3(x,y,z), hp: 60, maxHp: 60, attackPower: 12, update: function() {} });
+    return spawnArcticCreature(x, y, z, enemies, group, 1, "eagle", "Fırtına Buz Kartalı 🦅❄️", 0x64748b, 0xbae6fd, 85, 13, 4);
   }
   function createFrostBouncingSeal(x, y, z, enemies, group) {
-    const THREE = window.THREE; const g = new THREE.Group(); g.position.set(x, y, z);
-    const b = new THREE.Mesh(new THREE.SphereGeometry(1.0, 10, 8), new THREE.MeshStandardMaterial({ color: 0x475569 }));
-    b.scale.set(1.1, 0.7, 1.6); b.position.y = 0.55; g.add(b); group.add(g);
-    enemies.push({ id: "s_" + z, type: "frost_seal", name: "Kutup Foku", mesh: g, pos: new THREE.Vector3(x,y,z), hp: 85, maxHp: 85, attackPower: 13, update: function() {} });
+    return spawnArcticCreature(x, y, z, enemies, group, 14, "seal", "Zırhlı Kutup Foku 🦭🧊", 0x475569, 0x38bdf8, 100, 13, 3);
   }
   function createFrostSnowman(x, y, z, enemies, group) {
-    const THREE = window.THREE; const g = new THREE.Group(); g.position.set(x, y, z);
-    const b = new THREE.Mesh(new THREE.SphereGeometry(0.85, 8, 8), new THREE.MeshStandardMaterial({ color: 0xffffff }));
-    b.position.y = 0.85; g.add(b); group.add(g);
-    enemies.push({ id: "sm_" + z, type: "frost_snowman", name: "Kar Adamı", mesh: g, pos: new THREE.Vector3(x,y,z), hp: 70, maxHp: 70, attackPower: 11, update: function() {} });
+    return spawnArcticCreature(x, y, z, enemies, group, 16, "snowman", "Sihirli Kar Otomatonu ⛄❄️", 0xf8fafc, 0x0ea5e9, 95, 13, 2);
   }
   function createIceHunterSniper(x, y, z, enemies, group) {
-    const THREE = window.THREE; const g = new THREE.Group(); g.position.set(x, y, z);
-    const b = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.75, 2.2, 8), new THREE.MeshStandardMaterial({ color: 0x334155 }));
-    b.position.y = 1.1; g.add(b); group.add(g);
-    enemies.push({ id: "ih_" + z, type: "ice_hunter", name: "Buz Avcısı", mesh: g, pos: new THREE.Vector3(x,y,z), hp: 80, maxHp: 80, attackPower: 14, update: function() {} });
+    return spawnArcticCreature(x, y, z, enemies, group, 9, "sniper", "Kutup Mızrak Avcısı 🏹❄️", 0x1e3a8a, 0x67e8f9, 110, 15, 0);
   }
   function createFrostVortexElemental(x, y, z, enemies, group) {
-    const THREE = window.THREE; const g = new THREE.Group(); g.position.set(x, y, z);
-    const c = new THREE.Mesh(new THREE.ConeGeometry(1.2, 3.2, 12, 1, true), new THREE.MeshBasicMaterial({ color: 0xe0f2fe, wireframe: true }));
-    c.position.y = 1.6; g.add(c); group.add(g);
-    enemies.push({ id: "fv_" + z, type: "frost_vortex", name: "Buz Kasırgası", mesh: g, pos: new THREE.Vector3(x,y,z), hp: 120, maxHp: 120, attackPower: 15, update: function() {} });
+    return spawnArcticCreature(x, y, z, enemies, group, 8, "vortex", "Buzul Prizma Elementali 🌪️❄️", 0x06b6d4, 0xffffff, 125, 15, 4);
   }
   function createGlacialIceBat(x, y, z, enemies, group) {
-    const THREE = window.THREE; const g = new THREE.Group(); g.position.set(x, y, z);
-    const b = new THREE.Mesh(new THREE.SphereGeometry(0.5, 6, 6), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
-    g.add(b); group.add(g);
-    enemies.push({ id: "ib_" + z, type: "ice_bat", name: "Buz Yarasası", mesh: g, pos: new THREE.Vector3(x,y,z), hp: 45, maxHp: 45, attackPower: 10, update: function() {} });
+    return spawnArcticCreature(x, y, z, enemies, group, 12, "icebat", "Çift Kanatlı Buz Yarasası 🦇❄️", 0x312e81, 0x38bdf8, 80, 12, 4);
   }
   function createArcticFrostShaman(x, y, z, enemies, group) {
-    const THREE = window.THREE; const g = new THREE.Group(); g.position.set(x, y, z);
-    const r = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.85, 2.4, 8), new THREE.MeshStandardMaterial({ color: 0x0284c7 }));
-    r.position.y = 1.2; g.add(r); group.add(g);
-    enemies.push({ id: "fs_" + z, type: "frost_shaman", name: "Kutup Şamanı", mesh: g, pos: new THREE.Vector3(x,y,z), hp: 120, maxHp: 120, attackPower: 14, update: function() {} });
+    return spawnArcticCreature(x, y, z, enemies, group, 3, "shaman", "Kutup Kristal Şamanı 🧙‍♂️❄️", 0x0369a1, 0xfef08a, 130, 15, 2);
   }
+  function createPolarIceBehemoth(x, y, z, enemies, group) {
+    return spawnArcticCreature(x, y, z, enemies, group, 11, "behemoth", "Boynuzlu Kutup Minotoru 🐂❄️", 0x1e40af, 0x93c5fd, 155, 16, 1);
+  }
+  function createCryoScorpionStalker(x, y, z, enemies, group) {
+    return spawnArcticCreature(x, y, z, enemies, group, 2, "cryoscorp", "Buzul Kıskaç Akrebi 🦂❄️", 0x0e7490, 0xa5f3fc, 145, 16, 0);
+  }
+  function createFrostValkyrieKnight(x, y, z, enemies, group) {
+    return spawnArcticCreature(x, y, z, enemies, group, 17, "valkyrie", "Donmuş Taht Muhafızı 🛡️❄️", 0x1d4ed8, 0xfacc15, 165, 17, 2);
+  }
+
   function createExactBigfootBoss(x, y, z, enemies, group) {
-    const THREE = window.THREE; const g = new THREE.Group(); g.position.set(x, y, z); g.scale.set(3.4, 3.4, 3.4);
-    const t = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.85, 1.4, 12), new THREE.MeshStandardMaterial({ color: 0xe2e8f0 }));
-    t.position.y = 1.0; g.add(t); group.add(g);
-    const boss = { id: "boss_bigfoot_titan", type: "bigfoot_boss", name: "Koca Ayak Yeti", mesh: g, pos: new THREE.Vector3(x,y,z), hp: 550, maxHp: 550, attackPower: 22, isBoss: true };
-    enemies.push(boss); return boss;
+    const THREE = window.THREE;
+    const g = (typeof window.__buildDistinctCreatureMesh === 'function')
+      ? window.__buildDistinctCreatureMesh(THREE, 0, { primaryColor: 0xe2e8f0, accentColor: 0x38bdf8, scale: 3.1 })
+      : new THREE.Group();
+    g.position.set(x, y, z);
+    group.add(g);
+
+    const boss = {
+      id: "boss_bigfoot_titan",
+      type: "bigfoot_boss",
+      name: "Koca Ayak Yeti (Buzul Kralı ❄️👑)",
+      mesh: g,
+      pos: new THREE.Vector3(x, y, z),
+      baseX: x,
+      baseY: y,
+      baseZ: z,
+      hp: 650,
+      maxHp: 650,
+      attackPower: 22,
+      isBoss: true,
+      _shootCooldown: 2.0,
+      update: function(dt, p, game) {
+        const t = Date.now() * 0.002;
+        this.mesh.position.x = this.baseX + Math.sin(t) * 12.0;
+        this.mesh.position.z = this.baseZ + Math.cos(t * 0.7) * 9.0;
+        if (p) {
+          this.mesh.lookAt(p.x, this.mesh.position.y, p.z);
+        }
+        this.pos.copy(this.mesh.position);
+
+        if (p && this.pos.distanceTo(p) < 42) {
+          this._shootCooldown -= dt;
+          if (this._shootCooldown <= 0) {
+            this._shootCooldown = 1.9;
+            if (typeof window.__spawnEnemyProjectile === 'function') {
+              window.__spawnEnemyProjectile(game, this.pos, p, {
+                color: 0x38bdf8,
+                glow: 0xffffff,
+                shape: 'crystal',
+                speed: 22,
+                dmg: 18
+              });
+            }
+          }
+          if (this.pos.distanceTo(p) < 5.5) {
+            game.damagePlayer(this.attackPower);
+          }
+        }
+      }
+    };
+    enemies.push(boss);
+    return boss;
   }
+
   function createSnowVictoryPortal(x, y, z, group) {
-    const THREE = window.THREE; const g = new THREE.Group(); g.position.set(x, y, z);
-    const r = new THREE.Mesh(new THREE.TorusGeometry(3.5, 0.45, 16, 32), new THREE.MeshStandardMaterial({ color: 0xf97316, emissive: 0xc2410c, emissiveIntensity: 1.8 }));
-    r.position.y = 3.5; g.add(r); group.add(g);
-    return { mesh: g, pos: new THREE.Vector3(x,y,z), targetRegion: "volcano_cave" };
+    const THREE = window.THREE;
+    const g = new THREE.Group();
+    g.position.set(x, y, z);
+    const r = new THREE.Mesh(
+      new THREE.TorusGeometry(3.5, 0.45, 16, 32),
+      new THREE.MeshStandardMaterial({ color: 0xf97316, emissive: 0xc2410c, emissiveIntensity: 1.8 })
+    );
+    r.position.y = 3.5;
+    g.add(r);
+    group.add(g);
+    return { mesh: g, pos: new THREE.Vector3(x, y, z), targetRegion: "volcano_cave" };
   }
-  function spawnSnowball() {}
-  function spawnIceArrow() {}
 
   function updateSnowDesertExtension(dt) {
     const game = window.__superBearGame;
     if (!game || game.currentRegion !== 'snow_desert') return;
     totalTime += dt;
+
+    // Moving Ice Floes
+    snowMovingFloes.forEach(s => {
+      const offX = Math.sin(totalTime * s.speed + (s.offset || 0)) * s.rangeX;
+      s.mesh.position.x = s.baseX + offX;
+      if (s.coll && s.coll.min && s.coll.max) {
+        const hw = s.halfW || 2.4;
+        s.coll.min.x = s.baseX + offX - hw;
+        s.coll.max.x = s.baseX + offX + hw;
+      }
+    });
+
+    // Rotating Ice Mills
+    snowRotatingIceMills.forEach(rm => {
+      rm.group.rotation.y += dt * rm.speed;
+      if (game.playerPos && rm.group.position.distanceTo(game.playerPos) < 3.0) {
+        game.damagePlayer(15);
+      }
+    });
+
+    // Frost Lasers
+    snowFrostLasers.forEach(fl => {
+      fl.mesh.rotation.y += dt * fl.speed;
+      if (game.playerPos && Math.hypot(game.playerPos.x - fl.mesh.position.x, game.playerPos.z - fl.z) < 5.5 && Math.abs(game.playerPos.y - fl.y) < 1.6) {
+        game.damagePlayer(16);
+      }
+    });
+
+    // Victory Portal Check
     if (snowVictoryPortal && game.playerPos && snowVictoryPortal.pos.distanceTo(game.playerPos) < 4.5) {
       const boss = (game.currentLevel && game.currentLevel.enemies || []).find(e => e && e.id === "boss_bigfoot_titan");
       if (!boss || boss.hp <= 0) {

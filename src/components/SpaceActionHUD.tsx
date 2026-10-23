@@ -208,14 +208,12 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
       const detail = (e as CustomEvent).detail;
       if (detail && typeof detail.isNear === 'boolean') {
         setIsNearCatMerchant(detail.isNear);
-        if (detail.isNear) setIsNearInteractable(true);
       }
     };
     const handleArcadeProximity = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail && typeof detail.isNear === 'boolean') {
         setIsNearArcade(detail.isNear);
-        if (detail.isNear) setIsNearInteractable(true);
       }
     };
     const handleOpenPowersRack = () => {
@@ -226,7 +224,6 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
       const detail = (e as CustomEvent).detail;
       if (detail && typeof detail.isNear === 'boolean') {
         setIsNearDimensionPortal(detail.isNear);
-        if (detail.isNear) setIsNearInteractable(true);
       }
     };
 
@@ -1806,7 +1803,7 @@ export const SpaceActionHUD: React.FC<SpaceActionHUDProps> = ({
             </button>
 
             {/* 3. Interaction Button [E] (ONLY visible when near an interactable target!) */}
-            {isNearInteractable && (
+            {(isNearInteractable || isNearDimensionPortal || isNearCatMerchant || isNearArcade) && (
               <button
                 onTouchStart={(e) => {
                   e.preventDefault();

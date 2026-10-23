@@ -1009,24 +1009,21 @@
         vortex.rotation.z += 0.025;
         capstone.rotation.y += 0.03;
 
-        if (game && game.playerPos) {
-          const dist = game.playerPos.distanceTo(portalMaster.position);
+        const liveGame = window.__superBearGame || game;
+        if (liveGame && liveGame.playerPos) {
+          const dist = Math.hypot(liveGame.playerPos.x - portalX, liveGame.playerPos.z - portalZ);
 
-          // Proximity notification event for UI banner - SADECE portalın yanına yaklaşınca görünür (4.2m)
-          if (dist < 4.2) {
-            if (!isNearDispatched) {
-              isNearDispatched = true;
-              window.dispatchEvent(new CustomEvent('superbear:dimension-portal-proximity', {
-                detail: { isNear: true, dist, activeChapter: currentMasterPortalChapter }
-              }));
-            }
+          // Proximity notification event for UI banner - SADECE portalın yanına yaklaşınca görünür (3.8m), uzaklaşınca anında kaybolur
+          if (dist < 3.8) {
+            isNearDispatched = true;
+            window.dispatchEvent(new CustomEvent('superbear:dimension-portal-proximity', {
+              detail: { isNear: true, dist, activeChapter: currentMasterPortalChapter }
+            }));
           } else {
-            if (isNearDispatched) {
-              isNearDispatched = false;
-              window.dispatchEvent(new CustomEvent('superbear:dimension-portal-proximity', {
-                detail: { isNear: false }
-              }));
-            }
+            isNearDispatched = false;
+            window.dispatchEvent(new CustomEvent('superbear:dimension-portal-proximity', {
+              detail: { isNear: false }
+            }));
           }
 
           // Stepping into portal trigger
@@ -1043,8 +1040,8 @@
             // Kilit kontrolü: Eğer bölüm henüz açılmadıysa geçiş kesinlikle yasak!
             if (!isChapterUnlocked(currentMasterPortalChapter)) {
               const warningText = "⚠️ Bu portala giremezsin! Git boss'u yen sonra gel!";
-              if (game.callbacks && game.callbacks.onShowNotice) {
-                game.callbacks.onShowNotice(warningText, "warning");
+              if (liveGame.callbacks && liveGame.callbacks.onShowNotice) {
+                liveGame.callbacks.onShowNotice(warningText, "warning");
               }
               if (typeof window.St !== 'undefined' && window.St.playDamage) window.St.playDamage();
               setTimeout(() => { portalMaster._cooldown = false; }, 2500);
@@ -1053,18 +1050,18 @@
 
             // Unlocked transition
             if (typeof window.St !== 'undefined' && window.St.playPortal) window.St.playPortal();
-            if (game.callbacks && game.callbacks.onShowNotice) {
-              game.callbacks.onShowNotice(`🌀 ${currentMasterPortalChapter.title} Geçidine Girildi...`, "success");
+            if (liveGame.callbacks && liveGame.callbacks.onShowNotice) {
+              liveGame.callbacks.onShowNotice(`🌀 ${currentMasterPortalChapter.title} Geçidine Girildi...`, "success");
             }
-            if (game.spawnSparkleParticles) {
-              game.spawnSparkleParticles(game.playerPos, 45, currentMasterPortalChapter.vortexColor || 0xffffff);
+            if (liveGame.spawnSparkleParticles) {
+              liveGame.spawnSparkleParticles(liveGame.playerPos, 45, currentMasterPortalChapter.vortexColor || 0xffffff);
             }
 
             setTimeout(() => {
-              if (game.loadRegion) {
-                game.loadRegion(currentMasterPortalChapter.targetRegion);
-              } else if (game.callbacks && game.callbacks.onSelectRegion) {
-                game.callbacks.onSelectRegion(currentMasterPortalChapter.targetRegion);
+              if (liveGame.loadRegion) {
+                liveGame.loadRegion(currentMasterPortalChapter.targetRegion);
+              } else if (liveGame.callbacks && liveGame.callbacks.onSelectRegion) {
+                liveGame.callbacks.onSelectRegion(currentMasterPortalChapter.targetRegion);
               }
               setTimeout(() => { portalMaster._cooldown = false; }, 4000);
             }, 350);
@@ -1113,6 +1110,9 @@
   // Remove portals when leaving hub with DEEP GEOMETRY, MATERIAL & TEXTURE DISPOSAL
   function removeAllVillagePortals(game) {
     if (!game) game = window.__superBearGame;
+    window.dispatchEvent(new CustomEvent('superbear:dimension-portal-proximity', {
+      detail: { isNear: false }
+    }));
     if (villagePortalsGroup) {
       // 🧹 Bellek Temizliği: Tüm 3D objelerin, materyallerin, dokuların ve ışıkların hafızadan silinmesi
       villagePortalsGroup.traverse((obj) => {
@@ -1165,10 +1165,15 @@
 
   // Animation & distance check loop
   function updateVillagePortals(game) {
+    if (!game) game = window.__superBearGame;
     if (!game) return;
-    if (game.currentRegion !== 'hub') {
+    if (game.currentRegion && game.currentRegion !== 'hub') {
       if (isPortalsBuilt) {
         removeAllVillagePortals(game);
+      } else {
+        window.dispatchEvent(new CustomEvent('superbear:dimension-portal-proximity', {
+          detail: { isNear: false }
+        }));
       }
       return;
     }
@@ -1197,38 +1202,34 @@
 
   // Listen to region transitions
   window.addEventListener('superbear:region-changed', (e) => {
-    const newReg = e.detail;
+    const newReg = (e.detail && e.detail.region) || e.detail;
     const game = window.__superBearGame;
     if (newReg === 'hub') {
       setTimeout(() => {
-        buildAllVillagePortals(game);
+        buildAllVillagePortals(window.__superBearGame || game);
       }, 100);
     } else {
-      removeAllVillagePortals(game);
+      removeAllVillagePortals(window.__superBearGame || game);
     }
   });
 
+  // Dedicated continuous requestAnimationFrame loop so proximity NEVER gets stuck
+  let _portalRafRunning = false;
+  function portalTick() {
+    _portalRafRunning = true;
+    try {
+      const game = window.__superBearGame;
+      if (game && game.scene && window.THREE) {
+        updateVillagePortals(game);
+      }
+    } catch (err) {}
+    requestAnimationFrame(portalTick);
+  }
+
   // Main ticker hook
   function initVillagePortalsEngine() {
-    const game = window.__superBearGame;
-    if (game && game.scene && window.THREE) {
-      if (game.currentRegion === 'hub' || !game.currentRegion) {
-        buildAllVillagePortals(game);
-      }
-
-      // Hook game update loop safely
-      const origUpdate = game.update;
-      if (origUpdate && !game._villagePortalsHooked) {
-        game._villagePortalsHooked = true;
-        game.update = function(dt, totalTime) {
-          origUpdate.call(this, dt, totalTime);
-          try {
-            updateVillagePortals(this);
-          } catch (err) {}
-        };
-      }
-    } else {
-      setTimeout(initVillagePortalsEngine, 300);
+    if (!_portalRafRunning) {
+      portalTick();
     }
   }
 

@@ -29,466 +29,127 @@
   }
 
   // =========================================================================
-  // 12 UNIQUE WATER CAVE CREATURES
+  // 13 UNIQUE WATER CAVE CREATURES (MOVE & SHOOT)
   // =========================================================================
-
-  // 1. Shadow Mole Miner
-  function createMoleMiner(x, y, z) {
+  function spawnCaveCreature(x, y, z, name, archetypeIdx, primaryHex, secondaryHex, hp, isFlyer) {
     const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-    const brownMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.9 });
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.8, 1.6, 10), brownMat);
-    body.position.y = 0.8;
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 8), brownMat);
-    head.position.y = 1.8;
-    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.18, 0.4, 6), new THREE.MeshStandardMaterial({ color: 0xf472b6 }));
-    nose.rotation.x = Math.PI / 2;
-    nose.position.set(0, 1.8, 0.55);
-    const pick = new THREE.Mesh(new THREE.BoxGeometry(0.15, 1.4, 0.15), new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.8 }));
-    pick.position.set(0.65, 1.0, 0.3);
-    group.add(body, head, nose, pick);
-
-    group.userData = {
-      type: "mole_miner",
-      hp: 3,
-      baseY: y,
-      startX: x,
-      dir: 1,
-      update: function(dt, playerPos, game) {
-        group.position.x += this.dir * dt * 2.5;
-        if (Math.abs(group.position.x - this.startX) > 5) this.dir *= -1;
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.7 && playerPos.y > group.position.y + 1.2 && game.playerVel && game.playerVel.y < 0) {
-            this.hp--;
-            game.playerVel.y = 11;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) { group.visible = false; group.position.y = -9999; }
-          } else if (d < 1.4 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
-  }
-
-  // 2. Luminescent Salamander
-  function createLuminescentSalamander(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-    const blueMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, emissive: 0x0891b2, emissiveIntensity: 0.6, roughness: 0.2 });
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.4, 1.8), blueMat);
-    body.position.y = 0.3;
-    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1.4, 6), blueMat);
-    tail.rotation.x = -Math.PI / 2;
-    tail.position.set(0, 0.3, -1.5);
-    group.add(body, tail);
-
-    group.userData = {
-      type: "salamander",
-      hp: 2,
-      baseY: y,
-      time: Math.random() * 5,
-      startZ: z,
-      dir: 1,
-      update: function(dt, playerPos, game) {
-        group.position.z += this.dir * dt * 2.8;
-        if (Math.abs(group.position.z - this.startZ) > 6) this.dir *= -1;
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.6 && playerPos.y > group.position.y + 0.6 && game.playerVel && game.playerVel.y < 0) {
-            this.hp--;
-            game.playerVel.y = 10;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) { group.visible = false; group.position.y = -9999; }
-          } else if (d < 1.3 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
-  }
-
-  // 3. Abyssal Angler Lurker
-  function createAnglerLurker(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.4 });
-    const lureMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.9, 10, 10), bodyMat);
-    body.scale.set(1, 0.8, 1.4);
-    body.position.y = 1.0;
-    const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.2, 6), bodyMat);
-    antenna.position.set(0, 2.0, 0.6);
-    antenna.rotation.x = Math.PI / 4;
-    const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.25, 8, 8), lureMat);
-    bulb.position.set(0, 2.4, 1.1);
-    group.add(body, antenna, bulb);
-
-    group.userData = {
-      type: "angler",
-      hp: 3,
-      baseY: y,
-      time: Math.random() * 5,
-      update: function(dt, playerPos, game) {
-        this.time += dt;
-        group.position.y = this.baseY + Math.sin(this.time * 2) * 1.2;
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.8 && playerPos.y > group.position.y + 0.8 && game.playerVel && game.playerVel.y < 0) {
-            this.hp--;
-            game.playerVel.y = 11;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) { group.visible = false; group.position.y = -9999; }
-          } else if (d < 1.4 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
-  }
-
-  // 4. Crystal Cave Crab
-  function createCrystalCrab(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-    const shellMat = new THREE.MeshStandardMaterial({ color: 0x3b82f6, roughness: 0.2, metalness: 0.4 });
-    const shell = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.1, 0.5, 8), shellMat);
-    shell.position.y = 0.3;
-    const clawL = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.8), shellMat);
-    clawL.position.set(-1.1, 0.4, 0.6);
-    const clawR = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.4, 0.8), shellMat);
-    clawR.position.set(1.1, 0.4, 0.6);
-    group.add(shell, clawL, clawR);
-
-    group.userData = {
-      type: "crystal_crab",
-      hp: 3,
-      baseY: y,
-      startX: x,
-      dir: 1,
-      update: function(dt, playerPos, game) {
-        group.position.x += this.dir * dt * 3.5;
-        if (Math.abs(group.position.x - this.startX) > 6) this.dir *= -1;
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.7 && playerPos.y > group.position.y + 0.6 && game.playerVel && game.playerVel.y < 0) {
-            this.hp--;
-            game.playerVel.y = 11;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) { group.visible = false; group.position.y = -9999; }
-          } else if (d < 1.4 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
-  }
-
-  // 5. Cavern Stingray
-  function createCavernStingray(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-    const rayMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, transparent: true, opacity: 0.9 });
-    const body = new THREE.Mesh(new THREE.ConeGeometry(1.6, 0.2, 4), rayMat);
-    body.rotation.y = Math.PI / 4;
-    body.position.y = 1.0;
-    const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.5, 6), rayMat);
-    tail.rotation.x = Math.PI / 2;
-    tail.position.set(0, 1.0, -1.8);
-    group.add(body, tail);
-
-    group.userData = {
-      type: "stingray",
-      hp: 2,
-      baseY: y,
-      time: Math.random() * 5,
-      update: function(dt, playerPos, game) {
-        this.time += dt;
-        group.position.y = this.baseY + Math.sin(this.time * 2) * 1.3;
-        group.rotation.z = Math.sin(this.time * 3) * 0.2;
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.8 && playerPos.y > group.position.y + 0.6 && game.playerVel && game.playerVel.y < 0) {
-            this.hp--;
-            game.playerVel.y = 10;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) { group.visible = false; group.position.y = -9999; }
-          } else if (d < 1.4 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
-  }
-
-  // 6. Steam Wraith
-  function createSteamWraith(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-    const steamMat = new THREE.MeshStandardMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.7, emissive: 0x38bdf8, emissiveIntensity: 0.4 });
-    const wisp = new THREE.Mesh(new THREE.SphereGeometry(0.8, 10, 10), steamMat);
-    wisp.position.y = 1.2;
-    group.add(wisp);
-
-    group.userData = {
-      type: "steam_wraith",
-      hp: 2,
-      baseY: y,
-      time: Math.random() * 5,
-      update: function(dt, playerPos, game) {
-        this.time += dt * 2.5;
-        group.position.y = this.baseY + Math.sin(this.time) * 1.5;
-        group.rotation.y += dt * 1.5;
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.6 && playerPos.y > group.position.y + 0.8 && game.playerVel && game.playerVel.y < 0) {
-            this.hp--;
-            game.playerVel.y = 11;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) { group.visible = false; group.position.y = -9999; }
-          } else if (d < 1.3 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
-  }
-
-  // 7. Emerald Cavern Eel
-  function createEmeraldEel(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-    const eelMat = new THREE.MeshStandardMaterial({ color: 0x10b981, emissive: 0x059669, emissiveIntensity: 0.5 });
-    for (let s = 0; s < 4; s++) {
-      const seg = new THREE.Mesh(new THREE.SphereGeometry(0.5 - s * 0.08, 8, 8), eelMat);
-      seg.position.set(0, 0.8, -s * 0.7);
-      group.add(seg);
+    const game = window.__superBearGame;
+    let group;
+    if (typeof window.__buildDistinctCreatureMesh === 'function') {
+      group = window.__buildDistinctCreatureMesh(THREE, archetypeIdx, {
+        primary: primaryHex,
+        secondary: secondaryHex,
+        eye: 0x38bdf8,
+        scale: 1.28
+      });
+    } else {
+      group = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.SphereGeometry(0.9, 10, 10),
+        new THREE.MeshStandardMaterial({ color: primaryHex, roughness: 0.4 })
+      );
+      body.position.y = 0.9;
+      group.add(body);
     }
+    group.position.set(x, y, z);
 
-    group.userData = {
-      type: "emerald_eel",
-      hp: 3,
+    const enemyObj = {
+      id: "cave_" + archetypeIdx + "_" + Math.round(z),
+      type: "cave_creature_" + archetypeIdx,
+      name: name,
+      mesh: group,
+      pos: new THREE.Vector3(x, y, z),
+      baseX: x,
       baseY: y,
-      time: Math.random() * 5,
-      startX: x,
-      dir: 1,
-      update: function(dt, playerPos, game) {
-        group.position.x += this.dir * dt * 3.0;
-        if (Math.abs(group.position.x - this.startX) > 6) this.dir *= -1;
+      baseZ: z,
+      hp: hp * 32,
+      maxHp: hp * 32,
+      attackPower: 15,
+      _combatUpgraded: true,
+      _archetype: archetypeIdx,
+      _isFlyer: !!isFlyer,
+      _patrolSpeed: isFlyer ? 4.5 : 3.7,
+      _patrolRangeX: 5.0,
+      _patrolRangeZ: 2.8,
+      _animPhase: Math.random() * 10,
+      _projCooldown: 0.9 + Math.random() * 1.4,
+      _projInterval: 2.1,
+      _projTheme: {
+        color: primaryHex,
+        emissive: secondaryHex,
+        speed: 18.0,
+        damage: 14,
+        radius: 0.44
+      },
+      update: function(dt, playerPos, gameInst) {
+        if (this.hp <= 0) return;
+        if (typeof window.__updateCreatureCombatAI === 'function') {
+          window.__updateCreatureCombatAI(this, dt, playerPos, gameInst, archetypeIdx);
+        }
         if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.7 && playerPos.y > group.position.y + 0.6 && game.playerVel && game.playerVel.y < 0) {
-            this.hp--;
-            game.playerVel.y = 11;
+          const d = this.pos.distanceTo(playerPos);
+          if (d < 2.0 && playerPos.y > this.pos.y + 1.2 && gameInst.playerVel && gameInst.playerVel.y < 0) {
+            this.hp -= 35;
+            gameInst.playerVel.y = 12;
             if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) { group.visible = false; group.position.y = -9999; }
-          } else if (d < 1.4 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
+            if (this.hp <= 0) {
+              group.visible = false;
+              this.pos.y = -9999;
+              group.position.y = -9999;
+            }
+          } else if (d < 1.65) {
+            if (gameInst.damagePlayer) gameInst.damagePlayer(15);
+            else if (gameInst.takeDamage) gameInst.takeDamage(1);
           }
         }
       }
     };
+
+    group.userData = enemyObj;
+    if (game && game.currentLevel && Array.isArray(game.currentLevel.enemies)) {
+      game.currentLevel.enemies.push(enemyObj);
+    }
     return group;
   }
 
-  // 8. Echo Bat Drone
+  function createMoleMiner(x, y, z) {
+    return spawnCaveCreature(x, y, z, "Gölge Köstebek Madenci ⛏️🐾", 9, 0x451a03, 0x38bdf8, 3, false);
+  }
+  function createLuminescentSalamander(x, y, z) {
+    return spawnCaveCreature(x, y, z, "Fosforlu Mağara Semenderi 🦎💧", 4, 0x06b6d4, 0xa855f7, 3, false);
+  }
+  function createAnglerLurker(x, y, z) {
+    return spawnCaveCreature(x, y, z, "Derin Mağara Fener Balığı 🏮🐟", 14, 0x1e293b, 0xfef08a, 4, true);
+  }
+  function createCrystalCrab(x, y, z) {
+    return spawnCaveCreature(x, y, z, "Kristal Kıskaçlı Yengeç 🦀💎", 2, 0x3b82f6, 0x67e8f9, 4, false);
+  }
+  function createCavernStingray(x, y, z) {
+    return spawnCaveCreature(x, y, z, "Mağara Elektrik Vatozu ⚡🌊", 13, 0x0284c7, 0x38bdf8, 3, true);
+  }
+  function createSteamWraith(x, y, z) {
+    return spawnCaveCreature(x, y, z, "Kaynar Buhar Tayfı 💨👻", 3, 0xe0f2fe, 0x38bdf8, 3, true);
+  }
+  function createEmeraldEel(x, y, z) {
+    return spawnCaveCreature(x, y, z, "Zümrüt Mağara Müreni 🐍💚", 5, 0x10b981, 0x34d399, 4, false);
+  }
   function createEchoBat(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-    const batMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.8 });
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.5, 8, 8), batMat);
-    const wingL = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.05, 0.5), batMat);
-    wingL.position.x = -0.7;
-    const wingR = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.05, 0.5), batMat);
-    wingR.position.x = 0.7;
-    group.add(body, wingL, wingR);
-
-    group.userData = {
-      type: "echo_bat",
-      hp: 2,
-      baseY: y,
-      time: Math.random() * 5,
-      wingL, wingR,
-      update: function(dt, playerPos, game) {
-        this.time += dt * 4;
-        wingL.rotation.z = Math.sin(this.time * 5) * 0.7;
-        wingR.rotation.z = -Math.sin(this.time * 5) * 0.7;
-        group.position.y = this.baseY + Math.sin(this.time) * 1.5;
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.6 && playerPos.y > group.position.y + 0.4 && game.playerVel && game.playerVel.y < 0) {
-            this.hp--;
-            game.playerVel.y = 10;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) { group.visible = false; group.position.y = -9999; }
-          } else if (d < 1.3 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
+    return spawnCaveCreature(x, y, z, "Sonik Yankı Yarasası 🦇🔊", 1, 0x312e81, 0xc084fc, 3, true);
   }
-
-  // 9. Moss Slime Crawler
   function createMossSlime(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-    const slimeMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.3, transparent: true, opacity: 0.9 });
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.7, 10, 10), slimeMat);
-    body.scale.set(1.2, 0.6, 1.2);
-    body.position.y = 0.35;
-    group.add(body);
-
-    group.userData = {
-      type: "moss_slime",
-      hp: 3,
-      baseY: y,
-      timer: 0,
-      startX: x,
-      dir: 1,
-      update: function(dt, playerPos, game) {
-        this.timer += dt * 3;
-        group.position.x += this.dir * dt * 2.2;
-        group.scale.y = 1.0 + Math.sin(this.timer) * 0.2;
-        if (Math.abs(group.position.x - this.startX) > 5) this.dir *= -1;
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.6 && playerPos.y > group.position.y + 0.5 && game.playerVel && game.playerVel.y < 0) {
-            this.hp--;
-            game.playerVel.y = 11;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) { group.visible = false; group.position.y = -9999; }
-          } else if (d < 1.3 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
+    return spawnCaveCreature(x, y, z, "Zırhlı Yosun Kaplumbağası 🐢🌿", 6, 0x15803d, 0x4ade80, 4, false);
   }
-
-  // 10. Armored Placoderm (Prehistoric armored fish)
   function createArmoredFish(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-    const ironMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.3 });
-    const body = new THREE.Mesh(new THREE.ConeGeometry(0.7, 2.0, 6), ironMat);
-    body.rotation.x = Math.PI / 2;
-    body.position.y = 1.0;
-    group.add(body);
-
-    group.userData = {
-      type: "placoderm",
-      hp: 4,
-      baseY: y,
-      startZ: z,
-      dir: 1,
-      update: function(dt, playerPos, game) {
-        group.position.z += this.dir * dt * 3.2;
-        if (Math.abs(group.position.z - this.startZ) > 7) this.dir *= -1;
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.8 && playerPos.y > group.position.y + 0.7 && game.playerVel && game.playerVel.y < 0) {
-            this.hp -= 2;
-            game.playerVel.y = 11;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) { group.visible = false; group.position.y = -9999; }
-          } else if (d < 1.5 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
+    return spawnCaveCreature(x, y, z, "Antik Zırhlı Plakoderm 🐟🛡️", 15, 0x475569, 0x38bdf8, 4, false);
   }
-
-  // 11. Crystal Jellyfish Floater
   function createCrystalJellyfish(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-    const jellyMat = new THREE.MeshStandardMaterial({ color: 0xa855f7, transparent: true, opacity: 0.8, emissive: 0x7e22ce, emissiveIntensity: 0.5 });
-    const bell = new THREE.Mesh(new THREE.SphereGeometry(0.8, 12, 12, 0, Math.PI * 2, 0, Math.PI / 2), jellyMat);
-    bell.rotation.x = Math.PI;
-    bell.position.y = 1.4;
-    group.add(bell);
-
-    group.userData = {
-      type: "jellyfish",
-      hp: 2,
-      baseY: y,
-      time: Math.random() * 5,
-      update: function(dt, playerPos, game) {
-        this.time += dt * 2;
-        group.position.y = this.baseY + Math.sin(this.time) * 1.6;
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.7 && playerPos.y > group.position.y + 0.8 && game.playerVel && game.playerVel.y < 0) {
-            this.hp--;
-            game.playerVel.y = 11;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) { group.visible = false; group.position.y = -9999; }
-          } else if (d < 1.4 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
+    return spawnCaveCreature(x, y, z, "Ametist Kristal Denizanası 🪼💜", 10, 0xa855f7, 0xf472b6, 3, true);
   }
-
-  // 12. Cave Troll Fisher
   function createCaveTroll(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-    const skinMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9 });
-    const body = new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.0, 1.2), skinMat);
-    body.position.y = 1.5;
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.7, 8, 8), skinMat);
-    head.position.y = 2.8;
-    const club = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.4, 2.0, 6), skinMat);
-    club.position.set(1.1, 1.6, 0.4);
-    group.add(body, head, club);
-
-    group.userData = {
-      type: "cave_troll",
-      hp: 6,
-      baseY: y,
-      update: function(dt, playerPos, game) {
-        group.rotation.y += dt * 0.7;
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 2.0 && playerPos.y > group.position.y + 2.0 && game.playerVel && game.playerVel.y < 0) {
-            this.hp -= 2;
-            game.playerVel.y = 12;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) { group.visible = false; group.position.y = -9999; }
-          } else if (d < 1.8 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
+    return spawnCaveCreature(x, y, z, "Derin Mağara Trolü 🧌🪨", 0, 0x334155, 0x06b6d4, 6, false);
+  }
+  function createAbyssalHydraGuardian(x, y, z) {
+    return spawnCaveCreature(x, y, z, "Ejderha Boğazı Muhafızı 🐉🔱", 17, 0x6b21a8, 0x38bdf8, 5, false);
   }
 
   // =========================================================================
@@ -497,7 +158,7 @@
   window.__populateWaterCaveExtension = function(game) {
     if (!window.THREE || !game || !game.scene) return;
     const THREE = window.THREE;
-    console.log("💧 [Su Mağarası] Orijinal Mağara korundu, 14 Yeni Aşama ve 12 Farklı Canlı Yükleniyor...");
+    console.log("💧 [Su Mağarası] Orijinal Mağara korundu, 14 Yeni Aşama ve 13 Farklı Canlı Yükleniyor...");
 
     cleanUpWaterCaveExtension();
 
@@ -574,7 +235,7 @@
     addPlat(12, 2, 45, 0, 31, -830, biolumCyanMat);
 
     // =========================================================================
-    // 14 EXTENDED STAGES
+    // 14 EXTENDED STAGES (HER AŞAMADA FARKLI BİR CANLI!)
     // =========================================================================
 
     // Stage 1: Biyolüminesans Mantar Ormanı (z: -850 to -1050)
@@ -707,6 +368,9 @@
     addPlat(8, 2, 14, -8, 54, -3600, crystalPlatMat);
     addPlat(8, 2, 14, 8, 50, -3640, crystalPlatMat);
     addPlat(18, 2, 28, 0, 46, -3680, deepAmethystMat);
+    const hydra13 = createAbyssalHydraGuardian(0, 47, -3680);
+    caveExtensionGroup.add(hydra13);
+    caveCreatures.push(hydra13.userData);
 
     // Stage 14: BÜYÜK SU EJDERHASI YERALTI MABEDİ (z: -3720 to -4000)
     addCheckpoint(0, 46, -3720, "14. Aşama: Ejderha Mabedi - Patron Arenası");
@@ -730,7 +394,6 @@
     head.position.set(0, 8.5, 2.0);
     bossGroup.add(head);
 
-    // Cyan horns
     [-1.2, 1.2].forEach(hx => {
       const horn = new THREE.Mesh(new THREE.ConeGeometry(0.4, 2.5, 8), hornMat);
       horn.position.set(hx, 10.5, 0.5);
@@ -741,32 +404,53 @@
     caveExtensionGroup.add(bossGroup);
 
     caveDragonBoss = {
+      id: "boss_cave_dragon",
+      name: "Dev Su Ejderhası 🐉💧",
+      mesh: bossGroup,
       group: bossGroup,
+      pos: bossGroup.position,
       hp: 50,
       maxHp: 50,
+      isBoss: true,
+      baseX: 0,
       baseY: 46,
-      attackTimer: 2.0,
+      baseZ: -3890,
+      attackTimer: 1.7,
       isDead: false,
-      update: function(dt, playerPos, game) {
-        if (this.isDead) return;
+      _combatUpgraded: true,
+      update: function(dt, playerPos, gameInst) {
+        if (this.isDead || this.hp <= 0) return;
+        const t = Date.now() * 0.0025;
         this.attackTimer -= dt;
-        bossGroup.position.y = this.baseY + Math.sin(Date.now() * 0.003) * 1.2;
-        bossGroup.rotation.y += dt * 0.6;
+        bossGroup.position.x = this.baseX + Math.sin(t * 1.1) * 12.0;
+        bossGroup.position.z = this.baseZ + Math.cos(t * 0.8) * 9.0;
+        bossGroup.position.y = this.baseY + Math.sin(t * 1.5) * 1.3;
 
         if (playerPos) {
           bossGroup.lookAt(playerPos.x, bossGroup.position.y, playerPos.z);
         }
 
-        if (this.attackTimer <= 0) {
-          this.attackTimer = 2.2;
+        if (this.attackTimer <= 0 && playerPos) {
+          this.attackTimer = 1.9;
           if (window.St && window.St.playBossRoar) window.St.playBossRoar();
+          if (typeof window.__spawnEnemyProjectile === 'function' && bossGroup.position.distanceTo(playerPos) < 44) {
+            const fireOrigin = bossGroup.position.clone();
+            fireOrigin.y += 6.5;
+            window.__spawnEnemyProjectile(gameInst, fireOrigin, playerPos, {
+              color: 0x06b6d4,
+              emissive: 0x38bdf8,
+              speed: 20.5,
+              damage: 17,
+              radius: 0.68
+            });
+          }
         }
 
         if (playerPos) {
           const d = bossGroup.position.distanceTo(playerPos);
-          if (d < 4.5 && playerPos.y > bossGroup.position.y + 7.0 && game.playerVel && game.playerVel.y < 0) {
+          if (d < 4.5 && playerPos.y > bossGroup.position.y + 6.5 && gameInst.playerVel && gameInst.playerVel.y < 0) {
             this.hp -= 5;
-            game.playerVel.y = 15;
+            gameInst.playerVel.y = 15;
             if (window.St && window.St.playBossHit) window.St.playBossHit();
 
             if (this.hp <= 0) {
@@ -774,16 +458,16 @@
               bossGroup.visible = false;
               bossGroup.position.y = -9999;
               if (window.St && window.St.playGoalFanfare) window.St.playGoalFanfare();
-              if (game.callbacks && game.callbacks.onShowNotice) {
-                game.callbacks.onShowNotice("🎉 Dev Su Ejderhası Yenildi! 14. Bölüm: Arılar Çölü Portalı Açıldı! 🏜️", "success");
+              if (gameInst.callbacks && gameInst.callbacks.onShowNotice) {
+                gameInst.callbacks.onShowNotice("🎉 Dev Su Ejderhası Yenildi! 14. Bölüm: Arılar Çölü Portalı Açıldı! 🏜️", "success");
               }
               if (caveVictoryPortal) {
                 caveVictoryPortal.visible = true;
                 caveVictoryPortal.position.set(0, 47, -3960);
               }
             }
-          } else if (d < 3.2 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(2);
+          } else if (d < 3.4 && (!gameInst.damageInvulnerable || gameInst.damageInvulnerable <= 0)) {
+            if (gameInst.takeDamage) gameInst.takeDamage(2);
           }
         }
       }
@@ -809,7 +493,7 @@
     caveVictoryPortal = portalGroup;
 
     if (game.callbacks && game.callbacks.onShowNotice) {
-      game.callbacks.onShowNotice("💧 13. Bölüm Su Mağarası 14 Yeni Aşamayla Genişletildi! 12 Yeni Canlı Eklendi!", "info");
+      game.callbacks.onShowNotice("💧 13. Bölüm Su Mağarası 14 Yeni Aşama ve 13 Farklı Hareketli/Ateş Eden Canlıyla Genişletildi!", "info");
     }
   };
 
@@ -820,13 +504,6 @@
     const game = window.__superBearGame;
     if (!game || game.currentRegion !== "water_cave") return;
     const playerPos = game.playerPos;
-
-    for (let i = 0; i < caveCreatures.length; i++) {
-      const c = caveCreatures[i];
-      if (c && typeof c.update === "function") {
-        c.update(dt, playerPos, game);
-      }
-    }
 
     if (caveDragonBoss && typeof caveDragonBoss.update === "function") {
       caveDragonBoss.update(dt, playerPos, game);

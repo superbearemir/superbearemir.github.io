@@ -324,7 +324,7 @@
     buildOceanBasalt(16, 2.0, 22, 0, 72.0, -1825);
 
     buildBasaltPlatform(22, 2.5, 24, 0, 73.0, -1870, smoothObsidianMat);
-    createLavaSalamander(0, 74.0, -1780, enemies, volcanoExtensionGroup);
+    createPyroCerberusHound(0, 74.0, -1780, enemies, volcanoExtensionGroup);
 
     function buildOceanBasalt(w, h, d, px, py, pz) {
       return buildBasaltPlatform(w, h, d, px, py, pz, basaltMat);
@@ -416,7 +416,7 @@
     buildBasaltPlatform(14, 1.8, 30, -5, 91.8, -2760, basaltMat);
     buildBasaltPlatform(16, 2.0, 22, 0, 92.6, -2795, smoothObsidianMat);
     buildBasaltPlatform(22, 2.5, 24, 0, 93.5, -2835, basaltMat);
-    createLavaShaman(0, 95.0, -2740, enemies, volcanoExtensionGroup);
+    createMoltenMinotaurLord(0, 95.0, -2740, enemies, volcanoExtensionGroup);
 
     // 15-19. AŞAMALAR [ÇOK ZORLU / HARDCORE]: Lazerler, dar kirişler, kaldera tırmanışı
     // -------------------------------------------------------------------------
@@ -443,7 +443,7 @@
       addVolcanoItem("v_c15_" + lIdx, 0, ly + 1.8, lz, true);
     });
     buildBasaltPlatform(22, 2.5, 24, 0, 98.2, -3045, smoothObsidianMat);
-    createObsidianScorpion(0, 99.5, -2945, enemies, volcanoExtensionGroup);
+    createCinderHarpyQueen(0, 99.5, -2945, enemies, volcanoExtensionGroup);
 
     // 16. Aşama: Eriyip Düşen Sütunlar (z: -3045 -> -3240)
     addCheckpoint("volcano_cp_s16", "16. Aşama: Eriyip Düşen Sütunlar [Hardcore]", 0, 98.8, -3055);
@@ -472,7 +472,7 @@
       addVolcanoItem("v_c16_" + cIdx, cx, cy + 1.8, cz);
     });
     buildBasaltPlatform(22, 2.5, 24, 0, 102.5, -3240, basaltMat);
-    createEmberDrakelet(0, 104.0, -3145, enemies, volcanoExtensionGroup);
+    createInfernoHydraSerpent(0, 104.0, -3145, enemies, volcanoExtensionGroup);
 
     // 17. Aşama: Dar Obsidyen Kirişleri & Denge Tırmanışı (z: -3240 -> -3430)
     addCheckpoint("volcano_cp_s17", "17. Aşama: Dar Obsidyen Kirişleri [Çok Zorlu]", 0, 103.0, -3250);
@@ -483,7 +483,7 @@
     buildBasaltPlatform(12, 2.0, 12, -4, 105.6, -3375, smoothObsidianMat);
     buildBasaltPlatform(4, 2.0, 36, 4, 106.4, -3405, basaltMat);
     buildBasaltPlatform(22, 2.5, 24, 0, 107.0, -3435, smoothObsidianMat);
-    createBasaltArmorKnight(0, 108.5, -3345, enemies, volcanoExtensionGroup);
+    createObsidianLancerGuard(0, 108.5, -3345, enemies, volcanoExtensionGroup);
 
     // 18. Aşama: Şimşekli Magma Zirvesi & Zıplama Rampası (z: -3435 -> -3630)
     addCheckpoint("volcano_cp_s18", "18. Aşama: Şimşekli Magma Zirvesi [Hardcore]", 0, 107.5, -3445);
@@ -493,7 +493,7 @@
     buildBasaltPlatform(14, 2.0, 28, 5, 109.4, -3560, smoothObsidianMat);
     addMagmaJumpPad(0, 110.0, -3560, 34);
     buildBasaltPlatform(26, 2.5, 28, 0, 110.0, -3630, moltenGoldMat);
-    createBlazeElemental(0, 111.0, -3520, enemies, volcanoExtensionGroup);
+    createSolarFlareSeraph(0, 111.0, -3520, enemies, volcanoExtensionGroup);
 
     // 19. Aşama: [BÜYÜK BOSS] Yüce Volkanik Kaldera 🌋 (z: -3650 -> -3850, Y: 110.0)
     const calderaArenaZ = -3720;
@@ -535,90 +535,79 @@
     // Victory Portal behind Dragon: Leads to 7. Bölüm Antik Su Altı Kristal Sarayı
     volcanoVictoryPortal = createVolcanoVictoryPortal(0, calderaArenaY + 2.3, calderaArenaZ - 42, volcanoExtensionGroup);
 
-    console.log("✅ [Volcano Cave Extension] 19 Aşama ve Uçan Ejderha Boss Arenası (Aşama 19) Başarıyla Kuruldu!");
+    console.log("✅ [Volcano Cave Extension] 19 Aşama, 18 Benzersiz Volkan Canlısı ve Ejderha Boss Başarıyla Kuruldu!");
   };
 
   // =========================================================================
-  // 12 ÖZEL YENİ VOLKANİK CANLI (ÖZGÜN 3D MODELLER VE MEKANİKLER)
+  // 18 ÖZEL YENİ VOLKANİK CANLI (HER AŞAMADA FARKLI ÇOK PARÇALI 3D MODEL + MERMİ)
   // =========================================================================
 
   function createLavaSalamander(x, y, z, e, g) {
-    createVolcanoMonster(x, y, z, e, g, "Lava Salamander 🦎🔥", 0xef4444, 1.2, 90, 12, "crawl");
+    createVolcanoMonster(x, y, z, e, g, "Lav Semenderi 🦎🔥", 0xef4444, 0xfacc15, 4, 1.1, 95, 13, 0);
   }
-
   function createFirewingBat(x, y, z, e, g) {
-    createVolcanoMonster(x, y, z, e, g, "Firewing Bat 🦇🔥", 0xdc2626, 1.4, 70, 10, "swoop");
+    createVolcanoMonster(x, y, z, e, g, "Alev Kanatlı Wyvern 🦇🔥", 0xdc2626, 0xf97316, 1, 1.15, 85, 12, 4);
   }
-
   function createMagmaCrawler(x, y, z, e, g) {
-    createVolcanoMonster(x, y, z, e, g, "Magma Crawler 🕷️🔥", 0xf97316, 1.3, 100, 13, "patrol");
+    createVolcanoMonster(x, y, z, e, g, "Magma Tarantulası 🕷️🔥", 0xf97316, 0xfef08a, 7, 1.1, 105, 13, 2);
   }
-
   function createFlameImp(x, y, z, e, g) {
-    createVolcanoMonster(x, y, z, e, g, "Flame Imp 👺🔥", 0xb91c1c, 1.1, 80, 14, "hop");
+    createVolcanoMonster(x, y, z, e, g, "Kızıl Ateş İblisi 👺🔥", 0xb91c1c, 0xfacc15, 16, 1.05, 90, 14, 3);
   }
-
   function createVolcanoGolem(x, y, z, e, g) {
-    createVolcanoMonster(x, y, z, e, g, "Volcano Golem 🗿🔥", 0x451a03, 2.2, 180, 18, "stomp");
+    createVolcanoMonster(x, y, z, e, g, "Volkanik Dev Golem 🗿🔥", 0x7c2d12, 0xf97316, 0, 1.35, 180, 18, 0);
   }
-
   function createMagmaWurm(x, y, z, e, g) {
-    createVolcanoMonster(x, y, z, e, g, "Magma Wurm 🪱🔥", 0xea580c, 1.8, 130, 15, "breach");
+    createVolcanoMonster(x, y, z, e, g, "Zırhlı Magma Solucanı 🪱🔥", 0xea580c, 0xfde047, 5, 1.2, 135, 15, 1);
   }
-
   function createBlazeElemental(x, y, z, e, g) {
-    createVolcanoMonster(x, y, z, e, g, "Blaze Elemental 🔮🔥", 0xfacc15, 1.5, 120, 16, "spin");
+    createVolcanoMonster(x, y, z, e, g, "Kor Alev Prizması 🔮🔥", 0xfacc15, 0xef4444, 8, 1.15, 125, 16, 4);
   }
-
   function createObsidianScorpion(x, y, z, e, g) {
-    createVolcanoMonster(x, y, z, e, g, "Obsidian Scorpion 🦂", 0x18181b, 1.4, 140, 17, "lunge");
+    createVolcanoMonster(x, y, z, e, g, "Obsidyen Kıskaç Akrebi 🦂🔥", 0x18181b, 0xef4444, 2, 1.2, 145, 17, 0);
   }
-
+  function createPyroCerberusHound(x, y, z, e, g) {
+    createVolcanoMonster(x, y, z, e, g, "Kızıl Cehennem Tazısı 🐺🔥", 0x991b1b, 0xfbbf24, 15, 1.15, 140, 16, 1);
+  }
   function createLavaShaman(x, y, z, e, g) {
-    createVolcanoMonster(x, y, z, e, g, "Lava Shaman 🧙‍♂️🔥", 0x7c2d12, 1.6, 160, 18, "cast");
+    createVolcanoMonster(x, y, z, e, g, "Kهاdim Lav Şamanı 🧙‍♂️🔥", 0x7c2d12, 0xfacc15, 3, 1.15, 160, 18, 2);
   }
-
   function createEmberDrakelet(x, y, z, e, g) {
-    createVolcanoMonster(x, y, z, e, g, "Ember Drakelet 🐲🔥", 0xef4444, 1.7, 150, 17, "puff");
+    createVolcanoMonster(x, y, z, e, g, "Kor Kanatlı Ejdercik 🐲🔥", 0xef4444, 0xfde047, 12, 1.2, 150, 17, 4);
   }
-
   function createExplodingMagmaBubble(x, y, z, e, g) {
-    createVolcanoMonster(x, y, z, e, g, "Exploding Magma Bubble 💥", 0xf97316, 1.5, 95, 20, "pulse");
+    createVolcanoMonster(x, y, z, e, g, "Fenerli Magma Canavarı 💥🔥", 0xf97316, 0xfef08a, 14, 1.15, 120, 18, 3);
   }
-
   function createBasaltArmorKnight(x, y, z, e, g) {
-    createVolcanoMonster(x, y, z, e, g, "Basalt Armor Knight 🛡️⚔️", 0x334155, 2.0, 200, 20, "heavy");
+    createVolcanoMonster(x, y, z, e, g, "Bazalt Zırhlı Şövalye 🛡️⚔️", 0x334155, 0xf97316, 9, 1.25, 195, 19, 0);
+  }
+  function createMoltenMinotaurLord(x, y, z, e, g) {
+    createVolcanoMonster(x, y, z, e, g, "Eriyik Boynuzlu Minotor 🐂🔥", 0x7f1d1d, 0xfacc15, 11, 1.3, 190, 19, 1);
+  }
+  function createCinderHarpyQueen(x, y, z, e, g) {
+    createVolcanoMonster(x, y, z, e, g, "Kül Fırtınası Vatozu ⚡🔥", 0xc2410c, 0xfde047, 13, 1.15, 155, 18, 4);
+  }
+  function createInfernoHydraSerpent(x, y, z, e, g) {
+    createVolcanoMonster(x, y, z, e, g, "Sekiz Dokunaçlı Lav Ahtapotu 🦑🔥", 0xbe123c, 0xfb923c, 10, 1.2, 170, 19, 2);
+  }
+  function createObsidianLancerGuard(x, y, z, e, g) {
+    createVolcanoMonster(x, y, z, e, g, "Obsidyen Hilal Muhafızı ⚔️🔥", 0x1e293b, 0xef4444, 17, 1.2, 185, 20, 0);
+  }
+  function createSolarFlareSeraph(x, y, z, e, g) {
+    createVolcanoMonster(x, y, z, e, g, "Dikenli Kaldera Kaplumbağası 🐢🔥", 0xb45309, 0xfef08a, 6, 1.25, 210, 20, 1);
   }
 
-  function createVolcanoMonster(x, y, z, enemies, group, name, color, size, hp, atk, behavior) {
+  function createVolcanoMonster(x, y, z, enemies, group, name, color, accentColor, variantIdx, scale, hp, atk, moveMode) {
     const THREE = window.THREE;
-    const grp = new THREE.Group();
+    const grp = (typeof window.__buildDistinctCreatureMesh === 'function')
+      ? window.__buildDistinctCreatureMesh(THREE, variantIdx, { primaryColor: color, accentColor: accentColor, scale: scale })
+      : new THREE.Group();
     grp.position.set(x, y, z);
-
-    const mat = new THREE.MeshStandardMaterial({
-      color: color,
-      roughness: 0.4,
-      emissive: color,
-      emissiveIntensity: 0.4
-    });
-
-    const body = new THREE.Mesh(new THREE.BoxGeometry(size, size, size), mat);
-    body.position.y = size / 2;
-    grp.add(body);
-
-    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
-    const eye1 = new THREE.Mesh(new THREE.SphereGeometry(size * 0.15), eyeMat);
-    eye1.position.set(-size * 0.25, size * 0.7, size * 0.45);
-    grp.add(eye1);
-    const eye2 = new THREE.Mesh(new THREE.SphereGeometry(size * 0.15), eyeMat);
-    eye2.position.set(size * 0.25, size * 0.7, size * 0.45);
-    grp.add(eye2);
-
     group.add(grp);
 
     enemies.push({
-      id: name.toLowerCase().replace(/[^a-z0-9]/g, '_') + "_" + Math.round(z),
-      type: "volcano_creature",
+      id: "volc_" + variantIdx + "_" + Math.round(z),
+      type: "volcano_beast_" + variantIdx,
       name: name,
       mesh: grp,
       pos: new THREE.Vector3(x, y, z),
@@ -628,21 +617,13 @@
       hp: hp,
       maxHp: hp,
       attackPower: atk,
+      _moveMode: moveMode,
+      _projTheme: { color: color, glow: accentColor, shape: variantIdx % 2 === 0 ? 'orb' : 'crystal', speed: 20, dmg: atk },
       update: function(dt, p, game) {
-        const time = Date.now() * 0.002;
-        if (behavior === "swoop") {
-          this.mesh.position.y = this.baseY + Math.sin(time * 2.0) * 2.5;
-          this.mesh.position.x = this.baseX + Math.cos(time) * 4.0;
-        } else if (behavior === "hop") {
-          this.mesh.position.y = this.baseY + Math.abs(Math.sin(time * 3.0)) * 2.0;
-        } else if (behavior === "spin") {
-          this.mesh.rotation.y += dt * 3.0;
-        } else {
-          this.mesh.position.x = this.baseX + Math.sin(time) * 4.5;
+        if (typeof window.__updateCreatureCombatAI === 'function') {
+          window.__updateCreatureCombatAI(this, dt, p, game, variantIdx);
         }
-        this.pos.copy(this.mesh.position);
-
-        if (this.pos.distanceTo(p) < (size + 1.2)) {
+        if (p && this.pos.distanceTo(p) < 2.4) {
           game.damagePlayer(this.attackPower);
         }
       }

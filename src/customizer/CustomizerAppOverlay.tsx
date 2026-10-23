@@ -236,7 +236,42 @@ export const CustomizerAppOverlay: React.FC = () => {
       setIsNearDimensionPortal(false);
     };
     window.addEventListener('superbear:region-change', handleRegionChange);
+    window.addEventListener('superbear:region-changed', handleRegionChange);
     window.addEventListener('superbear:space-state-update', handleSpaceStateUpdate);
+
+    // Real-time distance enforcement so proximity text ONLY appears when right next to the portal and immediately disappears when walking away
+    const proximityWatchdog = setInterval(() => {
+      const game = (window as any).__superBearGame;
+      if (!game || !game.playerPos || (game.currentRegion && game.currentRegion !== 'hub')) {
+        setIsNearDimensionPortal(false);
+        setIsNearCatMerchant(false);
+        setIsNearArcade(false);
+        return;
+      }
+
+      // Strip any residual 3D signboard plane from the master portal if cached script added one
+      if (game.scene) {
+        const masterPortal = game.scene.getObjectByName('master_white_dimension_portal');
+        if (masterPortal && masterPortal.children) {
+          for (let i = masterPortal.children.length - 1; i >= 0; i--) {
+            const ch = masterPortal.children[i];
+            if (ch && ch.geometry && ch.geometry.type === 'PlaneGeometry') {
+              masterPortal.remove(ch);
+            }
+          }
+        }
+      }
+
+      const px = game.playerPos.x;
+      const pz = game.playerPos.z;
+      const distPortal = Math.hypot(px - (-1.0), pz - (-20.0));
+      const distCat = Math.hypot(px - 9.0, pz - (-18.0));
+      const distArcade = Math.hypot(px - (-11.0), pz - (-22.0));
+
+      setIsNearDimensionPortal(distPortal < 3.8);
+      setIsNearCatMerchant(distCat < 4.5);
+      setIsNearArcade(distArcade < 4.5);
+    }, 120);
 
     // Keyboard shortcuts
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -314,6 +349,9 @@ export const CustomizerAppOverlay: React.FC = () => {
       window.removeEventListener('superbear:arcade-proximity', handleArcadeProximity);
       window.removeEventListener('superbear:dimension-portal-proximity', handleDimensionPortalProximity);
       window.removeEventListener('superbear:open-dimension-portal', handleOpenDimensionPortal);
+      clearInterval(proximityWatchdog);
+      window.removeEventListener('superbear:region-change', handleRegionChange);
+      window.removeEventListener('superbear:region-changed', handleRegionChange);
       window.removeEventListener('superbear:space-state-update', handleSpaceStateUpdate);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('superbear:game-ready', handleGameReady);

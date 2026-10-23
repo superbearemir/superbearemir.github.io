@@ -281,13 +281,12 @@
     createCrystalCrab(0, 95.0, -1575, enemies, underwaterExtensionGroup);
 
     // 6. Aşama: Biyo-Işıltılı Denizanası Geçidi (z: -1675 -> -1895, Y: 94 -> 98)
-    addCheckpoint("uw_cp_s6", "6. Aşama: Biyo-Işıltılı Denizanası Geçidi", 0, 94.8, -1685);
+    addCheckpoint("uw_cp_s6", "6. Aşama: Biyo-Işıltılı Mercan Geçidi", 0, 94.8, -1685);
     buildOceanPlatform(22, 2.0, 22, 0, 94.0, -1685, marbleMat);
     [-1720, -1750, -1780, -1810, -1840, -1870].forEach((jz, jIdx) => {
       const jx = (jIdx % 2 === 0 ? 5.0 : -5.0);
       const jy = 94.5 + jIdx * 0.6;
       buildOceanPlatform(13, 1.8, 16, jx, jy, jz, aquaCrystalMat);
-      createLuminescentJellyfish(jx, jy + 3.0, jz, enemies, underwaterExtensionGroup);
       addOceanItem("uw_c6_" + jIdx, jx, jy + 1.8, jz);
     });
     buildOceanPlatform(22, 2.2, 24, 0, 98.2, -1895, marbleMat);
@@ -379,7 +378,7 @@
     addBubbleJumpPad(-6, 129.0, -2925, 30);
     buildOceanPlatform(14, 2.0, 16, 0, 135.0, -2960, aquaCrystalMat);
     buildOceanPlatform(24, 2.2, 26, 0, 120.0, -2995, marbleMat);
-    createCoralTortoise(0, 121.5, -2890, enemies, underwaterExtensionGroup);
+    createAbyssalMantisShrimp(0, 121.5, -2890, enemies, underwaterExtensionGroup);
 
     // 12. Aşama: Kristal Lazer Koridoru (z: -2995 -> -3215, Y: 120 -> 124)
     addCheckpoint("uw_cp_s12", "12. Aşama: Kristal Lazer Koridoru", 0, 120.8, -3005);
@@ -403,7 +402,7 @@
       addOceanItem("uw_c12_" + lIdx, 0, ly + 1.8, lz, true);
     });
     buildOceanPlatform(22, 2.2, 24, 0, 124.5, -3215, marbleMat);
-    createElectricEel(0, 126.0, -3105, enemies, underwaterExtensionGroup);
+    createNautilusPrismGuardian(0, 126.0, -3105, enemies, underwaterExtensionGroup);
 
     // 13. Aşama: Çöken İnci Plakaları & Ters Akıntılar (z: -3215 -> -3435, Y: 124 -> 128)
     addCheckpoint("uw_cp_s13", "13. Aşama: Çöken İnci Plakaları", 0, 125.2, -3225);
@@ -431,7 +430,7 @@
       addOceanItem("uw_c13_" + cIdx, cx, cy + 1.8, cz);
     });
     buildOceanPlatform(22, 2.2, 24, 0, 129.5, -3435, marbleMat);
-    createHunterShark(0, 131.0, -3315, enemies, underwaterExtensionGroup);
+    createPoseidonLancerKnight(0, 131.0, -3315, enemies, underwaterExtensionGroup);
 
     // 14. Aşama: Batık Antik Kalyon Güvertesi (z: -3435 -> -3655, Y: 128 -> 132)
     addCheckpoint("uw_cp_s14", "14. Aşama: Batık Kalyon Güvertesi", 0, 130.2, -3445);
@@ -442,7 +441,7 @@
     buildOceanPlatform(16, 2.5, 45, -4, 132.5, -3585, woodMat);
     buildOceanPlatform(18, 3.0, 48, 0, 133.5, -3625, woodMat);
     buildOceanPlatform(24, 2.2, 26, 0, 134.0, -3655, marbleMat);
-    createToxicInkSquid(0, 135.5, -3535, enemies, underwaterExtensionGroup);
+    createSunkenGalleonWraith(0, 135.5, -3535, enemies, underwaterExtensionGroup);
 
     // 15. Aşama: Derin Okyanus Çukuru & Çift Çarklar [Zorlu] (z: -3655 -> -3875, Y: 132 -> 136)
     addCheckpoint("uw_cp_s15", "15. Aşama: Derin Okyanus Çukuru [Zorlu]", 0, 134.8, -3665);
@@ -471,7 +470,7 @@
     buildOceanPlatform(14, 1.8, 22, 6, 136.5, -3800, marbleMat);
     buildOceanPlatform(14, 1.8, 28, 0, 137.2, -3840, aquaCrystalMat);
     buildOceanPlatform(22, 2.2, 24, 0, 138.0, -3875, marbleMat);
-    createCrystalCrab(0, 139.0, -3755, enemies, underwaterExtensionGroup);
+    createDeepTrenchBehemoth(0, 139.0, -3755, enemies, underwaterExtensionGroup);
 
     // 16. Aşama: Kraliyet Su Muhafızları Zirvesi & Zıplama Rampası (z: -3875 -> -4100, Y: 136 -> 140)
     addCheckpoint("uw_cp_s16", "16. Aşama: Kraliyet Muhafızları Zirvesi", 0, 138.8, -3885);
@@ -482,8 +481,7 @@
     buildOceanPlatform(18, 2.0, 30, 0, 140.6, -4060, marbleMat);
     addBubbleJumpPad(0, 141.0, -4060, 34);
     buildOceanPlatform(26, 2.5, 30, 0, 140.0, -4100, goldOrnamentMat);
-    createTritonShaman(0, 141.5, -3970, enemies, underwaterExtensionGroup);
-    createLeviathanSerpent(0, 142.0, -4060, enemies, underwaterExtensionGroup);
+    createRoyalMantaEmperor(0, 141.5, -3990, enemies, underwaterExtensionGroup);
 
     // 17. Aşama: [BÜYÜK BOSS] BÖLÜMÜN EN SONUNDAKİ YÜCE NEPTÜN KRALLIĞI ARENASI 🌊 (z: -4150 -> -4350)
     const arenaX = 0;
@@ -526,334 +524,92 @@
     // Victory Portal behind Kraken (8. Bölüm Altın Cenneti'ne açılır)
     underwaterVictoryPortal = createUnderwaterVictoryPortal(arenaX, arenaY + 2.2, arenaZ - 44, underwaterExtensionGroup);
 
-    console.log("✅ [Underwater Palace] Orijinal Saray ve 17 Aşama Başarıyla Birleştirildi!");
+    console.log("✅ [Underwater Palace] Orijinal Saray, 17 Aşama ve 16 Benzersiz Deniz Canlısı Başarıyla Birleştirildi!");
   };
 
   // =========================================================================
-  // 10 ÖZEL YENİ DENİZ CANLISI MODELİ VE MEKANİĞİ
+  // 16 ÖZEL YENİ DENİZ CANLISI MODELİ VE MERMİ MEKANİĞİ
   // =========================================================================
+  function spawnOceanBeast(x, y, z, enemies, group, variantIdx, idPrefix, name, primaryColor, accentColor, scale, hp, atk, moveMode) {
+    const THREE = window.THREE;
+    const grp = (typeof window.__buildDistinctCreatureMesh === 'function')
+      ? window.__buildDistinctCreatureMesh(THREE, variantIdx, { primaryColor, accentColor, scale })
+      : new THREE.Group();
+    grp.position.set(x, y, z);
+    group.add(grp);
+
+    enemies.push({
+      id: idPrefix + "_" + Math.round(z),
+      type: "ocean_beast_" + variantIdx,
+      name: name,
+      mesh: grp,
+      pos: new THREE.Vector3(x, y, z),
+      baseX: x,
+      baseY: y,
+      baseZ: z,
+      hp: hp,
+      maxHp: hp,
+      attackPower: atk,
+      _moveMode: moveMode,
+      _projTheme: { color: primaryColor, glow: accentColor, shape: variantIdx % 2 === 0 ? 'ring' : 'orb', speed: 19, dmg: atk },
+      update: function(dt, p, game) {
+        if (typeof window.__updateCreatureCombatAI === 'function') {
+          window.__updateCreatureCombatAI(this, dt, p, game, variantIdx);
+        }
+        if (p && this.pos.distanceTo(p) < 2.5) {
+          game.damagePlayer(this.attackPower);
+        }
+      }
+    });
+  }
 
   function createLuminescentJellyfish(x, y, z, enemies, group) {
-    const THREE = window.THREE;
-    const grp = new THREE.Group();
-    grp.position.set(x, y, z);
-    const domeMat = new THREE.MeshStandardMaterial({
-      color: 0x06b6d4, emissive: 0x0891b2, emissiveIntensity: 1.2, transparent: true, opacity: 0.85
-    });
-    const dome = new THREE.Mesh(new THREE.SphereGeometry(1.6, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2), domeMat);
-    grp.add(dome);
-    const tentacleMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-    for (let t = 0; t < 6; t++) {
-      const ten = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.04, 2.5), tentacleMat);
-      const angle = (t / 6) * Math.PI * 2;
-      ten.position.set(Math.cos(angle) * 1.0, -1.2, Math.sin(angle) * 1.0);
-      grp.add(ten);
-    }
-    group.add(grp);
-    enemies.push({
-      id: "jellyfish_" + Math.round(z),
-      type: "ocean_jellyfish",
-      name: "Parlayan Lüminesans Denizanası 🪼",
-      mesh: grp,
-      pos: new THREE.Vector3(x, y, z),
-      baseY: y,
-      hp: 60,
-      maxHp: 60,
-      attackPower: 12,
-      update: function(dt, p, game) {
-        this.mesh.position.y = this.baseY + Math.sin(Date.now() * 0.003) * 1.8;
-        this.pos.copy(this.mesh.position);
-        if (this.pos.distanceTo(p) < 2.5) game.damagePlayer(this.attackPower);
-      }
-    });
+    spawnOceanBeast(x, y, z, enemies, group, 10, "jelly", "Parlayan Lüminesans Denizanası 🪼🌊", 0x06b6d4, 0x67e8f9, 1.1, 85, 13, 4);
   }
-
   function createHunterShark(x, y, z, enemies, group) {
-    const THREE = window.THREE;
-    const grp = new THREE.Group();
-    grp.position.set(x, y, z);
-    const sharkMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.4 });
-    const body = new THREE.Mesh(new THREE.ConeGeometry(1.2, 4.0, 8), sharkMat);
-    body.rotation.x = Math.PI / 2;
-    grp.add(body);
-    const finMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.2 });
-    const fin = new THREE.Mesh(new THREE.ConeGeometry(0.4, 1.2, 4), finMat);
-    fin.position.set(0, 1.0, -0.4);
-    grp.add(fin);
-    group.add(grp);
-    enemies.push({
-      id: "hunter_shark_" + Math.round(z),
-      type: "hunter_shark",
-      name: "Antik Zırhlı Muhafız Köpekbalığı 🦈",
-      mesh: grp,
-      pos: new THREE.Vector3(x, y, z),
-      baseX: x,
-      hp: 120,
-      maxHp: 120,
-      attackPower: 18,
-      update: function(dt, p, game) {
-        const time = Date.now() * 0.002;
-        this.mesh.position.x = this.baseX + Math.sin(time) * 8.0;
-        this.pos.copy(this.mesh.position);
-        this.mesh.rotation.y = Math.cos(time) > 0 ? Math.PI / 2 : -Math.PI / 2;
-        if (this.pos.distanceTo(p) < 3.0) game.damagePlayer(this.attackPower);
-      }
-    });
+    spawnOceanBeast(x, y, z, enemies, group, 4, "shark", "Zırhlı Muhafız Köpekbalığı 🦈🌊", 0x334155, 0x38bdf8, 1.2, 125, 16, 0);
   }
-
   function createCoralTortoise(x, y, z, enemies, group) {
-    const THREE = window.THREE;
-    const grp = new THREE.Group();
-    grp.position.set(x, y, z);
-    const shellMat = new THREE.MeshStandardMaterial({ color: 0x059669, roughness: 0.6 });
-    const shell = new THREE.Mesh(new THREE.SphereGeometry(1.8, 12, 10, 0, Math.PI * 2, 0, Math.PI / 2), shellMat);
-    grp.add(shell);
-    const headMat = new THREE.MeshStandardMaterial({ color: 0x10b981 });
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.6), headMat);
-    head.position.set(0, 0.4, 2.0);
-    grp.add(head);
-    group.add(grp);
-    enemies.push({
-      id: "coral_tortoise_" + Math.round(z),
-      type: "coral_tortoise",
-      name: "Mercan Zırhlı Antik Kaplumbağa 🐢",
-      mesh: grp,
-      pos: new THREE.Vector3(x, y, z),
-      baseZ: z,
-      hp: 140,
-      maxHp: 140,
-      attackPower: 14,
-      update: function(dt, p, game) {
-        this.mesh.position.z = this.baseZ + Math.sin(Date.now() * 0.0015) * 5.0;
-        this.pos.copy(this.mesh.position);
-        if (this.pos.distanceTo(p) < 2.8) game.damagePlayer(this.attackPower);
-      }
-    });
+    spawnOceanBeast(x, y, z, enemies, group, 6, "tortoise", "Mercan Zırhlı Kaplumbağa 🐢🌊", 0x059669, 0xf472b6, 1.2, 145, 15, 1);
   }
-
   function createElectricEel(x, y, z, enemies, group) {
-    const THREE = window.THREE;
-    const grp = new THREE.Group();
-    grp.position.set(x, y, z);
-    const rayMat = new THREE.MeshStandardMaterial({
-      color: 0x0284c7, emissive: 0x38bdf8, emissiveIntensity: 0.9
-    });
-    const body = new THREE.Mesh(new THREE.BoxGeometry(4.0, 0.3, 3.2), rayMat);
-    grp.add(body);
-    const tail = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.02, 3.5), rayMat);
-    tail.rotation.x = Math.PI / 2;
-    tail.position.set(0, 0, -3.0);
-    grp.add(tail);
-    group.add(grp);
-    enemies.push({
-      id: "electric_eel_" + Math.round(z),
-      type: "electric_eel",
-      name: "Elektrikli Şok Vatozu ⚡",
-      mesh: grp,
-      pos: new THREE.Vector3(x, y, z),
-      baseX: x,
-      baseY: y,
-      hp: 90,
-      maxHp: 90,
-      attackPower: 16,
-      update: function(dt, p, game) {
-        const t = Date.now() * 0.0025;
-        this.mesh.position.x = this.baseX + Math.sin(t) * 7.0;
-        this.mesh.position.y = this.baseY + Math.cos(t * 1.5) * 1.2;
-        this.pos.copy(this.mesh.position);
-        if (this.pos.distanceTo(p) < 3.2) game.damagePlayer(this.attackPower);
-      }
-    });
+    spawnOceanBeast(x, y, z, enemies, group, 13, "eel", "Elektrikli Şok Vatozu ⚡🌊", 0x0284c7, 0xfacc15, 1.15, 105, 16, 4);
   }
-
   function createCrystalCrab(x, y, z, enemies, group) {
-    const THREE = window.THREE;
-    const grp = new THREE.Group();
-    grp.position.set(x, y, z);
-    const crabMat = new THREE.MeshStandardMaterial({
-      color: 0x06b6d4, roughness: 0.2, metalness: 0.7, emissive: 0x0891b2, emissiveIntensity: 0.6
-    });
-    const body = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.0, 1.8), crabMat);
-    body.position.y = 0.5;
-    grp.add(body);
-    const claw1 = new THREE.Mesh(new THREE.SphereGeometry(0.6), crabMat);
-    claw1.position.set(-1.6, 0.6, 1.2);
-    grp.add(claw1);
-    const claw2 = new THREE.Mesh(new THREE.SphereGeometry(0.6), crabMat);
-    claw2.position.set(1.6, 0.6, 1.2);
-    grp.add(claw2);
-    group.add(grp);
-    enemies.push({
-      id: "crystal_crab_" + Math.round(z),
-      type: "crystal_crab",
-      name: "Kristal Kıskaçlı Yengeç 🦀",
-      mesh: grp,
-      pos: new THREE.Vector3(x, y, z),
-      baseX: x,
-      hp: 110,
-      maxHp: 110,
-      attackPower: 15,
-      update: function(dt, p, game) {
-        this.mesh.position.x = this.baseX + Math.sin(Date.now() * 0.003) * 4.5;
-        this.pos.copy(this.mesh.position);
-        if (this.pos.distanceTo(p) < 2.5) game.damagePlayer(this.attackPower);
-      }
-    });
+    spawnOceanBeast(x, y, z, enemies, group, 2, "crab", "Kristal Kıskaçlı Yengeç 🦀💎", 0xe11d48, 0x38bdf8, 1.15, 120, 15, 0);
   }
-
   function createSpikePufferfish(x, y, z, enemies, group) {
-    const THREE = window.THREE;
-    const grp = new THREE.Group();
-    grp.position.set(x, y, z);
-    const pufferMat = new THREE.MeshStandardMaterial({ color: 0xfbbf24, roughness: 0.5 });
-    const sphere = new THREE.Mesh(new THREE.SphereGeometry(1.4, 12, 12), pufferMat);
-    grp.add(sphere);
-    const spikeMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
-    for (let s = 0; s < 8; s++) {
-      const sp = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.8, 4), spikeMat);
-      const angle = (s / 8) * Math.PI * 2;
-      sp.position.set(Math.cos(angle) * 1.3, Math.sin(angle) * 0.8, 0);
-      grp.add(sp);
-    }
-    group.add(grp);
-    enemies.push({
-      id: "pufferfish_" + Math.round(z),
-      type: "spike_pufferfish",
-      name: "Dikenli Balon Balığı 🐡",
-      mesh: grp,
-      pos: new THREE.Vector3(x, y, z),
-      baseY: y,
-      hp: 85,
-      maxHp: 85,
-      attackPower: 16,
-      update: function(dt, p, game) {
-        const d = this.pos.distanceTo(p);
-        const scale = d < 8.0 ? 1.5 : 1.0;
-        this.mesh.scale.set(scale, scale, scale);
-        this.mesh.position.y = this.baseY + Math.sin(Date.now() * 0.002) * 1.0;
-        this.pos.copy(this.mesh.position);
-        if (d < 2.5 * scale) game.damagePlayer(this.attackPower);
-      }
-    });
+    spawnOceanBeast(x, y, z, enemies, group, 12, "puffer", "Dikenli Mercan Balon Balığı 🐡🌊", 0xf59e0b, 0xef4444, 1.15, 105, 16, 3);
   }
-
   function createAbyssalAnglerfish(x, y, z, enemies, group) {
-    const THREE = window.THREE;
-    const grp = new THREE.Group();
-    grp.position.set(x, y, z);
-    const anglerMat = new THREE.MeshStandardMaterial({ color: 0x1e1b4b, roughness: 0.8 });
-    const body = new THREE.Mesh(new THREE.SphereGeometry(1.6, 12, 12), anglerMat);
-    body.scale.set(1.0, 1.2, 1.5);
-    grp.add(body);
-    const lureMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
-    const lure = new THREE.Mesh(new THREE.SphereGeometry(0.4), lureMat);
-    lure.position.set(0, 2.2, 2.2);
-    grp.add(lure);
-    group.add(grp);
-    enemies.push({
-      id: "anglerfish_" + Math.round(z),
-      type: "abyssal_anglerfish",
-      name: "Derin Uçurum Fener Balığı 🐟💡",
-      mesh: grp,
-      pos: new THREE.Vector3(x, y, z),
-      baseZ: z,
-      hp: 130,
-      maxHp: 130,
-      attackPower: 20,
-      update: function(dt, p, game) {
-        this.mesh.position.z = this.baseZ + Math.sin(Date.now() * 0.002) * 6.0;
-        this.pos.copy(this.mesh.position);
-        if (this.pos.distanceTo(p) < 3.2) game.damagePlayer(this.attackPower);
-      }
-    });
+    spawnOceanBeast(x, y, z, enemies, group, 14, "angler", "Derin Uçurum Fener Balığı 🐟💡", 0x1e1b4b, 0xfde047, 1.2, 135, 18, 2);
   }
-
   function createToxicInkSquid(x, y, z, enemies, group) {
-    const THREE = window.THREE;
-    const grp = new THREE.Group();
-    grp.position.set(x, y, z);
-    const inkMat = new THREE.MeshStandardMaterial({ color: 0x4c1d95, roughness: 0.3 });
-    const mantle = new THREE.Mesh(new THREE.ConeGeometry(1.3, 3.5, 8), inkMat);
-    grp.add(mantle);
-    group.add(grp);
-    enemies.push({
-      id: "ink_squid_" + Math.round(z),
-      type: "ink_squid",
-      name: "Zehirli Mürekkep Balığı 🦑",
-      mesh: grp,
-      pos: new THREE.Vector3(x, y, z),
-      baseX: x,
-      hp: 100,
-      maxHp: 100,
-      attackPower: 14,
-      update: function(dt, p, game) {
-        this.mesh.position.x = this.baseX + Math.sin(Date.now() * 0.002) * 5.0;
-        this.pos.copy(this.mesh.position);
-        if (this.pos.distanceTo(p) < 2.6) game.damagePlayer(this.attackPower);
-      }
-    });
+    spawnOceanBeast(x, y, z, enemies, group, 7, "squid", "Sekiz Kollu Zehirli Ahtapot 🦑💜", 0x6b21a8, 0xc084fc, 1.15, 115, 15, 0);
   }
-
   function createTritonShaman(x, y, z, enemies, group) {
-    const THREE = window.THREE;
-    const grp = new THREE.Group();
-    grp.position.set(x, y, z);
-    const tritonMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.5 });
-    const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.5, 2.2, 8), tritonMat);
-    torso.position.y = 1.1;
-    grp.add(torso);
-    const tridentMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xb45309 });
-    const trident = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 3.8), tridentMat);
-    trident.position.set(1.0, 1.8, 0.5);
-    grp.add(trident);
-    group.add(grp);
-    enemies.push({
-      id: "triton_shaman_" + Math.round(z),
-      type: "triton_shaman",
-      name: "Antik Triton Mızraklı Şamanı 🧜‍♂️🔱",
-      mesh: grp,
-      pos: new THREE.Vector3(x, y, z),
-      baseY: y,
-      hp: 160,
-      maxHp: 160,
-      attackPower: 18,
-      update: function(dt, p, game) {
-        this.mesh.rotation.y += dt * 1.2;
-        if (this.pos.distanceTo(p) < 3.0) game.damagePlayer(this.attackPower);
-      }
-    });
+    spawnOceanBeast(x, y, z, enemies, group, 3, "triton", "Antik Triton Mızrak Şamanı 🧜‍♂️🔱", 0x0369a1, 0xfacc15, 1.2, 160, 18, 2);
   }
-
   function createLeviathanSerpent(x, y, z, enemies, group) {
-    const THREE = window.THREE;
-    const grp = new THREE.Group();
-    grp.position.set(x, y, z);
-    const serpentMat = new THREE.MeshStandardMaterial({
-      color: 0x0f766e, emissive: 0x14b8a6, emissiveIntensity: 0.6
-    });
-    for (let s = 0; s < 5; s++) {
-      const seg = new THREE.Mesh(new THREE.SphereGeometry(1.6 - s * 0.2, 10, 10), serpentMat);
-      seg.position.set(0, 0, -s * 2.2);
-      grp.add(seg);
-    }
-    group.add(grp);
-    enemies.push({
-      id: "leviathan_serpent_" + Math.round(z),
-      type: "leviathan_serpent",
-      name: "Devasa Leviathan Okyanus Yılanı 🐉🌊",
-      mesh: grp,
-      pos: new THREE.Vector3(x, y, z),
-      baseX: x,
-      hp: 200,
-      maxHp: 200,
-      attackPower: 22,
-      update: function(dt, p, game) {
-        const t = Date.now() * 0.002;
-        this.mesh.position.x = this.baseX + Math.sin(t) * 9.0;
-        this.pos.copy(this.mesh.position);
-        if (this.pos.distanceTo(p) < 4.0) game.damagePlayer(this.attackPower);
-      }
-    });
+    spawnOceanBeast(x, y, z, enemies, group, 5, "leviathan", "Devasa Leviathan Okyanus Yılanı 🐉🌊", 0x0f766e, 0x2dd4bf, 1.3, 195, 20, 1);
+  }
+  function createAbyssalMantisShrimp(x, y, z, enemies, group) {
+    spawnOceanBeast(x, y, z, enemies, group, 16, "mantis", "Yumrukçu Mantis Karidesi 🦐💥", 0xdb2777, 0x22d3ee, 1.2, 155, 18, 3);
+  }
+  function createNautilusPrismGuardian(x, y, z, enemies, group) {
+    spawnOceanBeast(x, y, z, enemies, group, 8, "nautilus", "Nautilus Kristal Prizması 🐚✨", 0x2563eb, 0xfef08a, 1.2, 160, 18, 4);
+  }
+  function createPoseidonLancerKnight(x, y, z, enemies, group) {
+    spawnOceanBeast(x, y, z, enemies, group, 9, "poseidon_knight", "Poseidon Zırhlı Şövalyesi 🛡️🔱", 0x1d4ed8, 0xfacc15, 1.25, 180, 19, 0);
+  }
+  function createSunkenGalleonWraith(x, y, z, enemies, group) {
+    spawnOceanBeast(x, y, z, enemies, group, 1, "galleon_wraith", "Batık Kalyon Hayalet Ejderi 👻🚢", 0x047857, 0x67e8f9, 1.25, 175, 19, 4);
+  }
+  function createDeepTrenchBehemoth(x, y, z, enemies, group) {
+    spawnOceanBeast(x, y, z, enemies, group, 0, "trench_golem", "Okyanus Çukuru Mercan Golemi 🗿🌊", 0x0c4a6e, 0x38bdf8, 1.35, 210, 20, 1);
+  }
+  function createRoyalMantaEmperor(x, y, z, enemies, group) {
+    spawnOceanBeast(x, y, z, enemies, group, 11, "manta_emperor", "Kraliyet Boynuzlu Deniz Minotoru 🐂🌊", 0x4338ca, 0xfacc15, 1.3, 205, 20, 2);
   }
 
   // =========================================================================

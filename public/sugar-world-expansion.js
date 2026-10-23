@@ -42,478 +42,127 @@
   }
 
   // =========================================================================
-  // CREATURE CREATION HELPERS (7 UNIQUE SWEET BEASTS)
+  // CREATURE CREATION HELPERS (13 UNIQUE SWEET BEASTS - MOVE & SHOOT)
   // =========================================================================
+  function spawnSugarCreature(x, y, z, name, archetypeIdx, primaryHex, secondaryHex, hp, isFlyer) {
+    const THREE = window.THREE;
+    const game = window.__superBearGame;
+    let group;
+    if (typeof window.__buildDistinctCreatureMesh === 'function') {
+      group = window.__buildDistinctCreatureMesh(THREE, archetypeIdx, {
+        primary: primaryHex,
+        secondary: secondaryHex,
+        eye: 0xffffff,
+        scale: 1.25
+      });
+    } else {
+      group = new THREE.Group();
+      const body = new THREE.Mesh(
+        new THREE.SphereGeometry(0.9, 12, 12),
+        new THREE.MeshStandardMaterial({ color: primaryHex, roughness: 0.25 })
+      );
+      body.position.y = 1.0;
+      group.add(body);
+    }
+    group.position.set(x, y, z);
+
+    const enemyObj = {
+      id: "sugar_" + archetypeIdx + "_" + Math.round(z),
+      type: "sugar_creature_" + archetypeIdx,
+      name: name,
+      mesh: group,
+      pos: new THREE.Vector3(x, y, z),
+      baseX: x,
+      baseY: y,
+      baseZ: z,
+      hp: hp * 30,
+      maxHp: hp * 30,
+      attackPower: 14,
+      _combatUpgraded: true,
+      _archetype: archetypeIdx,
+      _isFlyer: !!isFlyer,
+      _patrolSpeed: isFlyer ? 4.4 : 3.6,
+      _patrolRangeX: 5.0,
+      _patrolRangeZ: 2.8,
+      _animPhase: Math.random() * 10,
+      _projCooldown: 0.9 + Math.random() * 1.4,
+      _projInterval: 2.2,
+      _projTheme: {
+        color: primaryHex,
+        emissive: secondaryHex,
+        speed: 17.5,
+        damage: 12,
+        radius: 0.42
+      },
+      update: function(dt, playerPos, gameInst) {
+        if (this.hp <= 0) return;
+        if (typeof window.__updateCreatureCombatAI === 'function') {
+          window.__updateCreatureCombatAI(this, dt, playerPos, gameInst, archetypeIdx);
+        }
+        if (playerPos) {
+          const d = this.pos.distanceTo(playerPos);
+          if (d < 2.0 && playerPos.y > this.pos.y + 1.2 && gameInst.playerVel && gameInst.playerVel.y < 0) {
+            this.hp -= 35;
+            gameInst.playerVel.y = 12;
+            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
+            if (this.hp <= 0) {
+              group.visible = false;
+              this.pos.y = -9999;
+              group.position.y = -9999;
+            }
+          } else if (d < 1.65) {
+            if (gameInst.damagePlayer) gameInst.damagePlayer(14);
+            else if (gameInst.takeDamage) gameInst.takeDamage(1);
+          }
+        }
+      }
+    };
+
+    group.userData = enemyObj;
+    if (game && game.currentLevel && Array.isArray(game.currentLevel.enemies)) {
+      game.currentLevel.enemies.push(enemyObj);
+    }
+    return group;
+  }
+
   function createGummyBear(x, y, z, colorHex = 0xf43f5e) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-
-    const bodyMat = new THREE.MeshStandardMaterial({
-      color: colorHex,
-      roughness: 0.2,
-      metalness: 0.1,
-      transparent: true,
-      opacity: 0.9,
-      emissive: colorHex,
-      emissiveIntensity: 0.2
-    });
-
-    // Body
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.9, 1.8, 12), bodyMat);
-    body.position.y = 1.0;
-    group.add(body);
-
-    // Head
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.8, 14, 14), bodyMat);
-    head.position.y = 2.2;
-    group.add(head);
-
-    // Ears
-    const earGeo = new THREE.SphereGeometry(0.3, 8, 8);
-    const earL = new THREE.Mesh(earGeo, bodyMat);
-    earL.position.set(-0.6, 2.8, 0);
-    const earR = new THREE.Mesh(earGeo, bodyMat);
-    earR.position.set(0.6, 2.8, 0);
-    group.add(earL, earR);
-
-    // Cute Sugar Eyes & Muzzle
-    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-    const pupilMat = new THREE.MeshBasicMaterial({ color: 0x111827 });
-    [-0.28, 0.28].forEach(ex => {
-      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.16, 8, 8), eyeMat);
-      eye.position.set(ex, 2.3, 0.72);
-      const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), pupilMat);
-      pupil.position.set(ex, 2.3, 0.85);
-      group.add(eye, pupil);
-    });
-
-    // Belly candy badge
-    const badge = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.3 }));
-    badge.scale.set(1, 1.2, 0.4);
-    badge.position.set(0, 1.1, 0.8);
-    group.add(badge);
-
-    group.userData = {
-      type: "gummy_bear",
-      hp: 3,
-      maxHp: 3,
-      baseY: y,
-      startX: x,
-      startZ: z,
-      jumpTimer: Math.random() * 2,
-      direction: 1,
-      update: function(dt, playerPos, game) {
-        this.jumpTimer += dt;
-        // Bounce hop
-        const hop = Math.abs(Math.sin(this.jumpTimer * 3.5));
-        group.position.y = this.baseY + hop * 1.8;
-        group.scale.set(1 + (1 - hop) * 0.2, 1 + hop * 0.25 - (1 - hop) * 0.15, 1 + (1 - hop) * 0.2);
-
-        // Patrol back and forth
-        group.position.x += this.direction * dt * 2.2;
-        if (Math.abs(group.position.x - this.startX) > 7) {
-          this.direction *= -1;
-          group.rotation.y = this.direction > 0 ? 0 : Math.PI;
-        }
-
-        // Proximity check with player
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.8 && playerPos.y > group.position.y + 1.2 && game.playerVel && game.playerVel.y < 0) {
-            // Player jumped on it!
-            this.hp--;
-            game.playerVel.y = 12;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) {
-              group.visible = false;
-              group.position.y = -9999;
-            }
-          } else if (d < 1.5 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            // Hurt player
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
+    return spawnSugarCreature(x, y, z, "Jelibon Savaşçı Ayıcık 🍬🐻", 11, colorHex, 0xfef08a, 3, false);
   }
-
   function createCandyCaneGuard(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-
-    const redWhiteMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3 });
-    const whiteMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
-
-    // Main Body
-    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.75, 2.2, 10), redWhiteMat);
-    body.position.y = 1.3;
-    group.add(body);
-
-    // Candy Stripes
-    for (let i = 0; i < 4; i++) {
-      const ring = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.08, 6, 12), whiteMat);
-      ring.position.y = 0.5 + i * 0.5;
-      ring.rotation.x = Math.PI / 2;
-      group.add(ring);
-    }
-
-    // Helmet & Shield
-    const head = new THREE.Mesh(new THREE.SphereGeometry(0.6, 12, 12), whiteMat);
-    head.position.y = 2.6;
-    group.add(head);
-
-    const spear = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 3.4, 8), redWhiteMat);
-    spear.position.set(0.9, 1.8, 0.4);
-    spear.rotation.x = Math.PI / 6;
-    group.add(spear);
-
-    const spearTip = new THREE.Mesh(new THREE.ConeGeometry(0.3, 0.8, 8), whiteMat);
-    spearTip.position.set(0.9, 3.4, 1.3);
-    spearTip.rotation.x = Math.PI / 6;
-    group.add(spearTip);
-
-    group.userData = {
-      type: "cane_guard",
-      hp: 4,
-      baseY: y,
-      startX: x,
-      startZ: z,
-      chargeTimer: 0,
-      isCharging: false,
-      chargeDir: 1,
-      update: function(dt, playerPos, game) {
-        this.chargeTimer += dt;
-        if (this.chargeTimer > 3.0) {
-          this.chargeTimer = 0;
-          this.isCharging = true;
-          this.chargeDir = (playerPos && playerPos.z < group.position.z) ? -1 : 1;
-        }
-
-        if (this.isCharging) {
-          group.position.z += this.chargeDir * dt * 9.0;
-          group.rotation.x = 0.25;
-          if (Math.abs(group.position.z - this.startZ) > 14) {
-            this.isCharging = false;
-            group.position.z = this.startZ;
-            group.rotation.x = 0;
-          }
-        } else {
-          group.rotation.y += dt * 1.5;
-        }
-
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.9 && playerPos.y > group.position.y + 1.8 && game.playerVel && game.playerVel.y < 0) {
-            this.hp -= 2;
-            game.playerVel.y = 11;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) {
-              group.visible = false;
-              group.position.y = -9999;
-            }
-          } else if (d < 1.7 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
+    return spawnSugarCreature(x, y, z, "Şeker Kamışı Mızrakçısı 🍭🛡️", 9, 0xef4444, 0xffffff, 4, false);
   }
-
   function createSugarBee(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-
-    // Honeycomb candy body
-    const bodyMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3 });
-    const stripeMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.5 });
-    const wingMat = new THREE.MeshStandardMaterial({ color: 0xfbcfe8, transparent: true, opacity: 0.7, roughness: 0.1 });
-
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 12), bodyMat);
-    body.scale.set(1, 1, 1.4);
-    group.add(body);
-
-    const stripe = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.1, 6, 14), stripeMat);
-    stripe.rotation.y = Math.PI / 2;
-    group.add(stripe);
-
-    // Wings
-    const wingL = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.05, 0.6), wingMat);
-    wingL.position.set(-0.9, 0.6, 0);
-    const wingR = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.05, 0.6), wingMat);
-    wingR.position.set(0.9, 0.6, 0);
-    group.add(wingL, wingR);
-
-    // Stinger lollipop needle
-    const stinger = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.7, 8), new THREE.MeshStandardMaterial({ color: 0xdb2777 }));
-    stinger.rotation.x = -Math.PI / 2;
-    stinger.position.set(0, 0, 1.2);
-    group.add(stinger);
-
-    group.userData = {
-      type: "sugar_bee",
-      hp: 2,
-      baseY: y,
-      time: Math.random() * 10,
-      wingL, wingR,
-      update: function(dt, playerPos, game) {
-        this.time += dt * 4;
-        wingL.rotation.z = Math.sin(this.time * 6) * 0.6;
-        wingR.rotation.z = -Math.sin(this.time * 6) * 0.6;
-        group.position.y = this.baseY + Math.sin(this.time * 1.5) * 1.6;
-        group.position.x += Math.cos(this.time * 0.8) * dt * 3;
-
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.6 && playerPos.y > group.position.y + 0.6 && game.playerVel && game.playerVel.y < 0) {
-            this.hp--;
-            game.playerVel.y = 10;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) {
-              group.visible = false;
-              group.position.y = -9999;
-            }
-          } else if (d < 1.4 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
+    return spawnSugarCreature(x, y, z, "Uçan Lolipop Eşekarısı 🐝🍭", 12, 0xf59e0b, 0xf472b6, 3, true);
   }
-
   function createChocolateLeaper(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-
-    const chocMat = new THREE.MeshStandardMaterial({ color: 0x3e1f0e, roughness: 0.2, metalness: 0.1 });
-    const creamMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.4 });
-
-    const body = new THREE.Mesh(new THREE.SphereGeometry(0.9, 12, 10), chocMat);
-    body.scale.set(1.1, 0.7, 1.2);
-    body.position.y = 0.5;
-    group.add(body);
-
-    // Big Froggy Eyes
-    [-0.5, 0.5].forEach(ox => {
-      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.28, 8, 8), creamMat);
-      eye.position.set(ox, 1.0, 0.6);
-      group.add(eye);
-    });
-
-    group.userData = {
-      type: "choco_frog",
-      hp: 3,
-      baseY: y,
-      timer: Math.random() * 2,
-      isAirborne: false,
-      vy: 0,
-      update: function(dt, playerPos, game) {
-        this.timer += dt;
-        if (this.timer > 2.5 && !this.isAirborne) {
-          this.timer = 0;
-          this.isAirborne = true;
-          this.vy = 8.5;
-        }
-
-        if (this.isAirborne) {
-          group.position.y += this.vy * dt;
-          this.vy -= 22 * dt;
-          if (group.position.y <= this.baseY) {
-            group.position.y = this.baseY;
-            this.isAirborne = false;
-            this.vy = 0;
-          }
-        }
-
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.7 && playerPos.y > group.position.y + 0.8 && game.playerVel && game.playerVel.y < 0) {
-            this.hp--;
-            game.playerVel.y = 11;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) {
-              group.visible = false;
-              group.position.y = -9999;
-            }
-          } else if (d < 1.4 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
+    return spawnSugarCreature(x, y, z, "Çikolatalı Sıçrayan Canavar 🍫🐸", 4, 0x451a03, 0xfef08a, 3, false);
   }
-
   function createPopRockHedgehog(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-
-    const sugarPink = new THREE.MeshStandardMaterial({ color: 0xec4899, roughness: 0.4 });
-    const spineMat = new THREE.MeshStandardMaterial({ color: 0xa855f7, roughness: 0.2 });
-
-    const core = new THREE.Mesh(new THREE.SphereGeometry(0.8, 12, 12), sugarPink);
-    core.position.y = 0.6;
-    group.add(core);
-
-    // Spines radiating
-    for (let i = 0; i < 14; i++) {
-      const spine = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.7, 6), spineMat);
-      const angle = (i / 14) * Math.PI * 2;
-      spine.position.set(Math.cos(angle) * 0.7, 0.6 + Math.sin(angle * 2) * 0.3, Math.sin(angle) * 0.7);
-      spine.rotation.x = Math.sin(angle);
-      spine.rotation.z = -Math.cos(angle);
-      group.add(spine);
-    }
-
-    group.userData = {
-      type: "poprock",
-      hp: 2,
-      baseY: y,
-      rollAngle: 0,
-      dir: 1,
-      startX: x,
-      update: function(dt, playerPos, game) {
-        this.rollAngle += dt * 5 * this.dir;
-        group.rotation.z = -this.rollAngle;
-        group.position.x += this.dir * dt * 3.5;
-        if (Math.abs(group.position.x - this.startX) > 6) {
-          this.dir *= -1;
-        }
-
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.6 && playerPos.y > group.position.y + 0.9 && game.playerVel && game.playerVel.y < 0) {
-            this.hp--;
-            game.playerVel.y = 12;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) {
-              group.visible = false;
-              group.position.y = -9999;
-            }
-          } else if (d < 1.4 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
+    return spawnSugarCreature(x, y, z, "Patlayan Kristal Şeker Akrebi 💥🦂", 7, 0xec4899, 0xa855f7, 3, false);
   }
-
   function createCaramelGolem(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-
-    const caramelMat = new THREE.MeshStandardMaterial({
-      color: 0xd97706,
-      roughness: 0.25,
-      metalness: 0.1,
-      emissive: 0xb45309,
-      emissiveIntensity: 0.3
-    });
-
-    // Big bulky torso
-    const torso = new THREE.Mesh(new THREE.BoxGeometry(2.0, 2.2, 1.4), caramelMat);
-    torso.position.y = 2.0;
-    group.add(torso);
-
-    // Stone candy head
-    const head = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.0, 1.0), new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.6 }));
-    head.position.y = 3.6;
-    group.add(head);
-
-    // Huge Fists
-    [-1.4, 1.4].forEach(fx => {
-      const fist = new THREE.Mesh(new THREE.SphereGeometry(0.7, 8, 8), caramelMat);
-      fist.position.set(fx, 1.6, 0.4);
-      group.add(fist);
-    });
-
-    group.userData = {
-      type: "caramel_golem",
-      hp: 6,
-      maxHp: 6,
-      baseY: y,
-      smashTimer: 0,
-      update: function(dt, playerPos, game) {
-        this.smashTimer += dt;
-        group.position.y = this.baseY + Math.abs(Math.sin(this.smashTimer * 2)) * 0.4;
-        group.rotation.y += dt * 0.5;
-
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 2.2 && playerPos.y > group.position.y + 2.5 && game.playerVel && game.playerVel.y < 0) {
-            this.hp -= 2;
-            game.playerVel.y = 12;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) {
-              group.visible = false;
-              group.position.y = -9999;
-            }
-          } else if (d < 2.0 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
+    return spawnSugarCreature(x, y, z, "Eriyik Karamel Golemi 🍯🪨", 0, 0xd97706, 0xfef08a, 6, false);
   }
-
   function createCottonCandyWisp(x, y, z) {
-    const THREE = window.THREE;
-    const group = new THREE.Group();
-    group.position.set(x, y, z);
-
-    const cloudMat = new THREE.MeshStandardMaterial({
-      color: 0x67e8f9,
-      roughness: 0.8,
-      transparent: true,
-      opacity: 0.85,
-      emissive: 0x06b6d4,
-      emissiveIntensity: 0.4
-    });
-
-    // Cloud clusters
-    for (let i = 0; i < 5; i++) {
-      const puff = new THREE.Mesh(new THREE.SphereGeometry(0.7, 10, 10), cloudMat);
-      puff.position.set(Math.sin(i * 1.3) * 0.6, 1.2 + Math.cos(i * 1.5) * 0.3, Math.cos(i * 1.2) * 0.6);
-      group.add(puff);
-    }
-
-    group.userData = {
-      type: "candy_wisp",
-      hp: 2,
-      baseY: y,
-      time: Math.random() * 5,
-      update: function(dt, playerPos, game) {
-        this.time += dt;
-        group.position.y = this.baseY + Math.sin(this.time * 2) * 1.5;
-        group.rotation.y += dt * 1.2;
-
-        if (playerPos) {
-          const d = group.position.distanceTo(playerPos);
-          if (d < 1.8 && playerPos.y > group.position.y + 0.8 && game.playerVel && game.playerVel.y < 0) {
-            this.hp--;
-            game.playerVel.y = 11;
-            if (window.St && window.St.playEnemyHit) window.St.playEnemyHit();
-            if (this.hp <= 0) {
-              group.visible = false;
-              group.position.y = -9999;
-            }
-          } else if (d < 1.5 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(1);
-          }
-        }
-      }
-    };
-    return group;
+    return spawnSugarCreature(x, y, z, "Pamuk Şeker Bulut Serafı ☁️✨", 8, 0x67e8f9, 0xf472b6, 3, true);
+  }
+  function createPeppermintScorpion(x, y, z) {
+    return spawnSugarCreature(x, y, z, "Nane Şekeri Kristal Akrebi 🌿🦂", 2, 0x10b981, 0xffffff, 4, false);
+  }
+  function createGlazedDonutRoller(x, y, z) {
+    return spawnSugarCreature(x, y, z, "Çikolata Soslu Zırhlı Donut 🍩🛡️", 6, 0x78350f, 0xf472b6, 4, false);
+  }
+  function createSourWormSerpent(x, y, z) {
+    return spawnSugarCreature(x, y, z, "Ekşi Jelibon Solucan Ejderi 🐛🌈", 5, 0xa855f7, 0x4ade80, 4, false);
+  }
+  function createGingerbreadPaladin(x, y, z) {
+    return spawnSugarCreature(x, y, z, "Zencefilli Kurabiye Şövalyesi 🍪⚔️", 17, 0xb45309, 0xffffff, 5, false);
+  }
+  function createMoltenToffeeDrake(x, y, z) {
+    return spawnSugarCreature(x, y, z, "Kaynar Toffee Ejderhası 🔥🍬", 1, 0xea580c, 0xfde047, 5, true);
+  }
+  function createMacaronSeraph(x, y, z) {
+    return spawnSugarCreature(x, y, z, "Gökkuşağı Macaron Büyücüsü 🧁🔮", 3, 0xdb2777, 0x38bdf8, 4, true);
   }
 
   // =========================================================================
@@ -522,7 +171,7 @@
   window.__populateSugarWorldExtension = function(game) {
     if (!window.THREE || !game || !game.scene) return;
     const THREE = window.THREE;
-    console.log("🍬 [Şeker Dünyası] Orijinal Şeker Dünyası korundu, 14 Yeni Aşama ve 7 Yeni Canlı Yükleniyor...");
+    console.log("🍬 [Şeker Dünyası] Orijinal Şeker Dünyası korundu, 14 Yeni Aşama ve 13 Farklı Canlı Yükleniyor...");
 
     cleanUpSugarWorldExtension();
 
@@ -616,7 +265,7 @@
     addLollipopDeco(7, 32, -520, 0x06b6d4);
 
     // =========================================================================
-    // 14 EXTENDED STAGES
+    // 14 EXTENDED STAGES (HER AŞAMADA FARKLI BİR CANLI!)
     // =========================================================================
 
     // Stage 1: Çilekli Pamuk Şeker Bulutları (z: -560 to -720)
@@ -625,7 +274,6 @@
     addPlat(8, 2, 16, -10, 34, -620, marshmallowMat);
     addPlat(8, 2, 16, 10, 36, -650, marshmallowMat);
     addPlat(14, 2, 25, 0, 38, -690, pinkSugarMat);
-    // Creature 1: Jelibon Ayıcık
     const bear1 = createGummyBear(-2, 39, -690, 0xec4899);
     sugarExtensionGroup.add(bear1);
     sugarCreatures.push(bear1.userData);
@@ -636,7 +284,6 @@
     addPlat(6, 2, 14, -8, 40, -800, caramelMat);
     addPlat(6, 2, 14, 8, 42, -840, caramelMat);
     addPlat(14, 2, 22, 0, 44, -890, waffleMat);
-    // Creature 2: Şeker Kamışı Muhafızı
     const guard1 = createCandyCaneGuard(0, 45, -890);
     sugarExtensionGroup.add(guard1);
     sugarCreatures.push(guard1.userData);
@@ -649,7 +296,6 @@
     addPlat(8, 2, 16, -10, 58, -1050, marshmallowMat);
     addPlat(8, 2, 16, 10, 60, -1080, marshmallowMat);
     addPlat(14, 2, 24, 0, 62, -1110, blueSugarMat);
-    // Creature 3: Uçan Lolipop Arısı
     const bee1 = createSugarBee(0, 65, -1080);
     sugarExtensionGroup.add(bee1);
     sugarCreatures.push(bee1.userData);
@@ -660,7 +306,6 @@
     addPlat(7, 2, 12, -7, 60, -1200, pinkSugarMat);
     addPlat(7, 2, 12, 7, 58, -1240, pinkSugarMat);
     addPlat(14, 2, 24, 0, 56, -1290, rainbowMat);
-    // Creature 4: Çikolatalı Kurbağa
     const frog1 = createChocolateLeaper(0, 57, -1290);
     sugarExtensionGroup.add(frog1);
     sugarCreatures.push(frog1.userData);
@@ -672,7 +317,6 @@
     addPlat(6, 2, 10, 6, 52, -1430, marshmallowMat);
     addPlat(6, 2, 10, -5, 50, -1470, marshmallowMat);
     addPlat(14, 2, 25, 0, 48, -1510, chocoMat);
-    // Creature 5: Patlayan Şeker Kirpisi
     const hedge1 = createPopRockHedgehog(0, 49, -1510);
     sugarExtensionGroup.add(hedge1);
     sugarCreatures.push(hedge1.userData);
@@ -680,13 +324,11 @@
     // Stage 6: Şeker Kamışı Dikey Sarmal Kulesi (z: -1530 to -1720)
     addCheckpoint(0, 48, -1530, "6. Aşama: Sarmal Şeker Kulesi");
     addPlat(16, 2, 25, 0, 48, -1550, pinkSugarMat);
-    // Spiral steps climbing from y: 48 to 72
     for (let s = 0; s < 6; s++) {
       const angle = (s / 6) * Math.PI * 2;
       addPlat(6, 1.5, 6, Math.cos(angle) * 8, 52 + s * 3.5, -1620 + Math.sin(angle) * 8, caramelMat);
     }
     addPlat(16, 2, 25, 0, 74, -1700, pinkSugarMat);
-    // Creature 6: Karamel Golemi
     const golem1 = createCaramelGolem(0, 75, -1700);
     sugarExtensionGroup.add(golem1);
     sugarCreatures.push(golem1.userData);
@@ -697,7 +339,6 @@
     addPlat(8, 2, 18, -8, 70, -1800, blueSugarMat);
     addPlat(8, 2, 18, 8, 66, -1840, blueSugarMat);
     addPlat(16, 2, 25, 0, 62, -1890, mintMat);
-    // Creature 7: Pamuk Şeker Perisi
     const wisp1 = createCottonCandyWisp(0, 65, -1890);
     sugarExtensionGroup.add(wisp1);
     sugarCreatures.push(wisp1.userData);
@@ -705,12 +346,12 @@
     // Stage 8: Nane Şekeri Dönen Çarkları (z: -1930 to -2120)
     addCheckpoint(0, 62, -1930, "8. Aşama: Nane Şekeri Çarkları");
     addPlat(14, 2, 22, 0, 62, -1950, mintMat);
-    addPlat(7, 2, 14, -8, 64, -2000, whiteMat);
+    addPlat(7, 2, 14, -8, 64, -2000, marshmallowMat);
     addPlat(7, 2, 14, 8, 66, -2040, mintMat);
     addPlat(14, 2, 24, 0, 68, -2090, mintMat);
-    const bear2 = createGummyBear(2, 69, -2090, 0x10b981);
-    sugarExtensionGroup.add(bear2);
-    sugarCreatures.push(bear2.userData);
+    const scorp8 = createPeppermintScorpion(0, 69, -2090);
+    sugarExtensionGroup.add(scorp8);
+    sugarCreatures.push(scorp8.userData);
 
     // Stage 9: Çikolatalı Donut Çemberleri (z: -2130 to -2320)
     addCheckpoint(0, 68, -2130, "9. Aşama: Dev Donut Çemberleri");
@@ -719,9 +360,9 @@
     addJumpPad(0, 67, -2200, 20);
     addPlat(8, 2, 14, 0, 78, -2250, marshmallowMat);
     addPlat(16, 2, 25, 0, 76, -2300, chocoMat);
-    const bee2 = createSugarBee(0, 80, -2280);
-    sugarExtensionGroup.add(bee2);
-    sugarCreatures.push(bee2.userData);
+    const donut9 = createGlazedDonutRoller(0, 77, -2300);
+    sugarExtensionGroup.add(donut9);
+    sugarCreatures.push(donut9.userData);
 
     // Stage 10: Bonbon Kristalleri & Uçan Gofretler (z: -2330 to -2520)
     addCheckpoint(0, 76, -2330, "10. Aşama: Bonbon Kristalleri");
@@ -729,9 +370,9 @@
     addPlat(6, 2, 12, -9, 74, -2400, pinkSugarMat);
     addPlat(6, 2, 12, 9, 72, -2440, blueSugarMat);
     addPlat(14, 2, 24, 0, 70, -2490, rainbowMat);
-    const frog2 = createChocolateLeaper(0, 71, -2490);
-    sugarExtensionGroup.add(frog2);
-    sugarCreatures.push(frog2.userData);
+    const worm10 = createSourWormSerpent(0, 71, -2490);
+    sugarExtensionGroup.add(worm10);
+    sugarCreatures.push(worm10.userData);
 
     // Stage 11: Zencefilli Kurabiye Köyü (z: -2530 to -2720)
     addCheckpoint(0, 70, -2530, "11. Aşama: Kurabiye Köyü");
@@ -739,9 +380,9 @@
     addPlat(8, 2, 14, -8, 66, -2600, caramelMat);
     addPlat(8, 2, 14, 8, 62, -2640, caramelMat);
     addPlat(16, 2, 25, 0, 58, -2690, waffleMat);
-    const guard2 = createCandyCaneGuard(0, 59, -2690);
-    sugarExtensionGroup.add(guard2);
-    sugarCreatures.push(guard2.userData);
+    const paladin11 = createGingerbreadPaladin(0, 59, -2690);
+    sugarExtensionGroup.add(paladin11);
+    sugarCreatures.push(paladin11.userData);
 
     // Stage 12: Eriyik Karamel Lav Havuzları & Dikenli Şekerler (z: -2730 to -2920)
     addCheckpoint(0, 58, -2730, "12. Aşama: Karamel Havuzu");
@@ -749,9 +390,9 @@
     addPlat(6, 2, 10, -7, 56, -2800, pinkSugarMat);
     addPlat(6, 2, 10, 7, 54, -2840, pinkSugarMat);
     addPlat(16, 2, 25, 0, 52, -2890, caramelMat);
-    const golem2 = createCaramelGolem(0, 53, -2890);
-    sugarExtensionGroup.add(golem2);
-    sugarCreatures.push(golem2.userData);
+    const drake12 = createMoltenToffeeDrake(0, 55, -2890);
+    sugarExtensionGroup.add(drake12);
+    sugarCreatures.push(drake12.userData);
 
     // Stage 13: Gökkuşağı Macaron Merdivenleri (z: -2930 to -3140)
     addCheckpoint(0, 52, -2930, "13. Aşama: Macaron Merdivenleri");
@@ -760,13 +401,12 @@
     addPlat(8, 2, 14, 8, 46, -3040, blueSugarMat);
     addPlat(10, 2, 16, 0, 42, -3090, mintMat);
     addPlat(18, 2, 26, 0, 38, -3140, rainbowMat);
-    const wisp2 = createCottonCandyWisp(0, 42, -3140);
-    sugarExtensionGroup.add(wisp2);
-    sugarCreatures.push(wisp2.userData);
+    const seraph13 = createMacaronSeraph(0, 41, -3140);
+    sugarExtensionGroup.add(seraph13);
+    sugarCreatures.push(seraph13.userData);
 
     // Stage 14: BÜYÜK ŞEKER TAHTI ARENASI & LOLİPOP KRALI (z: -3180 to -3480)
     addCheckpoint(0, 38, -3180, "14. Aşama: Şeker Tahtı - Patron Arenası");
-    // Colossal candy arena
     addPlat(36, 4, 60, 0, 36, -3320, goldMat);
     addLollipopDeco(-16, 38, -3300, 0xec4899, 10);
     addLollipopDeco(16, 38, -3300, 0x06b6d4, 10);
@@ -779,12 +419,10 @@
     const bossGroup = new THREE.Group();
     bossGroup.position.set(0, 38, -3340);
 
-    // Boss Candy Stick Body
     const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 8, 12), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 }));
     stick.position.y = 4;
     bossGroup.add(stick);
 
-    // Red candy spiral
     for (let r = 0; r < 6; r++) {
       const stripe = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.12, 6, 16), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
       stripe.position.y = 1.5 + r * 1.1;
@@ -792,7 +430,6 @@
       bossGroup.add(stripe);
     }
 
-    // Gigantic Spiral Candy Head
     const head = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.2, 1.4, 24), new THREE.MeshStandardMaterial({
       color: 0xdb2777,
       emissive: 0x9d174d,
@@ -803,13 +440,11 @@
     head.position.y = 10;
     bossGroup.add(head);
 
-    // Golden Crown
     const crown = new THREE.Mesh(new THREE.ConeGeometry(2.0, 1.8, 6), new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.8, roughness: 0.2 }));
     crown.position.set(0, 14.5, 0);
     crown.rotation.x = Math.PI;
     bossGroup.add(crown);
 
-    // Boss Arms & Boxing Candy Gloves
     const armL = new THREE.Mesh(new THREE.BoxGeometry(1.2, 4.0, 1.2), pinkSugarMat);
     armL.position.set(-3.5, 7.5, 0);
     const armR = new THREE.Mesh(new THREE.BoxGeometry(1.2, 4.0, 1.2), pinkSugarMat);
@@ -819,49 +454,71 @@
     sugarExtensionGroup.add(bossGroup);
 
     sugarCandyBoss = {
+      id: "boss_sugar_king",
+      name: "Dev Lolipop Kralı 🍭👑",
+      mesh: bossGroup,
       group: bossGroup,
+      pos: bossGroup.position,
       hp: 40,
       maxHp: 40,
+      isBoss: true,
+      baseX: 0,
       baseY: 38,
       baseZ: -3340,
-      attackCooldown: 2.0,
+      attackCooldown: 1.6,
       phase: 1,
       armL, armR,
       headMesh: head,
       isDead: false,
-      update: function(dt, playerPos, game) {
-        if (this.isDead) return;
+      _combatUpgraded: true,
+      update: function(dt, playerPos, gameInst) {
+        if (this.isDead || this.hp <= 0) {
+          if (!this.isDead) {
+            this.isDead = true;
+            bossGroup.visible = false;
+            bossGroup.position.y = -9999;
+            if (sugarVictoryPortal) {
+              sugarVictoryPortal.visible = true;
+              sugarVictoryPortal.position.set(0, 39, -3420);
+            }
+          }
+          return;
+        }
 
-        // Hover & dynamic animation
+        const t = Date.now() * 0.0025;
         this.attackCooldown -= dt;
-        bossGroup.position.y = this.baseY + Math.sin(Date.now() * 0.003) * 1.2;
-        head.rotation.z += dt * 1.5;
-        armL.rotation.x = Math.sin(Date.now() * 0.005) * 0.5;
-        armR.rotation.x = -Math.sin(Date.now() * 0.005) * 0.5;
+        bossGroup.position.x = this.baseX + Math.sin(t) * 10.0;
+        bossGroup.position.z = this.baseZ + Math.cos(t * 0.7) * 8.0;
+        bossGroup.position.y = this.baseY + Math.sin(t * 1.4) * 1.2;
+        head.rotation.z += dt * 1.8;
+        armL.rotation.x = Math.sin(t * 2.5) * 0.6;
+        armR.rotation.x = -Math.sin(t * 2.5) * 0.6;
 
-        // Rotate facing player
         if (playerPos) {
           bossGroup.lookAt(playerPos.x, bossGroup.position.y, playerPos.z);
         }
 
-        // Attacks
         if (this.attackCooldown <= 0 && playerPos) {
-          this.attackCooldown = 2.2;
+          this.attackCooldown = 1.9;
           if (window.St && window.St.playBossRoar) window.St.playBossRoar();
-          // Summon minor candy minion if under 50% HP
-          if (this.hp < 20 && sugarCreatures.length < 25) {
-            const minion = createGummyBear(bossGroup.position.x + (Math.random() - 0.5) * 8, 38, bossGroup.position.z + (Math.random() - 0.5) * 8);
-            sugarExtensionGroup.add(minion);
-            sugarCreatures.push(minion.userData);
+          if (typeof window.__spawnEnemyProjectile === 'function' && bossGroup.position.distanceTo(playerPos) < 42) {
+            const fireOrigin = bossGroup.position.clone();
+            fireOrigin.y += 6.5;
+            window.__spawnEnemyProjectile(gameInst, fireOrigin, playerPos, {
+              color: 0xec4899,
+              emissive: 0xfde047,
+              speed: 19.5,
+              damage: 16,
+              radius: 0.65
+            });
           }
         }
 
-        // Damage detection: Player jump on head or spin attack
         if (playerPos) {
           const d = bossGroup.position.distanceTo(playerPos);
-          if (d < 4.2 && playerPos.y > bossGroup.position.y + 7.5 && game.playerVel && game.playerVel.y < 0) {
+          if (d < 4.5 && playerPos.y > bossGroup.position.y + 6.5 && gameInst.playerVel && gameInst.playerVel.y < 0) {
             this.hp -= 5;
-            game.playerVel.y = 15;
+            gameInst.playerVel.y = 15;
             if (window.St && window.St.playBossHit) window.St.playBossHit();
             this.headMesh.material.emissiveIntensity = 1.5;
             setTimeout(() => { if (this.headMesh) this.headMesh.material.emissiveIntensity = 0.5; }, 150);
@@ -871,16 +528,16 @@
               bossGroup.visible = false;
               bossGroup.position.y = -9999;
               if (window.St && window.St.playGoalFanfare) window.St.playGoalFanfare();
-              if (game.callbacks && game.callbacks.onShowNotice) {
-                game.callbacks.onShowNotice("🎉 Lolipop Kralı Yenildi! 11. Bölüm: Jokerooms Portalı Açıldı! 🚪", "success");
+              if (gameInst.callbacks && gameInst.callbacks.onShowNotice) {
+                gameInst.callbacks.onShowNotice("🎉 Lolipop Kralı Yenildi! 11. Bölüm: Jokerooms Portalı Açıldı! 🚪", "success");
               }
               if (sugarVictoryPortal) {
                 sugarVictoryPortal.visible = true;
                 sugarVictoryPortal.position.set(0, 39, -3420);
               }
             }
-          } else if (d < 3.2 && (!game.damageInvulnerable || game.damageInvulnerable <= 0)) {
-            if (game.takeDamage) game.takeDamage(2);
+          } else if (d < 3.4 && (!gameInst.damageInvulnerable || gameInst.damageInvulnerable <= 0)) {
+            if (gameInst.takeDamage) gameInst.takeDamage(2);
           }
         }
       }
@@ -901,7 +558,6 @@
     archTop.position.y = 4;
     portalGroup.add(archL, archR, archTop);
 
-    // Glowing Vortex
     const vortex = new THREE.Mesh(new THREE.PlaneGeometry(6, 7), new THREE.MeshBasicMaterial({
       color: 0xfde047,
       transparent: true,
@@ -914,9 +570,8 @@
     sugarExtensionGroup.add(portalGroup);
     sugarVictoryPortal = portalGroup;
 
-    // Notice
     if (game.callbacks && game.callbacks.onShowNotice) {
-      game.callbacks.onShowNotice("🍭 10. Bölüm Şeker Dünyası 14 Yeni Aşamayla Genişletildi! 7 Yeni Canlı Eklendi!", "info");
+      game.callbacks.onShowNotice("🍭 10. Bölüm Şeker Dünyası 14 Yeni Aşama ve 13 Farklı Hareketli/Ateş Eden Canlıyla Genişletildi!", "info");
     }
   };
 
@@ -927,14 +582,6 @@
     const game = window.__superBearGame;
     if (!game || game.currentRegion !== "sugar_world") return;
     const playerPos = game.playerPos;
-
-    // Update creatures
-    for (let i = 0; i < sugarCreatures.length; i++) {
-      const c = sugarCreatures[i];
-      if (c && typeof c.update === "function") {
-        c.update(dt, playerPos, game);
-      }
-    }
 
     // Update Boss
     if (sugarCandyBoss && typeof sugarCandyBoss.update === "function") {
