@@ -2170,6 +2170,7 @@
   window.__populateEarthSummit = populateEarthSummit;
   window.__updateEarthSummit = updateEarthSummit;
   window.__cleanUpEarthSummit = cleanUpEarthSummit;
+  window.__createMorisBossMesh = createMorisBossMesh;
 
   console.log("⛰️ Earth Summit Level (15 Stages, 5 New Creatures & Enhanced Hazards) Ready!");
 })();

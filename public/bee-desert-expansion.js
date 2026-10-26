@@ -214,6 +214,8 @@
       desertExtensionGroup.add(mesh);
 
       const collider = {
+        min: new THREE.Vector3(px - w / 2, py - h / 2, pz - d / 2),
+        max: new THREE.Vector3(px + w / 2, py + h / 2 + 0.15, pz + d / 2),
         minX: px - w / 2, maxX: px + w / 2,
         minY: py - h / 2, maxY: py + h / 2,
         minZ: pz - d / 2, maxZ: pz + d / 2
@@ -285,26 +287,45 @@
     addPlat(42, 4, 75, 0, 68, -4330, goldHieroglyphMat);
 
     // -------------------------------------------------------------------------
-    // RELOCATED BOSS: DEV ÇÖL TİMSAHI SOBEK (STAGE 17)
+    // RELOCATED BOSS: DEV ÇÖL TİMSAHI SOBEK (STAGE 17 - Orijinal Model)
     // -------------------------------------------------------------------------
-    const bossGroup = new THREE.Group();
+    let bossGroup;
+    let crocLegs = [];
+    let crocTailSegments = [];
+    let crocJaw = null;
+
+    if (game.currentLevel && game.currentLevel.crocodileBoss && game.currentLevel.crocodileBoss.mesh) {
+      const origCroc = game.currentLevel.crocodileBoss;
+      bossGroup = origCroc.mesh;
+      crocLegs = origCroc.legs || [];
+      crocTailSegments = origCroc.tailSegments || [];
+      crocJaw = origCroc.jaw || null;
+      game.currentLevel.crocodileBoss = null;
+      if (typeof window.updateDesertCrocodileHealthBar === 'function') {
+        window.updateDesertCrocodileHealthBar(0, 55);
+      }
+    } else if (typeof window.create3DCrocodileBoss === 'function') {
+      const cData = window.create3DCrocodileBoss(game, new THREE.Vector3(0, 70, -4350));
+      bossGroup = cData.mesh;
+      crocLegs = cData.legs || [];
+      crocTailSegments = cData.tailSegments || [];
+      crocJaw = cData.jaw || null;
+    } else {
+      bossGroup = new THREE.Group();
+      const crocMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.8 });
+      const bellyMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.5 });
+      const body = new THREE.Mesh(new THREE.BoxGeometry(3.0, 1.6, 9.0), crocMat);
+      body.position.y = 1.0;
+      bossGroup.add(body);
+      const belly = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.4, 8.8), bellyMat);
+      belly.position.y = 0.2;
+      bossGroup.add(belly);
+      const snout = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.9, 4.0), crocMat);
+      snout.position.set(0, 1.2, 5.5);
+      bossGroup.add(snout);
+    }
+
     bossGroup.position.set(0, 70, -4350);
-
-    const crocMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.8 });
-    const bellyMat = new THREE.MeshStandardMaterial({ color: 0xfef08a, roughness: 0.5 });
-
-    const body = new THREE.Mesh(new THREE.BoxGeometry(3.0, 1.6, 9.0), crocMat);
-    body.position.y = 1.0;
-    bossGroup.add(body);
-
-    const belly = new THREE.Mesh(new THREE.BoxGeometry(2.8, 0.4, 8.8), bellyMat);
-    belly.position.y = 0.2;
-    bossGroup.add(belly);
-
-    const snout = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.9, 4.0), crocMat);
-    snout.position.set(0, 1.2, 5.5);
-    bossGroup.add(snout);
-
     desertExtensionGroup.add(bossGroup);
 
     desertCrocBoss = {
@@ -313,6 +334,9 @@
       mesh: bossGroup,
       group: bossGroup,
       pos: bossGroup.position,
+      legs: crocLegs,
+      tailSegments: crocTailSegments,
+      jaw: crocJaw,
       hp: 55,
       maxHp: 55,
       isBoss: true,
@@ -328,7 +352,23 @@
         this.attackTimer -= dt;
         bossGroup.position.x = this.baseX + Math.sin(t * 1.2) * 12.0;
         bossGroup.position.z = this.baseZ + Math.cos(t * 0.85) * 10.0;
-        bossGroup.position.y = this.baseY + Math.sin(t * 1.5) * 0.5;
+        bossGroup.position.y = this.baseY + Math.sin(t * 1.5) * 0.4;
+
+        if (this.legs && this.legs.length >= 4) {
+          const legSwing = Math.sin(t * 3.0) * 0.35;
+          this.legs[0].rotation.x = legSwing;
+          this.legs[1].rotation.x = -legSwing;
+          this.legs[2].rotation.x = -legSwing;
+          this.legs[3].rotation.x = legSwing;
+        }
+        if (this.tailSegments && this.tailSegments.length > 0) {
+          this.tailSegments.forEach((seg, idx) => {
+            seg.rotation.y = Math.sin(t * 3.2 + idx * 0.5) * 0.25;
+          });
+        }
+        if (this.jaw) {
+          this.jaw.rotation.x = 0.2 + Math.abs(Math.sin(t * 4.0)) * 0.45;
+        }
 
         if (playerPos) {
           bossGroup.lookAt(playerPos.x, bossGroup.position.y, playerPos.z);
@@ -352,9 +392,9 @@
 
         if (playerPos) {
           const d = bossGroup.position.distanceTo(playerPos);
-          if (d < 5.0 && playerPos.y > bossGroup.position.y + 2.2 && gameInst.playerVel && gameInst.playerVel.y < 0) {
+          if (d < 5.5 && playerPos.y > bossGroup.position.y + 2.2 && gameInst.playerVel && gameInst.playerVel.y < 0) {
             this.hp -= 5;
-            gameInst.playerVel.y = 15;
+            gameInst.playerVel.y = 16;
             if (window.St && window.St.playBossHit) window.St.playBossHit();
 
             if (this.hp <= 0) {

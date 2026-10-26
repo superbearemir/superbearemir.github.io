@@ -916,7 +916,21 @@
     if (!Array.isArray(enemies)) return;
 
     enemies.forEach((en, idx) => {
-      if (!en || en.isBoss || en.type === 'ocean_kraken' || en.type === 'volcano_dragon_boss' || en.type === 'bigfoot_boss' || en.type === 'dino_trex_boss') {
+      if (!en) return;
+      const enType = String(en.type || '').toLowerCase();
+      const enId = String(en.id || '').toLowerCase();
+      const enName = String(en.name || '').toLowerCase();
+      if (
+        en.isBoss ||
+        enType.includes('boss') ||
+        enType.includes('kraken') ||
+        enId.includes('boss') ||
+        enName.includes('boss') ||
+        enName.includes('patron') ||
+        enName.includes('kral') ||
+        enName.includes('lord') ||
+        (en.maxHp && en.maxHp >= 200)
+      ) {
         return;
       }
       if (en._combatEngineHooked) return;
@@ -968,7 +982,225 @@
     });
   }
 
-  // Ana oyun döngüsüne bağlan ve mermileri + canlıları güncelle
+  // =========================================================================
+  // EVRENSEL BÖLÜM YOLU & BOŞLUK KÖPRÜLEME SİSTEMİ (TÜM BÖLÜMLER İÇİN)
+  // - Platformlar arası ulaşılamayan uzak mesafeleri (gapZ > 7.5 veya dy > 3.0)
+  //   otomatik tespit eder ve bölge temasına uygun 3D aşama platformları yerleştirir.
+  // - Eksik Vector3 min/max collider'larını onarır ve checkpoint altlarını destekler.
+  // =========================================================================
+  const REGION_PLATFORM_THEMES = {
+    snow_desert:       { top: 0xdbeafe, trim: 0x38bdf8, glow: 0x00ffff },
+    volcano_cave:      { top: 0x451a03, trim: 0x9a3412, glow: 0xff4500 },
+    underwater_palace: { top: 0x0e7490, trim: 0x06b6d4, glow: 0x22d3ee },
+    forest_temple:     { top: 0x3f6212, trim: 0x65a30d, glow: 0x84cc16 },
+    beehive:           { top: 0xf59e0b, trim: 0xd97706, glow: 0xfde047 },
+    pelican_plains:    { top: 0xd97706, trim: 0xb45309, glow: 0xfbbf24 },
+    golden_sanctuary:  { top: 0xfbbf24, trim: 0xd97706, glow: 0xfef08a },
+    dinosaur_world:    { top: 0x57534e, trim: 0x78716c, glow: 0x84cc16 },
+    sugar_world:       { top: 0xf472b6, trim: 0xec4899, glow: 0xfbcfe8 },
+    ruin_village:      { top: 0x78716c, trim: 0x57534e, glow: 0x34d399 },
+    water_cave:        { top: 0x0284c7, trim: 0x0369a1, glow: 0x38bdf8 },
+    bee_desert:        { top: 0xeab308, trim: 0xca8a04, glow: 0xfef08a },
+    earth_summit:      { top: 0x4f46e5, trim: 0x4338ca, glow: 0x818cf8 }
+  };
+
+  window.__ensureContinuousLevelPath = function(game, forceNow = false) {
+    if (!game || !game.currentLevel || !window.THREE) return;
+    const lvl = game.currentLevel;
+
+    const region = game.currentRegion || '';
+    if (!region || region === 'village' || region === 'hub') return;
+
+    const colliders = lvl.colliders;
+    if (!Array.isArray(colliders) || colliders.length === 0) return;
+
+    // İlk 2 kare boyunca genişletme (expansion) scriptlerinin sahneyi kurmasını bekle
+    if (!forceNow) {
+      lvl._pathVerifyTicks = (lvl._pathVerifyTicks || 0) + 1;
+      if (lvl._pathVerifyTicks < 3) return;
+      if (lvl._lastVerifiedColliderCount === colliders.length) return;
+    }
+
+    const THREE = window.THREE;
+    const targetParent = lvl.mesh || game.scene;
+
+    // Eğer daha önce otomatik köprü eklendiyse ve sahneye yeni aşamalar yüklendiyse eski köprüleri temizle
+    if (lvl._autoBridgeGroup && lvl._autoBridgeGroup.parent) {
+      lvl._autoBridgeGroup.parent.remove(lvl._autoBridgeGroup);
+    }
+    lvl._autoBridgeGroup = new THREE.Group();
+    lvl._autoBridgeGroup.name = "auto_continuous_path_bridges";
+    if (targetParent) targetParent.add(lvl._autoBridgeGroup);
+
+    for (let i = colliders.length - 1; i >= 0; i--) {
+      if (colliders[i] && colliders[i]._isAutoBridge) {
+        colliders.splice(i, 1);
+      }
+    }
+
+    const theme = REGION_PLATFORM_THEMES[region] || { top: 0x64748b, trim: 0x475569, glow: 0x38bdf8 };
+
+    const platMat = new THREE.MeshStandardMaterial({
+      color: theme.top,
+      roughness: 0.35,
+      metalness: 0.2
+    });
+    const trimMat = new THREE.MeshStandardMaterial({
+      color: theme.trim,
+      emissive: theme.glow,
+      emissiveIntensity: 0.45,
+      roughness: 0.25
+    });
+
+    function spawnBridgePlatform(x, topY, z, w, h, d) {
+      const cy = topY - h / 2;
+      const grp = new THREE.Group();
+      grp.position.set(x, cy, z);
+
+      const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), platMat);
+      baseMesh.castShadow = true;
+      baseMesh.receiveShadow = true;
+      grp.add(baseMesh);
+
+      const trimMesh = new THREE.Mesh(new THREE.BoxGeometry(w + 0.24, Math.min(0.32, h * 0.25), d + 0.24), trimMat);
+      trimMesh.position.y = h * 0.32;
+      grp.add(trimMesh);
+
+      lvl._autoBridgeGroup.add(grp);
+
+      const minX = x - w / 2, maxX = x + w / 2;
+      const minY = topY - h,  maxY = topY;
+      const minZ = z - d / 2, maxZ = z + d / 2;
+      colliders.push({
+        min: new THREE.Vector3(minX, minY, minZ),
+        max: new THREE.Vector3(maxX, maxY, maxZ),
+        minX, maxX, minY, maxY, minZ, maxZ,
+        _isAutoBridge: true
+      });
+    }
+
+    // 1. Tüm collider'larda THREE.Vector3 min/max bulunduğundan emin ol
+    for (let i = 0; i < colliders.length; i++) {
+      const c = colliders[i];
+      if (!c) continue;
+      if ((!c.min || !c.max) && c.minX !== undefined && c.maxX !== undefined) {
+        c.min = new THREE.Vector3(c.minX, c.minY, c.minZ);
+        c.max = new THREE.Vector3(c.maxX, c.maxY, c.maxZ);
+      }
+    }
+
+    // 2. Tüm kayıt noktalarının (checkpoint) altında sağlam bir platform olduğundan emin ol
+    if (Array.isArray(lvl.checkpoints)) {
+      lvl.checkpoints.forEach(cp => {
+        if (!cp || !cp.pos) return;
+        const px = cp.pos.x, py = cp.pos.y, pz = cp.pos.z;
+        let hasFloor = false;
+        for (let i = 0; i < colliders.length; i++) {
+          const c = colliders[i];
+          if (!c || c.isToxic) continue;
+          const minX = c.min ? c.min.x : c.minX;
+          const maxX = c.max ? c.max.x : c.maxX;
+          const maxY = c.max ? c.max.y : c.maxY;
+          const minZ = c.min ? c.min.z : c.minZ;
+          const maxZ = c.max ? c.max.z : c.maxZ;
+          if (px >= minX - 1.5 && px <= maxX + 1.5 && pz >= minZ - 1.5 && pz <= maxZ + 1.5 && Math.abs(py - maxY) <= 4.5) {
+            hasFloor = true;
+            break;
+          }
+        }
+        if (!hasFloor) {
+          spawnBridgePlatform(px, py, pz, 12, 2.0, 12);
+        }
+      });
+    }
+
+    // 3. Yürünebilir platformları Z sırasına göre diz (başlangıçtan Boss arenasına doğru)
+    const walkable = [];
+    for (let i = 0; i < colliders.length; i++) {
+      const c = colliders[i];
+      if (!c || c.isToxic) continue;
+      const minX = c.min ? c.min.x : c.minX;
+      const maxX = c.max ? c.max.x : c.maxX;
+      const minY = c.min ? c.min.y : c.minY;
+      const maxY = c.max ? c.max.y : c.maxY;
+      const minZ = c.min ? c.min.z : c.minZ;
+      const maxZ = c.max ? c.max.z : c.maxZ;
+      if (minX === undefined || maxZ === undefined) continue;
+
+      const w = maxX - minX;
+      const h = maxY - minY;
+      const d = maxZ - minZ;
+      const cx = (minX + maxX) * 0.5;
+      // Sadece yürünebilir platformları al (yüksek duvarları ve çok uzaktaki dekorları hariç tut)
+      if (h < 8.5 && w >= 1.2 && d >= 1.2 && Math.abs(cx) <= 28) {
+        walkable.push({
+          cx,
+          topY: maxY,
+          cz: (minZ + maxZ) * 0.5,
+          minX, maxX, minY, maxY, minZ, maxZ, w, h, d
+        });
+      }
+    }
+
+    if (walkable.length < 2) {
+      lvl._lastVerifiedColliderCount = colliders.length;
+      return;
+    }
+    walkable.sort((a, b) => b.maxZ - a.maxZ);
+
+    let frontier = Object.assign({}, walkable[0]);
+    let bridgedCount = 0;
+
+    for (let i = 1; i < walkable.length; i++) {
+      const curr = walkable[i];
+      const gapZ = frontier.minZ - curr.maxZ;
+      const dx = Math.abs(curr.cx - frontier.cx);
+      const dy = curr.topY - frontier.topY;
+
+      // Eğer iki aşama arasında zıplanamayacak kadar Z boşluğu, yatay mesafe veya dikey uçurum varsa köprüle!
+      const needsBridgeZ = gapZ > 7.5;
+      const needsBridgeDiag = gapZ > 3.5 && Math.hypot(gapZ, dx) > 9.5;
+      const needsBridgeClimb = gapZ >= -1.0 && dy > 3.2;
+
+      if (needsBridgeZ || needsBridgeDiag || needsBridgeClimb) {
+        const effectiveGapZ = Math.max(0.1, gapZ);
+        const stepsByZ = Math.ceil(effectiveGapZ / 7.0);
+        const stepsByDiag = Math.ceil(Math.hypot(effectiveGapZ, dx) / 7.5);
+        const stepsByY = dy > 0 ? Math.ceil(dy / 2.2) : Math.ceil(Math.abs(dy) / 4.5);
+        const totalSteps = Math.max(2, stepsByZ, stepsByDiag, stepsByY);
+        const numNewPlats = totalSteps - 1;
+
+        for (let s = 1; s <= numNewPlats; s++) {
+          const frac = s / totalSteps;
+          const bx = frontier.cx + (curr.cx - frontier.cx) * frac;
+          const by = frontier.topY + (curr.topY - frontier.topY) * frac;
+          const bz = frontier.minZ - effectiveGapZ * frac;
+          spawnBridgePlatform(bx, by, bz, 9.5, 1.8, 8.2);
+          bridgedCount++;
+        }
+      }
+
+      // Frontier güncellemesi
+      if (curr.minZ < frontier.minZ) {
+        if (Math.abs(curr.minZ - frontier.minZ) < 3.0) {
+          frontier.cx = (frontier.cx + curr.cx) * 0.5;
+          frontier.topY = Math.max(frontier.topY, curr.topY);
+          frontier.minZ = curr.minZ;
+        } else {
+          frontier = Object.assign({}, curr);
+        }
+      } else if (Math.abs(curr.minZ - frontier.minZ) < 3.0) {
+        frontier.cx = (frontier.cx + curr.cx) * 0.5;
+      }
+    }
+
+    lvl._lastVerifiedColliderCount = colliders.length;
+    if (bridgedCount > 0) {
+      console.log(`🌉 [Path Engine] ${region} bölümünde ${bridgedCount} ara geçiş platformu eklendi.`);
+    }
+  };
+
+  // Ana oyun döngüsüne bağlan ve mermileri + canlıları + kesintisiz yolları güncelle
   function updateEngineTick(dt) {
     const game = window.__superBearGame;
     if (!game || !game.scene) return;
@@ -983,6 +1215,7 @@
       activeEngineProjectiles.length = 0;
     }
 
+    window.__ensureContinuousLevelPath(game);
     upgradeAndDiversifyLevelEnemies(game);
 
     const pPos = game.playerPos;
@@ -1030,5 +1263,5 @@
     }
   }, 80);
 
-  console.log("⚔️ [Creature Combat Engine] 18 Çok Parçalı 3D Canlı Arketipi, Devriye AI ve Mermi Sistemi Yüklendi!");
+  console.log("⚔️ [Creature Combat & Path Engine] 18 Çok Parçalı 3D Canlı Arketipi, Devriye AI, Mermi ve Kesintisiz Platform Köprüleme Sistemi Yüklendi!");
 })();

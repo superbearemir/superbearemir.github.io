@@ -635,44 +635,38 @@
   // =========================================================================
   function createFlyingFlameDragonBoss(x, y, z, enemies, group) {
     const THREE = window.THREE;
-    const bossGrp = new THREE.Group();
+    let bossGrp;
+    let wingL = null;
+    let wingR = null;
+    let tailGrp = null;
+
+    if (typeof window.createDragonMesh === 'function') {
+      bossGrp = window.createDragonMesh(THREE, true);
+      wingL = bossGrp.getObjectByName('dragon_wing_left');
+      wingR = bossGrp.getObjectByName('dragon_wing_right');
+      tailGrp = bossGrp.getObjectByName('dragon_tail');
+    } else {
+      bossGrp = new THREE.Group();
+      bossGrp.scale.set(3.8, 3.8, 3.8);
+      const redMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, emissive: 0x7f1d1d, emissiveIntensity: 0.5 });
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xd97706, emissiveIntensity: 0.8 });
+      const body = new THREE.Mesh(new THREE.ConeGeometry(1.6, 6.0, 8), redMat);
+      body.rotation.x = Math.PI / 2;
+      bossGrp.add(body);
+      const head = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.4, 2.4), redMat);
+      head.position.set(0, 1.2, 3.2);
+      bossGrp.add(head);
+      const wingGeo = new THREE.BoxGeometry(6.0, 0.15, 3.2);
+      wingL = new THREE.Mesh(wingGeo, goldMat);
+      wingL.position.set(-3.5, 1.2, 0);
+      bossGrp.add(wingL);
+      wingR = new THREE.Mesh(wingGeo, goldMat);
+      wingR.position.set(3.5, 1.2, 0);
+      bossGrp.add(wingR);
+    }
+
     bossGrp.name = "boss_volcano_dragon_flying";
     bossGrp.position.set(x, y, z);
-    bossGrp.scale.set(3.8, 3.8, 3.8);
-
-    const redMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, emissive: 0x7f1d1d, emissiveIntensity: 0.5 });
-    const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xd97706, emissiveIntensity: 0.8 });
-
-    // Dragon Body
-    const body = new THREE.Mesh(new THREE.ConeGeometry(1.6, 6.0, 8), redMat);
-    body.rotation.x = Math.PI / 2;
-    bossGrp.add(body);
-
-    // Dragon Head & Horns
-    const head = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.4, 2.4), redMat);
-    head.position.set(0, 1.2, 3.2);
-    bossGrp.add(head);
-
-    const hornL = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1.8, 4), goldMat);
-    hornL.position.set(-0.7, 2.2, 2.8);
-    hornL.rotation.x = -0.4;
-    bossGrp.add(hornL);
-
-    const hornR = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1.8, 4), goldMat);
-    hornR.position.set(0.7, 2.2, 2.8);
-    hornR.rotation.x = -0.4;
-    bossGrp.add(hornR);
-
-    // Dragon Wings
-    const wingGeo = new THREE.BoxGeometry(6.0, 0.15, 3.2);
-    const wingL = new THREE.Mesh(wingGeo, goldMat);
-    wingL.position.set(-3.5, 1.2, 0);
-    bossGrp.add(wingL);
-
-    const wingR = new THREE.Mesh(wingGeo, goldMat);
-    wingR.position.set(3.5, 1.2, 0);
-    bossGrp.add(wingR);
-
     group.add(bossGrp);
 
     const bossData = {
@@ -682,7 +676,9 @@
       mesh: bossGrp,
       wingL: wingL,
       wingR: wingR,
+      tailGrp: tailGrp,
       pos: bossGrp.position,
+      velocity: new THREE.Vector3(),
       basePos: new THREE.Vector3(x, y, z),
       hp: 1500,
       maxHp: 1500,
@@ -693,8 +689,9 @@
       attackPower: 26,
       update: function(dt, p, game) {
         const time = Date.now() * 0.001;
-        this.wingL.rotation.z = Math.sin(time * 6.0) * 0.45;
-        this.wingR.rotation.z = -Math.sin(time * 6.0) * 0.45;
+        if (this.wingL) this.wingL.rotation.z = Math.sin(time * 6.0) * 0.45;
+        if (this.wingR) this.wingR.rotation.z = -Math.sin(time * 6.0) * 0.45;
+        if (this.tailGrp) this.tailGrp.rotation.y = Math.sin(time * 4.0) * 0.35;
 
         this.groundCooldown -= dt;
         if (this.groundCooldown <= 0) {
@@ -710,22 +707,22 @@
           this.mesh.position.y += (targetY - this.mesh.position.y) * dt * 2.0;
           this.mesh.position.x = this.basePos.x + Math.sin(time * 0.8) * 16.0;
           this.mesh.position.z = this.basePos.z + Math.cos(time * 0.8) * 10.0;
-          this.mesh.lookAt(p.x, this.mesh.position.y, p.z);
+          if (p) this.mesh.lookAt(p.x, this.mesh.position.y, p.z);
 
           this.shootCooldown -= dt;
-          if (this.shootCooldown <= 0) {
+          if (this.shootCooldown <= 0 && p) {
             this.shootCooldown = 2.0;
             spawnDragonFireball(this.mesh.position, p, game);
           }
         } else {
           // Ground state
           this.mesh.position.y += (this.basePos.y - this.mesh.position.y) * dt * 3.0;
-          this.mesh.lookAt(p.x, this.basePos.y, p.z);
+          if (p) this.mesh.lookAt(p.x, this.basePos.y, p.z);
         }
 
         this.pos.copy(this.mesh.position);
 
-        if (this.pos.distanceTo(p) < 10.0) {
+        if (p && this.pos.distanceTo(p) < 10.0) {
           game.damagePlayer(this.attackPower);
         }
       }

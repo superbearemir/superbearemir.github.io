@@ -223,6 +223,8 @@
       sugarExtensionGroup.add(mesh);
 
       const collider = {
+        min: new THREE.Vector3(px - w / 2, py - h / 2, pz - d / 2),
+        max: new THREE.Vector3(px + w / 2, py + h / 2 + 0.15, pz + d / 2),
         minX: px - w / 2, maxX: px + w / 2,
         minY: py - h / 2, maxY: py + h / 2,
         minZ: pz - d / 2, maxZ: pz + d / 2,
@@ -414,64 +416,151 @@
     addLollipopDeco(16, 38, -3340, 0x10b981, 10);
 
     // -------------------------------------------------------------------------
-    // RELOCATED BOSS: DEV LOLİPOP KRALI (STAGE 14)
+    // RELOCATED BOSS: DEV LOLİPOP PATRONU (STAGE 14 - Orijinal Elleri ve Ayakları Olan Model)
     // -------------------------------------------------------------------------
-    const bossGroup = new THREE.Group();
-    bossGroup.position.set(0, 38, -3340);
+    let bossGroup;
+    let leftArmGroup = null;
+    let rightArmGroup = null;
+    let leftLegGroup = null;
+    let rightLegGroup = null;
 
-    const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.8, 0.8, 8, 12), new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 }));
-    stick.position.y = 4;
-    bossGroup.add(stick);
+    if (game.currentLevel && game.currentLevel.lollipopBoss && game.currentLevel.lollipopBoss.mesh) {
+      const origLollipop = game.currentLevel.lollipopBoss;
+      bossGroup = origLollipop.mesh;
+      leftArmGroup = origLollipop.leftArm || null;
+      rightArmGroup = origLollipop.rightArm || null;
+      leftLegGroup = origLollipop.leftLeg || null;
+      rightLegGroup = origLollipop.rightLeg || null;
+      bossGroup.position.set(0, 38, -3340);
+      if (origLollipop.pos) origLollipop.pos.set(0, 38, -3340);
+      sugarExtensionGroup.add(bossGroup);
+    } else {
+      bossGroup = new THREE.Group();
+      bossGroup.position.set(0, 38, -3340);
+      bossGroup.scale.set(1.5, 1.5, 1.5);
 
-    for (let r = 0; r < 6; r++) {
-      const stripe = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.12, 6, 16), new THREE.MeshStandardMaterial({ color: 0xef4444 }));
-      stripe.position.y = 1.5 + r * 1.1;
-      stripe.rotation.x = Math.PI / 2;
-      bossGroup.add(stripe);
+      const stickMat = new THREE.MeshStandardMaterial({ color: 0xfdf2f8, roughness: 0.4 });
+      const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.7, 6, 12), stickMat);
+      stick.position.y = 3;
+      bossGroup.add(stick);
+
+      for (let k = 0; k < 5; k++) {
+        const stripe = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.75, 0.75, 0.6, 12),
+          new THREE.MeshStandardMaterial({ color: 0xef4444 })
+        );
+        stripe.position.y = 1 + k * 1.1;
+        stripe.rotation.y = k * 0.4;
+        bossGroup.add(stripe);
+      }
+
+      const head = new THREE.Mesh(
+        new THREE.SphereGeometry(3.5, 24, 24),
+        new THREE.MeshStandardMaterial({ color: 0xdb2777, emissive: 0x9d174d, roughness: 0.1 })
+      );
+      head.position.y = 8;
+      bossGroup.add(head);
+
+      const swirl = new THREE.Mesh(
+        new THREE.TorusGeometry(2.2, 0.4, 8, 24),
+        new THREE.MeshStandardMaterial({ color: 0xfdf2f8 })
+      );
+      swirl.position.set(0, 8, 2.5);
+      bossGroup.add(swirl);
+
+      const eyeMat = new THREE.MeshStandardMaterial({ color: 0x111827 });
+      const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), eyeMat);
+      leftEye.position.set(-1.1, 8.5, 3.2);
+      const rightEye = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), eyeMat);
+      rightEye.position.set(1.1, 8.5, 3.2);
+      bossGroup.add(leftEye, rightEye);
+
+      const leftEyebrow = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.25, 0.3), eyeMat);
+      leftEyebrow.position.set(-1.0, 9.1, 3.25);
+      leftEyebrow.rotation.z = -0.35;
+      const rightEyebrow = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.25, 0.3), eyeMat);
+      rightEyebrow.position.set(1.0, 9.1, 3.25);
+      rightEyebrow.rotation.z = 0.35;
+      bossGroup.add(leftEyebrow, rightEyebrow);
+
+      const smile = new THREE.Mesh(new THREE.TorusGeometry(0.8, 0.18, 6, 12, Math.PI), eyeMat);
+      smile.position.set(0, 7.3, 3.2);
+      bossGroup.add(smile);
+
+      const armMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.4 });
+      const gloveMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+
+      leftArmGroup = new THREE.Group();
+      leftArmGroup.position.set(-3.2, 7.5, 0);
+      const leftArmCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 3, 8), armMat);
+      leftArmCyl.position.y = -1.5;
+      leftArmCyl.rotation.z = Math.PI / 4;
+      leftArmGroup.add(leftArmCyl);
+      const leftHand = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 12), gloveMat);
+      leftHand.position.set(-1.2, -2.5, 0);
+      leftArmGroup.add(leftHand);
+      bossGroup.add(leftArmGroup);
+
+      rightArmGroup = new THREE.Group();
+      rightArmGroup.position.set(3.2, 7.5, 0);
+      const rightArmCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 3, 8), armMat);
+      rightArmCyl.position.y = -1.5;
+      rightArmCyl.rotation.z = -Math.PI / 4;
+      rightArmGroup.add(rightArmCyl);
+      const rightHand = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 12), gloveMat);
+      rightHand.position.set(1.2, -2.5, 0);
+      rightArmGroup.add(rightHand);
+      bossGroup.add(rightArmGroup);
+
+      const shoeMat = new THREE.MeshStandardMaterial({ color: 0xf43f5e, roughness: 0.3 });
+      leftLegGroup = new THREE.Group();
+      leftLegGroup.position.set(-1.5, 0, 0);
+      const leftLegCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 2.5, 8), stickMat);
+      leftLegCyl.position.y = -1.25;
+      leftLegGroup.add(leftLegCyl);
+      const leftFoot = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 2), shoeMat);
+      leftFoot.position.set(0, -2.5, 0.4);
+      leftLegGroup.add(leftFoot);
+      bossGroup.add(leftLegGroup);
+
+      rightLegGroup = new THREE.Group();
+      rightLegGroup.position.set(1.5, 0, 0);
+      const rightLegCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 2.5, 8), stickMat);
+      rightLegCyl.position.y = -1.25;
+      rightLegGroup.add(rightLegCyl);
+      const rightFoot = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.8, 2), shoeMat);
+      rightFoot.position.set(0, -2.5, 0.4);
+      rightLegGroup.add(rightFoot);
+      bossGroup.add(rightLegGroup);
+
+      sugarExtensionGroup.add(bossGroup);
     }
-
-    const head = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 4.2, 1.4, 24), new THREE.MeshStandardMaterial({
-      color: 0xdb2777,
-      emissive: 0x9d174d,
-      emissiveIntensity: 0.5,
-      roughness: 0.2
-    }));
-    head.rotation.x = Math.PI / 2;
-    head.position.y = 10;
-    bossGroup.add(head);
-
-    const crown = new THREE.Mesh(new THREE.ConeGeometry(2.0, 1.8, 6), new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.8, roughness: 0.2 }));
-    crown.position.set(0, 14.5, 0);
-    crown.rotation.x = Math.PI;
-    bossGroup.add(crown);
-
-    const armL = new THREE.Mesh(new THREE.BoxGeometry(1.2, 4.0, 1.2), pinkSugarMat);
-    armL.position.set(-3.5, 7.5, 0);
-    const armR = new THREE.Mesh(new THREE.BoxGeometry(1.2, 4.0, 1.2), pinkSugarMat);
-    armR.position.set(3.5, 7.5, 0);
-    bossGroup.add(armL, armR);
-
-    sugarExtensionGroup.add(bossGroup);
 
     sugarCandyBoss = {
       id: "boss_sugar_king",
-      name: "Dev Lolipop Kralı 🍭👑",
+      name: "Lolipop Patronu 🍭👑",
       mesh: bossGroup,
       group: bossGroup,
       pos: bossGroup.position,
-      hp: 40,
-      maxHp: 40,
+      hp: 35,
+      maxHp: 35,
       isBoss: true,
       baseX: 0,
       baseY: 38,
       baseZ: -3340,
       attackCooldown: 1.6,
       phase: 1,
-      armL, armR,
-      headMesh: head,
+      leftArm: leftArmGroup,
+      rightArm: rightArmGroup,
+      leftLeg: leftLegGroup,
+      rightLeg: rightLegGroup,
       isDead: false,
       _combatUpgraded: true,
       update: function(dt, playerPos, gameInst) {
+        const origBoss = gameInst && gameInst.currentLevel && gameInst.currentLevel.lollipopBoss;
+        if (origBoss && origBoss !== this) {
+          this.hp = origBoss.hp;
+        }
         if (this.isDead || this.hp <= 0) {
           if (!this.isDead) {
             this.isDead = true;
@@ -489,10 +578,21 @@
         this.attackCooldown -= dt;
         bossGroup.position.x = this.baseX + Math.sin(t) * 10.0;
         bossGroup.position.z = this.baseZ + Math.cos(t * 0.7) * 8.0;
-        bossGroup.position.y = this.baseY + Math.sin(t * 1.4) * 1.2;
-        head.rotation.z += dt * 1.8;
-        armL.rotation.x = Math.sin(t * 2.5) * 0.6;
-        armR.rotation.x = -Math.sin(t * 2.5) * 0.6;
+        bossGroup.position.y = this.baseY + Math.sin(t * 1.4) * 0.8;
+        if (origBoss && origBoss.pos && origBoss.pos !== bossGroup.position) {
+          origBoss.pos.copy(bossGroup.position);
+        }
+
+        if (this.leftArm) {
+          this.leftArm.rotation.z = Math.sin(t * 1.4) * 0.4 + 0.3;
+          this.leftArm.rotation.x = Math.cos(t * 1.4) * 0.3;
+        }
+        if (this.rightArm) {
+          this.rightArm.rotation.z = -Math.sin(t * 1.4) * 0.4 - 0.3;
+          this.rightArm.rotation.x = -Math.cos(t * 1.4) * 0.3;
+        }
+        if (this.leftLeg) this.leftLeg.rotation.x = Math.sin(t * 2.1) * 0.4;
+        if (this.rightLeg) this.rightLeg.rotation.x = -Math.sin(t * 2.1) * 0.4;
 
         if (playerPos) {
           bossGroup.lookAt(playerPos.x, bossGroup.position.y, playerPos.z);
@@ -518,10 +618,9 @@
           const d = bossGroup.position.distanceTo(playerPos);
           if (d < 4.5 && playerPos.y > bossGroup.position.y + 6.5 && gameInst.playerVel && gameInst.playerVel.y < 0) {
             this.hp -= 5;
+            if (origBoss) origBoss.hp = this.hp;
             gameInst.playerVel.y = 15;
             if (window.St && window.St.playBossHit) window.St.playBossHit();
-            this.headMesh.material.emissiveIntensity = 1.5;
-            setTimeout(() => { if (this.headMesh) this.headMesh.material.emissiveIntensity = 0.5; }, 150);
 
             if (this.hp <= 0) {
               this.isDead = true;
@@ -529,7 +628,7 @@
               bossGroup.position.y = -9999;
               if (window.St && window.St.playGoalFanfare) window.St.playGoalFanfare();
               if (gameInst.callbacks && gameInst.callbacks.onShowNotice) {
-                gameInst.callbacks.onShowNotice("🎉 Lolipop Kralı Yenildi! 11. Bölüm: Jokerooms Portalı Açıldı! 🚪", "success");
+                gameInst.callbacks.onShowNotice("🎉 Lolipop Patronu Yenildi! 11. Bölüm: Jokerooms Portalı Açıldı! 🚪", "success");
               }
               if (sugarVictoryPortal) {
                 sugarVictoryPortal.visible = true;
@@ -542,6 +641,9 @@
         }
       }
     };
+    if (game.currentLevel) {
+      game.currentLevel.lollipopBoss = sugarCandyBoss;
+    }
 
     // -------------------------------------------------------------------------
     // VICTORY PORTAL TO CHAPTER 11: JOKEROOMS (at z: -3420)

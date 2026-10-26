@@ -208,6 +208,8 @@
       ruinExtensionGroup.add(mesh);
 
       const collider = {
+        min: new THREE.Vector3(px - w / 2, py - h / 2, pz - d / 2),
+        max: new THREE.Vector3(px + w / 2, py + h / 2 + 0.15, pz + d / 2),
         minX: px - w / 2, maxX: px + w / 2,
         minY: py - h / 2, maxY: py + h / 2,
         minZ: pz - d / 2, maxZ: pz + d / 2
@@ -390,41 +392,42 @@
     addPlat(40, 4, 65, 0, 46, -3770, bloodStoneMat);
 
     // -------------------------------------------------------------------------
-    // RELOCATED BOSS: DEV SİRK PALYAÇOSU (STAGE 15)
+    // RELOCATED BOSS: JOKEROOMS DEV PALYAÇO BOSS (STAGE 15 - Orijinal Elleri & Ayakları Olan Model)
     // -------------------------------------------------------------------------
-    const bossGroup = new THREE.Group();
+    let bossGroup;
+    if (game.currentLevel && game.currentLevel.clownBoss && game.currentLevel.clownBoss.mesh) {
+      bossGroup = game.currentLevel.clownBoss.mesh;
+      if (Array.isArray(game.currentLevel.enemies)) {
+        const cIdx = game.currentLevel.enemies.indexOf(game.currentLevel.clownBoss);
+        if (cIdx !== -1) game.currentLevel.enemies.splice(cIdx, 1);
+      }
+      game.currentLevel.clownBoss = null;
+    } else if (typeof window.createClownBossMesh === 'function') {
+      bossGroup = window.createClownBossMesh(THREE);
+    } else {
+      bossGroup = new THREE.Group();
+      const clownMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3 });
+      const collarMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 });
+      const faceMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
+      const torso = new THREE.Mesh(new THREE.CylinderGeometry(2.0, 2.5, 6, 16), clownMat);
+      torso.position.y = 3.5;
+      bossGroup.add(torso);
+      const collar = new THREE.Mesh(new THREE.TorusGeometry(2.6, 0.6, 8, 20), collarMat);
+      collar.position.y = 6.6;
+      collar.rotation.x = Math.PI / 2;
+      bossGroup.add(collar);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(2.2, 16, 16), faceMat);
+      head.position.y = 9.0;
+      bossGroup.add(head);
+    }
+
     bossGroup.position.set(0, 48, -3790);
-
-    const clownMat = new THREE.MeshStandardMaterial({ color: 0xef4444, roughness: 0.3 });
-    const collarMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 });
-    const faceMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.2 });
-
-    const torso = new THREE.Mesh(new THREE.CylinderGeometry(2.0, 2.5, 6, 16), clownMat);
-    torso.position.y = 3.5;
-    bossGroup.add(torso);
-
-    const collar = new THREE.Mesh(new THREE.TorusGeometry(2.6, 0.6, 8, 20), collarMat);
-    collar.position.y = 6.6;
-    collar.rotation.x = Math.PI / 2;
-    bossGroup.add(collar);
-
-    const head = new THREE.Mesh(new THREE.SphereGeometry(2.2, 16, 16), faceMat);
-    head.position.y = 9.0;
-    bossGroup.add(head);
-
-    const nose = new THREE.Mesh(new THREE.SphereGeometry(0.7, 12, 12), new THREE.MeshStandardMaterial({ color: 0xdc2626 }));
-    nose.position.set(0, 9.0, 2.3);
-    bossGroup.add(nose);
-
-    const cap = new THREE.Mesh(new THREE.ConeGeometry(1.6, 3.2, 12), new THREE.MeshStandardMaterial({ color: 0x8b5cf6 }));
-    cap.position.set(0, 12.2, 0);
-    bossGroup.add(cap);
-
     ruinExtensionGroup.add(bossGroup);
 
     ruinClownBoss = {
-      id: "boss_ruin_clown",
-      name: "Dev Sirk Palyaçosu 🤡👑",
+      id: "boss_joker_clown",
+      type: "joker_clown_boss",
+      name: "Jokerooms Dev Palyaço Boss (Elleri & Ayakları Var 🤡)",
       mesh: bossGroup,
       group: bossGroup,
       pos: bossGroup.position,
@@ -443,7 +446,16 @@
         this.attackTimer -= dt;
         bossGroup.position.x = this.baseX + Math.sin(t * 1.1) * 11.0;
         bossGroup.position.z = this.baseZ + Math.cos(t * 0.8) * 9.0;
-        bossGroup.position.y = this.baseY + Math.sin(t * 1.5) * 1.0;
+        bossGroup.position.y = this.baseY + Math.abs(Math.sin(t * 2.5)) * 0.4;
+
+        const legL = bossGroup.getObjectByName('clown_leg_left');
+        const legR = bossGroup.getObjectByName('clown_leg_right');
+        const armL = bossGroup.getObjectByName('clown_arm_left');
+        const armR = bossGroup.getObjectByName('clown_arm_right');
+        if (legL) legL.rotation.x = Math.sin(t * 2.5) * 0.6;
+        if (legR) legR.rotation.x = -Math.sin(t * 2.5) * 0.6;
+        if (armL) armL.rotation.x = -Math.sin(t * 2.5) * 0.55;
+        if (armR) armR.rotation.x = Math.sin(t * 2.5) * 0.55;
 
         if (playerPos) {
           bossGroup.lookAt(playerPos.x, bossGroup.position.y, playerPos.z);
@@ -467,9 +479,9 @@
 
         if (playerPos) {
           const d = bossGroup.position.distanceTo(playerPos);
-          if (d < 4.5 && playerPos.y > bossGroup.position.y + 6.5 && gameInst.playerVel && gameInst.playerVel.y < 0) {
+          if (d < 5.5 && playerPos.y > bossGroup.position.y + 4.5 && gameInst.playerVel && gameInst.playerVel.y < 0) {
             this.hp -= 5;
-            gameInst.playerVel.y = 15;
+            gameInst.playerVel.y = 18;
             if (window.St && window.St.playBossHit) window.St.playBossHit();
 
             if (this.hp <= 0) {

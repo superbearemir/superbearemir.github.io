@@ -756,6 +756,8 @@
     const bossFurMat = new THREE.MeshStandardMaterial({ color: 0x6b21a8, roughness: 0.55, emissive: 0x3b0764, emissiveIntensity: 0.45 });
     const bossBellyMat = new THREE.MeshStandardMaterial({ color: 0x9333ea, roughness: 0.6 });
     const bossHornMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706, emissiveIntensity: 0.8, roughness: 0.3 });
+    const bossEyeMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+    const bossNoseMat = new THREE.MeshStandardMaterial({ color: 0x0f172a });
 
     // Body
     const bBody = new THREE.Mesh(new THREE.SphereGeometry(0.58, 16, 16), bossFurMat);
@@ -767,10 +769,51 @@
     bBelly.position.set(0, 0.95, 0.38);
     bossGroup.add(bBelly);
 
-    // Head
+    // Head, Snout, Nose, Ears & Eyes
     const bHead = new THREE.Mesh(new THREE.SphereGeometry(0.48, 16, 16), bossFurMat);
     bHead.position.set(0, 1.75, 0.1);
     bossGroup.add(bHead);
+
+    const bSnout = new THREE.Mesh(new THREE.SphereGeometry(0.24, 12, 12), bossBellyMat);
+    bSnout.position.set(0, 1.68, 0.48);
+    bossGroup.add(bSnout);
+
+    const bNose = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 8), bossNoseMat);
+    bNose.position.set(0, 1.74, 0.68);
+    bossGroup.add(bNose);
+
+    [-0.36, 0.36].forEach(ex => {
+      const ear = new THREE.Mesh(new THREE.SphereGeometry(0.16, 10, 10), bossFurMat);
+      ear.position.set(ex, 2.12, 0.05);
+      bossGroup.add(ear);
+    });
+
+    [-0.16, 0.16].forEach(ex => {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), bossEyeMat);
+      eye.position.set(ex, 1.82, 0.52);
+      bossGroup.add(eye);
+    });
+
+    // Arms & Legs (animated natively by corrupted_bear_boss in game-bundle.js)
+    const armL = new THREE.Mesh(new THREE.CapsuleGeometry(0.18, 0.55, 4, 8), bossFurMat);
+    armL.name = "boss_left_arm";
+    armL.position.set(-0.68, 1.05, 0.1);
+    bossGroup.add(armL);
+
+    const armR = new THREE.Mesh(new THREE.CapsuleGeometry(0.18, 0.55, 4, 8), bossFurMat);
+    armR.name = "boss_right_arm";
+    armR.position.set(0.68, 1.05, 0.1);
+    bossGroup.add(armR);
+
+    const legL = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 0.45, 4, 8), bossFurMat);
+    legL.name = "boss_left_leg";
+    legL.position.set(-0.3, 0.35, 0.05);
+    bossGroup.add(legL);
+
+    const legR = new THREE.Mesh(new THREE.CapsuleGeometry(0.2, 0.45, 4, 8), bossFurMat);
+    legR.name = "boss_right_leg";
+    legR.position.set(0.3, 0.35, 0.05);
+    bossGroup.add(legR);
 
     // Royal Horns
     [-0.25, 0.25].forEach(hx => {

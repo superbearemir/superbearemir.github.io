@@ -443,12 +443,26 @@
     buildGoldPlatform(22, 2.2, 24, 0, 118.5, -3110, polishedGoldMat);
     createImperialAnubisPaladin(0, 120.0, -3020, enemies, goldenExtensionGroup);
 
-    // 14. Aşama: [BÜYÜK BOSS] BÖLÜMÜN EN SONUNDAKİ İMPARATORLUK ALTIN KOLEZYUMU 👑 (z: -3150 -> -3500)
+    // 14. Aşama: [BÜYÜK BOSS] BÖLÜMÜN EN SONUNDAKİ İMPARATORLUK ALTIN KOLEZYUMU 👑 (z: -3135 -> -3500)
     const arenaX = 0;
     const arenaY = 117.0;
     const arenaZ = -3380;
 
-    addCheckpoint("gold_cp_s14", "14. Aşama: [BÜYÜK BOSS] İmparatorluk Altın Kolezyumu 👑", 0, arenaY + 1.2, -3160);
+    // Imperial Golden Causeway connecting Stage 13 (-3110) to Colosseum Arena (-3336)
+    [
+      { x: 0, z: -3140, y: 118.2, w: 16, d: 28, mat: darkGoldBrickMat },
+      { x: -3, z: -3170, y: 118.0, w: 14, d: 26, mat: polishedGoldMat },
+      { x: 3, z: -3200, y: 117.8, w: 14, d: 26, mat: darkGoldBrickMat },
+      { x: 0, z: -3230, y: 117.6, w: 16, d: 28, mat: celestialCrystalMat },
+      { x: -3, z: -3260, y: 117.4, w: 14, d: 26, mat: polishedGoldMat },
+      { x: 3, z: -3290, y: 117.2, w: 14, d: 26, mat: darkGoldBrickMat },
+      { x: 0, z: -3320, y: 117.0, w: 20, d: 28, mat: polishedGoldMat }
+    ].forEach((step, idx) => {
+      buildGoldPlatform(step.w, 2.2, step.d, step.x, step.y, step.z, step.mat);
+      addGoldItem("g_c14_bridge_" + idx, step.x, step.y + 1.8, step.z, idx === 3);
+    });
+
+    addCheckpoint("gold_cp_s14", "14. Aşama: [BÜYÜK BOSS] İmparatorluk Altın Kolezyumu 👑", 0, arenaY + 1.2, -3320);
 
     // Grand Golden Colosseum Arena Platform
     buildGoldPlatform(72, 4.0, 88, arenaX, arenaY, arenaZ, polishedGoldMat);

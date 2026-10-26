@@ -217,6 +217,8 @@
       summitExtGroup.add(mesh);
 
       const collider = {
+        min: new THREE.Vector3(px - w / 2, py - h / 2, pz - d / 2),
+        max: new THREE.Vector3(px + w / 2, py + h / 2 + 0.15, pz + d / 2),
         minX: px - w / 2, maxX: px + w / 2,
         minY: py - h / 2, maxY: py + h / 2,
         minZ: pz - d / 2, maxZ: pz + d / 2
@@ -288,33 +290,41 @@
     addPlat(48, 5, 80, 0, 158, -6500, celestialGoldMat);
 
     // -------------------------------------------------------------------------
-    // RELOCATED ULTIMATE FINAL BOSS: MORİS (STAGE 18)
+    // RELOCATED ULTIMATE FINAL BOSS: MORİS (STAGE 18 - Orijinal Model & Tenrex Çekici)
     // -------------------------------------------------------------------------
-    const bossGroup = new THREE.Group();
+    let bossGroup;
+    let morisParts = null;
+
+    if (typeof window.__createMorisBossMesh === 'function') {
+      const mData = window.__createMorisBossMesh(THREE);
+      bossGroup = mData.group;
+      morisParts = mData.parts || bossGroup.userData;
+    } else {
+      bossGroup = new THREE.Group();
+      const morisFur = new THREE.MeshStandardMaterial({ color: 0x6b21a8, roughness: 0.75 });
+      const armorMat = new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.9, roughness: 0.25 });
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.85, roughness: 0.2 });
+      const eyeMat = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xdc2626, emissiveIntensity: 1.8 });
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(2.6, 3.4, 2.2), morisFur);
+      torso.position.y = 3.2;
+      bossGroup.add(torso);
+      const chestArmor = new THREE.Mesh(new THREE.BoxGeometry(2.7, 1.8, 0.4), armorMat);
+      chestArmor.position.set(0, 3.4, 1.15);
+      bossGroup.add(chestArmor);
+      const head = new THREE.Mesh(new THREE.BoxGeometry(1.8, 1.6, 1.7), morisFur);
+      head.position.set(0, 5.3, 0.2);
+      bossGroup.add(head);
+      [-0.4, 0.4].forEach(ex => {
+        const eye = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.15, 0.1), eyeMat);
+        eye.position.set(ex, 5.4, 1.06);
+        bossGroup.add(eye);
+      });
+      const hammerHead = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 2.6), goldMat);
+      hammerHead.position.set(1.8, 4.6, 2.8);
+      bossGroup.add(hammerHead);
+    }
+
     bossGroup.position.set(0, 160, -6520);
-
-    const morisFur = new THREE.MeshStandardMaterial({ color: 0x7e22ce, roughness: 0.8 });
-    const redAura = new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xdc2626, emissiveIntensity: 1.0 });
-
-    const torso = new THREE.Mesh(new THREE.CylinderGeometry(2.4, 2.8, 7, 16), morisFur);
-    torso.position.y = 4.0;
-    bossGroup.add(torso);
-
-    const head = new THREE.Mesh(new THREE.SphereGeometry(2.2, 14, 14), morisFur);
-    head.position.y = 9.0;
-    bossGroup.add(head);
-
-    const crown = new THREE.Mesh(new THREE.ConeGeometry(1.8, 2.5, 6), redAura);
-    crown.rotation.x = Math.PI;
-    crown.position.set(0, 12.5, 0);
-    bossGroup.add(crown);
-
-    [-0.7, 0.7].forEach(ex => {
-      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), redAura);
-      eye.position.set(ex, 9.2, 2.0);
-      bossGroup.add(eye);
-    });
-
     summitExtGroup.add(bossGroup);
 
     summitExtMorisBoss = {
@@ -322,6 +332,7 @@
       name: "Kırmızı Çizgi Hakimi Moris 🐻👑",
       mesh: bossGroup,
       group: bossGroup,
+      parts: morisParts,
       pos: bossGroup.position,
       hp: 100,
       maxHp: 100,
@@ -338,7 +349,16 @@
         this.attackTimer -= dt;
         bossGroup.position.x = this.baseX + Math.sin(t * 1.2) * 14.0;
         bossGroup.position.z = this.baseZ + Math.cos(t * 0.85) * 10.0;
-        bossGroup.position.y = this.baseY + Math.sin(t * 1.5) * 1.0;
+        bossGroup.position.y = this.baseY + Math.sin(t * 1.5) * 0.5;
+
+        if (this.parts) {
+          if (this.parts.legL) this.parts.legL.rotation.x = Math.sin(t * 3.0) * 0.6;
+          if (this.parts.legR) this.parts.legR.rotation.x = -Math.sin(t * 3.0) * 0.6;
+          if (this.parts.armRGroup) this.parts.armRGroup.rotation.x = Math.sin(t * 2.5) * 0.5;
+          if (this.parts.rageAura) {
+            this.parts.rageAura.material.opacity = this.hp <= 50 ? 0.55 : 0.0;
+          }
+        }
 
         if (playerPos) {
           bossGroup.lookAt(playerPos.x, bossGroup.position.y, playerPos.z);
@@ -349,7 +369,7 @@
           if (window.St && window.St.playBossRoar) window.St.playBossRoar();
           if (typeof window.__spawnEnemyProjectile === 'function' && bossGroup.position.distanceTo(playerPos) < 46) {
             const fireOrigin = bossGroup.position.clone();
-            fireOrigin.y += 6.5;
+            fireOrigin.y += 5.0;
             window.__spawnEnemyProjectile(gameInst, fireOrigin, playerPos, {
               color: 0xef4444,
               emissive: 0xa855f7,
@@ -362,9 +382,9 @@
 
         if (playerPos) {
           const d = bossGroup.position.distanceTo(playerPos);
-          if (d < 5.0 && playerPos.y > bossGroup.position.y + 6.5 && gameInst.playerVel && gameInst.playerVel.y < 0) {
+          if (d < 5.5 && playerPos.y > bossGroup.position.y + 4.5 && gameInst.playerVel && gameInst.playerVel.y < 0) {
             this.hp -= 10;
-            gameInst.playerVel.y = 16;
+            gameInst.playerVel.y = 18;
             if (window.St && window.St.playBossHit) window.St.playBossHit();
 
             if (this.hp <= 0) {

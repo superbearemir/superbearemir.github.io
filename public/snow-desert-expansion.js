@@ -116,10 +116,9 @@
     });
     buildSnowPlatform(2, 7, 38, -19, 36.5, -195, iceWallMat, false, false, false);
     buildSnowPlatform(2, 7, 38, 19, 36.5, -195, iceWallMat, false, false, false);
-    buildSnowPlatform(38, 7, 2, 0, 36.5, -176, iceWallMat, false, false, false);
-    T("snow_closed_nest_easel", 4, "❄️ ESKİ BOSS İNİ KAPATILDI!\nKoca Ayak 14. Aşamaya (-1496) Taşındı!\nÖnündeki 14 Zorlu Aşamayı Aş!", 0, 36.0, -186, 0);
-    buildSnowPlatform(12, 1.8, 28, 0, 35.0, -208, v, false, false, true);
-    buildSnowPlatform(10, 0.4, 28, 0, 36.0, -208, snowWhiteMat, false, false, true);
+    T("snow_closed_nest_easel", 4, "❄️ ESKİ BOSS İNİ KAPATILDI!\nKoca Ayak 14. Aşamaya (-1420) Taşındı!\nÖnündeki 14 Zorlu Aşamayı Aş!", 0, 36.0, -186, 0);
+    buildSnowPlatform(14, 1.8, 36, 0, 35.0, -205, v, false, false, true);
+    buildSnowPlatform(12, 0.4, 36, 0, 36.0, -205, snowWhiteMat, false, false, true);
 
     // =========================================================================
     // ❄️ 1. AŞAMA: DONMUŞ BUZUL GİRİŞİ & KAYGAN RAMPALAR [Zorlu]
@@ -129,41 +128,44 @@
     buildSnowPlatform(18, 0.4, 18, 0, 36.1, -220, snowWhiteMat);
     b("snow_coin_s1_0", -4, 37.0, -220, false);
     b("snow_coin_s1_1", 4, 37.0, -220, false);
-    buildSnowPlatform(8, 1.0, 35, 0, 36.0, -248, iceGlacierMat, false, false, true);
-    b("snow_gem_s1", 0, 38.0, -248, true);
-    createFrostShardGolem(0, 37.5, -260, enemies, snowExtensionGroup);
+    buildSnowPlatform(9, 1.2, 38, 0, 36.2, -248, iceGlacierMat, false, false, true);
+    buildSnowPlatform(12, 1.5, 12, 0, 37.4, -270, v, false, false, true);
+    b("snow_gem_s1", 0, 38.5, -248, true);
+    createFrostShardGolem(0, 38.0, -260, enemies, snowExtensionGroup);
 
     // =========================================================================
     // ❄️ 2. AŞAMA: DÜŞEN SİVRİ BUZ SARKITLARI [Zorlu]
     // =========================================================================
     addCheckpoint("snow_cp_s2", "2. Aşama: Düşen Sivri Buz Sarkıtları", 0, 39.5, -280);
     buildSnowPlatform(16, 2, 14, 0, 38.5, -280, v, false, false, true);
-    [-292, -304, -316].forEach((iz, idx) => {
-      const ix = (idx % 2 === 0 ? -2.5 : 2.5);
-      const iy = 40.0 + idx * 0.8;
-      buildSnowPlatform(5.5, 1.0, 5.5, ix, iy, iz, v, false, false, true);
-      const icicle = new THREE.Mesh(new THREE.ConeGeometry(0.4, 2.2, 6), frostCrystalMat);
-      icicle.rotation.x = Math.PI;
-      icicle.position.set(ix, iy + 6.5, iz);
-      snowExtensionGroup.add(icicle);
-      snowFallingIcicles.push({ mesh: icicle, x: ix, y: iy + 6.5, targetY: iy + 0.5, z: iz, triggered: false, fallSpeed: 0 });
+    [-292, -302, -312, -322, -331].forEach((iz, idx) => {
+      const ix = (idx % 2 === 0 ? -2.2 : 2.2);
+      const iy = 39.2 + idx * 0.5;
+      buildSnowPlatform(7.5, 1.2, 7.5, ix, iy, iz, v, false, false, true);
+      if (idx < 3) {
+        const icicle = new THREE.Mesh(new THREE.ConeGeometry(0.4, 2.2, 6), frostCrystalMat);
+        icicle.rotation.x = Math.PI;
+        icicle.position.set(ix, iy + 6.5, iz);
+        snowExtensionGroup.add(icicle);
+        snowFallingIcicles.push({ mesh: icicle, x: ix, y: iy + 6.5, targetY: iy + 0.5, z: iz, triggered: false, fallSpeed: 0 });
+      }
     });
-    createArcticAlphaWolf(0, 42.0, -320, enemies, snowExtensionGroup);
+    createArcticAlphaWolf(0, 42.0, -322, enemies, snowExtensionGroup);
 
     // =========================================================================
     // ❄️ 3. AŞAMA: HAREKETLİ BUZ SALI PLATFORMLARI [Zorlu]
     // =========================================================================
     addCheckpoint("snow_cp_s3", "3. Aşama: Hareketli Buz Salları", 0, 42.5, -340);
     buildSnowPlatform(16, 2, 14, 0, 41.5, -340, v, false, false, true);
-    [-355, -367, -379, -391].forEach((mz, mIdx) => {
-      const my = 42.0 + mIdx * 0.8;
-      const mMesh = buildSnowPlatform(4.8, 1.0, 4.8, 0, my, mz, iceGlacierMat, false, false, true);
+    [-353, -363, -373, -383, -392].forEach((mz, mIdx) => {
+      const my = 42.0 + mIdx * 0.55;
+      const mMesh = buildSnowPlatform(6.8, 1.2, 6.8, 0, my, mz, iceGlacierMat, false, false, true);
       snowMovingFloes.push({
         mesh: mMesh, coll: collidables[collidables.length - 1],
-        baseX: 0, baseY: my, baseZ: mz, rangeX: 5.5, speed: 1.8, offset: mIdx * 1.5, halfW: 2.4
+        baseX: 0, baseY: my, baseZ: mz, rangeX: 4.2, speed: 1.6, offset: mIdx * 1.3, halfW: 3.4
       });
     });
-    createGlacialTortoise(0, 44.5, -375, enemies, snowExtensionGroup);
+    createGlacialTortoise(0, 44.5, -373, enemies, snowExtensionGroup);
 
     // =========================================================================
     // ❄️ 4. AŞAMA: ÇÖKEN İNCE KAR KÖPRÜLERİ [Zorlu]
@@ -171,10 +173,11 @@
     addCheckpoint("snow_cp_s4", "4. Aşama: Çöken İnce Kar Köprüleri", 0, 45.5, -400);
     buildSnowPlatform(14, 2, 12, 0, 44.5, -400, v, false, false, true);
     [
-      { x: -3.5, z: -412, y: 45.2 }, { x: 3.5, z: -422, y: 46.0 },
-      { x: -2.0, z: -432, y: 46.8 }, { x: 2.5, z: -442, y: 47.6 }
-    ].forEach((cs, cIdx) => {
-      const cMesh = buildSnowPlatform(2.2, 0.6, 2.2, cs.x, cs.y, cs.z, snowWhiteMat, false, false, true);
+      { x: -2.5, z: -411, y: 45.0 }, { x: 2.5, z: -420, y: 45.6 },
+      { x: -2.0, z: -429, y: 46.2 }, { x: 2.0, z: -438, y: 46.8 },
+      { x: 0.0, z: -448, y: 47.2 }
+    ].forEach((cs) => {
+      const cMesh = buildSnowPlatform(6.2, 1.0, 6.5, cs.x, cs.y, cs.z, snowWhiteMat, false, false, true);
       snowCrumblingCrusts.push({
         mesh: cMesh, coll: collidables[collidables.length - 1],
         baseY: cs.y, stepped: false, dropTimer: 0.75, fallSpeed: 0, respawnTimer: 0
@@ -187,28 +190,30 @@
     // =========================================================================
     addCheckpoint("snow_cp_s5", "5. Aşama: Dönen Buz Değirmenleri", 0, 48.5, -460);
     buildSnowPlatform(16, 2, 14, 0, 47.5, -460, v, false, false, true);
-    [-475, -495].forEach((sz, sIdx) => {
-      buildSnowPlatform(6, 1.2, 6, 0, 48.5 + sIdx * 1.0, sz, v, false, false, true);
-      const spinGroup = new THREE.Group();
-      spinGroup.position.set(0, 50.0 + sIdx * 1.0, sz);
-      for (let arm = 0; arm < 4; arm++) {
-        const iceSpike = new THREE.Mesh(new THREE.ConeGeometry(0.35, 4.8, 6), frostCrystalMat);
-        const ang = (arm / 4) * Math.PI * 2;
-        iceSpike.position.set(Math.cos(ang) * 2.6, 0, Math.sin(ang) * 2.6);
-        iceSpike.rotation.z = -Math.PI / 2; iceSpike.rotation.y = -ang;
-        spinGroup.add(iceSpike);
+    [-474, -486, -498, -509].forEach((sz, sIdx) => {
+      buildSnowPlatform(8.5, 1.2, 8.5, 0, 48.2 + sIdx * 0.6, sz, v, false, false, true);
+      if (sIdx === 0 || sIdx === 2) {
+        const spinGroup = new THREE.Group();
+        spinGroup.position.set(0, 49.8 + sIdx * 0.6, sz);
+        for (let arm = 0; arm < 4; arm++) {
+          const iceSpike = new THREE.Mesh(new THREE.ConeGeometry(0.35, 4.8, 6), frostCrystalMat);
+          const ang = (arm / 4) * Math.PI * 2;
+          iceSpike.position.set(Math.cos(ang) * 2.6, 0, Math.sin(ang) * 2.6);
+          iceSpike.rotation.z = -Math.PI / 2; iceSpike.rotation.y = -ang;
+          spinGroup.add(iceSpike);
+        }
+        snowExtensionGroup.add(spinGroup);
+        snowRotatingIceMills.push({ group: spinGroup, speed: 2.2 });
       }
-      snowExtensionGroup.add(spinGroup);
-      snowRotatingIceMills.push({ group: spinGroup, speed: 2.2 });
     });
-    createFrostBouncingSeal(-3.5, 49.5, -485, enemies, snowExtensionGroup);
+    createFrostBouncingSeal(-2.5, 49.8, -486, enemies, snowExtensionGroup);
 
     // =========================================================================
     // ❄️ 6. AŞAMA: ÇIĞ YUVARLANAN KAR TOPU KANYONU [Zorlu]
     // =========================================================================
     addCheckpoint("snow_cp_s6", "6. Aşama: Çığ Yuvarlanan Kar Topu Kanyonu", 0, 51.5, -520);
     buildSnowPlatform(18, 2, 14, 0, 50.5, -520, v, false, false, true);
-    buildSnowPlatform(9, 1.5, 45, 0, 52.0, -545, iceGlacierMat, false, false, true);
+    buildSnowPlatform(10, 1.5, 50, 0, 52.0, -550, iceGlacierMat, false, false, true);
     for (let bIdx = 0; bIdx < 2; bIdx++) {
       const bMesh = new THREE.Mesh(new THREE.SphereGeometry(1.4, 10, 10), snowWhiteMat);
       bMesh.position.set((bIdx === 0 ? -2.0 : 2.0), 53.5, -565 + bIdx * 20);
@@ -222,16 +227,16 @@
     // =========================================================================
     addCheckpoint("snow_cp_s7", "7. Aşama: Fırtınalı Kar Kasırgası Geçidi", 0, 54.5, -580);
     buildSnowPlatform(16, 2, 14, 0, 53.5, -580, v, false, false, true);
-    buildSnowPlatform(3.5, 1.0, 40, 0, 55.0, -605, iceGlacierMat, false, false, true);
-    createIceHunterSniper(-4.5, 56.5, -605, enemies, snowExtensionGroup);
+    buildSnowPlatform(6.5, 1.2, 48, 0, 55.0, -610, iceGlacierMat, false, false, true);
+    createIceHunterSniper(-2.0, 56.5, -610, enemies, snowExtensionGroup);
 
     // =========================================================================
     // ❄️ 8. AŞAMA: DONMUŞ GAYZER PÜSKÜRTÜCÜLERİ [Zorlu]
     // =========================================================================
     addCheckpoint("snow_cp_s8", "8. Aşama: Donmuş Gayzer Püskürtücüleri", 0, 57.5, -640);
     buildSnowPlatform(16, 2, 14, 0, 56.5, -640, v, false, false, true);
-    [-655, -670, -685].forEach((gz, gIdx) => {
-      buildSnowPlatform(6, 1.2, 6, (gIdx % 2 === 0 ? -3.0 : 3.0), 58.0 + gIdx * 0.8, gz, iceGlacierMat, false, false, true);
+    [-653, -664, -675, -687].forEach((gz, gIdx) => {
+      buildSnowPlatform(7.5, 1.2, 8.0, (gIdx % 2 === 0 ? -2.2 : 2.2), 57.3 + gIdx * 0.6, gz, iceGlacierMat, false, false, true);
     });
     createFrostVortexElemental(0, 59.0, -670, enemies, snowExtensionGroup);
 
@@ -240,14 +245,16 @@
     // =========================================================================
     addCheckpoint("snow_cp_s9", "9. Aşama: Lazerli Buz Kristali Izgarası", 0, 60.5, -700);
     buildSnowPlatform(16, 2, 14, 0, 59.5, -700, v, false, false, true);
-    [-715, -735].forEach((lz, idx) => {
-      buildSnowPlatform(12, 1.5, 10, 0, 61.0 + idx * 1.0, lz, iceGlacierMat, false, false, true);
-      const laserMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 11.5, 8), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
-      laserMesh.rotation.z = Math.PI / 2; laserMesh.position.set(0, 62.5 + idx * 1.0, lz);
-      snowExtensionGroup.add(laserMesh);
-      snowFrostLasers.push({ mesh: laserMesh, speed: 2.5, y: 62.5 + idx * 1.0, z: lz });
+    [-714, -728, -744].forEach((lz, idx) => {
+      buildSnowPlatform(12, 1.5, 11, 0, 60.4 + idx * 0.7, lz, iceGlacierMat, false, false, true);
+      if (idx < 2) {
+        const laserMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 11.5, 8), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+        laserMesh.rotation.z = Math.PI / 2; laserMesh.position.set(0, 62.0 + idx * 0.7, lz);
+        snowExtensionGroup.add(laserMesh);
+        snowFrostLasers.push({ mesh: laserMesh, speed: 2.5, y: 62.0 + idx * 0.7, z: lz });
+      }
     });
-    createGlacialIceBat(-4.0, 64.0, -725, enemies, snowExtensionGroup);
+    createGlacialIceBat(-3.0, 63.5, -728, enemies, snowExtensionGroup);
 
     // =========================================================================
     // ❄️ 10. AŞAMA: ERİYİP DÜŞEN BUZUL SÜTUNLARI [Zorlu]
@@ -255,44 +262,109 @@
     addCheckpoint("snow_cp_s10", "10. Aşama: Eriyip Düşen Buzul Sütunları", 0, 63.5, -760);
     buildSnowPlatform(14, 2, 12, 0, 62.5, -760, v, false, false, true);
     [
-      { x: -3.0, z: -772, y: 63.5 }, { x: 3.0, z: -782, y: 64.3 },
-      { x: -2.0, z: -792, y: 65.1 }, { x: 2.5, z: -802, y: 65.9 }
-    ].forEach((tp, tIdx) => {
-      const pMesh = buildSnowPlatform(1.8, 0.6, 1.8, tp.x, tp.y, tp.z, iceGlacierMat, false, false, true);
+      { x: -2.2, z: -771, y: 63.1 }, { x: 2.2, z: -781, y: 63.7 },
+      { x: -2.0, z: -791, y: 64.3 }, { x: 2.0, z: -801, y: 64.9 },
+      { x: 0.0, z: -810, y: 65.2 }
+    ].forEach((tp) => {
+      const pMesh = buildSnowPlatform(6.0, 1.0, 6.5, tp.x, tp.y, tp.z, iceGlacierMat, false, false, true);
       snowCrumblingCrusts.push({
         mesh: pMesh, coll: collidables[collidables.length - 1],
         baseY: tp.y, stepped: false, dropTimer: 0.7, fallSpeed: 0, respawnTimer: 0
       });
     });
-    createArcticFrostShaman(0, 67.0, -795, enemies, snowExtensionGroup);
+    createArcticFrostShaman(0, 66.5, -791, enemies, snowExtensionGroup);
 
     // =========================================================================
     // ❄️ 11. AŞAMA: DEVASA BUZUL SIRTI & FIRTINALI DENGE KİRİŞLERİ
     // =========================================================================
     addCheckpoint("snow_cp_s11", "11. Aşama: Devasa Buzul Sırtı & Fırtına Kirişleri", 0, 66.5, -820);
     buildSnowPlatform(16, 2, 14, 0, 65.5, -820, v, false, false, true);
-    buildSnowPlatform(7.5, 1.2, 34, 0, 70.2, -946, iceGlacierMat, false, false, true);
-    createPolarIceBehemoth(0, 71.0, -944, enemies, snowExtensionGroup);
+    buildSnowPlatform(8.5, 1.4, 24, 0, 66.2, -838, iceGlacierMat, false, false, true);
+    buildSnowPlatform(12, 1.6, 14, -2.5, 67.0, -856, v, false, false, true);
+    b("snow_coin_s11_0", -2.5, 68.5, -856, false);
+    [-870, -882, -894].forEach((mz, idx) => {
+      const my = 67.6 + idx * 0.6;
+      const floe = buildSnowPlatform(7.5, 1.2, 8.0, (idx % 2 === 0 ? 2.0 : -2.0), my, mz, iceGlacierMat, false, false, true);
+      snowMovingFloes.push({
+        mesh: floe, coll: collidables[collidables.length - 1],
+        baseX: 0, baseY: my, baseZ: mz, rangeX: 3.5, speed: 1.5, offset: idx * 1.2, halfW: 3.75
+      });
+    });
+    buildSnowPlatform(12, 1.6, 16, 0, 69.5, -910, v, false, false, true);
+    b("snow_gem_s11", 0, 71.2, -910, true);
+    buildSnowPlatform(9.5, 1.5, 48, 0, 70.4, -942, iceGlacierMat, false, false, true);
+    createPolarIceBehemoth(0, 71.3, -942, enemies, snowExtensionGroup);
 
     // =========================================================================
     // ❄️ 12. AŞAMA: ERİYİP ÇÖKEN SÜTUNLAR & ÇİFTLİ DEĞİRMENLER
     // =========================================================================
     addCheckpoint("snow_cp_s12", "12. Aşama: Eriyip Çöken Sütunlar & Çiftli Değirmenler", 0, 72.2, -976);
-    buildSnowPlatform(16, 2, 14, 0, 71.2, -976, v, false, false, true);
+    buildSnowPlatform(16, 2, 16, 0, 71.2, -976, v, false, false, true);
     createCryoScorpionStalker(0, 72.4, -976, enemies, snowExtensionGroup);
-    S(0, 77.2, -1125, 17.5);
+    [
+      { x: -2.5, z: -992, y: 71.8, w: 8.5, d: 10 },
+      { x: 2.5, z: -1006, y: 72.4, w: 8.5, d: 10 },
+      { x: 0.0, z: -1022, y: 73.0, w: 12, d: 14 },
+      { x: 0.0, z: -1040, y: 73.7, w: 10, d: 14 },
+      { x: -2.0, z: -1058, y: 74.4, w: 9, d: 14 },
+      { x: 2.0, z: -1076, y: 75.1, w: 9, d: 14 },
+      { x: 0.0, z: -1094, y: 75.8, w: 11, d: 14 },
+      { x: 0.0, z: -1112, y: 76.4, w: 10, d: 14 },
+      { x: 0.0, z: -1128, y: 77.0, w: 14, d: 16 }
+    ].forEach((st, idx) => {
+      buildSnowPlatform(st.w, 1.5, st.d, st.x, st.y, st.z, idx % 2 === 0 ? iceGlacierMat : v, false, false, true);
+      if (idx === 3 || idx === 6) {
+        const spinGroup = new THREE.Group();
+        spinGroup.position.set(st.x, st.y + 1.8, st.z);
+        for (let arm = 0; arm < 4; arm++) {
+          const iceSpike = new THREE.Mesh(new THREE.ConeGeometry(0.35, 4.8, 6), frostCrystalMat);
+          const ang = (arm / 4) * Math.PI * 2;
+          iceSpike.position.set(Math.cos(ang) * 2.6, 0, Math.sin(ang) * 2.6);
+          iceSpike.rotation.z = -Math.PI / 2; iceSpike.rotation.y = -ang;
+          spinGroup.add(iceSpike);
+        }
+        snowExtensionGroup.add(spinGroup);
+        snowRotatingIceMills.push({ group: spinGroup, speed: idx === 3 ? 2.0 : -2.0 });
+      }
+      if (idx % 2 === 1) b("snow_coin_s12_" + idx, st.x, st.y + 1.8, st.z, idx === 5);
+    });
+    S(0, 77.9, -1128, 17.5);
 
     // =========================================================================
     // ❄️ 13. AŞAMA: DONMUŞ ZAMAN KRİSTALLERİ & KAOTİK LAZER LABİRENTİ
     // =========================================================================
-    addCheckpoint("snow_cp_s13", "13. Aşama: Donmuş Zaman Kristalleri & Lazer Labirenti", 0, 77.8, -1148);
-    buildSnowPlatform(18, 2, 16, 0, 83.0, -1308, v, false, false, true);
+    addCheckpoint("snow_cp_s13", "13. Aşama: Donmuş Zaman Kristalleri & Lazer Labirenti", 0, 78.6, -1148);
+    buildSnowPlatform(18, 2, 16, 0, 77.6, -1148, v, false, false, true);
+    [
+      { x: 0.0, z: -1166, y: 78.2, w: 12, d: 14, laser: true },
+      { x: -2.5, z: -1184, y: 78.8, w: 10, d: 14, laser: false },
+      { x: 2.5, z: -1202, y: 79.4, w: 10, d: 14, laser: true },
+      { x: 0.0, z: -1222, y: 80.1, w: 9, d: 18, laser: false },
+      { x: 0.0, z: -1244, y: 80.8, w: 12, d: 18, laser: true },
+      { x: -2.0, z: -1266, y: 81.5, w: 10, d: 16, laser: false },
+      { x: 2.0, z: -1286, y: 82.2, w: 10, d: 16, laser: false }
+    ].forEach((st, idx) => {
+      buildSnowPlatform(st.w, 1.5, st.d, st.x, st.y, st.z, idx % 2 === 0 ? iceGlacierMat : v, false, false, true);
+      if (st.laser) {
+        const laserMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 11.0, 8), new THREE.MeshBasicMaterial({ color: 0x38bdf8 }));
+        laserMesh.rotation.z = Math.PI / 2;
+        laserMesh.position.set(st.x, st.y + 1.8, st.z);
+        snowExtensionGroup.add(laserMesh);
+        snowFrostLasers.push({ mesh: laserMesh, speed: idx % 2 === 0 ? 2.2 : -2.2, y: st.y + 1.8, z: st.z });
+      }
+      b("snow_coin_s13_" + idx, st.x, st.y + 1.8, st.z, idx === 4);
+    });
+    buildSnowPlatform(18, 2, 18, 0, 83.0, -1308, v, false, false, true);
     createFrostValkyrieKnight(0, 84.2, -1308, enemies, snowExtensionGroup);
 
     // =========================================================================
     // 👑 14. AŞAMA: [BÜYÜK BOSS ARENASI] YÜCE DONMUŞ TAHT ZİRVESİ & KOCA AYAK YETİ
     // =========================================================================
-    addCheckpoint("snow_cp_s14", "14. Aşama: [BÜYÜK BOSS] Yüce Donmuş Taht Zirvesi ❄️", 0, 84.0, -1318);
+    addCheckpoint("snow_cp_s14", "14. Aşama: [BÜYÜK BOSS] Yüce Donmuş Taht Zirvesi ❄️", 0, 84.5, -1324);
+    buildSnowPlatform(16, 2.0, 16, 0, 83.3, -1324, v, false, false, true);
+    // Grand Royal Ice Causeway Bridge leading directly into the Boss Arena (-1332 to -1382)
+    buildSnowPlatform(14, 2.0, 54, 0, 83.5, -1356, iceGlacierMat, false, false, true);
+    buildSnowPlatform(12, 0.4, 54, 0, 84.6, -1356, snowWhiteMat, false, false, true);
 
     const summitArenaZ = -1420;
     const summitArenaY = 83.5;
@@ -395,54 +467,100 @@
 
   function createExactBigfootBoss(x, y, z, enemies, group) {
     const THREE = window.THREE;
-    const g = (typeof window.__buildDistinctCreatureMesh === 'function')
-      ? window.__buildDistinctCreatureMesh(THREE, 0, { primaryColor: 0xe2e8f0, accentColor: 0x38bdf8, scale: 3.1 })
-      : new THREE.Group();
-    g.position.set(x, y, z);
-    group.add(g);
+    const I = new THREE.Group();
+    I.name = "boss_bigfoot_titan_relocated";
+    I.position.set(x, y, z);
+    I.scale.set(3.2, 3.2, 3.2);
+
+    // Exact original Koca Ayak (Bigfoot Yeti Boss) materials & geometry from game-bundle.js
+    const G = new THREE.MeshStandardMaterial({ color: 14870768, emissive: 9741240, emissiveIntensity: 0.25 });
+    const Z = new THREE.MeshStandardMaterial({ color: 6583435 });
+    const pe = new THREE.MeshBasicMaterial({ color: 3718648 });
+    const Se = new THREE.MeshStandardMaterial({ color: 16777215 });
+    const le = new THREE.MeshStandardMaterial({ color: 13358561 });
+    const Ue = new THREE.MeshStandardMaterial({ color: 4674921 });
+    const je = new THREE.MeshStandardMaterial({ color: 3718648, emissive: 165063, emissiveIntensity: 0.4 });
+
+    // Torso
+    const X = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.85, 1.4, 12), G);
+    X.position.y = 1.0;
+    I.add(X);
+
+    // Head
+    const C = new THREE.Mesh(new THREE.SphereGeometry(0.55, 12, 12), G);
+    C.position.set(0, 1.8, 0.2);
+    I.add(C);
+
+    // Snout
+    const W = new THREE.Mesh(new THREE.SphereGeometry(0.35, 10, 10), Z);
+    W.position.set(0, 1.75, 0.5);
+    I.add(W);
+
+    // Glowing Ice Eyes
+    const oe = new THREE.Mesh(new THREE.SphereGeometry(0.09, 6, 6), pe);
+    oe.position.set(-0.18, 1.85, 0.75);
+    I.add(oe);
+    const xe = new THREE.Mesh(new THREE.SphereGeometry(0.09, 6, 6), pe);
+    xe.position.set(0.18, 1.85, 0.75);
+    I.add(xe);
+
+    // White Fangs
+    const Q = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.35, 6), Se);
+    Q.position.set(-0.16, 1.55, 0.75);
+    Q.rotateX(Math.PI);
+    I.add(Q);
+    const ae = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.35, 6), Se);
+    ae.position.set(0.16, 1.55, 0.75);
+    ae.rotateX(Math.PI);
+    I.add(ae);
+
+    // Left & Right Arms
+    const Re = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.35, 1.5, 8), le);
+    Re.name = "bf_arm_left";
+    Re.position.set(-1.0, 0.9, 0.2);
+    Re.rotateZ(0.25);
+    I.add(Re);
+
+    const Ce = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.35, 1.5, 8), le);
+    Ce.name = "bf_arm_right";
+    Ce.position.set(1.0, 0.9, 0.2);
+    Ce.rotateZ(-0.25);
+    I.add(Ce);
+
+    // Bigfoot Feet
+    const ut = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.25, 1.1), Ue);
+    ut.position.set(-0.45, 0.12, 0.2);
+    I.add(ut);
+    const Ye = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.25, 1.1), Ue);
+    Ye.position.set(0.45, 0.12, 0.2);
+    I.add(Ye);
+
+    // Giant Ice Club
+    const ct = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.4, 2.0, 8), je);
+    ct.name = "bf_ice_club";
+    ct.position.set(1.2, 0.6, 0.6);
+    ct.rotateX(Math.PI / 4);
+    I.add(ct);
+
+    group.add(I);
 
     const boss = {
       id: "boss_bigfoot_titan",
       type: "bigfoot_boss",
-      name: "Koca Ayak Yeti (Buzul Kralı ❄️👑)",
-      mesh: g,
+      name: "Koca Ayak (Bigfoot Yeti Boss)",
+      mesh: I,
       pos: new THREE.Vector3(x, y, z),
+      velocity: new THREE.Vector3(),
       baseX: x,
       baseY: y,
       baseZ: z,
-      hp: 650,
-      maxHp: 650,
+      hp: 320,
+      maxHp: 320,
       attackPower: 22,
       isBoss: true,
-      _shootCooldown: 2.0,
-      update: function(dt, p, game) {
-        const t = Date.now() * 0.002;
-        this.mesh.position.x = this.baseX + Math.sin(t) * 12.0;
-        this.mesh.position.z = this.baseZ + Math.cos(t * 0.7) * 9.0;
-        if (p) {
-          this.mesh.lookAt(p.x, this.mesh.position.y, p.z);
-        }
-        this.pos.copy(this.mesh.position);
-
-        if (p && this.pos.distanceTo(p) < 42) {
-          this._shootCooldown -= dt;
-          if (this._shootCooldown <= 0) {
-            this._shootCooldown = 1.9;
-            if (typeof window.__spawnEnemyProjectile === 'function') {
-              window.__spawnEnemyProjectile(game, this.pos, p, {
-                color: 0x38bdf8,
-                glow: 0xffffff,
-                shape: 'crystal',
-                speed: 22,
-                dmg: 18
-              });
-            }
-          }
-          if (this.pos.distanceTo(p) < 5.5) {
-            game.damagePlayer(this.attackPower);
-          }
-        }
-      }
+      attackCooldown: 0,
+      state: "chase",
+      animTimer: 0
     };
     enemies.push(boss);
     return boss;

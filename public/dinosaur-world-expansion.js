@@ -427,12 +427,31 @@
     buildPrehistoricPlatform(22, 2.2, 24, 0, 106.5, -2860, volcanicBasaltMat);
     createVolcanicCarnotaurus(0, 108.0, -2770, enemies, dinosaurExtensionGroup);
 
-    // 14. Aşama: [BÜYÜK BOSS] BÖLÜMÜN EN SONUNDAKİ VOLKANİK DİNOZOR KRALLIĞI ARENASI 🦖🌋 (z: -3050 -> -3400)
+    // 14. Aşama: [BÜYÜK BOSS] BÖLÜMÜN EN SONUNDAKİ VOLKANİK DİNOZOR KRALLIĞI ARENASI 🦖🌋 (z: -2885 -> -3400)
     const arenaX = 0;
     const arenaY = 105.0;
     const arenaZ = -3280;
 
-    addCheckpoint("dino_cp_s14", "14. Aşama: [BÜYÜK BOSS] Volkanik Dinozor Arenası 🦖🌋", 0, arenaY + 1.2, -3060);
+    // Prehistoric Bone & Basalt Causeway connecting Stage 13 (-2860) to T-Rex Arena (-3236)
+    [
+      { x: 0, z: -2890, y: 106.3, w: 16, d: 28, mat: jungleRockMat },
+      { x: -3, z: -2920, y: 106.1, w: 14, d: 26, mat: mossyStoneMat },
+      { x: 3, z: -2950, y: 105.9, w: 14, d: 26, mat: volcanicBasaltMat },
+      { x: 0, z: -2980, y: 105.8, w: 16, d: 28, mat: ancientBoneMat },
+      { x: -3, z: -3010, y: 105.7, w: 14, d: 26, mat: jungleRockMat },
+      { x: 3, z: -3040, y: 105.6, w: 14, d: 26, mat: mossyStoneMat },
+      { x: 0, z: -3070, y: 105.5, w: 18, d: 28, mat: volcanicBasaltMat },
+      { x: -3, z: -3100, y: 105.4, w: 14, d: 26, mat: ancientBoneMat },
+      { x: 3, z: -3130, y: 105.3, w: 14, d: 26, mat: jungleRockMat },
+      { x: 0, z: -3160, y: 105.2, w: 16, d: 28, mat: mossyStoneMat },
+      { x: 0, z: -3190, y: 105.1, w: 16, d: 28, mat: ancientBoneMat },
+      { x: 0, z: -3220, y: 105.0, w: 22, d: 28, mat: volcanicBasaltMat }
+    ].forEach((step, idx) => {
+      buildPrehistoricPlatform(step.w, 2.2, step.d, step.x, step.y, step.z, step.mat);
+      addPrehistoricItem("d_c14_bridge_" + idx, step.x, step.y + 1.8, step.z, idx % 4 === 0);
+    });
+
+    addCheckpoint("dino_cp_s14", "14. Aşama: [BÜYÜK BOSS] Volkanik Dinozor Arenası 🦖🌋", 0, arenaY + 1.2, -3220);
 
     // Grand Volcanic Caldera Platform for T-Rex
     buildPrehistoricPlatform(72, 4.0, 88, arenaX, arenaY, arenaZ, volcanicBasaltMat);

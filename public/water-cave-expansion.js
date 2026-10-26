@@ -205,6 +205,8 @@
       caveExtensionGroup.add(mesh);
 
       const collider = {
+        min: new THREE.Vector3(px - w / 2, py - h / 2, pz - d / 2),
+        max: new THREE.Vector3(px + w / 2, py + h / 2 + 0.15, pz + d / 2),
         minX: px - w / 2, maxX: px + w / 2,
         minY: py - h / 2, maxY: py + h / 2,
         minZ: pz - d / 2, maxZ: pz + d / 2
@@ -377,30 +379,38 @@
     addPlat(42, 4, 70, 0, 44, -3870, deepAmethystMat);
 
     // -------------------------------------------------------------------------
-    // RELOCATED BOSS: DEV SU EJDERHASI (STAGE 14)
+    // RELOCATED BOSS: DEV SU EJDERHASI (STAGE 14 - Orijinal Model)
     // -------------------------------------------------------------------------
-    const bossGroup = new THREE.Group();
+    let bossGroup;
+    if (game.currentLevel && game.currentLevel.waterDragonBoss && game.currentLevel.waterDragonBoss.mesh) {
+      bossGroup = game.currentLevel.waterDragonBoss.mesh;
+      game.currentLevel.waterDragonBoss = null;
+      if (typeof window.updateWaterDragonHealthBar === 'function') {
+        window.updateWaterDragonHealthBar(0, 50);
+      }
+    } else if (typeof window.create3DWaterDragon === 'function') {
+      const dData = window.create3DWaterDragon(game, new THREE.Vector3(0, 46, -3890));
+      bossGroup = dData.mesh;
+    } else {
+      bossGroup = new THREE.Group();
+      const dragonMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3, emissive: 0x0369a1, emissiveIntensity: 0.4 });
+      const hornMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.2 });
+      const torso = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.8, 8, 16), dragonMat);
+      torso.position.y = 4.5;
+      bossGroup.add(torso);
+      const head = new THREE.Mesh(new THREE.ConeGeometry(2.0, 4.0, 12), dragonMat);
+      head.rotation.x = Math.PI / 2;
+      head.position.set(0, 8.5, 2.0);
+      bossGroup.add(head);
+      [-1.2, 1.2].forEach(hx => {
+        const horn = new THREE.Mesh(new THREE.ConeGeometry(0.4, 2.5, 8), hornMat);
+        horn.position.set(hx, 10.5, 0.5);
+        horn.rotation.z = hx > 0 ? -0.5 : 0.5;
+        bossGroup.add(horn);
+      });
+    }
+
     bossGroup.position.set(0, 46, -3890);
-
-    const dragonMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.3, emissive: 0x0369a1, emissiveIntensity: 0.4 });
-    const hornMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.2 });
-
-    const torso = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.8, 8, 16), dragonMat);
-    torso.position.y = 4.5;
-    bossGroup.add(torso);
-
-    const head = new THREE.Mesh(new THREE.ConeGeometry(2.0, 4.0, 12), dragonMat);
-    head.rotation.x = Math.PI / 2;
-    head.position.set(0, 8.5, 2.0);
-    bossGroup.add(head);
-
-    [-1.2, 1.2].forEach(hx => {
-      const horn = new THREE.Mesh(new THREE.ConeGeometry(0.4, 2.5, 8), hornMat);
-      horn.position.set(hx, 10.5, 0.5);
-      horn.rotation.z = hx > 0 ? -0.5 : 0.5;
-      bossGroup.add(horn);
-    });
-
     caveExtensionGroup.add(bossGroup);
 
     caveDragonBoss = {
@@ -426,6 +436,15 @@
         bossGroup.position.z = this.baseZ + Math.cos(t * 0.8) * 9.0;
         bossGroup.position.y = this.baseY + Math.sin(t * 1.5) * 1.3;
 
+        const wingL = bossGroup.getObjectByName('dragon_wing_left');
+        const wingR = bossGroup.getObjectByName('dragon_wing_right');
+        const tailGrp = bossGroup.getObjectByName('dragon_tail');
+        const jaw = bossGroup.getObjectByName('dragon_jaw');
+        if (wingL) wingL.rotation.z = Math.sin(t * 3.0) * 0.45;
+        if (wingR) wingR.rotation.z = -Math.sin(t * 3.0) * 0.45;
+        if (tailGrp) tailGrp.rotation.y = Math.sin(t * 2.5) * 0.35;
+        if (jaw) jaw.rotation.x = Math.abs(Math.sin(t * 2.0)) * 0.35;
+
         if (playerPos) {
           bossGroup.lookAt(playerPos.x, bossGroup.position.y, playerPos.z);
         }
@@ -448,9 +467,9 @@
 
         if (playerPos) {
           const d = bossGroup.position.distanceTo(playerPos);
-          if (d < 4.5 && playerPos.y > bossGroup.position.y + 6.5 && gameInst.playerVel && gameInst.playerVel.y < 0) {
+          if (d < 5.5 && playerPos.y > bossGroup.position.y + 4.5 && gameInst.playerVel && gameInst.playerVel.y < 0) {
             this.hp -= 5;
-            gameInst.playerVel.y = 15;
+            gameInst.playerVel.y = 18;
             if (window.St && window.St.playBossHit) window.St.playBossHit();
 
             if (this.hp <= 0) {
